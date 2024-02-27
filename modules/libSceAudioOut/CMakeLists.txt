@@ -9,9 +9,10 @@ target_include_directories(${libName} PRIVATE
   ${CMAKE_SOURCE_DIR}/third_party/portAudio/include
 )
 
-add_dependencies(${libName} portaudio)
-target_link_libraries(${libName} PRIVATE
-  ${CMAKE_BINARY_DIR}/third_party/portAudio/portaudio_static_x64.lib
+add_dependencies(${libName} third_party)
+
+target_link_libraries(${libName} PUBLIC
+  portaudio_static_x64
 )
 
 setupModule(${libName})
