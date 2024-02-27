@@ -1,0 +1,26 @@
+== Overview Modules
+
+A brief overview of the modules.
+
+[plantuml, softwareArchoverview-class, png]
+----
+include::../uml/ModulesOverview.puml[]
+----
+
+Each target library is created seperatly as a shared library in the *modules* folder. This allows NIDs generation at build time and a clean code seperation.
+
+New modules can be created by:
+
+. copying the *template* folder
+. replace the name of the folder with the *identical* name of the target library.
+. inside CMakeLists.txt, replace template inside "set(libName template)" with the library name
+. inside entry.cpp, replace "libSce" both in LOG_DEFINE_MODULE() and MODULE_NAME = ""
+
+All exported function are placed inside the provided extern "C" scope and should start with "EXPORT SYSV_ABI", since those functions are  called directly by the emulated application (linux).
+
+[TIP]
+The template only contains a dependency to the logging library as a bare minimum. To access the interfaces from the emulator, add the following line: +
+target_link_libraries(${libName} PRIVATE emulator.lib)
+
+After a new cmake config, the new library should be picked up and built.
+Libraries are only loaded on demand.

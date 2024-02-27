@@ -1,0 +1,17 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "Modules" {}
+
+class "psOff Emulator"{
+  +accessRuntimeLinker()
+  +accessInitParams()
+  +accessTimer()
+  +accessVideoOut()
+  +accessFileManager()
+  +accessGpuMemory()
+  +accessSystemContent()
+}
+
+Modules -> "psOff Emulator"
+@enduml

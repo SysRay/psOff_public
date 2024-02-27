@@ -1,0 +1,86 @@
+{
+  "version": "2.0.0",
+  "windows": {
+    "options": {
+      "env": {
+        "CXXFLAGS": "-m64 -fdiagnostics-absolute-paths",
+        "CFLAGS": "-m64 -fdiagnostics-absolute-paths"
+      },
+      "shell": {
+        "executable": "cmd.exe",
+        "args": [
+          "/C",
+          "\"C:/PROGRA~2/MICROS~1/2019/Community/VC/Auxiliary/Build/vcvars64.bat\"",
+          "&&"
+        ]
+      }
+    }
+  },
+  "tasks": [
+    {
+      "label": "Config",
+      "type": "shell",
+      "command": "cmake.exe",
+      "args": [
+        "-S${workspaceFolder}",
+        "-B_build/_Release",
+        "-GNinja",
+        "-DEMULATOR_DEV_ROOT=D:/tmpSdk/development",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=_build/_Install",
+        "-DCMAKE_C_COMPILER=clang-cl.exe",
+        "-DCMAKE_CXX_COMPILER=clang-cl.exe",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=1",
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {},
+    },
+    {
+      "label": "Build",
+      "type": "shell",
+      "command": "cmake.exe",
+      "args": [
+        "--build",
+        "_build/_Release",
+        "-j8"
+      ],
+      "group": {
+        "kind": "build",
+      },
+      "presentation": {},
+    },
+    {
+      "label": "install",
+      "type": "shell",
+      "command": "cmake.exe",
+      "args": [
+        "--install",
+        "_build/_Release"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {},
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "cmake.exe",
+      "args": [
+        "--build",
+        "_build/_Release",
+        "--target",
+        "clean"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {},
+    }
+  ]
+}

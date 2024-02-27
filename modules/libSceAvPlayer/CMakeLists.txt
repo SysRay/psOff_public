@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.24)
+include(../setupModule.cmake)
+
+set(libName libSceAvPlayer)
+project(${libName})
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
+
+add_library(${libName} SHARED
+  entry.cpp entryEx.cpp avplayer.cpp
+)
+
+target_link_directories(${libName} PRIVATE
+  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib
+)
+
+target_include_directories(${libName} PRIVATE
+  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/include
+  ${Vulkan_INCLUDE_DIRS}
+)
+
+set(FFMPEG_LIBS
+  avformat
+  avcodec
+  avutil
+  swscale
+  swresample
+)
+
+target_link_libraries(${libName} PUBLIC emulator.lib ${FFMPEG_LIBS})
+
+setupModule(${libName})

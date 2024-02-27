@@ -1,0 +1,12 @@
+{
+    "ccls.misc.compilationDatabaseDirectory": "_Build/_Release",
+    "ccls.clang.excludeArgsIsWhitelist": true,
+    "ccls.clang.excludeArgs": ["-I*", "-isystem*", "-x*", "-D*", "/std*", "-std:*", "-f*"],
+    "ccls.clang.extraArgs": ["-fexceptions"],
+    "ccls.index.threads": 0,
+
+    "asciidoc.use_kroki": true,
+    "asciidoc.preview.useEditorStyle": false,
+    "asciidoc.use_asciidoctorpdf": true,
+    "editor.tabSize": 2,
+}

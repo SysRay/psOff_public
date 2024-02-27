@@ -1,0 +1,13 @@
+#pragma once
+
+namespace Err {
+constexpr int USER_SERVICE_ERROR_INTERNAL                = -2137653247; /* 0x80960001 */
+constexpr int USER_SERVICE_ERROR_NOT_INITIALIZED         = -2137653246; /* 0x80960002 */
+constexpr int USER_SERVICE_ERROR_ALREADY_INITIALIZED     = -2137653245; /* 0x80960003 */
+constexpr int USER_SERVICE_ERROR_NO_MEMORY               = -2137653244; /* 0x80960004 */
+constexpr int USER_SERVICE_ERROR_INVALID_ARGUMENT        = -2137653243; /* 0x80960005 */
+constexpr int USER_SERVICE_ERROR_OPERATION_NOT_SUPPORTED = -2137653242; /* 0x80960006 */
+constexpr int USER_SERVICE_ERROR_NO_EVENT                = -2137653241; /* 0x80960007 */
+constexpr int USER_SERVICE_ERROR_NOT_LOGGED_IN           = -2137653239; /* 0x80960009 */
+constexpr int USER_SERVICE_ERROR_BUFFER_TOO_SHORT        = -2137653238; /* 0x8096000A */
+} // namespace Err

@@ -1,0 +1,22 @@
+#pragma once
+#include <stdint.h>
+
+namespace Err {
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_NOT_INIT               = -2142369535;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_ARGUMENT_INVALID       = -2142369534;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_PACKET_INVALID         = -2142369533;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_INTERNAL_UNRECOVERABLE = -2142369532;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_INITIALIZED            = -2142369531;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_SYSTEM                 = -2142369530;
+constexpr int32_t SCE_VOICE_ERROR_LIBVOICEQOS_RESOURCE_USED          = -2142369529;
+} // namespace Err
+
+constexpr int32_t SCE_VOICE_QOS_MAX_LOCAL_ENDPOINTS     = 1;
+constexpr int32_t SCE_VOICE_QOS_MAX_REMOTE_ENDPOINTS    = 7;
+constexpr int32_t SCE_VOICE_QOS_MAX_CONNECTIONS         = 7;
+constexpr int32_t SCE_VOICE_QOS_MAX_15_REMOTE_ENDPOINTS = 15;
+constexpr int32_t SCE_VOICE_QOS_MAX_15_CONNECTIONS      = 15;
+
+constexpr int32_t SCE_VOICE_QOS_INVALID_LOCAL_ID      = (-1);
+constexpr int32_t SCE_VOICE_QOS_INVALID_REMOTE_ID     = (-1);
+constexpr int32_t SCE_VOICE_QOS_INVALID_CONNECTION_ID = (-1);
