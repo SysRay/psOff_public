@@ -9,4 +9,5 @@
     "asciidoc.preview.useEditorStyle": false,
     "asciidoc.use_asciidoctorpdf": true,
     "editor.tabSize": 2,
+    "git.ignoredRepositories": ["third_party/boost"]
 }
