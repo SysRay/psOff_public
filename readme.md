@@ -39,7 +39,9 @@ For development, set CMAKE_INSTALL_PREFIX to the downloaded emulators folder.
 .\emulator.exe --h
 .\emulator.exe --file="C:/****/eboot.bin"
 ```
-If no --root is defined, it uses the folder from --file
+If no --root is defined, it uses the folder from --file \
+For testing/benchmark, add --vsync=0
+
 
 It expects the Target to be in the following format:
 ```
