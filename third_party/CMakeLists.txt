@@ -1,3 +1,8 @@
+cmake_minimum_required(VERSION 3.24)
+project(third_party VERSION 0.0.1)
+
+include(ExternalProject)
+
 add_subdirectory(portAudio)
 
 install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
