@@ -23,11 +23,11 @@
       "command": "cmake.exe",
       "args": [
         "-S${workspaceFolder}",
-        "-B_build/_Release",
+        "-B_build/",
         "-GNinja",
         "-DEMULATOR_DEV_ROOT=../_build/_Install/development",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_INSTALL_PREFIX=_build/_Install",
+        "-DCMAKE_INSTALL_PREFIX=../_build/_Install",
         "-DCMAKE_C_COMPILER=clang-cl.exe",
         "-DCMAKE_CXX_COMPILER=clang-cl.exe",
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=1",
