@@ -27,8 +27,10 @@ EXPORT SYSV_ABI int sceSslGetCaList(int libsslCtxId, SceSslCaList* caList) {
 EXPORT SYSV_ABI int sceSslFreeCaList(int libsslCtxId, SceSslCaList* caList) {
   return Ok;
 }
-EXPORT SYSV_ABI SceSslCertName* sceSslGetSubjectName(int libsslCtxId, SceSslCert* sslCert);
-SceSslCertName*                 sceSslGetIssuerName(int libsslCtxId, SceSslCert* sslCert) {
+EXPORT SYSV_ABI SceSslCertName* sceSslGetSubjectName(int libsslCtxId, SceSslCert* sslCert) {
+  return nullptr;
+}
+SceSslCertName* sceSslGetIssuerName(int libsslCtxId, SceSslCert* sslCert) {
   return nullptr;
 }
 EXPORT SYSV_ABI int sceSslGetNotAfter(int libsslCtxId, SceSslCert* sslCert, uint64_t* limit) {
