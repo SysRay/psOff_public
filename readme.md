@@ -15,9 +15,8 @@ It currently doesn't support:
 + missing opcodes
 
 
-I’m happy for any help. I'll update the docs and document the currently accessible interfaces, I promise.
-
-Just jump in, system part isn't complicated.
+I’m happy for any help. Just hop in, system part isn't complicated. \
+I don't serve spaghetti only bugs.
 
 ## Getting Started
 ### Dependencies
@@ -48,4 +47,8 @@ sce_module
 sce_sys
 eboot.bin
 ```
+
+## Development
+
+Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel".
 
