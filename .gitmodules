@@ -3,4 +3,4 @@
 	url = https://github.com/SysRay/psOff_public.git
 [submodule "third_party/boost"]
 	path = third_party/boost
-	url = https://github.com/boostorg/boost.git
+	url = https://github.com/SysRay/boost.git
