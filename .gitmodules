@@ -4,3 +4,6 @@
 [submodule "third_party/boost"]
 	path = third_party/boost
 	url = https://github.com/SysRay/boost.git
+[submodule "third_party/optick"]
+	path = third_party/optick
+	url = https://github.com/bombomby/optick.git
