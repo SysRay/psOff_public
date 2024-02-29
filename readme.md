@@ -2,12 +2,12 @@
 Windows only.
 Tested only with AMD GPU. May not run with nvidia, currently.
 
-Will add more of the "private" part later.
+Will add more to the "private" part later.
 
 Target is to have a standalone framework for shader reconstruction, commandbuffer translation and managing the GPU memory, for others to use. That’s why the project is currently split.
 
 ## Description
-Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries. It renders decently fast. The planned changes will make it almost perfect. Had to reverse engineer and try out a lot, before.
+Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries. It renders decently fast. The planned changes will make it almost perfect. Had to reverse engineer and try out a lot previously.
 
 It currently doesn't support:
 + multiple command buffer submits
@@ -15,8 +15,8 @@ It currently doesn't support:
 + missing opcodes
 
 
-I’m happy for any help. Just hop in, system part isn't complicated. \
-I don't serve spaghetti only bugs.
+I’m happy to receive any help. Just hop in, system part isn't complicated. \
+I don't serve spaghetti, only bugs.
 
 ## Getting Started
 ### Dependencies
@@ -52,5 +52,5 @@ eboot.bin
 
 ## Development
 
-Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel".
+Uses boost's thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel".
 
