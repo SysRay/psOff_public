@@ -1,0 +1,17 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package Modules {}
+
+package core {
+  package kernel { }
+}
+
+package "psOff Emulator" {
+
+}
+
+Modules -> core
+
+core <--> "psOff Emulator"
+@enduml

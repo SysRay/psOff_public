@@ -36,6 +36,7 @@ include_directories(BEFORE
 link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
   ${CMAKE_BINARY_DIR}/third_party/install/lib
+  ${CMAKE_BINARY_DIR}/core
 )
 
 link_libraries(

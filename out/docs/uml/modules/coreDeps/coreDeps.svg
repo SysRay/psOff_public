@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="227px" preserveAspectRatio="none" style="width:240px;height:227px;background:#FFFFFF;" version="1.1" viewBox="0 0 240 227" width="240px" zoomAndPan="magnify"><defs/><g><!--MD5=[01435ace8273dc3cae88e7f376e4d373]
+cluster core--><g id="cluster_core"><path d="M109,6 L142,6 A3.75,3.75 0 0 1 144.5,8.5 L151.5,29.6094 L231,29.6094 A2.5,2.5 0 0 1 233.5,32.1094 L233.5,126.5 A2.5,2.5 0 0 1 231,129 L109,129 A2.5,2.5 0 0 1 106.5,126.5 L106.5,8.5 A2.5,2.5 0 0 1 109,6 " fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="106.5" x2="151.5" y1="29.6094" y2="29.6094"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="32" x="110.5" y="22.5332">core</text></g><path d="M8.5,50 L62.5,50 A3.75,3.75 0 0 1 65,52.5 L72,73.6094 L76.5,73.6094 A2.5,2.5 0 0 1 79,76.1094 L79,102.7188 A2.5,2.5 0 0 1 76.5,105.2188 L8.5,105.2188 A2.5,2.5 0 0 1 6,102.7188 L6,52.5 A2.5,2.5 0 0 1 8.5,50 " fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="6" x2="72" y1="73.6094" y2="73.6094"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53" x="10" y="66.5332">Modules</text><path d="M152.5,50 L192.5,50 A3.75,3.75 0 0 1 195,52.5 L202,73.6094 L206.5,73.6094 A2.5,2.5 0 0 1 209,76.1094 L209,102.7188 A2.5,2.5 0 0 1 206.5,105.2188 L152.5,105.2188 A2.5,2.5 0 0 1 150,102.7188 L150,52.5 A2.5,2.5 0 0 1 152.5,50 " fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="150" x2="202" y1="73.6094" y2="73.6094"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39" x="154" y="66.5332">kernel</text><path d="M60,165 L155,165 A3.75,3.75 0 0 1 157.5,167.5 L164.5,188.6094 L169,188.6094 A2.5,2.5 0 0 1 171.5,191.1094 L171.5,217.7188 A2.5,2.5 0 0 1 169,220.2188 L60,220.2188 A2.5,2.5 0 0 1 57.5,217.7188 L57.5,167.5 A2.5,2.5 0 0 1 60,165 " fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="57.5" x2="164.5" y1="188.6094" y2="188.6094"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="94" x="61.5" y="181.5332">psOff Emulator</text><!--MD5=[5143ca2d4783abcd169ffba1812598cd]
+link Modules to core--><g id="link_Modules_core"><path d="M79.06,77.5 C84.875,77.5 90.69,77.5 96.505,77.5 C99.4125,77.5 102.32,77.5 105.2275,77.5 C105.5909,77.5 105.9544,77.5 106.3178,77.5 C106.3632,77.5 106.4087,77.5 106.4541,77.5 " fill="none" id="Modules-to-core" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="106.4541,77.5,97.4541,73.5,101.4541,77.5,97.4541,81.5,106.4541,77.5" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[68544d523d0d03d5cbd57953bc8e80fe]
+link core to psOff Emulator--><g id="link_core_psOff Emulator"><path d="M114.5,129.0178 C114.5,129.1573 114.5,129.2968 114.5,129.4363 C114.5,129.7155 114.5,129.9948 114.5,130.2742 C114.5,131.392 114.5,132.5123 114.5,133.6333 C114.5,142.6013 114.5,151.615 114.5,159.77 " fill="none" id="core-psOff Emulator" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="114.5,164.88,118.5,155.88,114.5,159.88,110.5,155.88,114.5,164.88" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="114.5,129.0178,110.5,138.0178,114.5,134.0178,118.5,138.0178,114.5,129.0178" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[c882305d6c779617b5b9e94cce383613]
+@startuml
+skinparam classAttributeIconSize 0
+
+package Modules {}
+
+package core {
+  package kernel {}
+}
+
+package "psOff Emulator" {
+
+}
+
+Modules -> core
+
+core <- -> "psOff Emulator"
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 19:01:30 CEST 2022)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Default Encoding: Cp1252
+Language: de
+Country: DE
+--></g></svg>
