@@ -1,10 +1,10 @@
 #include "common.h"
-#include <logging.h>
 #include "portaudio.h"
 #include "types.h"
 
 #include <array>
 #include <chrono>
+#include <logging.h>
 #include <mutex>
 
 LOG_DEFINE_MODULE(libSceAudioOut);
@@ -53,6 +53,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   Pa_Initialize();
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, SceAudioOutParamFormat format) {
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
@@ -128,6 +129,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   }
   return Err::PORT_FULL;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
@@ -144,12 +146,14 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
   }
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
   auto pimpl = getData();
 
   // std::unique_lock const lock(pimpl->mutexInt);
   return writeOut(pimpl, handle, ptr);
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32_t* vol) {
   LOG_USE_MODULE(libSceAudioOut);
   auto pimpl = getData();
@@ -178,6 +182,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
   }
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
   auto pimpl = getData();
 
@@ -187,6 +192,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
   }
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* outputTime) {
   auto pimpl = getData();
 
@@ -197,9 +203,11 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* o
   *outputTime = port.lastOutputTime;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mixLevel) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortState* state) {
   auto pimpl = getData();
 
@@ -212,10 +220,12 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortS
   state->output  = (uint16_t)SceAudioOutStateOutput::CONNECTED_PRIMARY;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state) {
   state->loudness = -70.0f;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAudioOutSetSystemDebugState(SceAudioOutSystemDebugStateElement elem, SceAudioOutSystemDebugStateParam* param) {
   return Ok;
 }

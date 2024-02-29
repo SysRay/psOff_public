@@ -52,6 +52,7 @@ if(NOT DEFINED EMU_THIRDPARTY_BUILD_DIR)
   include("${CMAKE_SOURCE_DIR}/third_party/third_party.cmake")
 else()
   add_library(third_party INTERFACE)
+
   # submodule
   include_directories(BEFORE
     ${EMU_THIRDPARTY_BUILD_DIR}/include
@@ -64,6 +65,7 @@ endif()
 
 # Internal Projects
 add_subdirectory(modules)
+add_subdirectory(core)
 
 # #- Projects
 

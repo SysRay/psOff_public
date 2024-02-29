@@ -9,6 +9,7 @@ install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
   FILES_MATCHING PATTERN "*.dll"
 )
 
+# Boost
 set(BOOST_INCLUDE_LIBRARIES "program_options;date_time;interprocess;stacktrace;uuid;beast;signals2;thread")
 ExternalProject_Add(boost_thirdParty
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost
@@ -23,4 +24,25 @@ ExternalProject_Add(boost_thirdParty
   -DBUILD_TESTING=OFF
   -DBOOST_INSTALL_LAYOUT=system
   CMAKE_CACHE_ARGS -DBOOST_INCLUDE_LIBRARIES:STRING=${BOOST_INCLUDE_LIBRARIES}
+)
+
+# Optick
+add_library(Optick STATIC)
+target_sources(Optick
+  PRIVATE
+  optick/src/optick_capi.cpp
+  optick/src/optick_core.cpp
+  optick/src/optick_gpu.cpp
+  optick/src/optick_gpu.d3d12.cpp
+  optick/src/optick_gpu.vulkan.cpp
+  optick/src/optick_message.cpp
+  optick/src/optick_miniz.cpp
+  optick/src/optick_serialization.cpp
+  optick/src/optick_server.cpp
+)
+
+set_target_properties(Optick
+  PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/install/bin"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/install/lib"
 )

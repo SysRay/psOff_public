@@ -1,15 +1,12 @@
-#include "common.h"
 #include "../libSceNpManager/types.h"
-
-#include <fileManager.h>
-#include <systemContent.h>
-
-
-#include <logging.h>
+#include "common.h"
 #include "types.h"
 
+#include <fileManager.h>
 #include <filesystem>
+#include <logging.h>
 #include <optional>
+#include <systemContent.h>
 
 LOG_DEFINE_MODULE(libSceAppContent);
 
@@ -23,6 +20,7 @@ EXPORT SYSV_ABI int32_t sceAppContentInitialize(SceAppContentInitParam* initPara
   bootParam->attr = 0;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentAppParamGetInt(SceAppContentAppParamId paramId, int32_t* value) {
   LOG_USE_MODULE(libSceAppContent);
 
@@ -44,40 +42,47 @@ EXPORT SYSV_ABI int32_t sceAppContentAppParamGetInt(SceAppContentAppParamId para
   return retValue.has_value() ? Ok : Err::PARAMETER;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentGetAddcontInfoList(SceNpServiceLabel serviceLabel, SceAppContentAddcontInfo* list, uint32_t listNum, uint32_t* hitNum) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   *hitNum = 0;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentGetAddcontInfo(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel,
                                                     SceAppContentAddcontInfo* info) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentAddcontMount(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel,
                                                   SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentAddcontUnmount(const SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentAddcontEnqueueDownload(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentGetEntitlementKey(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel,
                                                        SceAppContentEntitlementKey* key) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataMount2(SceAppContentTemporaryDataOption option, SceAppContentMountPoint* mountPoint) {
   auto tempFolder = accessFileManager().getMountPoint(MountType::Temp, MOUNT_POINT_TEMP.data());
   if ((option & 1) > 0) {
@@ -89,11 +94,13 @@ EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataMount2(SceAppContentTemporaryD
 
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataUnmount(const SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataFormat(const SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   auto tempFolder = accessFileManager().getMappedPath(mountPoint->data);
@@ -104,16 +111,19 @@ EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataFormat(const SceAppContentMoun
   }
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentDownloadDataFormat(const SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentAddcontDelete(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceAppContentGetAddcontDownloadProgress(SceNpServiceLabel serviceLabel, const SceNpUnifiedEntitlementLabel* entitlementLabel,
                                                                 SceAppContentAddcontDownloadProgress* progress) {
   LOG_USE_MODULE(libSceAppContent);

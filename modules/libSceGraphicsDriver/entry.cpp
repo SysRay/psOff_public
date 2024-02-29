@@ -1,8 +1,8 @@
 #include "common.h"
+#include "core/kernel/eventqueue_types.h"
 #include "types.h"
 
-#include <eventqueue_types.h>
-#include <igraphics.h>
+#include <graphics.h>
 #include <logging.h>
 #include <pm4_custom.h>
 #include <timer.h>
@@ -23,7 +23,7 @@ void event_reset_func(Kernel::EventQueue::KernelEqueueEvent* event) {
   event->event.data   = 0;
 }
 
-void event_delete_func(Kernel::EventQueue::KernelEqueue* eq, Kernel::EventQueue::KernelEqueueEvent* event) {
+void event_delete_func(Kernel::EventQueue::IKernelEqueue_t eq, Kernel::EventQueue::KernelEqueueEvent* event) {
   accessVideoOut().getGraphics()->removeEvent(eq, event->event.ident);
 }
 } // namespace
@@ -198,6 +198,7 @@ int SYSV_ABI sceGnmSubmitAndFlipCommandBuffers(uint32_t count, void** dcb_gpu_ad
                                                   ccb_sizes_in_bytes, handle, index, flip_mode, flip_arg, true);
   return Ok;
 }
+
 int SYSV_ABI sceGnmSubmitAndFlipCommandBuffersForWorkload(uint64_t workload, uint32_t count, void** dcb_gpu_addrs, const uint32_t* dcb_sizes_in_bytes,
                                                           void** ccb_gpu_addrs, const uint32_t* ccb_sizes_in_bytes, int handle, int index, int flip_mode,
                                                           int64_t flip_arg) {
@@ -239,6 +240,7 @@ int SYSV_ABI sceGnmSetVgtControl(uint32_t* cmdOut, uint64_t size, uint32_t primG
   }
   return -1;
 }
+
 int SYSV_ABI sceGnmResetVgtControl(uint32_t* cmdOut, int32_t param) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
@@ -438,10 +440,11 @@ int SYSV_ABI sceGnmUnregisterOwnerAndResources(uint32_t owner_handle) {
 int SYSV_ABI sceGnmUnregisterResource(uint32_t resource_handle) {
   return Ok;
 }
+
 // - tracing
 // #####################################
 
-int SYSV_ABI sceGnmAddEqEvent(Kernel::EventQueue::KernelEqueue* eq, int id, void* udata) {
+int SYSV_ABI sceGnmAddEqEvent(Kernel::EventQueue::IKernelEqueue_t eq, int id, void* udata) {
   Kernel::EventQueue::KernelEqueueEvent event = {.triggered = false,
                                                  .event =
                                                      {
@@ -463,12 +466,13 @@ int SYSV_ABI sceGnmAddEqEvent(Kernel::EventQueue::KernelEqueue* eq, int id, void
   return accessVideoOut().getGraphics()->addEvent(event, eq);
 }
 
-int SYSV_ABI sceGnmDeleteEqEvent(Kernel::EventQueue::KernelEqueue* eq, int id) {
+int SYSV_ABI sceGnmDeleteEqEvent(Kernel::EventQueue::IKernelEqueue_t eq, int id) {
   accessVideoOut().getGraphics()->removeEvent(eq, id);
   return Ok;
 }
 
 void SYSV_ABI sceGnmInsertSetMarker(const char* debugString) {}
+
 void SYSV_ABI sceGnmInsertSetColorMarker(const char* debugString, uint32_t argbColor) {}
 
 SceWorkloadStatus SYSV_ABI sceGnmCreateWorkloadStream(const char* name, SceWorkloadStream* stream) {
@@ -484,9 +488,11 @@ SceWorkloadStatus SYSV_ABI sceGnmBeginWorkload(SceWorkloadStream stream, uint64_
   *workload            = ++count;
   return SceWorkloadStatus::StatusOk;
 }
+
 SceWorkloadStatus SYSV_ABI sceGnmEndWorkload(uint64_t workload) {
   return SceWorkloadStatus::StatusOk;
 }
+
 SceWorkloadStatus SYSV_ABI sceGnmDestroyWorkloadStream(SceWorkloadStream workloadStream) {
   return SceWorkloadStatus::StatusOk;
 }
