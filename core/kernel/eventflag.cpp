@@ -2,11 +2,12 @@
 #include "eventflag.h"
 #undef __APICALL_EXTERN
 
+#include "logging.h"
 #include "modules_include/common.h"
 
 #include <boost/thread/condition.hpp>
-#include <logging.h>
 #include <memory>
+
 
 LOG_DEFINE_MODULE(KernelEventFlag);
 

@@ -1,7 +1,6 @@
 #include "common.h"
+#include "logging.h"
 #include "types.h"
-
-#include <logging.h>
 
 LOG_DEFINE_MODULE(libSceNet);
 
@@ -39,15 +38,19 @@ EXPORT SYSV_ABI SceNetId sceNetEpollCreate(const char* name, int flags) {
   static int id = 0;
   return ++id;
 }
+
 EXPORT SYSV_ABI int sceNetEpollControl(SceNetId eid, int op, SceNetId id, SceNetEpollEvent* event) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int sceNetEpollWait(SceNetId eid, SceNetEpollEvent* events, int maxevents, int timeout) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int sceNetEpollDestroy(SceNetId eid) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int sceNetEpollAbort(SceNetId eid, int flags) {
   return Ok;
 }

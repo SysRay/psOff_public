@@ -14,6 +14,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:videoout>
 )
 
+add_dependencies(core logging)
 target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono

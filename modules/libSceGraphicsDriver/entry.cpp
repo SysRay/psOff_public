@@ -1,9 +1,9 @@
 #include "common.h"
 #include "core/kernel/eventqueue_types.h"
+#include "logging.h"
 #include "types.h"
 
 #include <graphics.h>
-#include <logging.h>
 #include <pm4_custom.h>
 #include <timer.h>
 #include <videoOut.h>

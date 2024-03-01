@@ -1,7 +1,6 @@
 #include "common.h"
+#include "logging.h"
 #include "types.h"
-
-#include <logging.h>
 
 LOG_DEFINE_MODULE(libSceNpManagerForToolkit);
 
@@ -14,9 +13,11 @@ EXPORT const char* MODULE_NAME = "libSceNpManager";
 EXPORT SYSV_ABI int sceNpCheckCallbackForLib() {
   return Ok;
 }
+
 EXPORT SYSV_ABI int sceNpRegisterStateCallbackForToolkit(void* /*callback*/, void* /*userdata*/) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int sceNpUnregisterStateCallbackForToolkit(void* /*callback*/, void* /*userdata*/) {
   return Ok;
 }

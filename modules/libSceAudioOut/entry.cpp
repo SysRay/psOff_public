@@ -1,10 +1,10 @@
 #include "common.h"
+#include "logging.h"
 #include "portaudio.h"
 #include "types.h"
 
 #include <array>
 #include <chrono>
-#include <logging.h>
 #include <mutex>
 
 LOG_DEFINE_MODULE(libSceAudioOut);

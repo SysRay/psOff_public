@@ -33,6 +33,7 @@ message("Vulkan Path: ${VulkanPath}")
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
   ${PRJ_SRC_DIR}/modules_include
+  ${PRJ_SRC_DIR}/tools/logging
   ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/install/include
 )
@@ -43,9 +44,11 @@ link_directories(BEFORE
   ${CMAKE_BINARY_DIR}/core
 )
 
+add_subdirectory(tools/logging) # include befire link_libraries
+
 link_libraries(
   psOff_utility
-  logging
+  logging.lib
 )
 
 add_definitions("-D__APICALL_IMPORT")
@@ -56,6 +59,7 @@ include("third_party/third_party.cmake")
 # Internal Projects
 add_subdirectory(modules)
 add_subdirectory(core)
+
 
 # #- Projects
 

@@ -1,8 +1,8 @@
 #include "common.h"
 #include "core/kernel/eventqueue.h"
+#include "logging.h"
 #include "types.h"
 
-#include <logging.h>
 
 LOG_DEFINE_MODULE(equeue);
 

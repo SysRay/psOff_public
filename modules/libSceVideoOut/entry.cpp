@@ -1,8 +1,8 @@
 #include "common.h"
 #include "core/kernel/eventqueue_types.h"
+#include "logging.h"
 #include "types.h"
 
-#include <logging.h>
 #include <videoOut.h>
 
 LOG_DEFINE_MODULE(libSceVideoOut);

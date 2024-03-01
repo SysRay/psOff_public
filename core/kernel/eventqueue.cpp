@@ -2,6 +2,7 @@
 #include "eventqueue.h"
 #undef __APICALL_EXTERN
 
+#include "logging.h"
 #include "modules_include/common.h"
 
 #include <algorithm>
@@ -10,7 +11,6 @@
 #include <boost/thread/mutex.hpp>
 #include <chrono>
 #include <list>
-#include <logging.h>
 #include <memory>
 #include <mutex>
 #include <string>

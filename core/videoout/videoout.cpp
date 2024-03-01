@@ -3,6 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "core/kernel/eventqueue.h"
+#include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
 #include "modules/libSceVideoOut/types.h"
 #include "modules_include/common.h"
@@ -20,7 +21,6 @@
 #include <graphics.h>
 #include <initParams.h>
 #include <list>
-#include <logging.h>
 #include <memory>
 #include <mutex>
 #include <optick.h>

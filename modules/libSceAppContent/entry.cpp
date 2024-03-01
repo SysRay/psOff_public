@@ -1,10 +1,10 @@
 #include "../libSceNpManager/types.h"
 #include "common.h"
+#include "logging.h"
 #include "types.h"
 
 #include <fileManager.h>
 #include <filesystem>
-#include <logging.h>
 #include <optional>
 #include <systemContent.h>
 
