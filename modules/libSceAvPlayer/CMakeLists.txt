@@ -27,6 +27,6 @@ set(FFMPEG_LIBS
   swresample
 )
 
-target_link_libraries(${libName} PUBLIC emulator.lib ${FFMPEG_LIBS})
+target_link_libraries(${libName} PUBLIC emulator.lib psOff_utility ${FFMPEG_LIBS})
 
 setupModule(${libName})

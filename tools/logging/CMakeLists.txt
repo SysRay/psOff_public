@@ -9,7 +9,7 @@ target_link_directories(logging PRIVATE
 add_dependencies(logging third_party)
 
 target_link_libraries(logging ws2_32 p7)
-target_include_directories(logging PRIVATE ${CMAKE_SOURCE_DIR}/third_party/p7/Headers)
+target_include_directories(logging PRIVATE ${PRJ_SRC_DIR}/third_party/p7/Headers)
 target_compile_options(logging PRIVATE "/Zi")
 
 ADD_CUSTOM_COMMAND(TARGET logging

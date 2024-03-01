@@ -47,11 +47,8 @@ link_directories(BEFORE
 add_subdirectory(tools/logging) # include befire link_libraries
 
 link_libraries(
-  psOff_utility
   logging.lib
 )
-
-add_definitions("-D__APICALL_IMPORT")
 
 # # Projects
 include("third_party/third_party.cmake")
@@ -59,7 +56,7 @@ include("third_party/third_party.cmake")
 # Internal Projects
 add_subdirectory(modules)
 add_subdirectory(core)
-
+add_subdirectory(utility)
 
 # #- Projects
 
