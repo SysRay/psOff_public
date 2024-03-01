@@ -10,6 +10,7 @@ target_include_directories(${libName} PRIVATE
   ${PRJ_SRC_DIR}/runtime/system
 )
 
-target_link_libraries(${libName} PRIVATE emulator.lib)
+add_dependencies(${libName} emuExports core)
+target_link_libraries(${libName} PRIVATE emulator.lib core)
 
 setupModule(${libName})

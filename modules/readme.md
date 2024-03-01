@@ -21,7 +21,8 @@ Planned is a core library for such cases and for the interfaces currently in the
 
 All exported function are placed inside the provided extern "C" scope and should start with "EXPORT SYSV_ABI", since those functions are  called directly by the emulated application (linux).
 
-> **_NOTE:_** The template only contains a dependency to the logging library as a bare minimum. To access the interfaces from the emulator, add the following line: \
+> **_NOTE:_** The template only contains a dependency to the logging library as a bare minimum. To access the interfaces from the emulator, add the following two lines: \
+add_dependencies(${libName} emuExports) \
 target_link_libraries(${libName} PRIVATE emulator.lib)
 
 After a new cmake config, the new library should be picked up and built.

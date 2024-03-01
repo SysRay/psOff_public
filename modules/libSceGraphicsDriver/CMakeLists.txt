@@ -13,6 +13,7 @@ target_include_directories(${libName} PRIVATE
   ${PRJ_SRC_DIR}/tools/sb2spirv/lib/include
 )
 
-target_link_libraries(${libName} PRIVATE emulator.lib)
+add_dependencies(${libName} emuExports core)
+target_link_libraries(${libName} PRIVATE emulator.lib core.lib)
 
 setupModule(${libName})

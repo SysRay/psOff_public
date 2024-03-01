@@ -13,7 +13,7 @@ ENDMACRO()
 
 SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_definitions("-D__APICALL_IMPORT")
+add_compile_definitions(__APICALL_IMPORT)
 
 FOREACH(subdir ${SUBDIRS})
   ADD_SUBDIRECTORY(${subdir})

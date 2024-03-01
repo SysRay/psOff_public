@@ -6,6 +6,7 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-target_link_libraries(${libName} PRIVATE emulator.lib)
+add_dependencies(${libName} emuExports core)
+target_link_libraries(${libName} PRIVATE emulator.lib core.lib)
 
 setupModule(${libName})
