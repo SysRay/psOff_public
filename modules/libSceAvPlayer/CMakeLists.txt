@@ -11,11 +11,11 @@ add_library(${libName} SHARED
 )
 
 target_link_directories(${libName} PRIVATE
-  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
 )
 
 target_include_directories(${libName} PRIVATE
-  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/include
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
   ${Vulkan_INCLUDE_DIRS}
 )
 

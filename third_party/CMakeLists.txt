@@ -3,6 +3,8 @@ project(third_party VERSION 0.0.1)
 
 include(ExternalProject)
 
+message(CHECK_START "-> Building third_party")
+
 add_subdirectory(portAudio)
 add_subdirectory(optick)
 
@@ -10,7 +12,14 @@ install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
   FILES_MATCHING PATTERN "*.dll"
 )
 
+set_target_properties(OptickCore
+  PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/install/bin"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/install/lib"
+)
+
 # Boost
+message(CHECK_START "--> Building boost")
 set(BOOST_INCLUDE_LIBRARIES "program_options;date_time;interprocess;stacktrace;uuid;beast;signals2;thread")
 ExternalProject_Add(boost_thirdParty
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boost
@@ -26,9 +35,7 @@ ExternalProject_Add(boost_thirdParty
   -DBOOST_INSTALL_LAYOUT=system
   CMAKE_CACHE_ARGS -DBOOST_INCLUDE_LIBRARIES:STRING=${BOOST_INCLUDE_LIBRARIES}
 )
+message(CHECK_START "<-- boost")
 
-set_target_properties(OptickCore
-  PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/install/bin"
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/install/lib"
-)
+
+message(CHECK_PASS "<- third_party build")

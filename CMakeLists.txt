@@ -13,6 +13,10 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF"
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
 
+if(NOT PRJ_SRC_DIR)
+  set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 # # Gather Infos
 
 # Vulkan
@@ -28,8 +32,8 @@ message("Vulkan Path: ${VulkanPath}")
 #
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
-  ${CMAKE_SOURCE_DIR}/modules_include
-  ${CMAKE_SOURCE_DIR}
+  ${PRJ_SRC_DIR}/modules_include
+  ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/install/include
 )
 
@@ -47,7 +51,7 @@ link_libraries(
 add_definitions("-D__APICALL_IMPORT")
 
 # # Projects
-include("${CMAKE_SOURCE_DIR}/third_party/third_party.cmake")
+include("third_party/third_party.cmake")
 
 # Internal Projects
 add_subdirectory(modules)

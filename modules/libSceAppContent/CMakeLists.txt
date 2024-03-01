@@ -7,7 +7,7 @@ project(${libName})
 add_library(${libName} SHARED entry.cpp)
 
 target_include_directories(${libName} PRIVATE
-  ${CMAKE_SOURCE_DIR}/runtime/system
+  ${PRJ_SRC_DIR}/runtime/system
 )
 
 target_link_libraries(${libName} PRIVATE emulator.lib)

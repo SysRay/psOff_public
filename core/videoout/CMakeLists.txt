@@ -4,7 +4,8 @@ add_library(videoout OBJECT
   vulkan/vulkanHelper.cpp
 )
 
+add_dependencies(videoout third_party)
 target_include_directories(videoout PRIVATE
   ${Vulkan_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/third_party/optick/src
+  ${PRJ_SRC_DIR}/third_party/optick/src
 )
