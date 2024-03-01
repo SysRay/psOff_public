@@ -47,22 +47,7 @@ link_libraries(
 add_definitions("-D__APICALL_IMPORT")
 
 # # Projects
-# Build third party only if standalone
-if(NOT DEFINED EMU_THIRDPARTY_BUILD_DIR)
-  # Standalone build
-  include("${CMAKE_SOURCE_DIR}/third_party/third_party.cmake")
-else()
-  add_library(third_party INTERFACE)
-
-  # submodule
-  include_directories(BEFORE
-    ${EMU_THIRDPARTY_BUILD_DIR}/include
-  )
-
-  link_directories(BEFORE
-    ${EMU_THIRDPARTY_BUILD_DIR}/lib
-  )
-endif()
+include("${CMAKE_SOURCE_DIR}/third_party/third_party.cmake")
 
 # Internal Projects
 add_subdirectory(modules)

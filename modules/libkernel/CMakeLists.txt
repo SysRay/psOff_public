@@ -4,7 +4,11 @@ include(../setupModule.cmake)
 set(libName libkernel)
 project(${libName})
 
-add_library(${libName} SHARED entry.cpp equeue.cpp)
+add_library(${libName} SHARED
+  entry.cpp
+  equeue.cpp
+  eventflag.cpp
+)
 
 add_dependencies(${libName} core)
 target_link_libraries(${libName} PRIVATE core.lib)

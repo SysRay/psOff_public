@@ -3,8 +3,7 @@
 #include "modules_include/common.h"
 #include "utility/utility.h"
 
-namespace Kernel {
-namespace EventQueue {
+namespace Kernel::EventQueue {
 class IKernelEqueue {
   CLASS_NO_COPY(IKernelEqueue);
   CLASS_NO_MOVE(IKernelEqueue);
@@ -39,5 +38,4 @@ __APICALL int deleteEqueue(IKernelEqueue_t eq);
 
 #undef __APICALL
 
-} // namespace EventQueue
-} // namespace Kernel
+} // namespace Kernel::EventQueue
