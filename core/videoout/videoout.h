@@ -1,12 +1,9 @@
 #pragma once
 
+#include "core/kernel/eventqueue_types.h"
+
 #include <mutex>
 #include <utility/utility.h>
-
-namespace Kernel::EventQueue {
-struct KernelEqueueEvent;
-class KernelEqueue;
-} // namespace Kernel::EventQueue
 
 namespace vulkan {
 struct SwapchainData;
@@ -66,7 +63,7 @@ class IVideoOut {
    * @param eq
    * @return int
    */
-  virtual int addEvent(int handle, Kernel::EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::KernelEqueue* eq) = 0;
+  virtual int addEvent(int handle, Kernel::EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) = 0;
 
   /**
    * @brief Removes a VIDEO_OUT_EVENT for the window
@@ -75,7 +72,7 @@ class IVideoOut {
    * @param eq
    * @param ident
    */
-  virtual void removeEvent(int handle, Kernel::EventQueue::KernelEqueue* eq, int const ident) = 0;
+  virtual void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) = 0;
 
   /**
    * @brief Submit flip video buffers to the queue

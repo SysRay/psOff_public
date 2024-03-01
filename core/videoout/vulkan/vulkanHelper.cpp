@@ -11,6 +11,7 @@
 #include <boost/assert.hpp>
 #include <chrono>
 #include <format>
+#include <gpuMemory_types.h>
 #include <mutex>
 #include <optick.h>
 #include <string>
@@ -192,7 +193,7 @@ void submitDisplayTransfer(VkCommandBuffer cmdBuffer, VulkanObj* obj, VkSemaphor
   }
 }
 
-void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, VkImage displayImage, Objects::ColorAttachment* image,
+void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, VkImage displayImage, IGpuImageObject* image,
                       uint32_t index) {
   LOG_USE_MODULE(vulkanHelper);
 
@@ -209,7 +210,22 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
     LOG_CRIT(L"Error vkBeginCommandBuffer");
   }
 
-  image->displaySrcBarrier(cmdBuffer);
+  {
+    VkImageMemoryBarrier const barrier {.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                                        .pNext               = nullptr,
+                                        .srcAccessMask       = 0,
+                                        .dstAccessMask       = VK_ACCESS_TRANSFER_READ_BIT,
+                                        .oldLayout           = image->getImageLayout(),
+                                        .newLayout           = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+
+                                        .image            = image->getImage(),
+                                        .subresourceRange = image->getSubresource()};
+
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    image->setImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+  }
 
   {
     VkImageMemoryBarrier const barrier {

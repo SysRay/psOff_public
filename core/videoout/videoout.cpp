@@ -2,8 +2,7 @@
 #include "videoout.h"
 #undef __APICALL_EXTERN
 
-#include "core/graphics/objects/colorAttachment.h"
-#include "core/manager/graphics/managerInit.h"
+#include "core/kernel/eventqueue.h"
 #include "modules/libSceVideoOut/codes.h"
 #include "modules/libSceVideoOut/types.h"
 #include "modules_include/common.h"
@@ -15,8 +14,9 @@
 #include <algorithm>
 #include <array>
 #include <assert.h>
-#include <eventqueue_types.h>
 #include <format>
+#include <gpuMemoryManagerExports.h>
+#include <gpuMemory_types.h>
 #include <graphics.h>
 #include <initParams.h>
 #include <list>
@@ -97,10 +97,10 @@ struct VideoOutConfig {
   SceVideoOutVblankStatus     vblankStatus;
   SceVideoOutResolutionStatus resolution;
 
-  std::array<vulkan::SwapchainData, 16>                   bufferSets;
-  std::array<int32_t, 16>                                 buffers; // index to bufferSets
-  std::array<std::weak_ptr<Objects::ColorAttachment>, 16> displayBuffers;
-  uint8_t                                                 buffersSetsCount = 0;
+  std::array<vulkan::SwapchainData, 16>          bufferSets;
+  std::array<int32_t, 16>                        buffers; // index to bufferSets
+  std::array<std::weak_ptr<IGpuImageObject>, 16> displayBuffers;
+  uint8_t                                        buffersSetsCount = 0;
 
   double fps = 0.0;
 
@@ -115,8 +115,8 @@ struct Context {
   GLFWwindow*    window;
   VkSurfaceKHR   surface;
 
-  std::list<EventQueue::KernelEqueue*> eventFlip;
-  std::list<EventQueue::KernelEqueue*> eventVblank;
+  std::list<EventQueue::IKernelEqueue_t> eventFlip;
+  std::list<EventQueue::IKernelEqueue_t> eventVblank;
 };
 
 enum class MessageType { open, close, flip };
@@ -197,8 +197,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     m_windows[handle - 1].fliprate = rate;
   }
 
-  int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, EventQueue::KernelEqueue* eq) final;
-  void removeEvent(int handle, Kernel::EventQueue::KernelEqueue* eq, int const ident) final;
+  int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
+  void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
   void submitFlip(int handle, int index, int64_t flipArg) final; // -> Renderer
 
   void getFlipStatus(int handle, void* status) final;
@@ -290,12 +290,12 @@ void VideoOut::close(int handle) {
   window.userId = -1;
   for (auto& item: window.eventFlip) {
     if (item != nullptr) {
-      (void)EventQueue::KernelDeleteEvent(item, VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT);
+      (void)item->deleteEvent(VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT);
     }
   }
   for (auto& item: window.eventVblank) {
     if (item != nullptr) {
-      (void)EventQueue::KernelDeleteEvent(item, VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT);
+      (void)item->deleteEvent(VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT);
     }
   }
 
@@ -311,12 +311,12 @@ void VideoOut::close(int handle) {
   m_condDone.wait(lock, [=] { return done; });
 }
 
-int VideoOut::addEvent(int handle, EventQueue::KernelEqueueEvent const& event, EventQueue::KernelEqueue* eq) {
+int VideoOut::addEvent(int handle, EventQueue::KernelEqueueEvent const& event, EventQueue::IKernelEqueue_t eq) {
   LOG_USE_MODULE(VideoOut);
 
   if (eq == nullptr) return getErr(ErrCode::_EINVAL);
 
-  int result = EventQueue::KernelAddEvent(eq, event);
+  int result = eq->addEvent(event);
   switch (event.event.ident) {
     case VIDEO_OUT_EVENT_FLIP: {
       LOG_DEBUG(L"+VIDEO_OUT_EVENT_FLIP(%d)", handle);
@@ -333,7 +333,7 @@ int VideoOut::addEvent(int handle, EventQueue::KernelEqueueEvent const& event, E
   return result;
 }
 
-void VideoOut::removeEvent(int handle, Kernel::EventQueue::KernelEqueue* eq, int const ident) {
+void VideoOut::removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) {
   LOG_USE_MODULE(VideoOut);
 
   switch (ident) {
@@ -360,7 +360,7 @@ void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size
   auto& swapchain         = window.config.bufferSets[setIndex];
   auto& displayBufferMeta = swapchain.buffers[index];
   if (window.config.displayBuffers[index].expired()) {
-    auto image = accessGpuMemory().getDisplayBuffer(displayBufferMeta.bufferVaddr);
+    auto image = getDisplayBuffer(displayBufferMeta.bufferVaddr);
     if (image) {
       window.config.displayBuffers[index] = image;
       vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, image->getImage(), image.get(), index);
@@ -438,8 +438,7 @@ void VideoOut::vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime) {
   ++vblank.count;
 
   for (auto& item: window.eventFlip) {
-    (void)EventQueue::KernelTriggerEvent(item, VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT,
-                                         reinterpret_cast<void*>(window.config.vblankStatus.count));
+    (void)item->triggerEvent(VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT, reinterpret_cast<void*>(window.config.vblankStatus.count));
   }
 }
 
@@ -499,8 +498,7 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
     LOG_INFO(L"+bufferset[%d] buffer:%d vaddr:0x%08llx", setIndex, n, (uint64_t)addresses[n]);
 
     auto [format, colorSpace] = vulkan::getDisplayFormat(m_vulkanObj);
-    if (!accessGpuMemory().registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height},
-                                                 _att->pitchInPixel, format))
+    if (!registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height}, _att->pitchInPixel, format))
       return -1;
   }
 
@@ -578,8 +576,7 @@ std::thread VideoOut::createGlfwThread() {
             m_vulkanObj = vulkan::initVulkan(m_windows[index].window, m_windows[index].surface, accessInitParams()->enableValidation());
             auto& info  = m_vulkanObj->deviceInfo;
 
-            initManager(info.device, info.physicalDevice, info.instance);
-            m_graphics = createGraphics(*this);
+            m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
           } else {
             vulkan::createSurface(m_vulkanObj, m_windows[index].window, m_windows[index].surface);
           }
@@ -619,8 +616,8 @@ std::thread VideoOut::createGlfwThread() {
 
           // Trigger Event Flip
           for (auto& item: m_windows[index].eventFlip) {
-            (void)EventQueue::KernelTriggerEvent(item, VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT,
-                                                 reinterpret_cast<void*>(m_windows[index].config.flipStatus.flipArg));
+            (void)item->triggerEvent(VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT,
+                                     reinterpret_cast<void*>(m_windows[index].config.flipStatus.flipArg));
           }
           // - Flip event
 
