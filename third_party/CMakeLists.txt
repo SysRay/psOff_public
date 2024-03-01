@@ -37,5 +37,14 @@ ExternalProject_Add(boost_thirdParty
 )
 message(CHECK_START "<-- boost")
 
+message(CHECK_START "--> Building GLFW")
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
+option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" OFF)
+option(GLFW_INSTALL "Generate installation target" ON)
+option(GLFW_VULKAN_STATIC "Assume the Vulkan loader is linked with the application" ON)
+add_subdirectory(glfw)
+message(CHECK_START "<-- GLFW")
 
 message(CHECK_PASS "<- third_party build")
