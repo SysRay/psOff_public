@@ -1,10 +1,9 @@
 #include "avplayer.h"
 
+#include "core/fileManager/fileManager.h"
+#include "core/imports/imports_func.h"
+#include "logging.h"
 #include "typesEx.h"
-
-#include <fileManager.h>
-#include <gpuMemoryManagerExports.h>
-#include <logging.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -93,6 +92,7 @@ class Avplayer: public IAvplayer {
 
   std::unique_ptr<std::thread> m_decodeThread;
   std::condition_variable      m_condDecode; // Notify Decoding Thread
+
   // - Decode Thread
 
   struct DataBase {
@@ -144,6 +144,7 @@ class Avplayer: public IAvplayer {
   };
 
   bool setFile(const char* filename) final;
+
   void setLoop(bool isLoop) final {
     std::unique_lock const lock(m_mutex_int);
     m_isLoop = isLoop;

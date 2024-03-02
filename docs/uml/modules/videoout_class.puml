@@ -1,0 +1,17 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface IVideoOut {
+}
+class VideoOut << (S,#FF7700) Singleton >> {}
+
+IVideoOut <|-- VideoOut
+
+user ()- IVideoOut : accessVideoOut()
+
+package emulator{
+interface IGraphics {}
+}
+
+VideoOut *- IGraphics : createGraphics()
+@enduml

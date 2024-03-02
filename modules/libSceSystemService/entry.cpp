@@ -1,9 +1,9 @@
 #include "common.h"
+#include "logging.h"
 #include "system_param.h"
 #include "types.h"
 
 #include <chrono>
-#include <logging.h>
 
 LOG_DEFINE_MODULE(libSceSystemService);
 
@@ -37,6 +37,7 @@ bool is24HourFormat() {
   // Check if the hours value is less than 13
   return info.tm_hour >= 13;
 }
+
 SystemParamDateFormat getDateFormat() {
 
   std::time_get<char>::dateorder order = std::use_facet<std::time_get<char>>(std::locale("")).date_order();
@@ -74,16 +75,19 @@ EXPORT SYSV_ABI int32_t sceSystemServiceParamGetInt(SceSystemServiceParamId para
   LOG_INFO(L" %d = %d", paramId, *value);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceParamGetString(SceSystemServiceParamId paramId, char* buf, size_t bufSize) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceReceiveEvent(SceSystemServiceEvent* event) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceGetStatus(SceSystemServiceStatus* status) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_TRACE(L"todo %S", __FUNCTION__);
@@ -95,32 +99,39 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetStatus(SceSystemServiceStatus* status
 
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceLoadExec(const char* path, char* const argv[]) {
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceHideSplashScreen() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceDisableMusicPlayer() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceReenableMusicPlayer() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceSetGpuLoadEmulationMode(SceSystemServiceGpuLoadEmulationMode mode) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI SceSystemServiceGpuLoadEmulationMode sceSystemServiceGetGpuLoadEmulationMode() {
   return SceSystemServiceGpuLoadEmulationMode::NORMAL;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceGetDisplaySafeAreaInfo(SceSystemServiceDisplaySafeAreaInfo* info) {
   if (info == nullptr) {
     return Err::SERVICE_ERROR_PARAMETER;
@@ -132,36 +143,43 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetDisplaySafeAreaInfo(SceSystemServiceD
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceLaunchWebBrowser(const char* uri, const SceSystemServiceLaunchWebBrowserParam* param) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceLaunchEventDetails(int32_t userId, const char* eventId) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceLaunchTournamentsTeamProfile(int32_t userId, const char* teamId, const char* eventId, const char* teamPlatform) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceLaunchTournamentList(int32_t userId) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServicePowerTick() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceEnableSuspendConfirmationDialog() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceDisableSuspendConfirmationDialog() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -169,36 +187,43 @@ EXPORT SYSV_ABI int32_t sceSystemServiceDisableSuspendConfirmationDialog() {
 }
 
 typedef struct SceSystemServiceAbnormalTerminationInfo SceSystemServiceAbnormalTerminationInfo;
-EXPORT SYSV_ABI int32_t                                sceSystemServiceReportAbnormalTermination(const SceSystemServiceAbnormalTerminationInfo* info) {
+
+EXPORT SYSV_ABI int32_t sceSystemServiceReportAbnormalTermination(const SceSystemServiceAbnormalTerminationInfo* info) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceIsEyeToEyeDistanceAdjusted(int32_t userId, bool* isAdjusted) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceShowEyeToEyeDistanceSetting() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceDisablePersonalEyeToEyeDistanceSetting() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceEnablePersonalEyeToEyeDistanceSetting() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceShowControllerSettings() {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSystemServiceGetHdrToneMapLuminance(SceSystemServiceHdrToneMapLuminance* hdrToneMapLuminance) {
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"todo %S", __FUNCTION__);

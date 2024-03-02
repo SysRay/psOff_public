@@ -1,9 +1,8 @@
 #include "codes.h"
 #include "common.h"
+#include "core/fileManager/fileManager.h"
+#include "logging.h"
 #include "types.h"
-
-#include <fileManager.h>
-#include <logging.h>
 
 LOG_DEFINE_MODULE(libSceSaveData);
 
@@ -95,16 +94,19 @@ EXPORT SYSV_ABI int32_t sceSaveDataInitialize(const SceSaveDataInitParams3* init
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataInitialize2(const SceSaveDataInitParams3* initParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataInitialize3(const SceSaveDataInitParams3* initParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataTerminate() {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -124,6 +126,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataTransferringMount(const SceSaveDataTransferri
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoint) {
   std::string_view path(&mountPoint->data[0]);
 
@@ -140,11 +143,13 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoin
   }
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetMountInfo(const SceSaveDataMountPoint* mountPoint, SceSaveDataMountInfo* info) {
   info->blocks     = 100000;
   info->freeBlocks = 100000;
@@ -152,16 +157,19 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetMountInfo(const SceSaveDataMountPoint* mou
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataDelete(const SceSaveDataDelete* del) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataDirNameSearch(const SceSaveDataDirNameSearchCond* cond, SceSaveDataDirNameSearchResult* result) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataSetParam(const SceSaveDataMountPoint* mountPoint, SceSaveDataParamType paramType, const void* paramBuf,
                                             size_t paramBufSize) {
   LOG_USE_MODULE(libSceSaveData);
@@ -177,68 +185,81 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetParam(const SceSaveDataMountPoint* mountPo
 
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetParam(const SceSaveDataMountPoint* mountPoint, SceSaveDataParamType paramType, void* paramBuf, size_t paramBufSize,
                                             size_t* gotSize) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataSaveIcon(const SceSaveDataMountPoint* mountPoint, const SceSaveDataIcon* icon) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataLoadIcon(const SceSaveDataMountPoint* mountPoint, SceSaveDataIcon* icon) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataSyncSaveDataMemory(const SceSaveDataMemorySync* syncParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemorySetup2* setupParam, SceSaveDataMemorySetupResult* result) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* setParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataRestoreBackupData(const SceSaveDataRestoreBackupData* restore) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataCheckBackupData(const SceSaveDataCheckBackupData* check) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataBackup(const SceSaveDataBackup* backup) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetProgress(float* progress) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
   *progress = 1.0f;
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataClearProgress(void) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetEventResult(const SceSaveDataEventParam* eventParam, SceSaveDataEvent* event) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);

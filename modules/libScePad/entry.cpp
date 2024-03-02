@@ -1,9 +1,8 @@
 #include "common.h"
+#include "core/timer/timer.h"
+#include "core/videoout/videoout.h"
+#include "logging.h"
 #include "types.h"
-
-#include <logging.h>
-#include <timer.h>
-#include <videoOut.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -130,6 +129,7 @@ ScePadData getPadData(int handle) {
   };
 }
 } // namespace
+
 extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePad";
@@ -138,6 +138,7 @@ EXPORT SYSV_ABI int scePadInit(void) {
   glfwInit();
   return glfwInit() ? Ok : Err::FATAL;
 }
+
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
   LOG_USE_MODULE(libScePad);
   auto pData = getData();
@@ -162,6 +163,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   }
   return Err::NO_HANDLE;
 }
+
 EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   if (handle < 0) return Ok;
 
@@ -175,6 +177,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
 
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
   auto pData = getData();
   LOG_USE_MODULE(libScePad);
@@ -205,6 +208,7 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   pData->controller[handle].prePadData = *pPadData;
   return abs(retVal);
 }
+
 EXPORT SYSV_ABI int scePadReadState(int32_t handle, ScePadData* pData) {
   auto ret = scePadRead(handle, pData, 1);
   return ret >= 0 ? Ok : ret;
@@ -214,30 +218,37 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadSetAngularVelocityDeadbandState(int32_t handle, bool bEnable) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
@@ -280,12 +291,14 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData* pData, ScePadDeviceClassData* pDeviceClassData) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
+
 EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, ScePadDeviceClassExtendedInformation* pExtInfo) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");

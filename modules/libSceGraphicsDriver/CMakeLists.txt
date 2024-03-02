@@ -10,9 +10,10 @@ add_library(${libName} SHARED
 
 target_include_directories(${libName} PRIVATE
   ${Vulkan_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/tools/sb2spirv/lib/include
+  ${PRJ_SRC_DIR}/tools/sb2spirv/lib/include
 )
 
-target_link_libraries(${libName} PRIVATE emulator.lib)
+add_dependencies(${libName} core)
+target_link_libraries(${libName} PRIVATE core.lib)
 
 setupModule(${libName})

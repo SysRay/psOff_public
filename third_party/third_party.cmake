@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 ExternalProject_Add(third_party
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/third_party
+  SOURCE_DIR ${PRJ_SRC_DIR}/third_party
   BINARY_DIR ${CMAKE_BINARY_DIR}/third_party
   CMAKE_ARGS
   -DCMAKE_BUILD_TYPE:STRING=Release

@@ -1,7 +1,6 @@
 #include "common.h"
+#include "logging.h"
 #include "types.h"
-
-#include <logging.h>
 
 LOG_DEFINE_MODULE(libSceScreenShot);
 

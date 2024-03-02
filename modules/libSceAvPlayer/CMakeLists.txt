@@ -11,11 +11,11 @@ add_library(${libName} SHARED
 )
 
 target_link_directories(${libName} PRIVATE
-  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
 )
 
 target_include_directories(${libName} PRIVATE
-  ${CMAKE_SOURCE_DIR}/third_party/ffmpeg/include
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
   ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -27,6 +27,7 @@ set(FFMPEG_LIBS
   swresample
 )
 
-target_link_libraries(${libName} PUBLIC emulator.lib ${FFMPEG_LIBS})
+add_dependencies(${libName} core)
+target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS})
 
 setupModule(${libName})

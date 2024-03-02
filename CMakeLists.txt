@@ -13,6 +13,10 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF"
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
 
+if(NOT PRJ_SRC_DIR)
+  set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 # # Gather Infos
 
 # Vulkan
@@ -24,46 +28,42 @@ get_filename_component(VulkanPath ${Vulkan_LIBRARY} DIRECTORY)
 message("Vulkan Path: ${VulkanPath}")
 
 # # - Gather Infos
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
+
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  # is subproject -> fake targets
+  add_custom_target(dll2Nids)
+endif()
 
 #
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
-  ${CMAKE_SOURCE_DIR}/modules_include
-  ${CMAKE_SOURCE_DIR}
+  ${PRJ_SRC_DIR}/modules_include
+  ${PRJ_SRC_DIR}/tools/logging
+  ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/install/include
 )
 
 link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
   ${CMAKE_BINARY_DIR}/third_party/install/lib
+  ${CMAKE_BINARY_DIR}/core
+  ${CMAKE_BINARY_DIR}/lib
 )
+
+add_subdirectory(tools/logging) # include before link_libraries
 
 link_libraries(
-  psOff_utility
-  logging
+  logging.lib
 )
 
-add_definitions("-D__APICALL_IMPORT")
-
 # # Projects
-# Build third party only if standalone
-if(NOT DEFINED EMU_THIRDPARTY_BUILD_DIR)
-  # Standalone build
-  include("${CMAKE_SOURCE_DIR}/third_party/third_party.cmake")
-else()
-  add_library(third_party INTERFACE)
-  # submodule
-  include_directories(BEFORE
-    ${EMU_THIRDPARTY_BUILD_DIR}/include
-  )
-
-  link_directories(BEFORE
-    ${EMU_THIRDPARTY_BUILD_DIR}/lib
-  )
-endif()
+include("third_party/third_party.cmake")
 
 # Internal Projects
 add_subdirectory(modules)
+add_subdirectory(core)
+add_subdirectory(utility)
 
 # #- Projects
 
