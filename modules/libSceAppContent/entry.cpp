@@ -1,12 +1,12 @@
 #include "../libSceNpManager/types.h"
 #include "common.h"
+#include "core/fileManager/fileManager.h"
+#include "core/systemContent/systemContent.h"
 #include "logging.h"
 #include "types.h"
 
-#include <fileManager.h>
 #include <filesystem>
 #include <optional>
-#include <systemContent.h>
 
 LOG_DEFINE_MODULE(libSceAppContent);
 

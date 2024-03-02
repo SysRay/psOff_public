@@ -6,7 +6,7 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-add_dependencies(${libName} emuExports core)
-target_link_libraries(${libName} PRIVATE glfw3 emulator.lib ${Vulkan_LIBRARIES} core)
+add_dependencies(${libName} core)
+target_link_libraries(${libName} PRIVATE glfw3 ${Vulkan_LIBRARIES} core.lib)
 
 setupModule(${libName})

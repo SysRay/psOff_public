@@ -5,6 +5,7 @@
 #include <boost/thread.hpp>
 #include <memory>
 #include <utility/utility.h>
+
 LOG_DEFINE_MODULE(libSceCoredump);
 
 namespace {

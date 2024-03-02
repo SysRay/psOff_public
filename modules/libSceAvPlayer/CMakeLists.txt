@@ -27,7 +27,7 @@ set(FFMPEG_LIBS
   swresample
 )
 
-add_dependencies(${libName} emuExports core)
-target_link_libraries(${libName} PUBLIC core emulator.lib psOff_utility ${FFMPEG_LIBS})
+add_dependencies(${libName} core)
+target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS})
 
 setupModule(${libName})

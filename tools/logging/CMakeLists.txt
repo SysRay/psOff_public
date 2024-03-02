@@ -14,7 +14,7 @@ target_compile_options(logging PRIVATE "/Zi")
 
 ADD_CUSTOM_COMMAND(TARGET logging
   POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/logging.lib" "${CMAKE_BINARY_DIR}/third_party/install/lib/"
+  COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/logging.lib" "${CMAKE_BINARY_DIR}/lib"
 )
 
 set_target_properties(logging

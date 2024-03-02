@@ -1,9 +1,8 @@
 #include "common.h"
+#include "core/timer/timer.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
-
-#include <timer.h>
-#include <videoOut.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>

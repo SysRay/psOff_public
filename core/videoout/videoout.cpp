@@ -2,7 +2,11 @@
 #include "videoout.h"
 #undef __APICALL_EXTERN
 
+#include "core/imports/imports_func.h"
+#include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
+#include "core/systemContent/systemContent.h"
+#include "core/timer/timer.h"
 #include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
 #include "modules/libSceVideoOut/types.h"
@@ -16,17 +20,13 @@
 #include <array>
 #include <assert.h>
 #include <format>
-#include <gpuMemoryManagerExports.h>
 #include <gpuMemory_types.h>
 #include <graphics.h>
-#include <initParams.h>
 #include <list>
 #include <memory>
 #include <mutex>
 #include <optick.h>
-#include <systemContent.h>
 #include <thread>
-#include <timer.h>
 
 LOG_DEFINE_MODULE(VideoOut);
 using namespace Kernel;

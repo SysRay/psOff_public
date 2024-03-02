@@ -28,6 +28,7 @@ get_filename_component(VulkanPath ${Vulkan_LIBRARY} DIRECTORY)
 message("Vulkan Path: ${VulkanPath}")
 
 # # - Gather Infos
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build
 
 #
 include_directories(BEFORE
@@ -42,9 +43,10 @@ link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
   ${CMAKE_BINARY_DIR}/third_party/install/lib
   ${CMAKE_BINARY_DIR}/core
+  ${CMAKE_BINARY_DIR}/lib
 )
 
-add_subdirectory(tools/logging) # include befire link_libraries
+add_subdirectory(tools/logging) # include before link_libraries
 
 link_libraries(
   logging.lib

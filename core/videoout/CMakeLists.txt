@@ -4,7 +4,7 @@ add_library(videoout OBJECT
   vulkan/vulkanHelper.cpp
 )
 
-add_dependencies(videoout third_party psOff_utility initParams)
+add_dependencies(videoout third_party psOff_utility initParams imports)
 target_include_directories(videoout PRIVATE
   ${Vulkan_INCLUDE_DIRS}
   ${PRJ_SRC_DIR}/third_party/optick/src

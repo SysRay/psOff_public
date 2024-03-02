@@ -10,6 +10,7 @@ add_subdirectory(initParams)
 add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(fileManager)
+add_subdirectory(imports)
 
 # Build
 add_library(core SHARED
@@ -19,16 +20,16 @@ add_library(core SHARED
   $<TARGET_OBJECTS:systemContent>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
+  $<TARGET_OBJECTS:imports>
 )
 
-add_dependencies(core logging emuExports)
+add_dependencies(core logging)
 target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
   libboost_program_options
   glfw3
   OptickCore
-  emulator.lib
   psOff_utility
   ${Vulkan_LIBRARIES}
 )
