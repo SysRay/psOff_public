@@ -1,13 +1,24 @@
 {
-    "ccls.misc.compilationDatabaseDirectory": "_Build/_Release",
-    "ccls.clang.excludeArgsIsWhitelist": true,
-    "ccls.clang.excludeArgs": ["-I*", "-isystem*", "-x*", "-D*", "/std*", "-std:*", "-f*"],
-    "ccls.clang.extraArgs": ["-fexceptions"],
-    "ccls.index.threads": 0,
-
-    "asciidoc.use_kroki": true,
-    "asciidoc.preview.useEditorStyle": false,
-    "asciidoc.use_asciidoctorpdf": true,
-    "editor.tabSize": 2,
-    "git.ignoredRepositories": ["third_party/boost", "third_party/optick", "third_party/glfw", "third_party/magic_enum"]
+  "ccls.misc.compilationDatabaseDirectory": "_Build/_Release",
+  "ccls.clang.excludeArgsIsWhitelist": true,
+  "ccls.clang.excludeArgs": [
+    "-I*",
+    "-isystem*",
+    "-x*",
+    "-D*",
+    "/std*",
+    "-std:*",
+    "-f*"
+  ],
+  "ccls.clang.extraArgs": [
+    "-fexceptions"
+  ],
+  "ccls.index.threads": 0,
+  "editor.tabSize": 2,
+  "git.ignoredRepositories": [
+    "third_party/boost",
+    "third_party/optick",
+    "third_party/glfw",
+    "third_party/magic_enum"
+  ],
 }
