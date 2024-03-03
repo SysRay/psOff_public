@@ -22,6 +22,8 @@ using getDisplayBuffer_t = std::shared_ptr<IGpuImageObject> (*)(uint64_t vaddr);
 
 using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
+using runtimeExport_t = class IRuntimeExport*;
+
 __APICALL void setCallback_getImageAlignment(getImageAlignment_t);
 
 __APICALL void setCallback_registerDisplayBuffer(registerDisplayBuffer_t);
@@ -29,5 +31,7 @@ __APICALL void setCallback_registerDisplayBuffer(registerDisplayBuffer_t);
 __APICALL void setCallback_getDisplayBuffer(getDisplayBuffer_t);
 
 __APICALL void setCallback_createGraphics(createGraphics_t);
+
+__APICALL void setCallback_accessRuntimeExport(runtimeExport_t);
 
 #undef __APICALL

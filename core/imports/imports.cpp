@@ -2,18 +2,20 @@
 #include "imports.h"
 
 #include "imports_func.h"
+#include "imports_runtime.h"
 
 #undef __APICALL_EXTERN
-
 #include "utility/utility.h"
 
 #include <assert.h>
+#include <runtimeExport.h>
 
 // todo: Change after splitting the project
 static getImageAlignment_t     g_getImageAlignment     = nullptr;
 static registerDisplayBuffer_t g_registerDisplayBuffer = nullptr;
 static getDisplayBuffer_t      g_getDisplayBuffer      = nullptr;
 static createGraphics_t        g_createGraphics        = nullptr;
+static runtimeExport_t         g_runtimeExport         = nullptr;
 
 uint64_t getImageAlignment(VkFormat format, VkExtent3D extent) {
   assert(g_getImageAlignment != nullptr);
@@ -35,6 +37,10 @@ std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice de
   return g_createGraphics(listener, device, physDev, instance);
 }
 
+IRuntimeExport* accessRuntimeExport() {
+  return g_runtimeExport;
+}
+
 void setCallback_getImageAlignment(getImageAlignment_t cb) {
   g_getImageAlignment = cb;
 }
@@ -49,4 +55,8 @@ void setCallback_getDisplayBuffer(getDisplayBuffer_t cb) {
 
 void setCallback_createGraphics(createGraphics_t cb) {
   g_createGraphics = cb;
+}
+
+void setCallback_accessRuntimeExport(runtimeExport_t cb) {
+  g_runtimeExport = cb;
 }

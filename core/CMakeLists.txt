@@ -33,3 +33,8 @@ target_link_libraries(core PRIVATE
   psOff_utility
   ${Vulkan_LIBRARIES}
 )
+
+ADD_CUSTOM_COMMAND(TARGET core POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_BINARY_DIR}/core.lib
+  ${CMAKE_BINARY_DIR}/lib)

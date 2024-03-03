@@ -150,5 +150,6 @@ constexpr int getErr(ErrCode err) {
   return (int)err == Ok ? 0 : (int32_t)0x80020000 - (int32_t)err;
 }
 
-#define __NID_HEX(hexId) __hex##hexId
-#define __NID(func)      __sce##func
+#define __NID_HEX_(hexId, funcName) __hex##hexId
+#define __NID_HEX(hexId)            __hex##hexId
+#define __NID(func)                 __sce##func

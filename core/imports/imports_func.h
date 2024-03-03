@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
-
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)
 #elif defined(__APICALL_IMPORT)
@@ -45,5 +44,15 @@ __APICALL bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t
  */
 __APICALL std::shared_ptr<IGpuImageObject> getDisplayBuffer(uint64_t vaddr);
 
+/**
+ * @brief Create a Graphics object.
+ *
+ * @param listener
+ * @param device
+ * @param physDev
+ * @param instance
+ * @return object
+ */
 __APICALL std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
+
 #undef __APICALL
