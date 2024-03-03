@@ -3,7 +3,6 @@
 #include "logging.h"
 #include "types.h"
 
-
 LOG_DEFINE_MODULE(equeue);
 
 extern "C" {

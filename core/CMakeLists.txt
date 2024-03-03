@@ -11,6 +11,7 @@ add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(fileManager)
 add_subdirectory(imports)
+add_subdirectory(semaphore)
 
 # Build
 add_library(core SHARED
@@ -21,6 +22,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:imports>
+  $<TARGET_OBJECTS:semaphore>
 )
 
 add_dependencies(core logging)
