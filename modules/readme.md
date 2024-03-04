@@ -25,6 +25,6 @@ After a new CMake config, the new library should be picked up and built.
 
 
 > **_Build:_** dll2Nids may print an error. Just add a dummy function with a long name (11 + extra space). \
-Normally, only names starting with sce are converted. Use one of the following macro, defined in *common.h*, for everything else: \
+Normally, only names starting with sce or _sce are converted. Use one of the following macro, defined in *common.h*, for everything else: \
 **__NID(func)** : converts the function name \
 **__NID_HEX(hexId)** : If the function name is unknown, use the hexId instead

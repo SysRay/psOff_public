@@ -17,14 +17,14 @@ __APICALL void setError_pthread(int);
  * @param result from gerErr()
  * @return int32_t
  */
-int32_t POSIX_CALL(int32_t result) {
+static int32_t POSIX_CALL(int32_t result) {
   if (result == Ok) return Ok;
 
   setError_pthread(result - (int32_t)0x80020000);
   return -1;
 }
 
-int32_t POSIX_SET(ErrCode error) {
+static int32_t POSIX_SET(ErrCode error) {
   setError_pthread((int32_t)error);
   return -1;
 }

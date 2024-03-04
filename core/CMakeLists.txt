@@ -12,6 +12,7 @@ add_subdirectory(systemContent)
 add_subdirectory(fileManager)
 add_subdirectory(imports)
 add_subdirectory(semaphore)
+add_subdirectory(memory)
 
 # Build
 add_library(core SHARED
@@ -23,6 +24,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:imports>
   $<TARGET_OBJECTS:semaphore>
+  $<TARGET_OBJECTS:memory>
 )
 
 add_dependencies(core logging)
