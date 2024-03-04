@@ -14,8 +14,6 @@
 #define __APICALL
 #endif
 
-using getImageAlignment_t = uint64_t (*)(VkFormat format, VkExtent3D extent);
-
 using registerDisplayBuffer_t = bool (*)(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
 
 using getDisplayBuffer_t = std::shared_ptr<IGpuImageObject> (*)(uint64_t vaddr);
@@ -24,7 +22,9 @@ using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listene
 
 using runtimeExport_t = class IRuntimeExport*;
 
-__APICALL void setCallback_getImageAlignment(getImageAlignment_t);
+using notify_allocHeap_t = bool (*)(uint64_t vaddr, uint64_t size, int memoryProtection);
+
+using isGPULocal_t = bool (*)(uint64_t vaddr);
 
 __APICALL void setCallback_registerDisplayBuffer(registerDisplayBuffer_t);
 
@@ -33,5 +33,7 @@ __APICALL void setCallback_getDisplayBuffer(getDisplayBuffer_t);
 __APICALL void setCallback_createGraphics(createGraphics_t);
 
 __APICALL void setCallback_accessRuntimeExport(runtimeExport_t);
+__APICALL void setCallback_notify_allocHeap(notify_allocHeap_t);
+__APICALL void setCallback_isGPULocal(isGPULocal_t);
 
 #undef __APICALL

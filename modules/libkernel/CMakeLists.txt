@@ -9,6 +9,7 @@ add_library(${libName} SHARED
   equeue.cpp
   eventflag.cpp
   semaphore.cpp
+  dmem.cpp
 )
 
 add_dependencies(${libName} core third_party)

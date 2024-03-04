@@ -13,6 +13,7 @@ add_subdirectory(fileManager)
 add_subdirectory(imports)
 add_subdirectory(semaphore)
 add_subdirectory(memory)
+add_subdirectory(dmem)
 
 # Build
 add_library(core SHARED
@@ -25,6 +26,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:imports>
   $<TARGET_OBJECTS:semaphore>
   $<TARGET_OBJECTS:memory>
+  $<TARGET_OBJECTS:dmem>
 )
 
 add_dependencies(core logging)

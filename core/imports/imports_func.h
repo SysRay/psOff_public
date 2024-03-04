@@ -16,15 +16,6 @@
 // All communication  strictly goes through the core library. (May change later)
 
 /**
- * @brief Get the required memory alignment. Dont' call from constructor.
- *
- * @param format
- * @param extent shouldn't matter if not 100% correct
- * @return memory alignment
- */
-__APICALL uint64_t getImageAlignment(VkFormat format, VkExtent3D extent);
-
-/**
  * @brief register the displayBuffer for the GPU memory manager. Dont' call from constructor.
  *
  * @param vaddr

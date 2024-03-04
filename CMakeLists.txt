@@ -17,6 +17,10 @@ if(NOT PRJ_SRC_DIR)
   set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
+if(NOT DEFINED IMAGE_BASE)
+  set(IMAGE_BASE 0x10000000)
+endif()
+
 # # Gather Infos
 
 # Vulkan
@@ -56,6 +60,7 @@ add_subdirectory(tools/logging) # include before link_libraries
 link_libraries(
   logging.lib
 )
+add_compile_definitions(IMAGE_BASE=${IMAGE_BASE})
 
 # # Projects
 include("third_party/third_party.cmake")

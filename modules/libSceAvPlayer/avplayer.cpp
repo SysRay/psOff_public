@@ -1,7 +1,8 @@
 #include "avplayer.h"
 
 #include "core/fileManager/fileManager.h"
-#include "core/imports/imports_func.h"
+#include "core/videoout/intern.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "typesEx.h"
 

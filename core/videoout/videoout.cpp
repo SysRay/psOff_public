@@ -1,5 +1,7 @@
 #define __APICALL_EXTERN
 #include "videoout.h"
+
+#include "intern.h"
 #undef __APICALL_EXTERN
 
 #include "core/imports/imports_func.h"
@@ -171,8 +173,6 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     m_condGlfw.notify_one();
   }
 
-  vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
-
   std::pair<VkQueue, uint32_t> getQueue(vulkan::QueueType type) final;
   // -
   void transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue); // -> Renderer
@@ -196,6 +196,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     std::unique_lock const lock(m_mutexInt);
     m_windows[handle - 1].fliprate = rate;
   }
+
+  vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
 
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
   void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
@@ -635,4 +637,31 @@ std::thread VideoOut::createGlfwThread() {
     }
     glfwTerminate();
   });
+}
+
+uint64_t getImageAlignment(VkFormat format, VkExtent3D const& extent) {
+  auto device = ((VideoOut&)accessVideoOut()).getDeviceInfo()->device;
+
+  VkImageCreateInfo const imageInfo {
+      .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext         = nullptr,
+      .flags         = 0,
+      .imageType     = VK_IMAGE_TYPE_2D,
+      .format        = format,
+      .extent        = extent,
+      .mipLevels     = 1,
+      .arrayLayers   = 1,
+      .samples       = VK_SAMPLE_COUNT_1_BIT,
+      .tiling        = VK_IMAGE_TILING_OPTIMAL,
+      .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+      .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
+
+  VkImage              image;
+  VkMemoryRequirements reqs;
+  vkCreateImage(device, &imageInfo, nullptr, &image);
+  vkGetImageMemoryRequirements(device, image, &reqs);
+  vkDestroyImage(device, image, nullptr);
+  return reqs.alignment;
 }

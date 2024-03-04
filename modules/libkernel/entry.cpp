@@ -141,6 +141,18 @@ EXPORT SYSV_ABI int sceKernelGettimeofday(SceKernelTimeval* tp) {
   return accessTimer().getTimeofDay(tp);
 }
 
+EXPORT SYSV_ABI int __NID(clock_getres)(SceKernelClockid clockId, SceKernelTimespec* tp) {
+  return accessTimer().getTimeRes(clockId, tp);
+}
+
+EXPORT SYSV_ABI int __NID(clock_gettime)(SceKernelClockid clockId, SceKernelTimespec* tp) {
+  return accessTimer().getTime(clockId, tp);
+}
+
+EXPORT SYSV_ABI int __NID(clock_settime)(SceKernelTimeval* tp) {
+  return accessTimer().getTimeofDay(tp);
+}
+
 EXPORT SYSV_ABI uint64_t sceKernelGetTscFrequency(void) {
   return accessTimer().getFrequency();
 }
