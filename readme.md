@@ -17,9 +17,6 @@ It currently doesn't support:
 + for loops in shader
 + missing opcodes
 
-<img src="https://github.com/SysRay/psOff_public/assets/48695846/cd83ba97-b649-4599-b555-24c43e9b8394" width="400"> 
-<img src="https://github.com/SysRay/psOff_public/assets/48695846/6156412e-569d-4f2a-b8d2-061d6942e107" width="400">
-
 I’m happy for any help. Just hop in, system part isn't complicated. \
 I don't serve spaghetti only bugs.
 
