@@ -25,6 +25,7 @@
 #include <gpuMemory_types.h>
 #include <graphics.h>
 #include <list>
+#include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <mutex>
 #include <optick.h>
@@ -35,16 +36,6 @@ using namespace Kernel;
 
 namespace {
 size_t constexpr WindowsMAX = 2;
-
-std::string getTitle(int handle, uint64_t frame, size_t fps) {
-  static auto title = [] {
-    auto title = accessSystemContent().getString("TITLE");
-    if (title) return title.value().data();
-    return "psOFF";
-  }();
-
-  return std::format("{}({}): frame={} fps={}", title, handle, frame, fps);
-}
 
 std::pair<uint32_t, uint32_t> getDisplayBufferSize(uint32_t width, uint32_t height, uint32_t pitch, bool tile, bool neo) {
   if (pitch == 3840) {
@@ -109,9 +100,15 @@ struct VideoOutConfig {
   VideoOutConfig() { std::fill(buffers.begin(), buffers.end(), -1); }
 };
 
+enum class FlipRate {
+  _60Hz,
+  _30Hz,
+  _20Hz,
+};
+
 struct Context {
-  int userId   = -1;
-  int fliprate = 3;
+  int      userId   = -1;
+  FlipRate fliprate = FlipRate::_60Hz;
 
   VideoOutConfig config;
   GLFWwindow*    window;
@@ -129,6 +126,17 @@ struct Message {
   bool*       done        = nullptr;
   uint32_t    index       = 0;
 };
+
+std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
+  static auto title = [] {
+    auto title = accessSystemContent().getString("TITLE");
+    if (title) return title.value().data();
+    return "psOFF";
+  }();
+
+  return std::format("{}({}): frame={} fps={}(locked:{})", title, handle, frame, fps, magic_enum::enum_name(maxFPS).data());
+}
+
 } // namespace
 
 class VideoOut: public IVideoOut, private IEventsGraphics {
@@ -145,6 +153,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   std::condition_variable    m_condDone;
   bool                       m_stop = false;
   std::queue<Message>        m_messages;
+
+  uint64_t m_vblankTime = (uint64_t)(1e6 / 59.0); // in us
 
   void vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime);
 
@@ -194,7 +204,13 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     LOG_USE_MODULE(VideoOut);
     LOG_INFO(L"Fliprate:%d", rate);
     std::unique_lock const lock(m_mutexInt);
-    m_windows[handle - 1].fliprate = rate;
+    m_windows[handle - 1].fliprate = (FlipRate)rate;
+
+    switch ((FlipRate)rate) {
+      case FlipRate::_60Hz: m_vblankTime = (uint64_t)(1e6 / 59.0); break;
+      case FlipRate::_30Hz: m_vblankTime = (uint64_t)(1e6 / 29.0); break;
+      case FlipRate::_20Hz: m_vblankTime = (uint64_t)(1e6 / 19.0); break;
+    }
   }
 
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
@@ -538,10 +554,9 @@ std::thread VideoOut::createGlfwThread() {
 
     glfwInit();
 
-    auto const vblankTime = (uint64_t)(1e6 / 59.0);
     while (!m_stop) {
       std::unique_lock lock(m_mutexInt);
-      m_condGlfw.wait_for(lock, std::chrono::microseconds(vblankTime), [=] { return m_stop || !m_messages.empty(); });
+      m_condGlfw.wait_for(lock, std::chrono::microseconds(m_vblankTime), [=] { return m_stop || !m_messages.empty(); });
       if (m_stop) break;
 
       if (m_messages.empty()) {
@@ -556,51 +571,53 @@ std::thread VideoOut::createGlfwThread() {
         }
         continue;
       }
-      auto       item  = m_messages.front();
-      auto const index = item.windowIndex;
+      auto       item   = m_messages.front();
+      auto const index  = item.windowIndex;
+      auto&      window = m_windows[index];
+
       switch (item.type) {
         case MessageType::open: {
-          auto const title = getTitle(index, 0, 0);
+
+          auto const title = getTitle(index, 0, 0, window.fliprate);
 
           glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
           glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
           glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-          m_windows[index].window = glfwCreateWindow(m_widthTotal, m_heightTotal, title.c_str(), nullptr, nullptr);
+          window.window = glfwCreateWindow(m_widthTotal, m_heightTotal, title.c_str(), nullptr, nullptr);
 
-          glfwMakeContextCurrent(m_windows[index].window);
-          glfwShowWindow(m_windows[index].window);
+          glfwMakeContextCurrent(window.window);
+          glfwShowWindow(window.window);
 
-          glfwGetWindowSize(m_windows[index].window, (int*)(&m_windows[index].config.resolution.paneWidth),
-                            (int*)(&m_windows[index].config.resolution.paneHeight));
+          glfwGetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
-          LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), m_windows[index].config.resolution.paneWidth, m_windows[index].config.resolution.paneHeight);
+          LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
-            m_vulkanObj = vulkan::initVulkan(m_windows[index].window, m_windows[index].surface, accessInitParams()->enableValidation());
+            m_vulkanObj = vulkan::initVulkan(window.window, window.surface, accessInitParams()->enableValidation());
             auto& info  = m_vulkanObj->deviceInfo;
 
             m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
           } else {
-            vulkan::createSurface(m_vulkanObj, m_windows[index].window, m_windows[index].surface);
+            vulkan::createSurface(m_vulkanObj, window.window, window.surface);
           }
 
           *item.done = true;
           m_condDone.notify_one();
         } break;
         case MessageType::close: {
-          glfwDestroyWindow(m_windows[index].window);
+          glfwDestroyWindow(window.window);
           *item.done = true;
           m_condDone.notify_one();
         } break;
         case MessageType::flip: {
-          LOG_TRACE(L"-> flip(%d) set:%u buffer:%u", index, item.index, m_windows[index].config.flipStatus.currentBuffer);
+          LOG_TRACE(L"-> flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
           OPTICK_FRAME("VideoOut");
-          auto& flipStatus = m_windows[index].config.flipStatus;
+          auto& flipStatus = window.config.flipStatus;
           using namespace std::chrono;
 
           lock.unlock();
           {
             OPTICK_EVENT("Present");
-            presentImage(m_vulkanObj, m_windows[index].config.bufferSets[item.index], (uint32_t&)m_windows[index].config.flipStatus.currentBuffer);
+            presentImage(m_vulkanObj, window.config.bufferSets[item.index], (uint32_t&)window.config.flipStatus.currentBuffer);
           }
           m_graphics->submitDone();
           lock.lock();
@@ -617,20 +634,19 @@ std::thread VideoOut::createGlfwThread() {
           vblankEnd(1 + index, curTime, procTime);
 
           // Trigger Event Flip
-          for (auto& item: m_windows[index].eventFlip) {
-            (void)item->triggerEvent(VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT,
-                                     reinterpret_cast<void*>(m_windows[index].config.flipStatus.flipArg));
+          for (auto& item: window.eventFlip) {
+            (void)item->triggerEvent(VIDEO_OUT_EVENT_FLIP, EventQueue::KERNEL_EVFILT_VIDEO_OUT, reinterpret_cast<void*>(window.config.flipStatus.flipArg));
           }
           // - Flip event
 
-          double const fps   = (m_windows[index].config.fps * 5.0 + (1e6 / (double)elapsed_us)) / 6.0;
-          auto         title = getTitle(index + 1, flipStatus.count, round(fps));
+          double const fps   = (window.config.fps * 5.0 + (1e6 / (double)elapsed_us)) / 6.0;
+          auto         title = getTitle(index + 1, flipStatus.count, round(fps), window.fliprate);
 
-          m_windows[index].config.fps = fps;
+          window.config.fps = fps;
 
-          glfwSetWindowTitle(m_windows[index].window, title.c_str());
+          glfwSetWindowTitle(window.window, title.c_str());
           glfwPollEvents();
-          LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, m_windows[index].config.flipStatus.currentBuffer);
+          LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
         } break;
       }
       m_messages.pop();

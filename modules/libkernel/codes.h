@@ -15,3 +15,15 @@ constexpr uint8_t SCE_KERNEL_PROT_GPU_RW    = 0x30;
 constexpr uint8_t SCE_KERNEL_PROT_GPU_ALL   = 0x30;
 
 constexpr uint32_t SCE_KERNEL_PAGE_SIZE = 16384;
+
+constexpr uint32_t SCE_KERNEL_AIO_SCHED_WINDOW_MAX      = 128;
+constexpr uint32_t SCE_KERNEL_AIO_DELAYED_COUNT_MAX     = 128;
+constexpr uint32_t SCE_KERNEL_AIO_ENABLE_SPLIT          = 1;
+constexpr uint32_t SCE_KERNEL_AIO_DISABLE_SPLIT         = 0;
+constexpr uint32_t SCE_KERNEL_AIO_SPLIT_SIZE_MAX        = 0x1000000;
+constexpr uint32_t SCE_KERNEL_AIO_SPLIT_CHUNK_SIZE_MAX  = 0x1000000;
+constexpr uint32_t SCE_KERNEL_AIO_SCHED_WINDOW_DEFAULT  = 32;
+constexpr uint32_t SCE_KERNEL_AIO_DELAYED_COUNT_DEFAULT = 32;
+constexpr uint32_t SCE_KERNEL_AIO_SPLIT_SIZE_DEFAULT    = 0x100000;
+constexpr uint32_t SCE_KERNEL_AIO_REQUEST_NUM_MAX       = 128;
+constexpr uint32_t SCE_KERNEL_AIO_ID_NUM_MAX            = 128;

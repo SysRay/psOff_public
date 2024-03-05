@@ -52,14 +52,20 @@ EXPORT SYSV_ABI int32_t sceVideoOutRegisterBuffers(int32_t handle, int32_t start
 
 EXPORT SYSV_ABI int32_t sceVideoOutRegisterStereoBuffers(int32_t handle, int32_t startIndex, const SceVideoOutStereoBuffers* buffers, int32_t length,
                                                          const SceVideoOutBufferAttribute* attribute) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutUnregisterBuffers(int32_t handle, int32_t attributeIndex) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutSubmitChangeBufferAttribute(int32_t handle, int32_t index, const SceVideoOutBufferAttribute* attribute) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
@@ -69,6 +75,8 @@ EXPORT SYSV_ABI int32_t sceVideoOutSetFlipRate(int32_t handle, int32_t rate) {
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutSetWindowModeMargins(int32_t handle, int top, int bottom) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
@@ -149,34 +157,45 @@ EXPORT SYSV_ABI int32_t sceVideoOutAddVblankEvent(Kernel::EventQueue::IKernelEqu
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutDeleteFlipEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutDeleteVblankEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutAddPreVblankStartEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle, void* udata) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutDeletePreVblankStartEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceVideoOutGetEventId(const void* ev) {
+EXPORT SYSV_ABI int32_t sceVideoOutGetEventId(Kernel::EventQueue::KernelEvent_t ev) {
+  return (*ev).ident;
+}
+
+EXPORT SYSV_ABI int32_t sceVideoOutGetEventData(Kernel::EventQueue::KernelEvent_t ev, int64_t* data) {
+  *data = (*ev).data;
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceVideoOutGetEventData(const void* ev, int64_t* data) {
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceVideoOutGetEventCount(const void* ev) {
+EXPORT SYSV_ABI int32_t sceVideoOutGetEventCount(Kernel::EventQueue::KernelEvent_t ev) {
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutWaitVblank(int32_t handle) {
+  LOG_USE_MODULE(libSceVideoOut);
+  LOG_ERR(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 

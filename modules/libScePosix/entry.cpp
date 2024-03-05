@@ -13,7 +13,7 @@ using ScePthreadSem_t = ISemaphore*;
 
 extern "C" {
 
-EXPORT const char* MODULE_NAME = "libScePosix";
+EXPORT const char* MODULE_NAME = "libkernel";
 
 EXPORT SYSV_ABI int __NID(sem_init)(ScePthreadSem_t* sem, int pshared, unsigned int value) {
   (*sem) = createSemaphore(nullptr, false, 0, std::numeric_limits<int>::max()).release();
@@ -75,36 +75,6 @@ EXPORT SYSV_ABI int __NID(nanosleep)(const SceKernelTimespec* rqtp, SceKernelTim
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(mlock)(const void* addr, size_t len) {
-  LOG_USE_MODULE(libScePosix);
-  LOG_DEBUG(L"MLock addr:0x%08llx len:0x%08llx", (uint64_t)addr, len);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int __NID(munlock)(const void* addr, size_t len) {
-  LOG_USE_MODULE(libScePosix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int __NID(mprotect)(const void* addr, size_t len, int prot) {
-  LOG_USE_MODULE(libScePosix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int __NID(msync)(void* addr, size_t len, int flags) {
-  LOG_USE_MODULE(libScePosix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int __NID(mlockall)(int flags) {
-  LOG_USE_MODULE(libScePosix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
 EXPORT SYSV_ABI int __NID(clock_getres)(SceKernelClockid clockId, SceKernelTimespec* tp) {
   return POSIX_CALL(accessTimer().getTimeRes(clockId, tp));
 }
@@ -137,7 +107,7 @@ EXPORT SYSV_ABI int __NID(sched_getparam)(int64_t, struct sched_param*) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int sched_yield(void) {
+EXPORT SYSV_ABI int __NID(sched_yield)(void) {
   boost::this_thread::yield();
   return Ok;
 }

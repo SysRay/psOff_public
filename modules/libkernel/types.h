@@ -37,3 +37,32 @@ struct SceModuleUndwindInfo {
   uint64_t seg0Addr; // Main vaddr (normaly offset:0)
   uint64_t seg0Size;
 };
+
+struct SceKernelAioSchedulingParam {
+  int      schedulingWindowSize;
+  int      delayedCountLimit;
+  uint32_t enableSplit;
+  uint32_t splitSize;
+  uint32_t splitChunkSize;
+};
+
+typedef int SceKernelAioSubmitId;
+
+struct SceKernelAioParam {
+  SceKernelAioSchedulingParam low;
+  SceKernelAioSchedulingParam mid;
+  SceKernelAioSchedulingParam high;
+};
+
+struct SceKernelAioResult {
+  int64_t  returnValue;
+  uint32_t state;
+};
+
+struct SceKernelAioRWRequest {
+  int64_t             offset;
+  size_t              nbyte;
+  void*               buf;
+  SceKernelAioResult* result;
+  int                 fd;
+};

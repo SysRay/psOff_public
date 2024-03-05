@@ -4,7 +4,11 @@ include(../setupModule.cmake)
 set(libName libScePosix)
 project(${libName})
 
-add_library(${libName} SHARED entry.cpp)
+add_library(${libName} SHARED
+  entry.cpp
+  fs.cpp
+  mman.cpp
+)
 
 add_dependencies(${libName} core third_party)
 target_link_libraries(${libName} PRIVATE

@@ -23,32 +23,32 @@ enum class SceVideoOutBusType {
 };
 
 enum class SceVideoOutPixelFormat : uint32_t {
-  PIXEL_FORMAT_A8R8G8B8_SRGB            = 0x80000000,                         /* MSB first. Blue is at LSB */
-  PIXEL_FORMAT_B8_G8_R8_A8_SRGB         = PIXEL_FORMAT_A8R8G8B8_SRGB,         /* alias name in a gnm-friendly order (LSB first) */
-  PIXEL_FORMAT_A16R16G16B16_FLOAT       = 0xC1060000,                         /* MSB first. Blue is at LSB */
-  PIXEL_FORMAT_B16_G16_R16_A16_FLOAT    = PIXEL_FORMAT_A16R16G16B16_FLOAT,    /* alias name in a gnm-friendly order (LSB first) */
-  PIXEL_FORMAT_A8B8G8R8_SRGB            = 0x80002200,                         /* MSB first. Red is at LSB */
-  PIXEL_FORMAT_R8_G8_B8_A8_SRGB         = PIXEL_FORMAT_A8B8G8R8_SRGB,         /* alias name in a gnm-friendly order (LSB first) */
-  PIXEL_FORMAT_A2R10G10B10              = 0x88060000,                         /* MSB first. Blue is at LSB */
-  PIXEL_FORMAT_B10_G10_R10_A2           = PIXEL_FORMAT_A2R10G10B10,           /* alias name in a gnm-friendly order (LSB first) */
-  PIXEL_FORMAT_A2R10G10B10_SRGB         = 0x88000000,                         /* MSB first. Blue is at LSB */
-  PIXEL_FORMAT_B10_G10_R10_A2_SRGB      = PIXEL_FORMAT_A2R10G10B10_SRGB,      /* alias name in a gnm-friendly order (LSB first) */
-  PIXEL_FORMAT_A2R10G10B10_BT2020_PQ    = 0x88740000,                         /* MSB first. Blue is at LSB */
-  PIXEL_FORMAT_B10_G10_R10_A2_BT2020_PQ = PIXEL_FORMAT_A2R10G10B10_BT2020_PQ, /* alias name in a gnm-friendly order (LSB first) */
+  PIXEL_FORMAT_A8R8G8B8_SRGB            = 0x80000000,
+  PIXEL_FORMAT_B8_G8_R8_A8_SRGB         = PIXEL_FORMAT_A8R8G8B8_SRGB,
+  PIXEL_FORMAT_A16R16G16B16_FLOAT       = 0xC1060000,
+  PIXEL_FORMAT_B16_G16_R16_A16_FLOAT    = PIXEL_FORMAT_A16R16G16B16_FLOAT,
+  PIXEL_FORMAT_A8B8G8R8_SRGB            = 0x80002200,
+  PIXEL_FORMAT_R8_G8_B8_A8_SRGB         = PIXEL_FORMAT_A8B8G8R8_SRGB,
+  PIXEL_FORMAT_A2R10G10B10              = 0x88060000,
+  PIXEL_FORMAT_B10_G10_R10_A2           = PIXEL_FORMAT_A2R10G10B10,
+  PIXEL_FORMAT_A2R10G10B10_SRGB         = 0x88000000,
+  PIXEL_FORMAT_B10_G10_R10_A2_SRGB      = PIXEL_FORMAT_A2R10G10B10_SRGB,
+  PIXEL_FORMAT_A2R10G10B10_BT2020_PQ    = 0x88740000,
+  PIXEL_FORMAT_B10_G10_R10_A2_BT2020_PQ = PIXEL_FORMAT_A2R10G10B10_BT2020_PQ,
 };
 
 enum class SceVideoOutFlipMode {
-  VSYNC         = 1, /* on real video out vsync */
-  HSYNC         = 2, /* ASAP (but not immediate) */
-  WINDOW        = 3, /* similar to vsync but may flip on some windows at the top and the bottom of the display. N/A on Neo mode */
-  VSYNC_MULTI   = 4, /* vsync mode but allows multiple flips per vsync. flipRate is not valid. N/A on Neo mode */
-  VSYNC_MULTI_2 = 5, /* vsync mode but allows multiple flips per vsync. flipRate is valid */
-  WINDOW_2      = 6, /* Window mode but the top margin is less accurate than _MODE_WINDOW. The bottom margin must be 0.  */
+  VSYNC         = 1,
+  HSYNC         = 2,
+  WINDOW        = 3,
+  VSYNC_MULTI   = 4,
+  VSYNC_MULTI_2 = 5,
+  WINDOW_2      = 6,
 };
 
 enum class SceVideoOutTilingMode {
-  TILE   = 0, /* 32bpp pixel format only if on Neo mode */
-  LINEAR = 1, /* 32bpp pixel format only */
+  TILE   = 0,
+  LINEAR = 1,
 };
 
 enum class SceVideoOutAspectRatio {
@@ -73,25 +73,24 @@ struct SceVideoOutBufferAttribute {
 };
 
 struct SceVideoOutFlipStatus {
-  uint64_t count;       // count of flips executed after sceVideoOutOpen()
-  uint64_t processTime; // processTime of the time of the latest flip executed
-  uint64_t tsc;         // Timestamp counter value when the latest flip executed
-  int64_t  flipArg;     // flipArg submitted with the latest flip
-  uint64_t
-      submitTsc; // Timestamp counter value when the latest flip was requested (after the preceding gpu commands executed if submitted with with gnm function)
+  uint64_t count;
+  uint64_t processTime;
+  uint64_t tsc;
+  int64_t  flipArg;
+  uint64_t submitTsc;
   uint64_t _reserved0;
-  int32_t  gcQueueNum     = 0; // number of non-finished flips that are waiting for finishing the gc commands
-  int32_t  flipPendingNum = 0; // number of total non-finished flips
-  int32_t  currentBuffer;      // current buffer index on display
+  int32_t  gcQueueNum     = 0;
+  int32_t  flipPendingNum = 0;
+  int32_t  currentBuffer;
   uint32_t _reserved1;
 };
 
 struct SceVideoOutVblankStatus {
-  uint64_t count;       // count of vblanks after sceVideoOutOpen()
-  uint64_t processTime; // processTime of the time of the latest vblank event
-  uint64_t tsc;         // Timestamp counter value when the latest vblank executed
+  uint64_t count;
+  uint64_t processTime;
+  uint64_t tsc;
   uint64_t _reserved[1];
-  uint8_t  flags; // SceVideoOutVblankStatusFlags
+  uint8_t  flags;
   uint8_t  pad1[7];
 };
 
