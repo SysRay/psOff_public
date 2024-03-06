@@ -8,6 +8,7 @@ add_library(${libName} SHARED
   entry.cpp
   fs.cpp
   mman.cpp
+  pthread.cpp
 )
 
 add_dependencies(${libName} core third_party)

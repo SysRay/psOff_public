@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/kernel/pthread.h"
 #include "logging.h"
 #include "types.h"
 
@@ -15,32 +16,30 @@ class Signal {
   public:
   auto getHandler(int signo) const { return m_signals[signo]; }
 
-  bool addExceptionHandler(int signum, void* exHandler) {
+  bool addExceptionHandler(int signo, void* exHandler) {
     LOG_USE_MODULE(libkernel_unity);
     boost::unique_lock lock(m_mutex);
 
-    m_signals[signum] = (unity_EXCEPTION_HANDLER)exHandler;
-    LOG_INFO(L"+Exceptionshandler signum:%d handler:0x%08llx", signum, exHandler);
+    m_signals[signo] = (unity_EXCEPTION_HANDLER)exHandler;
+    LOG_INFO(L"+Exceptionshandler signo:%d handler:0x%08llx", signo, exHandler);
     return true;
   }
 
-  bool removeExceptionHandler(int signum) {
+  bool removeExceptionHandler(int signo) {
     LOG_USE_MODULE(libkernel_unity);
     boost::unique_lock lock(m_mutex);
-    LOG_INFO(L"-Exceptionshandler signum:%d", signum);
+    LOG_INFO(L"-Exceptionshandler signo:%d", signo);
     return true;
   }
 
-  bool raise(void* pthread, int signum) {
+  bool raise(void* pthread, int signo) {
     LOG_USE_MODULE(libkernel_unity);
     boost::unique_lock lock(m_mutex);
 
-    // todo
-    // auto const threadId = pthread::getThreadId((ScePthread_obj)pthread);
+    auto const threadId = pthread::getThreadId((ScePthread_obj)pthread);
 
-    // LOG_DEBUG(L"raise signal:%d thread:%d(from:%d)", signo, threadId, pthread::getThreadId());
-    // pthread::PthreadRaise((ScePthread_obj)pthread, (void*)SignalHandler, signo);
-    LOG_CRIT(L"todo signals!");
+    LOG_DEBUG(L"raise signal:%d thread:%d(from:%d)", signo, threadId, pthread::getThreadId());
+    pthread::raise((ScePthread_obj)pthread, (void*)SignalHandler, signo);
     return true;
   }
 
@@ -67,7 +66,7 @@ VOID NTAPI SignalHandler(_In_ ULONG_PTR _signo) {
   info->si_signo = signo;
   info->si_code  = SiCode::SI_USER;
 
-  // LOG_DEBUG(L"Interrupted signal:%d thread:%d", signo, pthread::getThreadId()); // todo
+  LOG_DEBUG(L"Interrupted signal:%d thread:%d", signo, pthread::getThreadId());
   handler(signo, info.get());
 }
 } // namespace

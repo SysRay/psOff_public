@@ -7,6 +7,7 @@ using SceKernelModule = int32_t;
 using get_thread_atexit_count_func_t = SYSV_ABI int (*)(SceKernelModule);
 using thread_atexit_report_func_t    = SYSV_ABI void (*)(SceKernelModule);
 
+typedef int   SceKernelAioSubmitId;
 typedef void* sigset_t;
 
 enum class SceKernelCPUMode : int {
@@ -45,8 +46,6 @@ struct SceKernelAioSchedulingParam {
   uint32_t splitSize;
   uint32_t splitChunkSize;
 };
-
-typedef int SceKernelAioSubmitId;
 
 struct SceKernelAioParam {
   SceKernelAioSchedulingParam low;

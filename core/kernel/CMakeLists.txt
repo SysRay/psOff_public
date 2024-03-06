@@ -3,6 +3,7 @@ add_library(kernel OBJECT
   eventflag.cpp
   errors.cpp
   filesystem.cpp
+  pthread.cpp
 )
 
 add_dependencies(kernel third_party)

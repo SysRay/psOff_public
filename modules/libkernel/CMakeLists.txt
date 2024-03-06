@@ -12,6 +12,7 @@ add_library(${libName} SHARED
   dmem.cpp
   aio.cpp
   fs.cpp
+  pthread.cpp
 )
 
 add_dependencies(${libName} core third_party)

@@ -95,7 +95,7 @@ EXPORT SYSV_ABI void sceKernelAioInitializeParam(SceKernelAioParam* param) {
 }
 
 EXPORT SYSV_ABI int sceKernelAioSetParam(SceKernelAioSchedulingParam* param, int schedulingWindowSize, int handleelayedCountLimit, uint32_t enableSplit,
-                                  uint32_t splitSize, uint32_t splitChunkSize) {
+                                         uint32_t splitSize, uint32_t splitChunkSize) {
   LOG_USE_MODULE(aio);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
