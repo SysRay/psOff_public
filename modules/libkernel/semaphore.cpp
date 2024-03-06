@@ -1,4 +1,4 @@
-#include "core/semaphore/semaphore.h"
+#include "core/kernel/semaphore.h"
 
 #include "common.h"
 #include "core/kernel/errors.h"

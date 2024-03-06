@@ -1,6 +1,6 @@
 #include "common.h"
 #include "core/kernel/errors.h"
-#include "core/semaphore/semaphore.h"
+#include "core/kernel/semaphore.h"
 #include "core/timer/timer.h"
 #include "logging.h"
 #include "types.h"

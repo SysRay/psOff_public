@@ -2,10 +2,6 @@
 
 Each target library is created separately as a shared library in the **modules** folder. This allows NIDs generation at build time and a clean code separation.
 
-<div align="center">
-
-![](../out/docs/uml/modules/simpleOverview/simpleOverview.svg)
-</div>
 
 The Emulator loads the libraries on demand and resolves the symbols etc. A library does only communicate with the emulator.
 If it should need information/calls from other libraries, a separate top class should be used. The library can link against it and access the interface.
