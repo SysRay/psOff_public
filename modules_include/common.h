@@ -24,6 +24,7 @@ struct SceRtcTick {
 using SceKernelModule      = int;
 using SceKernelCpumask     = uint64_t;
 using SceUserServiceUserId = int32_t;
+using SceKernelClockid     = int32_t;
 
 #define SYSV_ABI __attribute__((sysv_abi))
 #define EXPORT   __declspec(dllexport)
@@ -148,4 +149,18 @@ constexpr int getErr(ErrCode err) {
   if ((int)err == Ok) return 0;
 
   return (int)err == Ok ? 0 : (int32_t)0x80020000 - (int32_t)err;
+}
+
+#define __NID_HEX_(hexId, funcName) __hex_##hexId
+#define __NID_HEX(hexId)            __hex_##hexId
+#define __NID(func)                 __sce_##func
+
+static void ns2timespec(SceKernelTimespec* ts, uint64_t const ns) {
+  ts->tv_sec  = (decltype(ts->tv_sec))(ns / 1000000000l);
+  ts->tv_nsec = (decltype(ts->tv_nsec))(ns % 1000000000l);
+}
+
+static void micro2timeval(SceKernelTimeval* tp, uint64_t const us) {
+  tp->tv_sec  = static_cast<decltype(tp->tv_sec)>(us / 1000000UL);
+  tp->tv_usec = static_cast<decltype(tp->tv_usec)>(us % 1000000UL);
 }

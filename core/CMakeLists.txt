@@ -11,6 +11,8 @@ add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(fileManager)
 add_subdirectory(imports)
+add_subdirectory(memory)
+add_subdirectory(dmem)
 
 # Build
 add_library(core SHARED
@@ -21,6 +23,8 @@ add_library(core SHARED
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:imports>
+  $<TARGET_OBJECTS:memory>
+  $<TARGET_OBJECTS:dmem>
 )
 
 add_dependencies(core logging)
@@ -33,3 +37,11 @@ target_link_libraries(core PRIVATE
   psOff_utility
   ${Vulkan_LIBRARIES}
 )
+
+ADD_CUSTOM_COMMAND(TARGET core POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_BINARY_DIR}/core.lib
+  ${CMAKE_BINARY_DIR}/lib)
+
+install(FILES $<TARGET_PDB_FILE:core> DESTINATION debug OPTIONAL)
+install(TARGETS core LIBRARY DESTINATION .)

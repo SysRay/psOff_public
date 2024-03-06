@@ -23,12 +23,16 @@ struct UniData {
   std::filesystem::path const m_path;
 
   UniData(Type type, std::filesystem::path const& path): m_type(type), m_path(path) {}
+
+  virtual ~UniData() = default;
 };
 
 struct FileData: public UniData {
   std::unique_ptr<std::fstream> const m_file;
 
   FileData(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path): UniData(UniData::Type::File, path), m_file(std::move(file)) {}
+
+  virtual ~FileData() { m_file->sync(); }
 };
 
 struct DirData: public UniData {
@@ -37,6 +41,8 @@ struct DirData: public UniData {
 
   DirData(std::unique_ptr<std::filesystem::directory_iterator>&& dirIt, std::filesystem::path const& path)
       : UniData(UniData::Type::Dir, path), m_file(std::move(dirIt)) {}
+
+  virtual ~DirData() = default;
 };
 
 namespace {

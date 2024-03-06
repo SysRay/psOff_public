@@ -13,6 +13,6 @@ package "psOff Emulator" {
 Modules -> core
 
 core <-- "psOff Emulator"
-core --> "psOff Emulator" : callbacks
+core --> "psOff Emulator" : callbacks "imports"
 
 @enduml

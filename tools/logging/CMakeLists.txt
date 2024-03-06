@@ -21,3 +21,5 @@ set_target_properties(logging
   PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
 )
+
+install(TARGETS logging LIBRARY DESTINATION .)

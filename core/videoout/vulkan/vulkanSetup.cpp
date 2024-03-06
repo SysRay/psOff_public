@@ -6,7 +6,6 @@
 #include <utility/utility.h>
 #include <vulkan/vk_enum_string_helper.h>
 
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -111,14 +110,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessengerCallback(VkDebugUtilsMessageSeverit
   return VK_FALSE;
 }
 
-VulkanExtensions getExtensions(bool useValidation) {
+VulkanExtensions getExtensions(bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
 
   uint32_t countAvailableExtensions = 0;
   uint32_t countAvailableLayers     = 0;
   uint32_t countRequiredExtensions  = 0;
 
-  VulkanExtensions r = {.enableValidationLayers = useValidation};
+  VulkanExtensions r = {.enableValidationLayers = enableValidation};
 
   auto res = glfwGetRequiredInstanceExtensions(&countRequiredExtensions);
   for (size_t n = 0; n < countRequiredExtensions; n++) {
@@ -320,7 +319,8 @@ bool checkFormat(VkPhysicalDevice device, VkFormat format, VkFormatFeatureFlags 
   return false;
 }
 
-void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabilities* outCapabilities, VkPhysicalDevice* outDevice, VulkanQueues* outQueues) {
+void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabilities* outCapabilities, VkPhysicalDevice* outDevice, VulkanQueues* outQueues,
+                        bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
 
   uint32_t devicesCount = 0;
@@ -408,14 +408,12 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
           break;
         }
       }
-
-      if (skipDevice) {
+      if (enableValidation) {
         for (const auto& ext: availableExt) {
-          LOG_TRACE(L"Vulkan available extension: %S, version:%u", ext.extensionName, ext.specVersion);
+          LOG_DEBUG(L"Vulkan available extension: %S, version:%u", ext.extensionName, ext.specVersion);
         }
       }
     }
-
     if (!skipDevice) {
       getSurfaceCapabilities(device, surface, *outCapabilities);
 
@@ -502,6 +500,7 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
       bestQueues = qs;
     }
   }
+
   // -Find best
 
   *outDevice = bestDevice;
@@ -509,7 +508,7 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
 }
 
 VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VulkanExtensions const extensions, VulkanQueues const& queues,
-                      bool useValidation) {
+                      bool enableValidation) {
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfo(queues.familyCount);
   std::vector<std::vector<float>>      queuePrio(queues.familyCount);
@@ -546,11 +545,11 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
   VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT, .shaderObject = VK_TRUE};
 
   VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamic3Features {
-      .sType                                     = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
-      .pNext                                     = &uniBlock,
-      .extendedDynamicState3PolygonMode          = VK_TRUE,
-      .extendedDynamicState3RasterizationSamples = VK_TRUE,
-      //.extendedDynamicState3AlphaToCoverageEnable     = VK_TRUE,
+      .sType                                      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
+      .pNext                                      = &uniBlock,
+      .extendedDynamicState3PolygonMode           = VK_TRUE,
+      .extendedDynamicState3RasterizationSamples  = VK_TRUE,
+      .extendedDynamicState3AlphaToCoverageEnable = VK_TRUE,
       //.extendedDynamicState3AlphaToOneEnable          = VK_TRUE,
       .extendedDynamicState3ColorBlendEnable          = VK_TRUE,
       .extendedDynamicState3ColorBlendEquation        = VK_TRUE,
@@ -587,7 +586,7 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
       .pNext               = &colorWriteExt,
       .bufferDeviceAddress = VK_TRUE,
 
-      .bufferDeviceAddressCaptureReplay = useValidation ? VK_TRUE : VK_FALSE,
+      .bufferDeviceAddressCaptureReplay = enableValidation ? VK_TRUE : VK_FALSE,
   };
 
   VkPhysicalDeviceDescriptorIndexingFeatures descIndexing {
@@ -624,7 +623,7 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
 static VkPhysicalDeviceProperties g_PhysicalDeviceProperties;
 static VkInstance                 g_VkInstance;
 
-VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool useValidation) {
+VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
   auto obj = new VulkanObj;
 
@@ -653,7 +652,7 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool useValidat
       .apiVersion         = VK_API_VERSION_1_3,
   };
 
-  auto extensions = getExtensions(useValidation);
+  auto extensions = getExtensions(enableValidation);
 
   VkInstanceCreateInfo const instInfo {
       .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -687,7 +686,7 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool useValidat
   }
 
   VulkanQueues queues;
-  findPhysicalDevice(obj->deviceInfo.instance, surface, &obj->surfaceCapabilities, &obj->deviceInfo.physicalDevice, &queues);
+  findPhysicalDevice(obj->deviceInfo.instance, surface, &obj->surfaceCapabilities, &obj->deviceInfo.physicalDevice, &queues, enableValidation);
   if (obj->deviceInfo.physicalDevice == nullptr) {
     LOG_CRIT(L"Couldn't find a suitable device");
   }
@@ -701,7 +700,7 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool useValidat
     LOG_INFO(L"%S", text.data());
   }
 
-  obj->deviceInfo.device = createDevice(obj->deviceInfo.physicalDevice, surface, extensions, queues, useValidation);
+  obj->deviceInfo.device = createDevice(obj->deviceInfo.physicalDevice, surface, extensions, queues, enableValidation);
   if (obj->deviceInfo.device == nullptr) {
     LOG_CRIT(L"Couldn't create vulkanDevice");
   }

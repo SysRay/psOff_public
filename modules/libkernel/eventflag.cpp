@@ -4,7 +4,6 @@
 #include "logging.h"
 #include "types.h"
 
-
 LOG_DEFINE_MODULE(eventFlag);
 using namespace Kernel::EventFlag;
 

@@ -90,20 +90,15 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceSaveData";
 
 EXPORT SYSV_ABI int32_t sceSaveDataInitialize(const SceSaveDataInitParams3* initParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataInitialize2(const SceSaveDataInitParams3* initParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataInitialize3(const SceSaveDataInitParams3* initParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
