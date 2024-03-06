@@ -4,13 +4,20 @@
 
 Tested only with AMD GPU. May not run with NVidia, currently.
 
-Will add more of the "private" part later.
-
+Runtime and rendering part is private currently.
 Target is to have a standalone framework for shader reconstruction, command buffer translation and managing the GPU memory, for others to use. This project uses it to run "Linux" binaries on windows.
 
+<img src="https://github.com/SysRay/psOff_public/assets/48695846/cd83ba97-b649-4599-b555-24c43e9b8394" width="400"> 
+<img src="https://github.com/SysRay/psOff_public/assets/48695846/6156412e-569d-4f2a-b8d2-061d6942e107" width="400">
+<img src="https://github.com/SysRay/psOff_public/assets/48695846/7e723874-5bb9-4cb7-bb28-5b0001d81f65" width="400" title="fps is capped internally">
+
+
+No, the fps is not fake :)
 
 ## Description
-Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries, it renders decently fast. The planned changes will make it almost perfect. Had to reverse engineer and try out a lot, before.
+Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries. 
+
+It renders decently fast, the planned changes will make it almost perfect. Had to reverse engineer and try out a lot, before.
 
 It currently doesn't support:
 + multiple command buffer submits
@@ -59,3 +66,7 @@ eboot.bin
 Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel". 
 
 Project uses p7 for tracing -> Baical server.
+
+* modules: the ps4 libraries
+* core: kernel, memory etc.
+* emulator.exe: (From Releases) contains the runtime and rendering
