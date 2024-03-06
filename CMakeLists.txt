@@ -76,5 +76,6 @@ add_subdirectory(utility)
 install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
   FILES_MATCHING PATTERN "*.dll"
 )
-
-install(FILES $<TARGET_PDB_FILE:emulator> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
+install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/install/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
+  FILES_MATCHING PATTERN "*.dll"
+)
