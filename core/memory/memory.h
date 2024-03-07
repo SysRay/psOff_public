@@ -20,6 +20,7 @@ constexpr inline bool isExecute(int prot) {
   return (prot & 0x4) > 0;
 }
 
+__APICALL int       getpagesize(void);
 __APICALL uint64_t  getTotalSystemMemory();
 __APICALL uintptr_t reserve(uint64_t start, uint64_t size, uint64_t alignment, bool isGpu);
 __APICALL uint64_t  commit(uintptr_t baseAddr, uint64_t offset, uint64_t size, uint64_t alignment, int prot);

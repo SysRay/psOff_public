@@ -68,6 +68,12 @@ VirtualAlloc2_func_t getVirtualAlloc2() {
 } // namespace
 
 namespace memory {
+int getpagesize(void) {
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return si.dwPageSize;
+}
+
 uint64_t getTotalSystemMemory() {
   MEMORYSTATUSEX status;
   status.dwLength = sizeof(status);
@@ -245,7 +251,7 @@ bool protect(uint64_t address, uint64_t size, int protection, int* oldProt) {
 
   DWORD oldProtection;
   if (VirtualProtect(reinterpret_cast<LPVOID>(static_cast<uintptr_t>(address)), size, convProtection(protection), &oldProtection) == 0) {
-    LOG_ERR(L"VirtualProtect() failed: 0x%04x", static_cast<uint32_t>(GetLastError()));
+    LOG_ERR(L"VirtualProtect() failed addr:0x%08llx size:0x%08llx prot:%d err:0x%04x", address, size, protection, static_cast<uint32_t>(GetLastError()));
     return false;
   }
 

@@ -144,48 +144,43 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   auto const mappedPath = mapped.value();
 
   bool isDir = std::filesystem::is_directory(mappedPath);
-  {
-    if (flags.directory || isDir) {
-      if (!isDir) {
-        LOG_WARN(L"Directory doesn't exist: %s", mappedPath.c_str());
-        return getErr(ErrCode::_ENOTDIR);
-      }
 
-      if (!std::filesystem::exists(mappedPath.parent_path())) std::filesystem::create_directories(mappedPath);
-
-      auto      dirIt  = std::make_unique<std::filesystem::directory_iterator>(mappedPath);
-      int const handle = accessFileManager().addDirIterator(std::move(dirIt), mappedPath);
-      LOG_INFO(L"OpenDir [%d]: %S (%s)", handle, path, mappedPath.c_str());
-
-      return handle;
-    } else {
-      std::ios_base::openmode mode = std::ios::binary;
-
-      switch (flags.mode) {
-        case SceOpenMode::RDONLY: mode |= std::ios::in; break;
-        case SceOpenMode::WRONLY: mode |= std::ios::out; break;
-        case SceOpenMode::RDWR: mode |= std::ios::out | std::ios::in; break;
-      }
-      if (flags.append) mode |= std::ios::app;
-      if (flags.trunc) mode |= std::ios::trunc;
-      if (flags.create) mode |= std::ios::out;
-
-      if ((mode & std::ios::out) == 0 && !std::filesystem::exists(mappedPath)) {
-        LOG_WARN(L"File doesn't exist: %s mode:0x%lx", mappedPath.c_str(), mode);
-        return getErr(ErrCode::_EMFILE);
-      }
-
-      auto      file   = std::make_unique<std::fstream>(std::fstream(mappedPath, mode));
-      int const handle = accessFileManager().addFileStream(std::move(file), mappedPath);
-      LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
-
-      return handle;
+  if (flags.directory || isDir) {
+    if (!isDir) {
+      LOG_WARN(L"Directory doesn't exist: %s", mappedPath.c_str());
+      return getErr(ErrCode::_ENOTDIR);
     }
-  }
 
-  LOG_WARN(L"path doesn't exist: %s flags:0x%04lx mode:%d", mappedPath.c_str(), flags, kernelMode);
-  if (flags.directory) return getErr(ErrCode::_ENOTDIR);
-  return getErr(ErrCode::_EACCES);
+    if (!std::filesystem::exists(mappedPath.parent_path())) std::filesystem::create_directories(mappedPath);
+
+    auto      dirIt  = std::make_unique<std::filesystem::directory_iterator>(mappedPath);
+    int const handle = accessFileManager().addDirIterator(std::move(dirIt), mappedPath);
+    LOG_INFO(L"OpenDir [%d]: %S (%s)", handle, path, mappedPath.c_str());
+
+    return handle;
+  } else {
+    std::ios_base::openmode mode = std::ios::binary;
+
+    switch (flags.mode) {
+      case SceOpenMode::RDONLY: mode |= std::ios::in; break;
+      case SceOpenMode::WRONLY: mode |= std::ios::out; break;
+      case SceOpenMode::RDWR: mode |= std::ios::out | std::ios::in; break;
+    }
+    if (flags.append) mode |= std::ios::app;
+    if (flags.trunc) mode |= std::ios::trunc;
+    if (flags.create) mode |= std::ios::out;
+
+    if ((mode & std::ios::out) == 0 && !std::filesystem::exists(mappedPath)) {
+      LOG_WARN(L"File doesn't exist: %s mode:0x%lx", mappedPath.c_str(), mode);
+      return getErr(ErrCode::_ENOENT);
+    }
+
+    auto      file   = std::make_unique<std::fstream>(std::fstream(mappedPath, mode));
+    int const handle = accessFileManager().addFileStream(std::move(file), mappedPath);
+    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
+
+    return handle;
+  }
 }
 
 int close(int handle) {

@@ -828,6 +828,8 @@ int setcanceltype(int type, int* oldType) {
 }
 
 void testCancel(void) {
+  LOG_USE_MODULE(pthread);
+  LOG_ERR(L" test cancel");
   // todo
   //::pthread_testcancel();
 }
@@ -838,7 +840,7 @@ int getprio(ScePthread_obj obj, int* prio) {
   }
 
   auto thread = getPthread(obj);
-  *prio       = thread->attr->getShedParam().sched_priority;
+  *prio       = thread->attr.getShedParam().sched_priority;
   return Ok;
 }
 
@@ -848,8 +850,8 @@ int setprio(ScePthread_obj obj, int prio) {
   }
 
   auto thread = getPthread(obj);
-  thread->attr->setShedParam({.sched_priority = prio});
-  setThreadPrio(thread->p.native_handle(), thread->attr->getShedParam().sched_priority);
+  thread->attr.setShedParam({.sched_priority = prio});
+  setThreadPrio(thread->p.native_handle(), thread->attr.getShedParam().sched_priority);
   return Ok;
 }
 
@@ -949,7 +951,7 @@ int getschedparam(ScePthread_obj obj, int* policy, SceSchedParam* param) {
 
   auto thread = getPthread(obj);
   if (policy != nullptr) *policy = thread->policy;
-  *param = thread->attr->getShedParam();
+  *param = thread->attr.getShedParam();
   return Ok;
 }
 
@@ -961,18 +963,8 @@ int setschedparam(ScePthread_obj obj, int policy, const SceSchedParam* param) {
   auto thread = getPthread(obj);
 
   thread->policy = policy;
-  thread->attr->setShedParam(*param);
+  thread->attr.setShedParam(*param);
 
-  return Ok;
-}
-
-int attrGet(ScePthread_obj obj, ScePthreadAttr* attr) {
-  if (obj == nullptr || attr == nullptr || *attr == nullptr) {
-    return getErr(ErrCode::_EINVAL);
-  }
-
-  auto thread = getPthread(obj);
-  **attr      = *thread->attr;
   return Ok;
 }
 
@@ -1001,7 +993,7 @@ int getaffinity(ScePthread_obj obj, SceKernelCpumask* mask) {
   }
 
   auto thread = getPthread(obj);
-  *mask       = thread->attr->getAffinity();
+  *mask       = thread->attr.getAffinity();
   return Ok;
 }
 
@@ -1012,7 +1004,7 @@ int setaffinity(ScePthread_obj obj, const SceKernelCpumask mask) {
 
   auto thread = getPthread(obj);
   int  result = Ok;
-  thread->attr->setAffinity(mask);
+  thread->attr.setAffinity(mask);
 
   return result;
 }
@@ -1063,6 +1055,17 @@ int attrInit(ScePthreadAttr* attr) {
   return *attr != nullptr ? Ok : getErr(ErrCode::_ENOMEM);
 }
 
+int attrGet(ScePthread_obj obj, ScePthreadAttr* attr) {
+  if (obj == nullptr || attr == nullptr || *attr == nullptr) {
+    return getErr(ErrCode::_EINVAL);
+  }
+
+  *attr       = attrInit_intern();
+  auto thread = getPthread(obj);
+  **attr      = thread->attr;
+  return Ok;
+}
+
 void exit(void* value) {
   LOG_USE_MODULE(pthread);
 
@@ -1085,6 +1088,7 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
     static boost::once_flag once;
     boost::call_once(once, init_pThread);
   }
+  // -
 
   LOG_USE_MODULE(pthread);
 
@@ -1102,21 +1106,11 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
   pthread      = new (pthread) PthreadPrivate();
 
   initTLS(*obj);
-  accessRuntimeExport()->initTLS(*obj);
-
-  pthread->free        = false;
-  pthread->almost_done = false;
-  pthread->attr        = nullptr;
   // -
 
   auto thread = getPthread(*obj);
 
-  if (thread->attr != nullptr) {
-    delete thread->attr;
-  }
-  thread->attr = attrInit_intern();
-
-  if (attr != nullptr) *thread->attr = **attr;
+  if (attr != nullptr) thread->attr = **attr;
 
   thread->unique_id = threadCounter();
 
@@ -1125,25 +1119,24 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
   else
     thread->name = std::format("_{}", thread->unique_id);
 
-  thread->entry       = entry;
-  thread->arg         = arg;
-  thread->almost_done = false;
-  thread->started     = false;
-  thread->detached    = thread->attr->getDetachState() == SceDetachState::DETACHED;
+  thread->entry    = entry;
+  thread->arg      = arg;
+  thread->started  = false;
+  thread->detached = thread->attr.getDetachState() == SceDetachState::DETACHED;
 
   boost::thread::attributes boostAttr;
-  boostAttr.set_stack_size(thread->attr->getStackSize());
+  boostAttr.set_stack_size(thread->attr.getStackSize());
   //!! start_thread_noexcept in boost shouldn't contain STACK_SIZE_PARAM_IS_A_RESERVATION!
 
   thread->p = boost::thread(boostAttr, boost::bind(threadWrapper, *obj));
 
-  setThreadPrio(thread->p.native_handle(), thread->attr->getShedParam().sched_priority);
+  setThreadPrio(thread->p.native_handle(), thread->attr.getShedParam().sched_priority);
   thread->started.wait(true); // race cond with wrapped thread start
-  if (thread->attr->getDetachState() == SceDetachState::DETACHED) {
+  if (thread->attr.getDetachState() == SceDetachState::DETACHED) {
     // thread->p.detach(); // Signaling (raiseSignal) doesnt work when detached
   }
-  LOG_INFO(L"--> threadId:%d name:%S addr:0x%08llx stackSize=0x%08llx detached:%d parent:%d", thread->unique_id, thread->name.c_str(), &thread->p,
-           thread->attr->getStackSize(), thread->detached, getSelf() != nullptr ? getThreadId() : 0);
+  LOG_INFO(L"--> threadId:%d name:%S addr:0x%08llx stackSize:0x%08llx detached:%d parent:%d", thread->unique_id, thread->name.c_str(), &thread->p,
+           thread->attr.getStackSize(), thread->detached, getSelf() != nullptr ? getThreadId() : 0);
   return Ok;
 }
 
@@ -1155,6 +1148,20 @@ int attrSetscope(ScePthreadAttr* attr, int flag) {
 void cxa_finalize(void* /*p*/) {
   LOG_USE_MODULE(pthread);
   LOG_ERR(L"pthread_cxa_finalize");
+}
+
+void cleanup_push(thread_clean_func_t func, void* arg) {
+  auto thread = getPthread(getSelf());
+  thread->cleanupFuncs.push_back(std::make_pair(func, arg));
+}
+
+void cleanup_pop(int execute) {
+  auto thread = getPthread(getSelf());
+  if (execute > 0) {
+    auto const& [func, arg] = thread->cleanupFuncs.back();
+    func(arg);
+  }
+  thread->cleanupFuncs.pop_back();
 }
 
 int attrGetscope(ScePthreadAttr* attr, int* flag) {
@@ -1171,11 +1178,6 @@ uint64_t* getDTV(ScePthread_obj obj) {
   return thread->dtv;
 }
 
-DTVKey* getDTVList(ScePthread_obj obj) {
-  auto thread = getPthread(obj);
-  return thread->dtvKeys.data();
-}
-
 int getThreadId() {
   return getPthread(getSelf())->unique_id;
 }
@@ -1188,7 +1190,12 @@ void cleanup_thread() {
   auto thread = getPthread(getSelf());
   LOG_USE_MODULE(pthread);
   LOG_DEBUG(L"cleanup thread:%d", thread->unique_id);
-  thread->almost_done = true;
+
+  while (!thread->cleanupFuncs.empty()) {
+    auto const& [func, arg] = thread->cleanupFuncs.back();
+    func(arg);
+    thread->cleanupFuncs.pop_back();
+  }
 
   auto thread_dtors = *getThreadDtors();
 
@@ -1218,15 +1225,16 @@ ScePthread setup_thread(void* arg) {
   // Set Stack Data -> for page_fault allocs
   {
     NT_TIB* tib = getTIB();
-    // Don't set stack data -> crashes, expects zero addr?
-    // attr->setStackAddr(tib->StackBase);
-    // attr->setStackBottom(tib->StackLimit);
+
+    attr.setStackAddr(tib->StackLimit); // lowest addressable byte
     auto const stackSize = (uint64_t)tib->StackBase - (uint64_t)tib->StackLimit;
+
     LOG_DEBUG(L"thread[%d] stack addr:0x%08llx size:0x%08llx", thread->unique_id, tib->StackBase, stackSize);
-    if (attr->getStackSize() < stackSize) {
+    if (attr.getStackSize() < stackSize) {
       LOG_USE_MODULE(pthread);
       LOG_WARN(L"wrong stack size");
     }
+    attr.setStackSize(stackSize);
   }
   // -
 

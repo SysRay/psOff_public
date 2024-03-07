@@ -38,7 +38,6 @@ void* __registerLoggingModule(std::wstring&& name) {
     if (*getClient() == nullptr) {
       *getClient() = P7_Create_Client(TM("/P7.Pool=1024"));
       *trace       = P7_Create_Trace(*getClient(), __APPNAME);
-      P7_Set_Crash_Handler();
     }
   }
   IP7_Trace::hModule pModule;

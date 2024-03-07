@@ -1,6 +1,7 @@
 #include "common.h"
 #include "core/kernel/errors.h"
 #include "core/kernel/filesystem.h"
+#include "core/memory/memory.h"
 #include "logging.h"
 #include "types.h"
 
@@ -41,10 +42,10 @@ EXPORT SYSV_ABI int __NID(munlock)(const void* addr, size_t len) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(mprotect)(const void* addr, size_t len, int prot) {
-  LOG_USE_MODULE(mman_posix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+EXPORT SYSV_ABI int __NID(mprotect)(uint64_t addr, size_t len, int prot) {
+  if (memory::protect(addr, len, prot, nullptr)) return Ok;
+  setError_pthread((int)ErrCode::_EACCES);
+  return -1;
 }
 
 EXPORT SYSV_ABI int __NID(msync)(void* addr, size_t len, int flags) {

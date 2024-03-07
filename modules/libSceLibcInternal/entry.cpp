@@ -42,19 +42,19 @@ EXPORT SYSV_ABI int __NID(vprintf)(const char* str, va_list args) {
 }
 
 EXPORT SYSV_ABI int __NID(snprintf)(char* s, size_t n, const char* format, va_list args) {
-  return ::snprintf(s, n, format, args);
+  return std::snprintf(s, n, format, args);
 }
 
 EXPORT SYSV_ABI int __NID(fflush)(FILE* stream) {
-  return ::fflush(stream);
+  return std::fflush(stream);
 }
 
 EXPORT SYSV_ABI void* __NID(memset)(void* s, int c, size_t n) {
-  return ::memset(s, c, n);
+  return std::memset(s, c, n);
 }
 
 EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
-  return ::memmove(dst, src, n);
+  return std::memmove(dst, src, n);
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_atexit)(void (*func)(void*), void* arg, int moduleId) {

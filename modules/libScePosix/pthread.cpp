@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "core/kernel/errors.h"
+#include "core/memory/memory.h"
 #include "logging.h"
 #include "types.h"
 
@@ -368,5 +369,17 @@ EXPORT SYSV_ABI int __NID(pthread_attr_setscope)(ScePthreadAttr* attr, int flag)
 
 EXPORT SYSV_ABI int __NID(pthread_attr_getscope)(ScePthreadAttr* attr, int* flag) {
   return POSIX_CALL(pthread::attrGetscope(attr, flag));
+}
+
+EXPORT SYSV_ABI void __NID(pthread_cleanup_push)(thread_clean_func_t func, void* arg) {
+  pthread::cleanup_push(func, arg);
+}
+
+EXPORT SYSV_ABI void __NID(pthread_cleanup_pop)(int execute) {
+  pthread::cleanup_pop(execute);
+}
+
+EXPORT SYSV_ABI int __NID(getpagesize)(void) {
+  return memory::getpagesize();
 }
 }

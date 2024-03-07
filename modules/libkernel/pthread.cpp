@@ -400,4 +400,17 @@ EXPORT SYSV_ABI int scePthreadAttrSetscope(ScePthreadAttr* attr, int flag) {
 EXPORT SYSV_ABI int scePthreadAttrGetscope(ScePthreadAttr* attr, int* flag) {
   return pthread::attrGetscope(attr, flag);
 }
+
+EXPORT SYSV_ABI void __NID(__pthread_cleanup_push_imp)(thread_clean_func_t func, void* arg, SceCleanInfo* info) {
+  // fake it
+  info->func   = func;
+  info->arg    = arg;
+  info->onHeap = 0;
+
+  pthread::cleanup_push(func, arg);
+}
+
+EXPORT SYSV_ABI void __NID(__pthread_cleanup_pop_imp)(int execute) {
+  pthread::cleanup_pop(execute);
+}
 }

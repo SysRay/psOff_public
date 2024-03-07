@@ -7,6 +7,7 @@
 #include "logging.h"
 #include "types.h"
 
+#include <algorithm>
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -14,7 +15,7 @@
 #include <procParam.h>
 #include <runtimeExport.h>
 #include <windows.h>
-
+#undef min
 LOG_DEFINE_MODULE(libkernel);
 
 namespace {
@@ -48,9 +49,7 @@ EXPORT SYSV_ABI char const* const* __NID(getargv)(void) {
 }
 
 EXPORT SYSV_ABI int __NID(getpagesize)(void) {
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
-  return si.dwPageSize;
+  return memory::getpagesize();
 }
 
 EXPORT SYSV_ABI void* __NID(__tls_get_addr)(TlsInfo* info) {
@@ -221,10 +220,8 @@ EXPORT SYSV_ABI int sceKernelIsNeoMode() {
   return 0;
 }
 
-EXPORT SYSV_ABI int sceKernelMprotect(const void* addr, size_t len, int prot) {
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+EXPORT SYSV_ABI int sceKernelMprotect(uint64_t addr, size_t len, int prot) {
+  return memory::protect(addr, len, prot, nullptr) ? Ok : getErr(ErrCode::_EACCES);
 }
 
 EXPORT SYSV_ABI int sceKernelMsync(void* addr, size_t len, int flags) {
@@ -354,5 +351,25 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfoForUnwind(uint64_t addr, int n, SceMod
 
 EXPORT SYSV_ABI void* sceKernelGetProcParam() {
   return (void*)accessRuntimeExport()->mainModuleInfo().procParamAddr;
+}
+
+EXPORT SYSV_ABI int sceKernelGetModuleList(int* modules, size_t size, size_t* sizeOut) {
+  auto const modules_ = accessRuntimeExport()->getModules();
+
+  for (size_t n = 0; n < std::min(size, modules_.size()); ++n) {
+    modules[n] = modules_[n];
+  }
+  *sizeOut = modules_.size();
+  if (modules_.size() > size) return getErr(ErrCode::_ENOMEM);
+
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelDlsym(int moduleId, const char* symbol, uint64_t* pAddr) {
+  *pAddr = (uint64_t)accessRuntimeExport()->getSymbol(moduleId, symbol, false);
+  LOG_USE_MODULE(libkernel);
+  LOG_DEBUG(L"dlsym[%d] 0x%08llx %S", moduleId, *pAddr, symbol);
+  if (*pAddr == 0) return getErr(ErrCode::_EFAULT);
+  return Ok;
 }
 }
