@@ -28,16 +28,11 @@ void event_delete_func(Kernel::EventQueue::IKernelEqueue_t eq, Kernel::EventQueu
   accessVideoOut().getGraphics()->removeEvent(eq, event->event.ident);
 }
 
-struct SceCmdBuffer {
-  uint32_t* m_beginptr; ///< The beginning of the command buffer.
-  uint32_t* m_endptr;   ///< The end of the space allocated to the command buffer.
-  uint32_t* m_cmdptr;   ///< The current location to which new commands will be added.
-};
-
 static memory::_t_hook _hook_setVsShader;
 
-static SYSV_ABI void hook_setVsShader(SceCmdBuffer const* buffer) {
-  ((__stdcall void (*)(SceCmdBuffer const*))_hook_setVsShader.data.data())(buffer);
+static SYSV_ABI void hook_setVsShader(void* buffer) {
+  accessVideoOut().getGraphics()->registerCommandBuffer(buffer);
+  ((__stdcall void (*)(void const*))_hook_setVsShader.data.data())(buffer);
 }
 } // namespace
 
@@ -46,6 +41,7 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceGraphicsDriver";
 
 int SYSV_ABI sceGnmSetVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* vs_regs, uint32_t shader_modifier) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
 
   // Nothing to see! hooking caller
   static bool once = false;
@@ -65,17 +61,19 @@ int SYSV_ABI sceGnmSetVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
       }
     }
     // -
-    if (callAddr != 0) installHook_long((uintptr_t)hook_setVsShader, callAddr, _hook_setVsShader, 16);
+    if (callAddr != 0) {
+      LOG_INFO(L"Hooked %S", __FUNCTION__);
+      installHook_long((uintptr_t)hook_setVsShader, callAddr, _hook_setVsShader, 16);
+    }
   }
   // -- hooking caller
 
-  LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
 
   cmdOut[0] = Pm4::create(size, Pm4::R_VS);
   cmdOut[1] = shader_modifier;
   memcpy(&cmdOut[2], vs_regs, size - 1);
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
+
   return Ok;
 }
 
@@ -86,7 +84,7 @@ int SYSV_ABI sceGnmUpdateVsShader(uint32_t* cmdOut, uint64_t size, const uint32_
   cmdOut[0] = Pm4::create(size, Pm4::R_VS_UPDATE);
   cmdOut[1] = shader_modifier;
   memcpy(&cmdOut[2], vs_regs, size - 1);
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
+
   return Ok;
 }
 
@@ -101,7 +99,6 @@ int SYSV_ABI sceGnmSetPsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
     memcpy(&cmdOut[1], ps_regs, 8 + size);
   }
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -116,7 +113,6 @@ int SYSV_ABI sceGnmSetPsShader350(uint32_t* cmdOut, uint64_t size, const uint32_
     memcpy(&cmdOut[1], ps_regs, 8 + size);
   }
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -127,7 +123,6 @@ int SYSV_ABI sceGnmUpdatePsShader(uint32_t* cmdOut, uint64_t size, const uint32_
   cmdOut[0] = Pm4::create(size, Pm4::R_PS_UPDATE);
   memcpy(&cmdOut[1], ps_regs, 8 + size);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -137,7 +132,6 @@ int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint
   cmdOut[0] = Pm4::create(size, Pm4::R_PS_UPDATE);
   memcpy(&cmdOut[1], ps_regs, 8 + size);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -147,8 +141,6 @@ int SYSV_ABI sceGnmSetCsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
   cmdOut[0] = Pm4::create(size, Pm4::R_CS);
   cmdOut[1] = 0;
   memcpy(&cmdOut[2], cs_regs, size);
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -158,8 +150,6 @@ int SYSV_ABI sceGnmSetCsShaderWithModifier(uint32_t* cmdOut, uint64_t size, cons
   cmdOut[0] = Pm4::create(size, Pm4::R_CS);
   cmdOut[1] = shader_modifier;
   memcpy(&cmdOut[2], cs_regs, size);
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -170,8 +160,6 @@ int SYSV_ABI sceGnmSetEmbeddedVsShader(uint32_t* cmdOut, uint64_t size, uint32_t
   cmdOut[0] = Pm4::create(size, Pm4::R_VS_EMBEDDED);
   cmdOut[1] = shader_modifier;
   cmdOut[2] = id;
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -185,8 +173,6 @@ int SYSV_ABI sceGnmDrawIndex(uint32_t* cmdOut, uint64_t size, uint32_t index_cou
   cmdOut[3] = static_cast<uint32_t>((reinterpret_cast<uint64_t>(index_addr) >> 32u) & 0xffffffffu);
   cmdOut[4] = flags;
   cmdOut[5] = type;
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -198,7 +184,6 @@ int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index
   cmdOut[1] = index_count;
   cmdOut[2] = flags;
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -270,8 +255,6 @@ int SYSV_ABI sceGnmSetVgtControl(uint32_t* cmdOut, uint64_t size, uint32_t primG
     cmdOut[0] = Pm4::create(size, Pm4::R_VGT_CONTROL);
     cmdOut[1] = 0x2aa;
     cmdOut[2] = ((partialVsWaveMode & 1) << 16) or (primGroupSizeMinusOne & 0xffff);
-
-    accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
     return Ok;
   }
   return -1;
@@ -286,7 +269,6 @@ int SYSV_ABI sceGnmResetVgtControl(uint32_t* cmdOut, int32_t param) {
     cmdOut[1] = 0x2aa;
     cmdOut[2] = 0xff;
 
-    accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + 3);
     return Ok;
   }
   return -1;
@@ -297,8 +279,6 @@ uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState(uint32_t* cmdOut, uint64_t 
   LOG_DEBUG(L"%S", __FUNCTION__);
 
   cmdOut[0] = Pm4::create(2, Pm4::R_DRAW_RESET);
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut[2]) + 2);
   return 2;
 }
 
@@ -308,7 +288,6 @@ uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState175(uint32_t* cmdOut, uint64
 
   cmdOut[0] = Pm4::create(2, Pm4::R_DRAW_RESET);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + 2);
   return 2;
 }
 
@@ -318,7 +297,6 @@ uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState200(uint32_t* cmdOut, uint64
 
   cmdOut[0] = Pm4::create(2, Pm4::R_DRAW_RESET);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + 2);
   return 2;
 }
 
@@ -327,8 +305,6 @@ uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState350(uint32_t* cmdOut, uint64
   LOG_DEBUG(L"%S", __FUNCTION__);
 
   cmdOut[0] = Pm4::create(2, Pm4::R_DRAW_RESET);
-
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + 2);
   return 2;
 }
 
@@ -338,7 +314,6 @@ uint32_t SYSV_ABI sceGnmDispatchInitDefaultHardwareState(uint32_t* cmdOut, uint6
 
   cmdOut[0] = Pm4::create(2, Pm4::R_DISPATCH_RESET);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + 2);
   return 2;
 }
 
@@ -350,7 +325,6 @@ int SYSV_ABI sceGnmInsertWaitFlipDone(uint32_t* cmdOut, uint64_t size, uint32_t 
   cmdOut[1] = video_out_handle;
   cmdOut[2] = display_buffer_index;
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -364,7 +338,6 @@ int SYSV_ABI sceGnmDispatchDirect(uint32_t* cmdOut, uint64_t size, uint32_t thre
   cmdOut[3] = thread_group_z;
   cmdOut[4] = mode;
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -413,7 +386,6 @@ int SYSV_ABI sceGnmInsertPushMarker(uint32_t* cmdOut, uint64_t size, const char*
   cmdOut[0]      = Pm4::create(size, Pm4::R_PUSH_MARKER);
   // memcpy(cmdOut + 1, str, len);
 
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
   return Ok;
 }
 
@@ -422,7 +394,7 @@ int SYSV_ABI sceGnmInsertPopMarker(uint32_t* cmdOut, uint64_t size) {
   LOG_TRACE(L"%S", __FUNCTION__);
 
   cmdOut[0] = Pm4::create(size, Pm4::R_POP_MARKER);
-  accessVideoOut().getGraphics()->updateCmdBuffer(((uint64_t)cmdOut) + size);
+
   return Ok;
 }
 
