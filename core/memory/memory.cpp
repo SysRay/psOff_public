@@ -268,4 +268,38 @@ int getProtection(uint64_t address) {
   }
   return convProtection(mbi.Protect);
 }
+
+void installHook_long(uintptr_t dst, uintptr_t src, _t_hook& pGateway, size_t lenOpCodes) {
+  std::array<uint8_t, 14> codeGateway = {
+      0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,             // jmp qword
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // addr
+  };
+
+  // setup jmp back code
+  *(uint64_t*)&codeGateway[6] = (uint64_t)(src + lenOpCodes);
+
+  LOG_USE_MODULE(memory);
+  {
+    // Interceptor, jmp to dst
+    std::array code      = codeGateway;
+    *(uint64_t*)&code[6] = (uint64_t)(dst);
+
+    int oldMode;
+    protect(src, code.size(), SceProtExecute | SceProtRead | SceProtWrite, &oldMode);
+
+    memcpy(pGateway.data.data(), (uint8_t*)src, lenOpCodes); // save code -> add to gateway
+    memcpy((uint8_t*)src, code.data(), code.size());
+
+    if (::FlushInstructionCache(GetCurrentProcess(), (void*)src, code.size()) == 0) {
+      LOG_ERR(L"FlushInstructionCache() failed: 0x%04x", static_cast<uint32_t>(GetLastError()));
+      return;
+    }
+    protect(src, code.size(), oldMode);
+    // - interceptor
+  }
+
+  memcpy(pGateway.data.data() + lenOpCodes, (uint8_t*)codeGateway.data(), codeGateway.size()); // cpy to gateway
+
+  protect((uintptr_t)pGateway.data.data(), pGateway.data.size(), SceProtExecute | SceProtRead, nullptr);
+}
 } // namespace memory
