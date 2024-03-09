@@ -2,6 +2,8 @@
 
 **In development**
 
+![Discord](https://img.shields.io/discord/1215784508708749322?style=plastic&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FJd2AuBN6eW)
+
 Tested only with AMD GPU. May not run with NVidia, currently.
 
 Runtime and rendering part is private currently.
@@ -37,8 +39,8 @@ I don't serve spaghetti only bugs.
 For development:
 
 + Ninja
-+ CMake
-+ Visual Studio 2019, for the build environment (clang-cl,c++20)
++ CMake 3.24+
++ Visual Studio 2019, for the build environment (uses clang-cl,c++20)
 
 ### Installing
 For testing, just download the latest release. And install the Vulkan SDK
@@ -70,3 +72,5 @@ Project uses p7 for tracing -> Baical server.
 * modules: the ps4 libraries
 * core: kernel, memory etc.
 * emulator.exe: (From Releases) contains the runtime and rendering
+
+I'm using vscode, '.vscode\tasks.json' contains the config&build tasks.
