@@ -37,7 +37,7 @@ jobs:
           cache: true
 
       - name: Configure
-        run: cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+        run: cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
 
       - name: Build
         run: cmake --build _build/_Release -j4
