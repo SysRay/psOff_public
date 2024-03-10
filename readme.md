@@ -1,10 +1,9 @@
 # psOff - PlayStation 4 Emulation (Windows)
 
-**In development**
-
 ![Discord](https://img.shields.io/discord/1215784508708749322?style=plastic&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FJd2AuBN6eW)
 
-Tested only with AMD GPU. May not run with NVidia, currently.
+**In development. Does it run ...? No!**
+
 
 Runtime and rendering part is private currently.
 Target is to have a standalone framework for shader reconstruction, command buffer translation and managing the GPU memory, for others to use. This project uses it to run "Linux" binaries on windows.
@@ -17,7 +16,7 @@ Target is to have a standalone framework for shader reconstruction, command buff
 No, the fps is not fake :)
 
 ## Description
-Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries. 
+Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries.
 
 It renders decently fast, the planned changes will make it almost perfect. Had to reverse engineer and try out a lot, before.
 
@@ -40,12 +39,10 @@ For development:
 
 + Ninja
 + CMake 3.24+
-+ Visual Studio 2019, for the build environment (uses clang-cl,c++20)
++ Visual Studio 2019 or newer, it' just for the build environment (uses clang-cl,c++20)
 
 ### Installing
-For testing, just download the latest release. And install the Vulkan SDK
-
-For development, set CMAKE_INSTALL_PREFIX to the downloaded emulators folder.
+For testing, just download the latest release and install the Vulkan SDK
 
 ### Executing program
 ```
@@ -56,7 +53,7 @@ If no --root is defined, it uses the folder from --file \
 For testing/benchmark, add --vsync=0
 
 
-It expects the Target to be in the following format:
+It expects the undecrypted Target to be in the following format:
 ```
 sce_module
 sce_sys
@@ -65,7 +62,7 @@ eboot.bin
 
 ## Development
 
-Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel". 
+Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel".
 
 Project uses p7 for tracing -> Baical server.
 

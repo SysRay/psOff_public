@@ -30,8 +30,6 @@ using ScePthread            = PthreadPrivate*;
 
 using ScePthreadKey = int;
 
-using thread_dtors_func_t = SYSV_ABI void (*)();
-
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)
 #elif defined(__APICALL_IMPORT)
@@ -46,7 +44,6 @@ namespace pthread {
 
 __APICALL uint8_t*  getTLSStaticBlock(ScePthread_obj obj);
 __APICALL uint64_t* getDTV(ScePthread_obj obj);
-__APICALL DTVKey*   getDTVList(ScePthread_obj obj);
 
 __APICALL int getThreadId();
 __APICALL int getThreadId(ScePthread_obj obj);
@@ -185,6 +182,9 @@ __APICALL int attrSetscope(ScePthreadAttr* attr, int flag);
 __APICALL int attrGetscope(ScePthreadAttr* attr, int* flag);
 
 __APICALL void cxa_finalize(void* /*p*/);
+
+__APICALL void cleanup_push(thread_clean_func_t func, void* arg);
+__APICALL void cleanup_pop(int execute);
 
 } // namespace pthread
 

@@ -16,9 +16,8 @@ constexpr size_t DTV_MAX_KEYS = 256;
 
 struct PthreadAttrPrivate {
   private:
-  size_t stackSize   = DEFAULT_STACKSIZE;
-  void*  stackAddr   = 0; /// if != 0 use the custum stack
-  void*  stackBottom = 0;
+  size_t stackSize = DEFAULT_STACKSIZE;
+  void*  stackAddr = 0; /// if != 0 use the custum stack
 
   SceSchedParam    shedParam   = {.sched_priority = 700};
   SceKernelCpumask affinity    = 0x7f;
@@ -35,10 +34,6 @@ struct PthreadAttrPrivate {
   auto getStackAddr() const noexcept { return stackAddr; }
 
   void setStackAddr(decltype(PthreadAttrPrivate::stackAddr) param) noexcept { stackAddr = param; }
-
-  auto getStackBottom() const noexcept { return stackBottom; }
-
-  void setStackBottom(decltype(PthreadAttrPrivate::stackBottom) param) noexcept { stackBottom = param; }
 
   auto getStackSize() const noexcept { return stackSize; }
 
@@ -115,20 +110,18 @@ struct PthreadPrivate {
 
   boost::thread p;
 
-  PthreadAttrPrivate*  attr        = nullptr;
-  pthread_entry_func_t entry       = nullptr;
-  void*                arg         = nullptr;
-  int                  unique_id   = 0;
-  std::atomic_bool     started     = false;
-  std::atomic_bool     almost_done = false;
-  std::atomic_bool     free        = false;
-  int                  policy      = 0;
+  PthreadAttrPrivate   attr      = {};
+  pthread_entry_func_t entry     = nullptr;
+  void*                arg       = nullptr;
+  int                  unique_id = 0;
+  std::atomic_bool     started   = false;
+  int                  policy    = 0;
+
+  std::vector<std::pair<thread_clean_func_t, void*>> cleanupFuncs;
 
   bool detached = false; // fake detach
 
   sce_jmp_buf threadEntryBuf;
-
-  std::array<DTVKey, DTV_MAX_KEYS> dtvKeys {0};
 
   ~PthreadPrivate() = default;
 };

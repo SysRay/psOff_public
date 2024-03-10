@@ -19,8 +19,7 @@ constexpr std::array requiredExtensions {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME, VK_KHR_MAINTENANCE_2_EXTENSION_NAME, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
     VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
-    VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
-    VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+    VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
     // VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
     "VK_KHR_external_memory_win32"};
 
@@ -341,7 +340,43 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
   for (const auto& device: devices) {
     skipDevice = false;
 
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObj {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT, .pNext = nullptr};
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT uniBlock {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES,
+        .pNext = nullptr,
+    };
+
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamic3Features {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT,
+        .pNext = &uniBlock,
+    };
+
+    VkPhysicalDeviceDepthClipControlFeaturesEXT depthClipControlFeatures {
+        .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT,
+        .pNext            = &extendedDynamic3Features,
+        .depthClipControl = VK_TRUE,
+    };
+
+    VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeature {
+        .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+        .pNext            = &depthClipControlFeatures,
+        .dynamicRendering = VK_TRUE,
+    };
+
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeature {
+        .sType             = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
+        .pNext             = &dynamicRenderingFeature,
+        .timelineSemaphore = VK_TRUE,
+    };
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddress {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
+                                                                     .pNext = &timelineSemaphoreFeature};
+
+    VkPhysicalDeviceDescriptorIndexingFeatures descIndexing {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+        .pNext = &bufferDeviceAddress,
+    };
+
+    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObj {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT, .pNext = &descIndexing};
 
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeature {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
                                                                 .pNext = &shaderObj};
@@ -351,10 +386,7 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
         .pNext = &indexingFeature,
     };
 
-    VkPhysicalDeviceFeatures2 deviceFeatures {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = &colorWriteExt,
-    };
+    VkPhysicalDeviceFeatures2 deviceFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &colorWriteExt};
 
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -509,7 +541,7 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
 
 VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VulkanExtensions const extensions, VulkanQueues const& queues,
                       bool enableValidation) {
-
+  LOG_USE_MODULE(vulkanSetup);
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfo(queues.familyCount);
   std::vector<std::vector<float>>      queuePrio(queues.familyCount);
 
@@ -535,11 +567,11 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
       .geometryShader = VK_TRUE, .fillModeNonSolid = VK_TRUE, .wideLines = VK_TRUE, .samplerAnisotropy = VK_TRUE, .fragmentStoresAndAtomics = VK_TRUE,
       // deviceFeatures.shaderImageGatherExtended = VK_TRUE;
   };
+
   VkPhysicalDeviceInlineUniformBlockFeaturesEXT uniBlock {
-      .sType                                              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES,
-      .pNext                                              = nullptr,
-      .inlineUniformBlock                                 = VK_TRUE,
-      .descriptorBindingInlineUniformBlockUpdateAfterBind = VK_TRUE,
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES, .pNext = nullptr,
+      //.inlineUniformBlock                                 = VK_TRUE,
+      //.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_TRUE,
   };
 
   VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT, .shaderObject = VK_TRUE};
@@ -582,17 +614,15 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
   };
 
   VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddress {
-      .sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
-      .pNext               = &colorWriteExt,
-      .bufferDeviceAddress = VK_TRUE,
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, .pNext = &colorWriteExt, .bufferDeviceAddress = VK_TRUE,
 
-      .bufferDeviceAddressCaptureReplay = enableValidation ? VK_TRUE : VK_FALSE,
+      //.bufferDeviceAddressCaptureReplay = enableValidation ? VK_TRUE : VK_FALSE,
   };
 
-  VkPhysicalDeviceDescriptorIndexingFeatures descIndexing {
+  VkPhysicalDeviceDescriptorIndexingFeatures const descIndexing {
       .sType                                         = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
       .pNext                                         = &bufferDeviceAddress,
-      .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+      .descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE, // Todo: only optional!
       .descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE,
       .descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE,
       .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
@@ -615,7 +645,9 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
   };
 
   VkDevice device = nullptr;
-  vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+  if (auto result = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device); result != VK_SUCCESS) {
+    LOG_CRIT(L"Couldn't create vulkanDevice %S", string_VkResult(result));
+  }
 
   return device;
 }
@@ -701,9 +733,6 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool enableVali
   }
 
   obj->deviceInfo.device = createDevice(obj->deviceInfo.physicalDevice, surface, extensions, queues, enableValidation);
-  if (obj->deviceInfo.device == nullptr) {
-    LOG_CRIT(L"Couldn't create vulkanDevice");
-  }
 
   // Create queues
   {

@@ -4,6 +4,6 @@ include(../setupModule.cmake)
 set(libName libSceNet)
 project(${libName})
 
-add_library(${libName} SHARED entry.cpp epoll.cpp socket.cpp)
+add_library(${libName} SHARED entry.cpp epoll.cpp socket.cpp resolver.cpp)
 
 setupModule(${libName})

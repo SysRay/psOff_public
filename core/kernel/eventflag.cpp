@@ -8,7 +8,6 @@
 #include <boost/thread/condition.hpp>
 #include <memory>
 
-
 LOG_DEFINE_MODULE(KernelEventFlag);
 
 namespace Kernel::EventFlag {
@@ -56,18 +55,18 @@ class KernelEventFlag: public IKernelEventFlag {
 KernelEventFlag::~KernelEventFlag() {
   boost::unique_lock lock(m_mutex_cond);
 
-  m_cond_var_status.wait(lock, [=] { return m_status == Status::Set; });
+  m_cond_var_status.wait(lock, [this] { return m_status == Status::Set; });
 
   m_status = Status::Deleted;
   m_cond_var.notify_all();
 
-  m_cond_var_status.wait(lock, [=] { return m_waitingThreads == 0; });
+  m_cond_var_status.wait(lock, [this] { return m_waitingThreads == 0; });
 }
 
 void KernelEventFlag::set(uint64_t bits) {
   boost::unique_lock lock(m_mutex_cond);
 
-  m_cond_var_status.wait(lock, [=] { return m_status == Status::Set; });
+  m_cond_var_status.wait(lock, [this] { return m_status == Status::Set; });
   m_bits |= bits;
   m_cond_var.notify_all();
 }
@@ -75,14 +74,14 @@ void KernelEventFlag::set(uint64_t bits) {
 void KernelEventFlag::clear(uint64_t bits) {
   boost::unique_lock lock(m_mutex_cond);
 
-  m_cond_var_status.wait(lock, [=] { return m_status == Status::Set; });
+  m_cond_var_status.wait(lock, [this] { return m_status == Status::Set; });
   m_bits &= bits;
 }
 
 void KernelEventFlag::cancel(uint64_t bits, int* num_waiting_threads) {
   boost::unique_lock lock(m_mutex_cond);
 
-  m_cond_var_status.wait(lock, [=] { return m_status == Status::Set; });
+  m_cond_var_status.wait(lock, [this] { return m_status == Status::Set; });
   if (num_waiting_threads != nullptr) {
     *num_waiting_threads = m_waitingThreads;
   }
@@ -91,7 +90,7 @@ void KernelEventFlag::cancel(uint64_t bits, int* num_waiting_threads) {
   m_bits = bits;
 
   m_cond_var.notify_all();
-  m_cond_var_status.wait(lock, [=] { return m_waitingThreads == 0; });
+  m_cond_var_status.wait(lock, [this] { return m_waitingThreads == 0; });
   setStatus(Status::Set);
 }
 
@@ -112,7 +111,7 @@ int KernelEventFlag::wait(uint64_t bits, WaitMode wait_mode, ClearMode clear_mod
 
   auto const start = boost::chrono::system_clock::now();
   ++m_waitingThreads;
-  auto waitFunc = [=] {
+  auto waitFunc = [this, wait_mode, bits] {
     return (m_status == Status::Canceled || m_status == Status::Deleted || (wait_mode == WaitMode::And && (m_bits & bits) == bits) ||
             (wait_mode == WaitMode::Or && (m_bits & bits) != 0));
   };

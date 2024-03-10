@@ -10,7 +10,7 @@
         "executable": "cmd.exe",
         "args": [
           "/C",
-          "\"C:/PROGRA~2/MICROS~1/2019/Community/VC/Auxiliary/Build/vcvars64.bat\"",
+          "\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat\"",
           "&&"
         ]
       }

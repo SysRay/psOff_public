@@ -4,6 +4,9 @@
 using pthread_entry_func_t          = SYSV_ABI void* (*)(void*);
 using pthread_key_destructor_func_t = SYSV_ABI void (*)(void*);
 
+using thread_dtors_func_t = SYSV_ABI void (*)();
+using thread_clean_func_t = SYSV_ABI void (*)(void*);
+
 struct SceSchedParam {
   int sched_priority;
 };
@@ -33,4 +36,11 @@ enum class SceCancelState {
 enum class SceCancelType {
   DEFERRED,
   ASYNC = 4,
+};
+
+struct SceCleanInfo {
+  SceCleanInfo*       prev;
+  thread_clean_func_t func;
+  void*               arg;
+  int                 onHeap;
 };

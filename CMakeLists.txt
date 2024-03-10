@@ -7,7 +7,7 @@ unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS_RELEASE "/MD /EHa /Zi /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -34,11 +34,6 @@ message("Vulkan Path: ${VulkanPath}")
 # # - Gather Infos
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  # is subproject -> fake targets
-  add_custom_target(dll2Nids)
-endif()
-
 #
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
@@ -56,6 +51,8 @@ link_directories(BEFORE
 )
 
 add_subdirectory(tools/logging) # include before link_libraries
+add_subdirectory(tools/dll2Nids)
+add_dependencies(dll2Nids third_party)
 
 link_libraries(
   logging.lib

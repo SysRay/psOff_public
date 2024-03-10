@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <stdint.h>
 
 constexpr int SceProtRead    = 1;
@@ -20,6 +21,11 @@ constexpr inline bool isExecute(int prot) {
   return (prot & 0x4) > 0;
 }
 
+struct _t_hook {
+  std::array<uint8_t, 14 + 8> data; // Should be enough for inserting the hook (min 14 max 14+8)
+};
+
+__APICALL int       getpagesize(void);
 __APICALL uint64_t  getTotalSystemMemory();
 __APICALL uintptr_t reserve(uint64_t start, uint64_t size, uint64_t alignment, bool isGpu);
 __APICALL uint64_t  commit(uintptr_t baseAddr, uint64_t offset, uint64_t size, uint64_t alignment, int prot);
@@ -31,6 +37,8 @@ __APICALL bool      allocFixed(uint64_t address, uint64_t size, int prot);
 __APICALL bool      free(uint64_t address);
 __APICALL bool      protect(uint64_t address, uint64_t size, int prot, int* oldMode = nullptr);
 __APICALL int       getProtection(uint64_t address);
+
+__APICALL void installHook_long(uintptr_t dst, uintptr_t src, _t_hook& pGateway, size_t lenOpCodes);
 } // namespace memory
 
 #undef __APICALL
