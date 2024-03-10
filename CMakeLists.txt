@@ -34,11 +34,6 @@ message("Vulkan Path: ${VulkanPath}")
 # # - Gather Infos
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  # is subproject -> fake targets
-  add_custom_target(dll2Nids)
-endif()
-
 #
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
