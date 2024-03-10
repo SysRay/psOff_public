@@ -14,6 +14,8 @@
     "-fexceptions"
   ],
   "ccls.index.threads": 0,
+
+  "cmake.buildDirectory": "${workspaceFolder}/_build",
   "editor.tabSize": 2,
   "git.ignoredRepositories": [
     "third_party/boost",
