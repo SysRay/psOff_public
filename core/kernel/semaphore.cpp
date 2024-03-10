@@ -71,7 +71,7 @@ Semaphore::~Semaphore() {
   }
 
   // Wait for Threads to leave wait
-  m_condState.wait(lock, [=] { return m_countThreads == 0; });
+  m_condState.wait(lock, [this] { return m_countThreads == 0; });
 }
 
 int Semaphore::cancel(int setCount, int* numWaitingThreads) {
@@ -90,7 +90,7 @@ int Semaphore::cancel(int setCount, int* numWaitingThreads) {
   }
 
   // Wait for Threads to leave wait
-  m_condState.wait(lock, [=] { return m_countThreads == 0; });
+  m_condState.wait(lock, [this] { return m_countThreads == 0; });
   m_state = Status::Set;
   return Ok;
 }
@@ -101,7 +101,7 @@ int Semaphore::signal(int signalCount) {
   boost::unique_lock lock(m_mutex);
   LOG_TRACE(L"KernelSema(%llu) name:%S signal:%d count:%d", m_id, m_name.c_str(), signalCount, m_count);
 
-  m_condState.wait(lock, [=] { return m_state != Status::Canceled; });
+  m_condState.wait(lock, [this] { return m_state != Status::Canceled; });
   if (m_state == Status::Deleted) {
     return getErr(ErrCode::_EACCES);
   }
@@ -139,14 +139,14 @@ int Semaphore::wait_internal(int needCount, uint32_t* pMicros, boost::unique_loc
     m_countThreads++;
     if (pMicros != nullptr) {
       if (!condVar->wait_for(lock, boost::chrono::microseconds(micros),
-                             [=] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); })) {
+                             [this, condVar, needCount] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); })) {
         LOG_WARN(L"<- KernelSema(%llu) name:%S waitCount:%llu timeout", m_id, m_name.c_str(), waitCount);
         *pMicros = 0;
         m_countThreads--;
         return getErr(ErrCode::_ETIMEDOUT);
       }
     } else {
-      condVar->wait(lock, [=] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); });
+      condVar->wait(lock, [this, condVar, needCount] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); });
     }
 
     if (m_fifo) m_condQueue.pop();

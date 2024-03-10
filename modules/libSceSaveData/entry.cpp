@@ -4,6 +4,8 @@
 #include "logging.h"
 #include "types.h"
 
+#include <mutex>
+
 LOG_DEFINE_MODULE(libSceSaveData);
 
 namespace {

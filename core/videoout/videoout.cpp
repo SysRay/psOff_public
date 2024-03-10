@@ -556,7 +556,7 @@ std::thread VideoOut::createGlfwThread() {
 
     while (!m_stop) {
       std::unique_lock lock(m_mutexInt);
-      m_condGlfw.wait_for(lock, std::chrono::microseconds(m_vblankTime), [=] { return m_stop || !m_messages.empty(); });
+      m_condGlfw.wait_for(lock, std::chrono::microseconds(m_vblankTime), [this] { return m_stop || !m_messages.empty(); });
       if (m_stop) break;
 
       if (m_messages.empty()) {
