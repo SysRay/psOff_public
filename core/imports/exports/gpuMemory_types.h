@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utility/utility.h"
-#include "vma/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
 enum class ImageType : uint8_t { ColorAttachment, DepthStencilTarget, Image, Buffer, NUM_ITEMS };
 
