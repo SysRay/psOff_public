@@ -1,6 +1,27 @@
 name: build
 
-on: [ push, pull_request ]
+on:
+  pull_request:
+    types: [opened, reopened]
+    paths:
+      - .github/**
+      - core/**
+      - modules/**
+      - modules_include/**
+      - third_part/**
+      - tools/**
+      - utility/**
+      - CMakeLists.txt
+  push:
+    paths:
+      - .github/**
+      - core/**
+      - modules/**
+      - modules_include/**
+      - third_part/**
+      - tools/**
+      - utility/**
+      - CMakeLists.txt
 
 jobs:
   build:
