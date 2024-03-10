@@ -449,6 +449,11 @@ int SYSV_ABI sceGnmUnregisterResource(uint32_t resource_handle) {
   return Ok;
 }
 
+void SYSV_ABI sceGnmDebugHardwareStatus(int flag) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_ERR(L"DebugHardwareStatus: Something went wrong");
+}
+
 // - tracing
 // #####################################
 

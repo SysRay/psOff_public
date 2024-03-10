@@ -1,5 +1,6 @@
 #pragma once
 #include "codes.h"
+#include "modules_include/common.h"
 #include "utility/utility.h"
 
 using SceKernelModule = int32_t;
@@ -64,4 +65,29 @@ struct SceKernelAioRWRequest {
   void*               buf;
   SceKernelAioResult* result;
   int                 fd;
+};
+
+enum class rusageWho : int {
+  Children = -1,
+  Self     = 0,
+  Thread   = 1,
+};
+
+struct rusage_t {
+  SceKernelTimeval ru_utime    = {0, 0};
+  SceKernelTimeval ru_stime    = {0, 0};
+  uint32_t         ru_maxrss   = 0;
+  uint32_t         ru_ixrss    = 0;
+  uint32_t         ru_idrss    = 0;
+  uint32_t         ru_isrss    = 0;
+  uint32_t         ru_minflt   = 0;
+  uint32_t         ru_majflt   = 0;
+  uint32_t         ru_nswap    = 0;
+  uint32_t         ru_inblock  = 0;
+  uint32_t         ru_oublock  = 0;
+  uint32_t         ru_msgsnd   = 0;
+  uint32_t         ru_msgrcv   = 0;
+  uint32_t         ru_nsignals = 0;
+  uint32_t         ru_nvcsw    = 0;
+  uint32_t         ru_nivcsw   = 0;
 };

@@ -53,7 +53,7 @@ EXPORT SYSV_ABI int __NID(getpagesize)(void) {
 }
 
 EXPORT SYSV_ABI void* __NID(__tls_get_addr)(TlsInfo* info) {
-  return (uint8_t*)accessRuntimeExport()->getTLSAddr(info->index) + info->offset;
+  return accessRuntimeExport()->getTLSAddr(info->index, info->offset);
 }
 
 EXPORT SYSV_ABI void __NID(__stack_chk_fail)() {
@@ -370,6 +370,11 @@ EXPORT SYSV_ABI int sceKernelDlsym(int moduleId, const char* symbol, uint64_t* p
   LOG_USE_MODULE(libkernel);
   LOG_DEBUG(L"dlsym[%d] 0x%08llx %S", moduleId, *pAddr, symbol);
   if (*pAddr == 0) return getErr(ErrCode::_EFAULT);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(getrusage)(rusageWho who, rusage_t* usage) {
+  *usage = rusage_t();
   return Ok;
 }
 }

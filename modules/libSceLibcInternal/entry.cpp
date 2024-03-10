@@ -53,6 +53,10 @@ EXPORT SYSV_ABI void* __NID(memset)(void* s, int c, size_t n) {
   return std::memset(s, c, n);
 }
 
+EXPORT SYSV_ABI void* __NID(memcpy)(void* d, void* s, size_t n) {
+  return std::memcpy(d, s, n);
+}
+
 EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
   return std::memmove(dst, src, n);
 }
