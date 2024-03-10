@@ -544,6 +544,21 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
   return std::make_pair(bestIt->queue, bestIt->family);
 }
 
+void cbWindow_close(GLFWwindow* window) {
+  // glfwDestroyWindow(window.window);
+  // Todo submit close event, cleanup
+  // m_stop = true;
+  // lock.unlock();
+  // m_condGlfw.notify_one();
+  // m_threadGlfw.join();
+  // // accessGraphics().stop();
+  // m_graphics.reset();
+  // deinitVulkan(m_vulkanObj);
+
+  exit(0); // just hard exit for now.
+           // todo clean shutdown (file syncs etc.)
+}
+
 std::thread VideoOut::createGlfwThread() {
   return std::thread([this] {
     util::setThreadName("VideoOut");
@@ -559,6 +574,7 @@ std::thread VideoOut::createGlfwThread() {
       m_condGlfw.wait_for(lock, std::chrono::microseconds(m_vblankTime), [this] { return m_stop || !m_messages.empty(); });
       if (m_stop) break;
 
+      // Handle VBlank
       if (m_messages.empty()) {
         using namespace std::chrono;
 
@@ -571,6 +587,8 @@ std::thread VideoOut::createGlfwThread() {
         }
         continue;
       }
+      // -
+
       auto       item   = m_messages.front();
       auto const index  = item.windowIndex;
       auto&      window = m_windows[index];
@@ -599,6 +617,8 @@ std::thread VideoOut::createGlfwThread() {
           } else {
             vulkan::createSurface(m_vulkanObj, window.window, window.surface);
           }
+
+          glfwSetWindowCloseCallback(window.window, cbWindow_close);
 
           *item.done = true;
           m_condDone.notify_one();
