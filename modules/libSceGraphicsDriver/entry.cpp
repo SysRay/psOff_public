@@ -1,13 +1,12 @@
 #include "common.h"
+#include "core/imports/exports/graphics.h"
+#include "core/imports/exports/pm4_custom.h"
 #include "core/kernel/eventqueue_types.h"
 #include "core/memory/memory.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
-
-#include <graphics.h>
-#include <pm4_custom.h>
 
 LOG_DEFINE_MODULE(libSceGraphicsDriver);
 

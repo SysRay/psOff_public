@@ -4,6 +4,8 @@
 #include "intern.h"
 #undef __APICALL_EXTERN
 
+#include "core/imports/exports/gpuMemory_types.h"
+#include "core/imports/exports/graphics.h"
 #include "core/imports/imports_func.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
@@ -22,8 +24,6 @@
 #include <array>
 #include <assert.h>
 #include <format>
-#include <gpuMemory_types.h>
-#include <graphics.h>
 #include <list>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>

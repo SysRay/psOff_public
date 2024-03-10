@@ -1,6 +1,6 @@
 #include "vulkanHelper.h"
 
-// #include "core/graphics/objects/colorAttachment.h"
+#include "core/imports/exports/gpuMemory_types.h"
 #include "logging.h"
 #include "utility/utility.h"
 
@@ -11,7 +11,6 @@
 #include <boost/assert.hpp>
 #include <chrono>
 #include <format>
-#include <gpuMemory_types.h>
 #include <mutex>
 #include <optick.h>
 #include <string>

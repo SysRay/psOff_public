@@ -1,6 +1,6 @@
 #pragma once
 
-#include <runtimeExport.h>
+#include "exports/runtimeExport.h"
 
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)

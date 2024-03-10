@@ -1,6 +1,6 @@
-#include "gpuMemory_types.h"
+#include "exports/gpuMemory_types.h"
+#include "exports/graphics.h"
 
-#include <graphics.h>
 #include <memory>
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>

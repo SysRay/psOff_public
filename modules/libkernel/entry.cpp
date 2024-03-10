@@ -1,5 +1,7 @@
 #include "common.h"
 #include "core/fileManager/fileManager.h"
+#include "core/imports/exports/procParam.h"
+#include "core/imports/exports/runtimeExport.h"
 #include "core/imports/imports_runtime.h"
 #include "core/kernel/errors.h"
 #include "core/memory/memory.h"
@@ -12,8 +14,6 @@
 #include <boost/thread.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
-#include <procParam.h>
-#include <runtimeExport.h>
 #include <windows.h>
 #undef min
 LOG_DEFINE_MODULE(libkernel);

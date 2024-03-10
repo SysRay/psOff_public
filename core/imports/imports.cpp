@@ -6,10 +6,10 @@
 #include "imports_runtime.h"
 
 #undef __APICALL_EXTERN
+#include "core/imports/exports/runtimeExport.h"
 #include "utility/utility.h"
 
 #include <assert.h>
-#include <runtimeExport.h>
 
 // Change if called from construct is needed
 static registerDisplayBuffer_t g_registerDisplayBuffer = nullptr;
