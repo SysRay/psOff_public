@@ -56,6 +56,8 @@ link_directories(BEFORE
 )
 
 add_subdirectory(tools/logging) # include before link_libraries
+add_subdirectory(tools/dll2Nids)
+add_dependencies(dll2Nids third_party)
 
 link_libraries(
   logging.lib

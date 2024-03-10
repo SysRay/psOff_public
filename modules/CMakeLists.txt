@@ -17,6 +17,7 @@ add_compile_definitions(__APICALL_IMPORT)
 
 FOREACH(subdir ${SUBDIRS})
   ADD_SUBDIRECTORY(${subdir})
+  add_dependencies(${subdir} dll2Nids)
 ENDFOREACH()
 
 install(TARGETS ${SUBDIRS}
