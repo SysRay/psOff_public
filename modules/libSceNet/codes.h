@@ -126,3 +126,8 @@ constexpr int32_t ERROR_RESOLVER_ENOTINIT        = -2143223316;
 
 constexpr size_t SCE_NET_ETHER_ADDR_LEN   = 6;
 constexpr size_t SCE_NET_ETHER_ADDRSTRLEN = 18;
+
+constexpr size_t SCE_NET_RESOLVER_MULTIPLE_RECORDS_MAX = 16;
+
+constexpr size_t SCE_NET_RESOLVER_PORT             = 53;
+constexpr size_t SCE_NET_RESOLVER_HOSTNAME_LEN_MAX = 255;
