@@ -4,28 +4,31 @@ on:
   pull_request:
     types: [opened, reopened]
     paths:
-      - .github/**
-      - core/**
-      - modules/**
-      - modules_include/**
-      - third_part/**
-      - tools/**
-      - utility/**
-      - CMakeLists.txt
-    paths-ignore:
-      - '**.md'
+      - '.github/workflows/build.yml'
+      - '**/CMakeLists.txt'
+      - 'CMakeLists.txt'
+      - '**.cmake'
+      - '**.cpp'
+      - '**.cxx'
+      - '**.cc'
+      - '**.c'
+      - '**.hpp'
+      - '**.hh'
+      - '**.h'
+
   push:
     paths:
-      - .github/**
-      - core/**
-      - modules/**
-      - modules_include/**
-      - third_part/**
-      - tools/**
-      - utility/**
-      - CMakeLists.txt
-    paths-ignore:
-      - '**.md'
+      - '.github/workflows/build.yml'
+      - '**/CMakeLists.txt'
+      - 'CMakeLists.txt'
+      - '**.cmake'
+      - '**.cpp'
+      - '**.cxx'
+      - '**.cc'
+      - '**.c'
+      - '**.hpp'
+      - '**.hh'
+      - '**.h'
 
 jobs:
   build:
