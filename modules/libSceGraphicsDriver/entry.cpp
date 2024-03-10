@@ -42,30 +42,30 @@ EXPORT const char* MODULE_NAME = "libSceGraphicsDriver";
 int SYSV_ABI sceGnmSetVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* vs_regs, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
 
-  // Nothing to see! hooking caller
-  static bool once = false;
+  // // Nothing to see! hooking caller
+  // static bool once = false;
 
-  if (!once) {
-    once               = true;
-    auto const retAddr = (uint64_t)_ReturnAddress();
-    // find start of caller
-    std::array     funcStart = {0x55, 0x48, 0x89, 0xe5};
-    uint8_t const* pCode     = (uint8_t const*)retAddr - 5 - funcStart.size();
+  // if (!once) {
+  //   once               = true;
+  //   auto const retAddr = (uint64_t)_ReturnAddress();
+  //   // find start of caller
+  //   std::array     funcStart = {0x55, 0x48, 0x89, 0xe5};
+  //   uint8_t const* pCode     = (uint8_t const*)retAddr - 5 - funcStart.size();
 
-    uint64_t callAddr = 0;
-    for (size_t n = 0; n < 200; n++, pCode--) {
-      if (std::equal(funcStart.data(), funcStart.data() + funcStart.size(), pCode)) {
-        callAddr = (uint64_t)pCode;
-        break;
-      }
-    }
-    // -
-    if (callAddr != 0) {
-      LOG_INFO(L"Hooked %S", __FUNCTION__);
-      installHook_long((uintptr_t)hook_setVsShader, callAddr, _hook_setVsShader, 16);
-    }
-  }
-  // -- hooking caller
+  //   uint64_t callAddr = 0;
+  //   for (size_t n = 0; n < 200; n++, pCode--) {
+  //     if (std::equal(funcStart.data(), funcStart.data() + funcStart.size(), pCode)) {
+  //       callAddr = (uint64_t)pCode;
+  //       break;
+  //     }
+  //   }
+  //   // -
+  //   if (callAddr != 0) {
+  //     LOG_INFO(L"Hooked %S", __FUNCTION__);
+  //     installHook_long((uintptr_t)hook_setVsShader, callAddr, _hook_setVsShader, 16);
+  //   }
+  // }
+  // // -- hooking caller
 
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
 
