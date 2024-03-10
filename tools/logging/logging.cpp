@@ -42,7 +42,6 @@ void* __registerLoggingModule(std::wstring&& name) {
   }
   IP7_Trace::hModule pModule;
   (*trace)->Register_Module(name.data(), &pModule);
-  (*trace)->Set_Verbosity(pModule, eP7Trace_Level::EP7TRACE_LEVEL_DEBUG);
   return pModule;
 }
 
