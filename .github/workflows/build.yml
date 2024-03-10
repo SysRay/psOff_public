@@ -1,0 +1,51 @@
+name: build
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+    name: Emulator
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Restore cached deps
+        uses: actions/cache@v4
+        id: cache-thirdparty
+        with:
+          path: third_party
+          key: ${{ runner.os }}-submodules
+
+      - name: Update submodules
+        if: steps.cache-thirdparty.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Detect MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86_64
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@c2aa128094d42ba02959a660f03e0a4e012192f9
+        with:
+          version: 1.3.275.0
+          cache: true
+
+      - name: Configure
+        run: cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
+
+      - name: Build
+        run: cmake --build _build/_Release -j4
+
+      - name: Install
+        run: cmake.exe --install _build/_Release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: _build/_Install/*
