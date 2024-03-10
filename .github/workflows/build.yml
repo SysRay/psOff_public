@@ -12,6 +12,8 @@ on:
       - tools/**
       - utility/**
       - CMakeLists.txt
+    paths-ignore:
+      - '**.md'
   push:
     paths:
       - .github/**
@@ -22,6 +24,8 @@ on:
       - tools/**
       - utility/**
       - CMakeLists.txt
+    paths-ignore:
+      - '**.md'
 
 jobs:
   build:
