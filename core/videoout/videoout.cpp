@@ -664,9 +664,22 @@ std::thread VideoOut::createSDLThread() {
 					while (SDL_PollEvent(&event)) {
 						switch (event.type) {
 							case SDL_WINDOWEVENT:
-								case SDL_WINDOWEVENT_CLOSE:
+								switch (event.window.event) {
+									case SDL_WINDOWEVENT_CLOSE:
+										cbWindow_close(window.window);
+										break;
+
+									default:
+										break;
+								}
+
+							case SDL_KEYUP:
+								if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 									cbWindow_close(window.window);
-									break;
+								}
+
+							default:
+								break;
 						}
 					}
           LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
