@@ -19,7 +19,7 @@
 
 #include <queue>
 
-#include <GLFW/glfw3.h>
+#include <SDL.h>
 #include <algorithm>
 #include <array>
 #include <assert.h>
@@ -111,7 +111,7 @@ struct Context {
   FlipRate fliprate = FlipRate::_60Hz;
 
   VideoOutConfig config;
-  GLFWwindow*    window;
+  SDL_Window*    window;
   VkSurfaceKHR   surface;
 
   std::list<EventQueue::IKernelEqueue_t> eventFlip;
@@ -148,8 +148,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   vulkan::VulkanObj* m_vulkanObj = nullptr;
 
   std::unique_ptr<IGraphics> m_graphics;
-  std::thread                m_threadGlfw;
-  std::condition_variable    m_condGlfw;
+  std::thread                m_threadSDL2;
+  std::condition_variable    m_condSDL2;
   std::condition_variable    m_condDone;
   bool                       m_stop = false;
   std::queue<Message>        m_messages;
@@ -180,14 +180,14 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
     m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex});
     lock.unlock();
-    m_condGlfw.notify_one();
+    m_condSDL2.notify_one();
   }
 
   std::pair<VkQueue, uint32_t> getQueue(vulkan::QueueType type) final;
   // -
   void transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue); // -> Renderer
 
-  std::thread createGlfwThread();
+  std::thread createSDLThread();
 
   public:
   VideoOut() = default;
@@ -241,7 +241,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     return m_graphics.get();
   };
 
-  std::unique_lock<std::mutex> getGlfwLock() const final { return std::unique_lock(m_mutexInt); }
+  std::unique_lock<std::mutex> getSDLLock() const final { return std::unique_lock(m_mutexInt); }
 };
 
 IVideoOut& accessVideoOut() {
@@ -251,14 +251,14 @@ IVideoOut& accessVideoOut() {
 
 void VideoOut::init() {
   LOG_USE_MODULE(VideoOut);
-  LOG_DEBUG(L"createGlfwThread()");
-  m_threadGlfw = createGlfwThread();
+  LOG_DEBUG(L"createSDLThread()");
+  m_threadSDL2 = createSDLThread();
 
   std::unique_lock lock(m_mutexInt);
   static bool      done = false;
   m_messages.push(Message {MessageType::open, 0, &done});
   lock.unlock();
-  m_condGlfw.notify_one();
+  m_condSDL2.notify_one();
 
   lock.lock();
   m_condDone.wait(lock, [=] { return done; });
@@ -291,7 +291,7 @@ int VideoOut::open(int userId) {
   static bool done = false;
   m_messages.push(Message {MessageType::open, windowIndex, &done});
   lock.unlock();
-  m_condGlfw.notify_one();
+  m_condSDL2.notify_one();
 
   lock.lock();
   m_condDone.wait(lock, [=] { return done; });
@@ -323,7 +323,7 @@ void VideoOut::close(int handle) {
   static bool done = false;
   m_messages.push(Message {MessageType::close, handle, &done});
   lock.unlock();
-  m_condGlfw.notify_one();
+  m_condSDL2.notify_one();
 
   lock.lock();
   m_condDone.wait(lock, [=] { return done; });
@@ -421,7 +421,7 @@ void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
 
   m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex});
   lock.unlock();
-  m_condGlfw.notify_one();
+  m_condSDL2.notify_one();
 }
 
 void VideoOut::getFlipStatus(int handle, void* status) {
@@ -544,13 +544,13 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
   return std::make_pair(bestIt->queue, bestIt->family);
 }
 
-void cbWindow_close(GLFWwindow* window) {
-  // glfwDestroyWindow(window.window);
+void cbWindow_close(SDL_Window* window) {
+	// SDL_DestroyWindow(window.window);
   // Todo submit close event, cleanup
   // m_stop = true;
   // lock.unlock();
-  // m_condGlfw.notify_one();
-  // m_threadGlfw.join();
+  // m_condSDL2.notify_one();
+  // m_threadSDL2.join();
   // // accessGraphics().stop();
   // m_graphics.reset();
   // deinitVulkan(m_vulkanObj);
@@ -559,19 +559,19 @@ void cbWindow_close(GLFWwindow* window) {
            // todo clean shutdown (file syncs etc.)
 }
 
-std::thread VideoOut::createGlfwThread() {
+std::thread VideoOut::createSDLThread() {
   return std::thread([this] {
     util::setThreadName("VideoOut");
     OPTICK_THREAD("VideoOut");
 
     LOG_USE_MODULE(VideoOut);
-    LOG_DEBUG(L"Init glfw");
+    LOG_DEBUG(L"Init SDL2 video");
 
-    glfwInit();
+		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     while (!m_stop) {
       std::unique_lock lock(m_mutexInt);
-      m_condGlfw.wait_for(lock, std::chrono::microseconds(m_vblankTime), [this] { return m_stop || !m_messages.empty(); });
+      m_condSDL2.wait_for(lock, std::chrono::microseconds(m_vblankTime), [this] { return m_stop || !m_messages.empty(); });
       if (m_stop) break;
 
       // Handle VBlank
@@ -598,15 +598,12 @@ std::thread VideoOut::createGlfwThread() {
 
           auto const title = getTitle(index, 0, 0, window.fliprate);
 
-          glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-          glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-          glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-          window.window = glfwCreateWindow(m_widthTotal, m_heightTotal, title.c_str(), nullptr, nullptr);
-
-          glfwMakeContextCurrent(window.window);
-          glfwShowWindow(window.window);
-
-          glfwGetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
+					window.window = SDL_CreateWindow(
+						title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+						m_widthTotal, m_heightTotal, SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN
+					);
+	
+					SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
@@ -618,13 +615,11 @@ std::thread VideoOut::createGlfwThread() {
             vulkan::createSurface(m_vulkanObj, window.window, window.surface);
           }
 
-          glfwSetWindowCloseCallback(window.window, cbWindow_close);
-
           *item.done = true;
           m_condDone.notify_one();
         } break;
         case MessageType::close: {
-          glfwDestroyWindow(window.window);
+					SDL_DestroyWindow(window.window);
           *item.done = true;
           m_condDone.notify_one();
         } break;
@@ -664,14 +659,22 @@ std::thread VideoOut::createGlfwThread() {
 
           window.config.fps = fps;
 
-          glfwSetWindowTitle(window.window, title.c_str());
-          glfwPollEvents();
+					SDL_SetWindowTitle(window.window, title.c_str());
+					SDL_Event event;
+					while (SDL_PollEvent(&event)) {
+						switch (event.type) {
+							case SDL_WINDOWEVENT:
+								case SDL_WINDOWEVENT_CLOSE:
+									cbWindow_close(window.window);
+									break;
+						}
+					}
           LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
         } break;
       }
       m_messages.pop();
     }
-    glfwTerminate();
+		SDL_Quit();
   });
 }
 

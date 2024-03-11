@@ -4,6 +4,8 @@
 #include "logging.h"
 #include "utility/utility.h"
 
+#include <SDL.h>
+#include <SDL_vulkan.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <array>
@@ -21,9 +23,9 @@ LOG_DEFINE_MODULE(vulkanHelper);
 
 namespace vulkan {
 
-void createSurface(VulkanObj* obj, GLFWwindow* window, VkSurfaceKHR& surfaceOut) {
+void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut) {
   LOG_USE_MODULE(vulkanHelper);
-  if (glfwCreateWindowSurface(obj->deviceInfo.instance, window, NULL, &surfaceOut)) {
+  if (SDL_Vulkan_CreateSurface(window, obj->deviceInfo.instance, &surfaceOut)) {
     LOG_CRIT(L"Couldn't create surface");
   }
 }

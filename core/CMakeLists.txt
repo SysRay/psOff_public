@@ -32,7 +32,7 @@ target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
   libboost_program_options
-  glfw3
+	sdl2
   OptickCore
   psOff_utility
   ${Vulkan_LIBRARIES}

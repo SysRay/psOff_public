@@ -6,6 +6,7 @@
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <SDL.h>
 #include <algorithm>
 #include <bitset>
 #include <chrono>
@@ -24,7 +25,7 @@ struct Pimpl {
   Pimpl() = default;
   std::mutex m_mutexInt;
 
-  std::array<Controller, GLFW_JOYSTICK_LAST - GLFW_JOYSTICK_1> controller;
+  std::array<Controller, 15 /* Define? */> controller;
 };
 
 static auto* getData() {
@@ -69,7 +70,7 @@ ScePadData getPadData(int handle) {
   }
 
   auto pData    = getData();
-  auto lockGlfw = accessVideoOut().getGlfwLock();
+  auto lockSDL2 = accessVideoOut().getSDLLock();
   return ScePadData {
       .buttons = getButtons(state),
       .leftStick =
@@ -135,8 +136,7 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libScePad";
 
 EXPORT SYSV_ABI int scePadInit(void) {
-  glfwInit();
-  return glfwInit() ? Ok : Err::FATAL;
+  return SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == 0 ? Ok : Err::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
@@ -151,7 +151,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   }
   // - already open
 
-  auto lockGlfw = accessVideoOut().getGlfwLock();
+  auto lockSDL2 = accessVideoOut().getSDLLock();
   for (size_t n = GLFW_JOYSTICK_1; n <= GLFW_JOYSTICK_LAST; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     pData->controller[n].userId = userId;
@@ -282,7 +282,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   pInfo->stickInfo.deadZoneLeft  = 2; // todo make config
   pInfo->stickInfo.deadZoneRight = 2; // todo make config
 
-  auto lockGlfw         = accessVideoOut().getGlfwLock();
+  auto lockSDL2         = accessVideoOut().getSDLLock();
   pInfo->connectionType = (uint8_t)PadPortType::STANDARD;
   pInfo->connectedCount = pad.countConnect;
   pInfo->connected      = glfwJoystickPresent(handle) == GLFW_TRUE;

@@ -152,7 +152,7 @@ class IVideoOut {
    *
    * @return std::unique_lock<std::mutex>
    */
-  virtual std::unique_lock<std::mutex> getGlfwLock() const = 0;
+  virtual std::unique_lock<std::mutex> getSDLLock() const = 0;
 };
 
 #if defined(__APICALL_EXTERN)
