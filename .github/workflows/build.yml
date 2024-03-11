@@ -31,7 +31,18 @@ on:
       - '**.h'
 
 jobs:
+  formatting-check:
+    name: Formatting check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Check clang format
+        uses: jidicula/clang-format-action@v4.11.0
   build:
+    needs: formatting-check
     name: Emulator
     runs-on: windows-latest
     steps:
@@ -39,9 +50,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Check clang format
-        uses: jidicula/clang-format-action@v4.11.0
 
       - name: Restore cached deps
         uses: actions/cache@v4
