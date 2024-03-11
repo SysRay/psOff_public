@@ -6,7 +6,6 @@
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
-#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <array>
 #include <assert.h>

@@ -4,8 +4,6 @@
 #include "logging.h"
 #include "types.h"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 #include <SDL.h>
 #include <algorithm>
 #include <bitset>
@@ -18,6 +16,7 @@ struct Controller {
   int32_t userId       = -1;
   uint8_t countConnect = 0;
 
+  SDL_GameController *padPtr;
   ScePadData prePadData;
 };
 
@@ -25,7 +24,7 @@ struct Pimpl {
   Pimpl() = default;
   std::mutex m_mutexInt;
 
-  std::array<Controller, 15 /* Define? */> controller;
+  std::array<Controller, 16 /* Define? */> controller;
 };
 
 static auto* getData() {
@@ -33,22 +32,22 @@ static auto* getData() {
   return &obj;
 }
 
-uint32_t getButtons(GLFWgamepadstate const& state) {
+uint32_t getButtons(SDL_GameController* pad) {
   std::bitset<32> bits;
-  bits[(uint32_t)ScePadButtonDataOffset::L3]        = state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_THUMB];
-  bits[(uint32_t)ScePadButtonDataOffset::R3]        = state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_THUMB];
-  bits[(uint32_t)ScePadButtonDataOffset::OPTIONS]   = state.buttons[GLFW_GAMEPAD_BUTTON_START];
-  bits[(uint32_t)ScePadButtonDataOffset::UP]        = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP];
-  bits[(uint32_t)ScePadButtonDataOffset::RIGHT]     = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT];
-  bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN];
-  bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT];
-  bits[(uint32_t)ScePadButtonDataOffset::L1]        = state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
-  bits[(uint32_t)ScePadButtonDataOffset::R1]        = state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER];
-  bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = state.buttons[GLFW_GAMEPAD_BUTTON_TRIANGLE];
-  bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = state.buttons[GLFW_GAMEPAD_BUTTON_CIRCLE];
-  bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = state.buttons[GLFW_GAMEPAD_BUTTON_CROSS];
-  bits[(uint32_t)ScePadButtonDataOffset::SQUARE]    = state.buttons[GLFW_GAMEPAD_BUTTON_SQUARE];
-  bits[(uint32_t)ScePadButtonDataOffset::TOUCH_PAD] = state.buttons[GLFW_GAMEPAD_BUTTON_BACK];
+  bits[(uint32_t)ScePadButtonDataOffset::L3]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_LEFTSTICK);
+  bits[(uint32_t)ScePadButtonDataOffset::R3]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_RIGHTSTICK);
+  bits[(uint32_t)ScePadButtonDataOffset::OPTIONS]   = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_START);
+  bits[(uint32_t)ScePadButtonDataOffset::UP]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_UP);
+  bits[(uint32_t)ScePadButtonDataOffset::RIGHT]     = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+  bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+  bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+  bits[(uint32_t)ScePadButtonDataOffset::L1]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+  bits[(uint32_t)ScePadButtonDataOffset::R1]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+  bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_Y);
+  bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_B);
+  bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_A);
+  bits[(uint32_t)ScePadButtonDataOffset::SQUARE]    = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_X);
+  bits[(uint32_t)ScePadButtonDataOffset::TOUCH_PAD] = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_TOUCHPAD);
   return bits.to_ulong();
 }
 
@@ -63,30 +62,29 @@ ScePadData getPadData(int handle) {
   LOG_USE_MODULE(libScePad);
   ScePadData data;
 
-  GLFWgamepadstate state;
-  if (auto res = glfwGetGamepadState(handle, &state); res < 0) {
-    LOG_ERR(L"glfwGetGamepadState err:%d", res);
-    return ScePadData();
-  }
-
   auto pData    = getData();
+  auto pController = pData->controller[handle].padPtr;
+
+  if (pController == nullptr) return ScePadData();
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  return ScePadData {
-      .buttons = getButtons(state),
+  // SDL_GameControllerTouch
+
+  data = ScePadData {
+      .buttons = getButtons(pController),
       .leftStick =
           {
-              .x = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]),
-              .y = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]),
+              .x = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f),
+              .y = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f),
           },
       .rightStick =
           {
-              .x = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]),
-              .y = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]),
+              .x = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f),
+              .y = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f),
           },
       .analogButtons =
           {
-              .l2 = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER]),
-              .r2 = convertAnalog(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER]),
+              .l2 = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f),
+              .r2 = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f),
           },
       .orientation =
           {
@@ -123,11 +121,26 @@ ScePadData getPadData(int handle) {
 
           },
 
-      .connected           = glfwJoystickIsGamepad(handle) == GLFW_TRUE,
+      .connected           = SDL_GameControllerGetAttached(pController) == true,
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = pData->controller[handle].countConnect,
       .deviceUniqueDataLen = 0,
   };
+
+  data.touchData.touchNum = 0;
+  for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pController, 0); f++) {
+    uint8_t s = 0;
+    float x = 0.0f, y = 0.0f;
+    auto& touch = data.touchData.touch[f];
+
+    SDL_GameControllerGetTouchpadFinger(pController, 0, f, &s, &x, &y, NULL);
+    if (s > 0) {
+      touch.x = x * 0xFFFF, touch.y = y * 0xFFFF;
+      ++data.touchData.touchNum;
+    }
+  }
+
+  return data;
 }
 } // namespace
 
@@ -136,29 +149,31 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libScePad";
 
 EXPORT SYSV_ABI int scePadInit(void) {
+  LOG_USE_MODULE(libScePad);
   return SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == 0 ? Ok : Err::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
   LOG_USE_MODULE(libScePad);
   auto pData = getData();
-
   std::unique_lock const lock(pData->m_mutexInt);
 
   // Check already opened
-  for (size_t n = GLFW_JOYSTICK_1; n <= GLFW_JOYSTICK_LAST; ++n) {
+  for (size_t n = 0; n < 16; ++n) {
     if (pData->controller[n].userId == userId) return Err::ALREADY_OPENED;
   }
   // - already open
 
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  for (size_t n = GLFW_JOYSTICK_1; n <= GLFW_JOYSTICK_LAST; ++n) {
+  for (size_t n = 0; n < 16; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     pData->controller[n].userId = userId;
     ++pData->controller[n].countConnect;
     pData->controller[n].prePadData = ScePadData();
+    pData->controller[n].padPtr = SDL_GameControllerOpen(n);
+    SDL_GameControllerSetPlayerIndex(pData->controller[n].padPtr, userId - 1);
 
-    LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S", n, userId, glfwGetJoystickName(n));
+    LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S", n, userId, SDL_GameControllerNameForIndex(n));
     return n;
   }
   return Err::NO_HANDLE;
@@ -174,6 +189,8 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   std::unique_lock const lock(pData->m_mutexInt);
   LOG_INFO(L"<- Pad[%d]", handle);
   pData->controller[handle].userId = -1;
+  SDL_GameControllerClose(pData->controller[handle].padPtr);
+  pData->controller[handle].padPtr = nullptr;
 
   return Ok;
 }
@@ -184,7 +201,7 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
   LOG_DEBUG(L"");
   std::unique_lock const lock(pData->m_mutexInt);
 
-  for (size_t n = GLFW_JOYSTICK_1; n <= GLFW_JOYSTICK_LAST; ++n) {
+  for (size_t n = 0; n < 16; ++n) {
     if (pData->controller[n].userId == userId) {
       return n;
     }
@@ -197,6 +214,14 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   if (handle < 0) return Err::INVALID_HANDLE;
 
   auto pData = getData();
+  auto pController = pData->controller[handle].padPtr;
+  if (SDL_GameControllerGetAttached(pController) == false) {
+    SDL_GameControllerClose(pController);
+    pData->controller[handle].padPtr = pController = SDL_GameControllerOpen(handle);
+    SDL_GameControllerSetPlayerIndex(pController, pData->controller[handle].userId - 1);
+    if (SDL_GameControllerGetAttached(pController) == false) return Err::DEVICE_NOT_CONNECTED;
+    ++pData->controller[handle].countConnect;
+  }
 
   std::unique_lock const lock(pData->m_mutexInt);
 
@@ -236,16 +261,36 @@ EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
 
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
+
+  auto pData = getData();
+  auto pController = pData->controller[handle].padPtr;
+
+  SDL_GameControllerRumble(pController, ((float)pParam->smallMotor / 255.0f) * 0xFFFF, ((float)pParam->largeMotor / 255.0f) * 0xFFFF, -1);
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
+
+  auto pData = getData();
+  auto pController = pData->controller[handle].padPtr;
+
+  if (SDL_GameControllerHasLED(pController) == false)
+    return Err::INVALID_LIGHTBAR_SETTING;
+
+  SDL_GameControllerSetLED(pController, pParam->r, pParam->g, pParam->b);
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
   if (handle < 0) return Err::INVALID_HANDLE;
+
+  auto pData = getData();
+  auto pController = pData->controller[handle].padPtr;
+  if (SDL_GameControllerHasLED(pController) == false)
+    return Err::INVALID_LIGHTBAR_SETTING;
+
+  SDL_GameControllerSetLED(pController, 0, 0, 0);
   return Ok;
 }
 
@@ -285,7 +330,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   auto lockSDL2         = accessVideoOut().getSDLLock();
   pInfo->connectionType = (uint8_t)PadPortType::STANDARD;
   pInfo->connectedCount = pad.countConnect;
-  pInfo->connected      = glfwJoystickPresent(handle) == GLFW_TRUE;
+  pInfo->connected      = SDL_GameControllerGetAttached(pad.padPtr) == true;
   pInfo->deviceClass    = ScePadDeviceClass::STANDARD;
 
   LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);

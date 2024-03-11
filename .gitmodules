@@ -1,9 +1,6 @@
 [submodule "third_party/optick"]
 	path = third_party/optick
 	url = https://github.com/bombomby/optick.git
-[submodule "third_party/glfw"]
-	path = third_party/glfw
-	url = https://github.com/glfw/glfw.git
 [submodule "third_party/magic_enum"]
 	path = third_party/magic_enum
 	url = https://github.com/Neargye/magic_enum.git

@@ -12,8 +12,6 @@ struct SwapchainData;
 constexpr int VIDEO_OUT_EVENT_FLIP   = 0;
 constexpr int VIDEO_OUT_EVENT_VBLANK = 1;
 
-class IGLFW {};
-
 class IGraphics;
 
 class IVideoOut {
@@ -148,7 +146,7 @@ class IVideoOut {
   virtual IGraphics* getGraphics() = 0;
 
   /**
-   * @brief locks the glfwpoll
+   * @brief locks the sdlpoll
    *
    * @return std::unique_lock<std::mutex>
    */

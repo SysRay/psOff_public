@@ -8,8 +8,6 @@
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 LOG_DEFINE_MODULE(vulkanSetup);
 
@@ -120,13 +118,13 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
 
   VulkanExtensions r = {.enableValidationLayers = enableValidation};
 
-	SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, NULL);
-	auto extensions = static_cast<const char **>(SDL_malloc(sizeof(char *) * countRequiredExtensions));
-	SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, extensions);
-	for (size_t n = 0; n < countRequiredExtensions; n++) {
-		r.requiredExtensions.push_back(extensions[n]);
-	}
-	SDL_free(extensions);
+  SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, NULL);
+  auto extensions = static_cast<const char **>(SDL_malloc(sizeof(char *) * countRequiredExtensions));
+  SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, extensions);
+  for (size_t n = 0; n < countRequiredExtensions; n++) {
+    r.requiredExtensions.push_back(extensions[n]);
+  }
+  SDL_free(extensions);
 
   vkEnumerateInstanceExtensionProperties(nullptr, &countAvailableExtensions, nullptr);
   r.availableExtensions = std::vector<VkExtensionProperties>(countAvailableExtensions, VkExtensionProperties {});
@@ -140,7 +138,7 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
   }
 
   for (size_t n = 0; n < r.requiredExtensions.size(); ++n) {
-    LOG_INFO(L"GLFW required extension: %S", r.requiredExtensions[n]);
+    LOG_INFO(L"SDL2 required extension: %S", r.requiredExtensions[n]);
   }
 
   for (const auto& ext: r.availableExtensions) {

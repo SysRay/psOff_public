@@ -7,6 +7,6 @@ project(${libName})
 add_library(${libName} SHARED entry.cpp)
 
 add_dependencies(${libName} core)
-target_link_libraries(${libName} PRIVATE glfw3 SDL2 ${Vulkan_LIBRARIES} core.lib)
+target_link_libraries(${libName} PRIVATE SDL2 ${Vulkan_LIBRARIES} core.lib)
 
 setupModule(${libName})
