@@ -13,7 +13,7 @@ Target is to have a standalone framework for shader reconstruction, command buff
 <img src="https://github.com/SysRay/psOff_public/assets/48695846/7e723874-5bb9-4cb7-bb28-5b0001d81f65" width="400" title="fps is capped internally">
 
 
-No, the fps is not fake :)
+No, the fps is not fake. :)
 
 ## Description
 Yet another compatibility layer! I solely focused on the rendering part and recently started to implement the system functions to run some binaries.
@@ -31,18 +31,18 @@ I don't serve spaghetti only bugs.
 ## Getting Started
 ### Dependencies
 + Vulkan SDK 1.3.268.0, minimum
-+ up to date graphic drivers
++ Up to date graphic drivers
 
-(May add the Vulkan libs in future Releases, if needed )
+(May add the Vulkan libs in Future Releases, if needed.)
 
 For development:
 
 + Ninja
 + CMake 3.24+
-+ Visual Studio 2019 or newer, it' just for the build environment (uses clang-cl,c++20)
++ Visual Studio 2019 or newer, it's just for the build environment (uses clang-cl,c++20)
 
 ### Installing
-For testing, just download the latest release and install the Vulkan SDK
+For testing, just download the latest release and install the Vulkan SDK. 
 
 ### Executing program
 ```
@@ -62,7 +62,7 @@ eboot.bin
 
 ## Development
 
-Use boosts thread, mutex and conditions. The waits have to be alert able in order to receive fake signals from "kernel".
+Use boosts thread, mutex and conditions. The waits have to be alertable in order to receive fake signals from "kernel".
 
 Project uses p7 for tracing -> Baical server.
 
@@ -70,4 +70,4 @@ Project uses p7 for tracing -> Baical server.
 * core: kernel, memory etc.
 * emulator.exe: (From Releases) contains the runtime and rendering
 
-I'm using vscode, '.vscode\tasks.json' contains the config&build tasks.
+I'm using vscode, '.vscode\tasks.json' contains the config & build tasks.
