@@ -39,10 +39,11 @@ bool InitParams::init(int argc, char** argv) {
 
   if (vm.count("help")) {
     std::cout << desc << '\n';
-    return 0;
+    return false;
   }
   if (!vm.count("file")) {
     std::cout << "--file missing\n";
+    return false;
   }
 
   return true;
