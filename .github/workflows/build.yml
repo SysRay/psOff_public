@@ -2,7 +2,7 @@ name: build
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     paths:
       - '.github/workflows/build.yml'
       - '**/CMakeLists.txt'
@@ -77,6 +77,6 @@ jobs:
         run: cmake.exe --install _build/_Release
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: _build/_Install/*
