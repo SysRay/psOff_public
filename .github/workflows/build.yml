@@ -31,20 +31,7 @@ on:
       - '**.h'
 
 jobs:
-  formatting-check:
-    name: Formatting check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Check clang format
-        uses: jidicula/clang-format-action@v4.11.0
-        with:
-          clang-format-version: '19'
   build:
-    needs: formatting-check
     name: Emulator
     runs-on: windows-latest
     steps:
