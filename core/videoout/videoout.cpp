@@ -545,7 +545,7 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
 }
 
 void cbWindow_close(SDL_Window* window) {
-	// SDL_DestroyWindow(window.window);
+  // SDL_DestroyWindow(window.window);
   // Todo submit close event, cleanup
   // m_stop = true;
   // lock.unlock();
@@ -567,7 +567,30 @@ std::thread VideoOut::createSDLThread() {
     LOG_USE_MODULE(VideoOut);
     LOG_DEBUG(L"Init SDL2 video");
 
-		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+
+    // SDL polling helper
+    auto func_pollSDL = [](auto& window) {
+      SDL_Event event;
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+          case SDL_WINDOWEVENT:
+            switch (event.window.event) {
+              case SDL_WINDOWEVENT_CLOSE: cbWindow_close(window); break;
+
+              default: break;
+            }
+
+          case SDL_KEYUP:
+            if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+              cbWindow_close(window);
+            }
+
+          default: break;
+        }
+      }
+    };
+    // -
 
     while (!m_stop) {
       std::unique_lock lock(m_mutexInt);
@@ -577,6 +600,8 @@ std::thread VideoOut::createSDLThread() {
       // Handle VBlank
       if (m_messages.empty()) {
         using namespace std::chrono;
+
+        func_pollSDL(m_windows[0].window); // check only main for now
 
         auto&      timer    = accessTimer();
         auto const curTime  = (uint64_t)(1e6 * timer.getTimeS());
@@ -598,12 +623,10 @@ std::thread VideoOut::createSDLThread() {
 
           auto const title = getTitle(index, 0, 0, window.fliprate);
 
-					window.window = SDL_CreateWindow(
-						title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-						m_widthTotal, m_heightTotal, SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN
-					);
-	
-					SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
+          window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
+                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
+
+          SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
@@ -619,7 +642,7 @@ std::thread VideoOut::createSDLThread() {
           m_condDone.notify_one();
         } break;
         case MessageType::close: {
-					SDL_DestroyWindow(window.window);
+          SDL_DestroyWindow(window.window);
           *item.done = true;
           m_condDone.notify_one();
         } break;
@@ -659,35 +682,15 @@ std::thread VideoOut::createSDLThread() {
 
           window.config.fps = fps;
 
-					SDL_SetWindowTitle(window.window, title.c_str());
-					SDL_Event event;
-					while (SDL_PollEvent(&event)) {
-						switch (event.type) {
-							case SDL_WINDOWEVENT:
-								switch (event.window.event) {
-									case SDL_WINDOWEVENT_CLOSE:
-										cbWindow_close(window.window);
-										break;
+          SDL_SetWindowTitle(window.window, title.c_str());
+          func_pollSDL(window.window);
 
-									default:
-										break;
-								}
-
-							case SDL_KEYUP:
-								if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-									cbWindow_close(window.window);
-								}
-
-							default:
-								break;
-						}
-					}
           LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
         } break;
       }
       m_messages.pop();
     }
-		SDL_Quit();
+    SDL_Quit();
   });
 }
 

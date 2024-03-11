@@ -27,12 +27,12 @@ add_library(core SHARED
   $<TARGET_OBJECTS:dmem>
 )
 
-add_dependencies(core logging)
+add_dependencies(core logging boost)
 target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
   libboost_program_options
-	sdl2
+  sdl2
   OptickCore
   psOff_utility
   ${Vulkan_LIBRARIES}
