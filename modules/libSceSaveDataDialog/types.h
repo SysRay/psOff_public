@@ -3,7 +3,6 @@
 #include "..\libSceCommonDialog\types.h"
 #include "codes.h"
 
-
 struct SceSaveDataDialogAnimationParam {
   SceSaveDataDialogAnimation userOK;       ///  animation setting when user decide OK or ListItem
   SceSaveDataDialogAnimation userCancel;   ///  animation setting when user cancel

@@ -2,12 +2,11 @@
 
 #include "logging.h"
 
+#include <SDL.h>
+#include <SDL_vulkan.h>
 #include <format>
 #include <utility/utility.h>
 #include <vulkan/vk_enum_string_helper.h>
-
-#include <SDL.h>
-#include <SDL_vulkan.h>
 
 LOG_DEFINE_MODULE(vulkanSetup);
 
@@ -119,7 +118,7 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
   VulkanExtensions r = {.enableValidationLayers = enableValidation};
 
   SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, NULL);
-  auto extensions = static_cast<const char **>(SDL_malloc(sizeof(char *) * countRequiredExtensions));
+  auto extensions = static_cast<const char**>(SDL_malloc(sizeof(char*) * countRequiredExtensions));
   SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, extensions);
   for (size_t n = 0; n < countRequiredExtensions; n++) {
     r.requiredExtensions.push_back(extensions[n]);

@@ -2,7 +2,6 @@
 #include "../libSceNpManager/types.h"
 #include "codes.h"
 
-
 typedef uint32_t SceAppContentMediaType;
 typedef uint32_t SceAppContentBootAttribute;
 typedef uint32_t SceAppContentAppParamId;

@@ -3,15 +3,15 @@
 #include "utility/utility.h"
 typedef void* SceAvPlayerHandle;
 
-using SceAvPlayerLogCallback       = SYSV_ABI int (*)(void* userData, const char* format, va_list args);
-using SceAvPlayerAllocate          = SYSV_ABI void* (*)(void* argP, uint32_t argAlignment, uint32_t argSize);
-using SceAvPlayerDeallocate        = SYSV_ABI void (*)(void* argP, void* argMemory);
-using SceAvPlayerAllocateTexture   = SYSV_ABI void* (*)(void* argP, uint32_t argAlignment, uint32_t argSize);
+using SceAvPlayerLogCallback       = SYSV_ABI int        (*)(void* userData, const char* format, va_list args);
+using SceAvPlayerAllocate          = SYSV_ABI void*         (*)(void* argP, uint32_t argAlignment, uint32_t argSize);
+using SceAvPlayerDeallocate        = SYSV_ABI void        (*)(void* argP, void* argMemory);
+using SceAvPlayerAllocateTexture   = SYSV_ABI void*  (*)(void* argP, uint32_t argAlignment, uint32_t argSize);
 using SceAvPlayerDeallocateTexture = SYSV_ABI void (*)(void* argP, void* argMemory);
-using SceAvPlayerOpenFile          = SYSV_ABI int (*)(void* argP, const char* argFilename);
-using SceAvPlayerCloseFile         = SYSV_ABI int (*)(void* argP);
-using SceAvPlayerReadOffsetFile    = SYSV_ABI int (*)(void* argP, uint8_t* argBuffer, uint64_t argPosition, uint32_t argLength);
-using SceAvPlayerEventCallback     = SYSV_ABI void (*)(void* p, int32_t argEventId, int32_t argSourceId, void* argEventData);
+using SceAvPlayerOpenFile          = SYSV_ABI int           (*)(void* argP, const char* argFilename);
+using SceAvPlayerCloseFile         = SYSV_ABI int          (*)(void* argP);
+using SceAvPlayerReadOffsetFile    = SYSV_ABI int     (*)(void* argP, uint8_t* argBuffer, uint64_t argPosition, uint32_t argLength);
+using SceAvPlayerEventCallback     = SYSV_ABI void     (*)(void* p, int32_t argEventId, int32_t argSourceId, void* argEventData);
 using SceAvPlayerSizeFile          = SYSV_ABI uint64_t (*)(void* argP);
 
 enum class SceAvPlayerVideoDecoderType { DEFAULT = 0, RESERVED1, RESERVED2, SOFTWARE2 };
@@ -53,6 +53,7 @@ struct SceAvPlayerDecoderInit {
     SceAvPlayerAudioDecoderType audioType;
     uint8_t                     reserved[4];
   } decoderType;
+
   union {
     struct {
       int32_t cpuAffinityMask;
@@ -67,10 +68,12 @@ struct SceAvPlayerDecoderInit {
 
       uint8_t reserved[16];
     } avcSw2;
+
     struct {
       uint8_t audioChannelOrder;
       uint8_t reserved[27];
     } aac;
+
     uint8_t reserved[28];
   } decoderParams;
 };

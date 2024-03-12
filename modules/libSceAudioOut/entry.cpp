@@ -41,11 +41,10 @@ int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
 
   port.lastOutputTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
-  if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING)
-    SDL_PauseAudioDevice(port.device, 0);
+  if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
 
   while (SDL_GetQueuedAudioSize(port.device) > 0)
-   SDL_Delay(0);
+    SDL_Delay(0);
 
   return SDL_QueueAudio(port.device, ptr, port.samplesNum * port.sampleSize * port.channelsNum);
 }
@@ -84,42 +83,42 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       case SceAudioOutParamFormat::S16_MONO:
         sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 1;
-        port.sampleSize = 2;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_MONO:
         sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 1;
-        port.sampleSize = 4;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_STEREO:
         sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 2;
-        port.sampleSize = 2;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_STEREO:
         sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 2;
-        port.sampleSize = 4;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH:
         sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 8;
-        port.sampleSize = 2;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH:
         sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 8;
-        port.sampleSize = 4;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH_STD:
         sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 8;
-        port.sampleSize = 2;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH_STD:
         sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 8;
-        port.sampleSize = 4;
+        port.sampleSize  = 4;
         break;
     }
 
@@ -127,16 +126,14 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       port.volume[i] = 32768;
     }
 
-    SDL_AudioSpec fmt {
-      .freq = static_cast<int>(freq),
-      .format = sampleFormat,
-      .channels = static_cast<uint8_t>(port.channelsNum),
-      .samples = static_cast<uint16_t>(port.samplesNum),
-      .callback = nullptr,
-      .userdata = nullptr
-    };
+    SDL_AudioSpec fmt {.freq     = static_cast<int>(freq),
+                       .format   = sampleFormat,
+                       .channels = static_cast<uint8_t>(port.channelsNum),
+                       .samples  = static_cast<uint16_t>(port.samplesNum),
+                       .callback = nullptr,
+                       .userdata = nullptr};
 
-    char *dname;
+    char*         dname;
     SDL_AudioSpec fmt_curr;
     SDL_GetDefaultAudioInfo(&dname, &fmt_curr, 0);
     LOG_INFO(L"Opening audio device: %s\n", dname);
