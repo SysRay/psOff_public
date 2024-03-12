@@ -1,9 +1,11 @@
 #include "filesystem.h"
 
 #include "core/fileManager/fileManager.h"
+#include "core/memory/memory.h"
 #include "logging.h"
 
 #include <assert.h>
+#include <unordered_map>
 #include <windows.h>
 
 LOG_DEFINE_MODULE(filesystem);
@@ -23,19 +25,40 @@ std::pair<DWORD, DWORD> convProtection(int prot) {
 
   return {PAGE_NOACCESS, 0};
 }
+
+auto getMappings() {
+  static std::unordered_map<uint64_t, filesystem::SceMap> obj;
+  return &obj;
+}
 } // namespace
 
 namespace filesystem {
 int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset, void** res) {
   LOG_USE_MODULE(filesystem);
 
-  if (fd < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
-
+  // Mapping cases
   if (flags.mode == SceMapMode::FIXED) {
     LOG_ERR(L"todo: Mmap fixed 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
     return getErr(ErrCode::_EINVAL);
+  }
+
+  if (flags.mode == SceMapMode::VOID_) {
+    // reserve memory
+    LOG_ERR(L"todo: Mmap void 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
+    return getErr(ErrCode::_EINVAL);
+  }
+
+  if (flags.type == SceMapType::ANON) {
+    *res = (void*)memory::alloc((uint64_t)addr, len, prot);
+
+    getMappings()->emplace(std::make_pair((uint64_t)*res, flags));
+    return getErr(ErrCode::_EINVAL);
+  }
+  // -
+
+  // Do file mapping
+  if (fd < FILE_DESCRIPTOR_MIN) {
+    return getErr(ErrCode::_EPERM);
   }
 
   auto const [fileProt, viewProt] = convProtection(prot);
@@ -80,8 +103,32 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   return Ok;
 }
 
-int munmap(void* address, size_t len) {
-  return UnmapViewOfFile(address) != 0 ? Ok : -1;
+int munmap(void* addr, size_t len) {
+  LOG_USE_MODULE(filesystem);
+
+  auto mappings = getMappings();
+  if (auto it = mappings->find((uint64_t)addr); it != mappings->end()) {
+    if (it->second.mode == SceMapMode::FIXED) {
+      LOG_ERR(L"todo: munmap fixed 0x%08llx len:0x%08llx", addr, len);
+      return getErr(ErrCode::_EINVAL);
+    }
+
+    if (it->second.mode == SceMapMode::VOID_) {
+      LOG_ERR(L"todo: munmap void 0x%08llx len:0x%08llx", addr, len);
+      return getErr(ErrCode::_EINVAL);
+    }
+
+    if (it->second.type == SceMapType::ANON) {
+      memory::free((uint64_t)addr);
+      return Ok;
+    }
+
+    // Is file Mapping
+    return UnmapViewOfFile(addr) != 0 ? Ok : -1;
+  }
+
+  LOG_ERR(L"munmap unknown 0x%08llx 0x%08llx", addr, len);
+  return -1;
 }
 
 size_t read(int handle, void* buf, size_t nbytes) {
@@ -268,8 +315,40 @@ int fcntl(int fd, int cmd, va_list args) {
 
 size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  if (handle < FILE_DESCRIPTOR_MIN) {
+    return getErr(ErrCode::_EPERM);
+  }
+
+  auto file = accessFileManager().getFile(handle);
+  if (file == nullptr) {
+    return getErr(ErrCode::_EBADF);
+  }
+  if (!(*file)) {
+    LOG_TRACE(L"file end");
+    return 0;
+  }
+
+  size_t count = 0;
+
+  for (int n = 0; n < iovcnt; ++n) {
+    auto* item = &iov[n];
+
+    if (item->iov_base == nullptr || item->iov_len == 0) continue;
+
+    file->read((char*)item->iov_base, item->iov_len);
+
+    auto const countTemp = file->gcount();
+
+    LOG_TRACE(L"KernelRead[%d]: 0x%08llx:%llu read(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, countTemp);
+
+    count += countTemp;
+    if (!(*file)) {
+      LOG_TRACE(L"file end");
+      break;
+    }
+  }
+
+  return count;
 }
 
 size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {

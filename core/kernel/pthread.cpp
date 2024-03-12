@@ -117,8 +117,8 @@ void init_pThread() {
   pimpl->sceSetJmp  = (decltype(pimpl->sceSetJmp))accessRuntimeExport()->getSymbol("gNQ1V2vfXDE", "libc", "libc");
   pimpl->sceLongJmp = (decltype(pimpl->sceLongJmp))accessRuntimeExport()->getSymbol("lKEN2IebgJ0", "libc", "libc");
 
-  assert(pimpl->sceSetJmp != nullptr);
-  assert(pimpl->sceLongJmp != nullptr);
+  // assert(pimpl->sceSetJmp != nullptr);
+  // assert(pimpl->sceLongJmp != nullptr);
 }
 } // namespace
 
@@ -1070,9 +1070,10 @@ void exit(void* value) {
   LOG_USE_MODULE(pthread);
 
   auto thread = getPthread(getSelf());
-  LOG_DEBUG(L"exit| %S id:%d", thread->name.data(), thread->unique_id);
+  LOG_CRIT(L"Currently not supported, exit| %S id:%d", thread->name.data(), thread->unique_id);
 
-  getData()->sceLongJmp(&thread->threadEntryBuf, *(int*)&value);
+  thread->p.interrupt();
+  boost::this_thread::interruption_point();
 }
 
 void raise(ScePthread_obj obj, void* callback, int signo) {
@@ -1256,11 +1257,7 @@ void* threadWrapper(void* arg) {
 
   int  resJmp      = 0;
   auto func_setjmp = getData()->sceSetJmp;
-  if (func_setjmp != nullptr && (resJmp = func_setjmp(&thread->threadEntryBuf)) != 0) {
-    ret = (void*)(int64_t)resJmp;
-  } else {
-    ret = thread->entry(thread->arg);
-  }
+  ret              = thread->entry(thread->arg);
   LOG_DEBUG(L"thread done:%d", thread->unique_id);
   return ret;
 }

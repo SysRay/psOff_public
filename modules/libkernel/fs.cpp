@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/kernel/errors.h"
 #include "core/kernel/filesystem.h"
 #include "logging.h"
 #include "types.h"
@@ -19,6 +20,10 @@ EXPORT SYSV_ABI int64_t sceKernelWrite(int handle, const void* buf, size_t nbyte
 
 EXPORT SYSV_ABI int sceKernelOpen(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
   return filesystem::open(path, flags, kernelMode);
+}
+
+EXPORT SYSV_ABI int __NID(_open)(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
+  return POSIX_CALL(filesystem::open(path, flags, kernelMode));
 }
 
 EXPORT SYSV_ABI int sceKernelClose(int handle) {
@@ -63,6 +68,10 @@ EXPORT SYSV_ABI int sceKernelFcntl(int fd, int cmd, ...) {
 
 EXPORT SYSV_ABI size_t sceKernelReadv(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {
   return filesystem::readv(handle, iov, iovcnt);
+}
+
+EXPORT SYSV_ABI size_t __NID(_readv)(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {
+  return POSIX_CALL(filesystem::readv(handle, iov, iovcnt));
 }
 
 EXPORT SYSV_ABI size_t sceKernelWritev(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {

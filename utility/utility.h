@@ -79,10 +79,12 @@ constexpr std::pair<int, int> getMemoryProtection(int prot) {
 }
 
 constexpr std::uint64_t alignUp(uint64_t value, uint64_t alignment) {
+  if (alignment == 0) return value;
   return (value + (alignment - 1)) & ~(alignment - 1);
 }
 
 constexpr std::uint64_t alignDown(uint64_t value, uint64_t alignment) {
+  if (alignment == 0) return value;
   return value & ~(alignment - 1);
 }
 
