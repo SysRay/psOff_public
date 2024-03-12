@@ -23,6 +23,7 @@
 	"C_Cpp.autoAddFileAssociations": false,
 	"cmake.generator": "Ninja",
   "editor.tabSize": 2,
+  "editor.insertSpaces": true,
   "git.ignoredRepositories": [
     "third_party/boost",
     "third_party/optick",

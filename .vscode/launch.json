@@ -1,0 +1,16 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "(Windows) Launch",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${config:psoff.root-path}/emulator.exe",
+			"args": ["--file", "${config:psoff.game-path}/eboot.bin"],
+			"stopAtEntry": false,
+			"cwd": "${config:psoff.root-path}",
+			"environment": [],
+			"console": "integratedTerminal"
+		}
+	]
+}

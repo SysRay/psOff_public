@@ -32,6 +32,19 @@ static auto* getData() {
   return &obj;
 }
 
+static SDL_GameController* setupPad(int n, int userId) {
+  auto pData = getData();
+  auto padPtr = SDL_GameControllerOpen(n);
+  if (padPtr == nullptr) return nullptr;
+
+  SDL_GameControllerSetPlayerIndex(padPtr, userId - 1);
+  if (userId > 0) pData->controller[n].userId = userId;
+  pData->controller[n].prePadData = ScePadData();
+  pData->controller[n].padPtr = padPtr;
+  ++pData->controller[n].countConnect;
+  return padPtr;
+}
+
 uint32_t getButtons(SDL_GameController* pad) {
   std::bitset<32> bits;
   bits[(uint32_t)ScePadButtonDataOffset::L3]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_LEFTSTICK);
@@ -169,11 +182,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   auto lockSDL2 = accessVideoOut().getSDLLock();
   for (size_t n = 0; n < 16; ++n) {
     if (pData->controller[n].userId >= 0) continue;
-    pData->controller[n].userId = userId;
-    ++pData->controller[n].countConnect;
-    pData->controller[n].prePadData = ScePadData();
-    pData->controller[n].padPtr     = SDL_GameControllerOpen(n);
-    SDL_GameControllerSetPlayerIndex(pData->controller[n].padPtr, userId - 1);
+    setupPad(n, userId);
 
     LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S", n, userId, SDL_GameControllerNameForIndex(n));
     return n;
@@ -216,13 +225,11 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   if (handle < 0) return Err::INVALID_HANDLE;
 
   auto pData       = getData();
-  auto pController = pData->controller[handle].padPtr;
-  if (SDL_GameControllerGetAttached(pController) == false) {
-    SDL_GameControllerClose(pController);
-    pData->controller[handle].padPtr = pController = SDL_GameControllerOpen(handle);
-    SDL_GameControllerSetPlayerIndex(pController, pData->controller[handle].userId - 1);
-    if (SDL_GameControllerGetAttached(pController) == false) return Err::DEVICE_NOT_CONNECTED;
-    ++pData->controller[handle].countConnect;
+  auto pController = &pData->controller[handle];
+  auto pSDLController = pController->padPtr;
+  if (SDL_GameControllerGetAttached(pSDLController) == false) {
+    SDL_GameControllerClose(pSDLController);
+    if ((pSDLController = setupPad(handle, 0)) == nullptr) return Err::DEVICE_NOT_CONNECTED;
   }
 
   std::unique_lock const lock(pData->m_mutexInt);
