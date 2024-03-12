@@ -33,14 +33,14 @@ static auto* getData() {
 }
 
 static SDL_GameController* setupPad(int n, int userId) {
-  auto pData = getData();
+  auto pData  = getData();
   auto padPtr = SDL_GameControllerOpen(n);
   if (padPtr == nullptr) return nullptr;
 
   SDL_GameControllerSetPlayerIndex(padPtr, userId - 1);
   if (userId > 0) pData->controller[n].userId = userId;
   pData->controller[n].prePadData = ScePadData();
-  pData->controller[n].padPtr = padPtr;
+  pData->controller[n].padPtr     = padPtr;
   ++pData->controller[n].countConnect;
   return padPtr;
 }
@@ -224,8 +224,8 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   LOG_USE_MODULE(libScePad);
   if (handle < 0) return Err::INVALID_HANDLE;
 
-  auto pData       = getData();
-  auto pController = &pData->controller[handle];
+  auto pData          = getData();
+  auto pController    = &pData->controller[handle];
   auto pSDLController = pController->padPtr;
   if (SDL_GameControllerGetAttached(pSDLController) == false) {
     SDL_GameControllerClose(pSDLController);
