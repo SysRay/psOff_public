@@ -28,9 +28,9 @@ typedef struct SceNpTrophyFlagArray {
   SceNpTrophyFlagMask flagBits[SCE_NP_TROPHY_FLAG_SETSIZE >> SCE_NP_TROPHY_FLAG_BITS_SHIFT];
 } SceNpTrophyFlagArray;
 
-#define SCE_NP_TROPHY_FLAG_SET(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] |= (1 << ((n)&SCE_NP_TROPHY_FLAG_BITS_MASK)))
-#define SCE_NP_TROPHY_FLAG_CLR(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] &= ~(1 << ((n)&SCE_NP_TROPHY_FLAG_BITS_MASK)))
-#define SCE_NP_TROPHY_FLAG_ISSET(n, p) ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] & (1 << ((n)&SCE_NP_TROPHY_FLAG_BITS_MASK)))
+#define SCE_NP_TROPHY_FLAG_SET(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] |= (1 << ((n) & SCE_NP_TROPHY_FLAG_BITS_MASK)))
+#define SCE_NP_TROPHY_FLAG_CLR(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] &= ~(1 << ((n) & SCE_NP_TROPHY_FLAG_BITS_MASK)))
+#define SCE_NP_TROPHY_FLAG_ISSET(n, p) ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] & (1 << ((n) & SCE_NP_TROPHY_FLAG_BITS_MASK)))
 #define SCE_NP_TROPHY_FLAG_ZERO(p)                                                                                                                             \
   do {                                                                                                                                                         \
     SceNpTrophyFlagArray* __fa = (p);                                                                                                                          \
