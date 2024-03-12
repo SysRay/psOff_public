@@ -1,6 +1,6 @@
 # psOff - PlayStation 4 Emulation (Windows)
 
-![Discord](https://img.shields.io/discord/1215784508708749322?style=plastic&logo=discord&logoColor=white&link=https%3A%2F%2Fdiscord.gg%2FJd2AuBN6eW)
+[<img src="https://img.shields.io/discord/1215784508708749322?color=5865F2&label=ps_off&logo=discord&logoColor=white"/>](https://discord.gg/Jd2AuBN6eW)
 
 **In development. Does it run ...? No!**
 
