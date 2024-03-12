@@ -3,7 +3,6 @@ project(third_party VERSION 0.0.1)
 
 include(ExternalProject)
 
-add_subdirectory(portAudio)
 add_subdirectory(optick)
 add_subdirectory(p7)
 add_subdirectory(SDL2)
