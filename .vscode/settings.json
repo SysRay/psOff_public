@@ -26,7 +26,7 @@
   "git.ignoredRepositories": [
     "third_party/boost",
     "third_party/optick",
-    "third_party/glfw",
-    "third_party/magic_enum"
+    "third_party/magic_enum",
+		"third_part/SDL2"
 	]
 }
