@@ -170,7 +170,12 @@ EXPORT const char* MODULE_NAME = "libScePad";
 
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
-  return SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == 0 ? Ok : Err::FATAL;
+
+  int32_t ret = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == 0 ? Ok : Err::FATAL;
+  if (SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt") < 0) {
+    LOG_WARN(L"Failed to load game controller mappings");
+  }
+  return ret;
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
