@@ -136,7 +136,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     char*         dname;
     SDL_AudioSpec fmt_curr;
     SDL_GetDefaultAudioInfo(&dname, &fmt_curr, 0);
-    LOG_INFO(L"Opening audio device: %s\n", dname);
+    LOG_INFO(L"Opening audio device: %S\n", dname);
     auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
     if (devId <= 0) return devId;
     SDL_PauseAudioDevice(devId, 0);
