@@ -16,11 +16,18 @@
   "ccls.index.threads": 0,
 
   "cmake.buildDirectory": "${workspaceFolder}/_build",
+	"cmake.installPrefix": "_Install",
+	"cmake.sourceDirectory": "${workspaceFolder}",
+	"C_Cpp.default.intelliSenseMode": "windows-clang-x64",
+	"C_Cpp.default.cppStandard": "c++20",
+	"C_Cpp.autoAddFileAssociations": false,
+	"cmake.generator": "Ninja",
   "editor.tabSize": 2,
+  "editor.insertSpaces": true,
   "git.ignoredRepositories": [
     "third_party/boost",
     "third_party/optick",
-    "third_party/glfw",
-    "third_party/magic_enum"
-  ],
+    "third_party/magic_enum",
+		"third_part/SDL2"
+	]
 }

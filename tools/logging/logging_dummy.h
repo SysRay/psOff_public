@@ -23,6 +23,7 @@ void __log(bool doExit, const wchar_t* i_pFormat, ...);
  *
  */
 constexpr void deinit() {}
+
 /**
  * @brief Register thread (for better logging)
  *

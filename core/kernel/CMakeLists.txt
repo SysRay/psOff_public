@@ -7,4 +7,4 @@ add_library(kernel OBJECT
   semaphore.cpp
 )
 
-add_dependencies(kernel third_party)
+add_dependencies(kernel third_party boost)

@@ -53,6 +53,7 @@ struct SceAvPlayerDecoderInit {
     SceAvPlayerAudioDecoderType audioType;
     uint8_t                     reserved[4];
   } decoderType;
+
   union {
     struct {
       int32_t cpuAffinityMask;
@@ -67,10 +68,12 @@ struct SceAvPlayerDecoderInit {
 
       uint8_t reserved[16];
     } avcSw2;
+
     struct {
       uint8_t audioChannelOrder;
       uint8_t reserved[27];
     } aac;
+
     uint8_t reserved[28];
   } decoderParams;
 };

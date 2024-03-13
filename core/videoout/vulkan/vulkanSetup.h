@@ -9,7 +9,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-struct GLFWwindow;
+struct SDL_Window;
 
 namespace vulkan {
 
@@ -83,10 +83,10 @@ struct VulkanObj {
   Queues                   queues;
 };
 
-VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool useValidation);
+VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool useValidation);
 void       deinitVulkan(VulkanObj* obj);
 
-void createSurface(VulkanObj* obj, GLFWwindow* window, VkSurfaceKHR& surfaceOut);
+void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut);
 
 VkPhysicalDeviceLimits const* getPhysicalLimits();
 
