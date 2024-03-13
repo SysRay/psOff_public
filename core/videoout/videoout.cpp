@@ -396,7 +396,7 @@ void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size
   // -
 
   // todo check if gpu memory is newer or not (commandprocessor submits)
-  if (true) {
+  if (false) {
     vulkan::transfer2Display_direct(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, image.get(), index);
   } else {
     vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, image->getImage(), image.get(), index);
