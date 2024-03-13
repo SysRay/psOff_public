@@ -223,7 +223,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     }
 
     auto      file   = std::make_unique<std::fstream>(std::fstream(mappedPath, mode));
-    int const handle = accessFileManager().addFileStream(std::move(file), mappedPath);
+    int const handle = accessFileManager().addFileStream(std::move(file), mappedPath, mode);
     LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
 
     return handle;
@@ -545,6 +545,8 @@ size_t pwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
 int64_t lseek(int handle, int64_t offset, int whence) {
   LOG_USE_MODULE(filesystem);
   LOG_TRACE(L"lseek [%d] 0x%08llx %d", handle, offset, whence);
+
+  if (whence > 2) return getErr(ErrCode::_EINVAL);
   if (handle < FILE_DESCRIPTOR_MIN) {
     return getErr(ErrCode::_EPERM);
   }
@@ -552,16 +554,18 @@ int64_t lseek(int handle, int64_t offset, int whence) {
   auto file = accessFileManager().getFile(handle);
   file->clear();
 
-  if (whence == 0) {
-    file->seekg(offset, std::ios::beg);
-    file->seekp(offset, std::ios::beg);
-  } else if (whence == 1) {
-    file->seekg(offset, std::ios::cur);
-    file->seekp(offset, std::ios::cur);
-  } else if (whence == 2) {
-    file->seekg(offset, std::ios::end);
-    file->seekp(offset, std::ios::end);
-  }
+  // translate to std
+  static int _whence[] = {
+      std::ios::beg,
+      std::ios::cur,
+      std::ios::end,
+  };
+  // -
+
+  auto const mode = accessFileManager().getMode(handle);
+
+  if ((mode & std::ios::in) > 0) file->seekg(offset, _whence[whence]);
+  if ((mode & std::ios::out) > 0) file->seekp(offset, _whence[whence]);
 
   if (!*file) {
     LOG_TRACE(L"lseek[%d] einval");
