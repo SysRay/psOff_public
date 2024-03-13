@@ -64,11 +64,18 @@ uint32_t getButtons(SDL_GameController* pad) {
   return bits.to_ulong();
 }
 
-uint8_t convertAnalog(float value) {
-  // todo: windows uses 255 ps4 256
-  int32_t v = (256.0f + 255.0f * value) / 2.0f;
-  // int32_t v = (255.0f * (value + 1.0f)) / 2.0f;
-  return std::clamp(v, 0, 255);
+uint8_t scaleAnalogStick(Sint16 value) {
+  // input -32768 (up/left) to 32767 (down/right).
+  // return 0..255
+
+  return 255 * (32768 + value) / (32768 + 32767);
+}
+
+uint8_t scaleAnalogButton(Sint16 value) {
+  // input 0 when released to 32767
+  // return 0..255
+
+  return 255 * value / 32767;
 }
 
 ScePadData getPadData(int handle) {
@@ -86,18 +93,18 @@ ScePadData getPadData(int handle) {
       .buttons = getButtons(pController),
       .leftStick =
           {
-              .x = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTX) / 32767.0f),
-              .y = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTY) / 32767.0f),
+              .x = scaleAnalogStick(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTX)),
+              .y = scaleAnalogStick(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_LEFTY)),
           },
       .rightStick =
           {
-              .x = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f),
-              .y = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f),
+              .x = scaleAnalogStick(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTX)),
+              .y = scaleAnalogStick(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_RIGHTY)),
           },
       .analogButtons =
           {
-              .l2 = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERLEFT) / 32767.0f),
-              .r2 = convertAnalog((float)SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) / 32767.0f),
+              .l2 = scaleAnalogButton(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERLEFT)),
+              .r2 = scaleAnalogButton(SDL_GameControllerGetAxis(pController, SDL_CONTROLLER_AXIS_TRIGGERRIGHT)),
           },
       .orientation =
           {
@@ -237,7 +244,8 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   *pPadData = getPadData(handle);
 
   int retVal = std::memcmp((uint8_t*)&pData->controller[handle].prePadData, (uint8_t*)pPadData, offsetof(ScePadData, connected));
-  LOG_DEBUG(L"buttons 0x%lx diff:%d", pPadData->buttons, retVal);
+  LOG_DEBUG(L"buttons 0x%lx leftStick:%u/%u rightStick:%u/%u diff:%d", pPadData->buttons, pPadData->leftStick.x, pPadData->leftStick.y, pPadData->rightStick.x,
+            pPadData->rightStick.y, retVal);
 
   pData->controller[handle].prePadData = *pPadData;
   return abs(retVal);
@@ -303,7 +311,6 @@ EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
 
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"");
   if (handle < 0) return Err::INVALID_HANDLE;
   auto pData = getData();
 
@@ -346,14 +353,14 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
 
 EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData* pData, ScePadDeviceClassData* pDeviceClassData) {
   LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"");
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, ScePadDeviceClassExtendedInformation* pExtInfo) {
   LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"");
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
 }

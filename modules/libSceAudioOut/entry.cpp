@@ -37,7 +37,7 @@ Pimpl* getData() {
 
 int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return 0;
+  if (!port.open || ptr == nullptr) return 0;
 
   port.lastOutputTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
