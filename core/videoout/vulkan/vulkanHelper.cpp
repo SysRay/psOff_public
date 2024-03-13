@@ -101,10 +101,20 @@ uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData&
         .flags = 0,
     };
 
+    VkFenceCreateInfo const fenceCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .pNext = 0,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+    };
+
     for (uint8_t i = 0; i < numImages; ++i) {
-      swapchainData.buffers[i].image = images[i];
-      vkCreateSemaphore(obj->deviceInfo.device, &semCreateInfo, nullptr, &swapchainData.buffers[i].semDisplayReady);
-      vkCreateSemaphore(obj->deviceInfo.device, &semCreateInfo, nullptr, &swapchainData.buffers[i].semPresentReady);
+      auto& buffer = swapchainData.buffers[i];
+      buffer.image = images[i];
+
+      vkCreateSemaphore(obj->deviceInfo.device, &semCreateInfo, nullptr, &buffer.semDisplayReady);
+      vkCreateSemaphore(obj->deviceInfo.device, &semCreateInfo, nullptr, &buffer.semPresentReady);
+
+      vkCreateFence(obj->deviceInfo.device, &fenceCreateInfo, nullptr, &buffer.bufferFence);
     }
   }
 
@@ -157,8 +167,7 @@ uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData&
   return curBufferIndex;
 }
 
-void submitDisplayTransfer(VkCommandBuffer cmdBuffer, VulkanObj* obj, VkSemaphore semPresentReady, VkSemaphore displayReady, VkSemaphore waitSema,
-                           size_t waitValue) {
+void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displayBuffer, VkSemaphore waitSema, size_t waitValue) {
   LOG_USE_MODULE(vulkanHelper);
 
   size_t   waitValues[] = {0, waitValue};
@@ -171,7 +180,7 @@ void submitDisplayTransfer(VkCommandBuffer cmdBuffer, VulkanObj* obj, VkSemaphor
   };
 
   VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-  VkSemaphore          sems[]      = {displayReady, waitSema};
+  VkSemaphore          sems[]      = {displayBuffer->semDisplayReady, waitSema};
 
   VkSubmitInfo const submitInfo {
       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -182,20 +191,103 @@ void submitDisplayTransfer(VkCommandBuffer cmdBuffer, VulkanObj* obj, VkSemaphor
       .pWaitDstStageMask  = waitStage,
 
       .commandBufferCount = 1,
-      .pCommandBuffers    = &cmdBuffer,
+      .pCommandBuffers    = &displayBuffer->transferBuffer,
 
       .signalSemaphoreCount = 1,
-      .pSignalSemaphores    = &semPresentReady,
+      .pSignalSemaphores    = &displayBuffer->semPresentReady,
   };
 
-  if (VkResult result = vkQueueSubmit(obj->queues.items[getIndex(QueueType::graphics)][0].queue, 1, &submitInfo, VK_NULL_HANDLE); result != VK_SUCCESS) {
+  if (VkResult result = vkQueueSubmit(obj->queues.items[getIndex(QueueType::graphics)][0].queue, 1, &submitInfo, displayBuffer->bufferFence);
+      result != VK_SUCCESS) {
     LOG_CRIT(L"Couldn't vkQueueSubmit Transfer %S", string_VkResult(result));
   }
+}
+
+void transfer2Display_direct(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGpuImageObject* image, uint32_t index) {
+  LOG_USE_MODULE(vulkanHelper);
+
+  auto& displayBuffer = swapchain.buffers[index];
+
+  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence);
+
+  vkResetCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+
+  // Transfer
+  VkCommandBufferBeginInfo const beginInfo {
+      .sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .flags            = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+      .pInheritanceInfo = nullptr,
+  };
+
+  if (vkBeginCommandBuffer(cmdBuffer, &beginInfo) != VK_SUCCESS) {
+    LOG_CRIT(L"Error vkBeginCommandBuffer");
+  }
+
+  { // Change layout: transfer dst
+    VkImageMemoryBarrier const barrier {
+        .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext               = nullptr,
+        .srcAccessMask       = 0,
+        .dstAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+
+        .image            = displayBuffer.image,
+        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+  }
+
+  { // Copy Buffer -> Display
+    VkBufferImageCopy imageCopy {.bufferOffset      = image->getBaseOffset(),
+                                 .bufferRowLength   = 0,
+                                 .bufferImageHeight = image->getExtent().height,
+                                 .imageSubresource =
+                                     {
+                                         .aspectMask     = image->getAspect(),
+                                         .mipLevel       = 0,
+                                         .baseArrayLayer = 0,
+                                         .layerCount     = 1,
+                                     },
+                                 .imageOffset = {0, 0, 0},
+                                 .imageExtent = image->getExtent()};
+
+    vkCmdCopyBufferToImage(cmdBuffer, image->getSrcBuffer(), displayBuffer.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+  }
+
+  { // Change layout: present
+
+    VkImageMemoryBarrier const barrier {
+        .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext               = nullptr,
+        .srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstAccessMask       = 0,
+        .oldLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .newLayout           = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+
+        .image            = displayBuffer.image,
+        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+  }
+
+  // End CmdBuffer -> Submit
+  if (vkEndCommandBuffer(cmdBuffer) != VK_SUCCESS) {
+    LOG_CRIT(L"Couldn't end commandbuffer");
+  }
+  // -
 }
 
 void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, VkImage displayImage, IGpuImageObject* image,
                       uint32_t index) {
   LOG_USE_MODULE(vulkanHelper);
+
+  auto& displayBuffer = swapchain.buffers[index];
 
   vkResetCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
@@ -295,11 +387,13 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
 void presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& index) {
   LOG_USE_MODULE(vulkanHelper);
 
+  auto& displayBuffer = swapchain.buffers[index];
+
   VkPresentInfoKHR const presentInfo {
       .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
       .pNext              = nullptr,
       .waitSemaphoreCount = 1,
-      .pWaitSemaphores    = &swapchain.buffers[index].semPresentReady,
+      .pWaitSemaphores    = &displayBuffer.semPresentReady,
       .swapchainCount     = 1,
       .pSwapchains        = &swapchain.swapchain,
       .pImageIndices      = &index,

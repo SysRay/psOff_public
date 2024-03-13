@@ -5,9 +5,9 @@
 class IGpuImageObject;
 
 namespace vulkan {
-void submitDisplayTransfer(VkCommandBuffer cmdBuffer, VulkanObj* obj, VkSemaphore semPresentReady, VkSemaphore displayReady, VkSemaphore waitSema,
-                           size_t waitValue);
+void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displayBuffer, VkSemaphore waitSema, size_t waitValue);
 
+void transfer2Display_direct(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGpuImageObject* image, uint32_t index);
 void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, VkImage displayImage, IGpuImageObject* image,
                       uint32_t index);
 

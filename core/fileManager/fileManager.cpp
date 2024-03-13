@@ -30,7 +30,10 @@ struct UniData {
 struct FileData: public UniData {
   std::unique_ptr<std::fstream> const m_file;
 
-  FileData(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path): UniData(UniData::Type::File, path), m_file(std::move(file)) {}
+  std::ios_base::openmode mode;
+
+  FileData(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode)
+      : UniData(UniData::Type::File, path), m_file(std::move(file)), mode(mode) {}
 
   virtual ~FileData() { m_file->sync(); }
 };
@@ -150,10 +153,10 @@ class FileManager: public IFileManager {
 
   std::filesystem::path const& getGameFilesDir() const final { return m_dirGameFiles; }
 
-  int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path) final {
+  int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) final {
     std::unique_lock const lock(m_mutext_int);
 
-    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path).release());
+    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path, mode).release());
   }
 
   int addDirIterator(std::unique_ptr<std::filesystem::directory_iterator>&& it, std::filesystem::path const& path) final {
@@ -179,6 +182,17 @@ class FileManager: public IFileManager {
       return static_cast<FileData*>(m_openFiles[handle].get())->m_file.get();
     }
     return nullptr;
+  }
+
+  std::ios_base::openmode getMode(int handle) final {
+    if (handle < FILE_DESCRIPTOR_MIN) return {};
+    handle -= FILE_DESCRIPTOR_MIN;
+
+    std::unique_lock const lock(m_mutext_int);
+    if (handle < m_openFiles.size() && m_openFiles[handle] && m_openFiles[handle]->m_type == UniData::Type::File) {
+      return static_cast<FileData*>(m_openFiles[handle].get())->mode;
+    }
+    return {};
   }
 
   std::filesystem::path getPath(int handle) final {

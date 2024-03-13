@@ -286,6 +286,8 @@ EXPORT SYSV_ABI void sceKernelDebugRaiseException(int reason, int id) {
 }
 
 EXPORT SYSV_ABI int __NID(_write)(int d, const char* str, int64_t size) {
+  if (size < 1) return size;
+
   LOG_USE_MODULE(libkernel);
   LOG_ERR(L"Kernel: %S", std::string(str, size - 1).data());
   return (int)size;

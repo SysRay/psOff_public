@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -56,6 +58,8 @@ struct SwapchainData {
 
     VkCommandBuffer transferBuffer;
     VkSemaphore     semPresentReady;
+
+    VkFence bufferFence;
   };
 
   VkCommandPool               commandPool;

@@ -16,7 +16,7 @@ enum class SceMapMode : uint16_t {
   PRIVATE      = 0x0002,
   FIXED        = 0x0010,
   NO_OVERWRITE = 0x0080,
-  VOID         = 0x0100,
+  VOID_        = 0x0100,
 };
 
 enum class SceMapType : uint16_t {
@@ -76,9 +76,14 @@ struct SceKernelStat {
   unsigned int: (8 / 2) * (16 - static_cast<int>(sizeof(SceKernelTimespec)));
 };
 
+struct Sce_iovec {
+  void*  iov_base;
+  size_t iov_len;
+};
+
 typedef uint16_t SceKernelMode; // todo needed?
 
-typedef struct iovec SceKernelIovec;
+typedef struct Sce_iovec SceKernelIovec;
 
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)

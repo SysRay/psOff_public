@@ -80,7 +80,7 @@ class IFileManager {
    * @param path the mapped path to the file/folder
    * @return int handle of the fstream. used by getFile() etc.
    */
-  virtual int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path) = 0;
+  virtual int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) = 0;
 
   /**
    * @brief Add a directory_iterator
@@ -106,6 +106,8 @@ class IFileManager {
    * @return std::fstream*
    */
   virtual std::fstream* getFile(int handle) = 0;
+
+  virtual std::ios_base::openmode getMode(int handle) = 0;
 
   virtual int getDents(int handle, char* buf, int nbytes, int64_t* basep) = 0;
 
