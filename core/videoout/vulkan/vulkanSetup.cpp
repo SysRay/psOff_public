@@ -2,12 +2,11 @@
 
 #include "logging.h"
 
+#include <SDL.h>
+#include <SDL_vulkan.h>
 #include <format>
 #include <utility/utility.h>
 #include <vulkan/vk_enum_string_helper.h>
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 LOG_DEFINE_MODULE(vulkanSetup);
 
@@ -109,7 +108,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessengerCallback(VkDebugUtilsMessageSeverit
   return VK_FALSE;
 }
 
-VulkanExtensions getExtensions(bool enableValidation) {
+VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
 
   uint32_t countAvailableExtensions = 0;
@@ -118,10 +117,13 @@ VulkanExtensions getExtensions(bool enableValidation) {
 
   VulkanExtensions r = {.enableValidationLayers = enableValidation};
 
-  auto res = glfwGetRequiredInstanceExtensions(&countRequiredExtensions);
+  SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, NULL);
+  auto extensions = static_cast<const char**>(SDL_malloc(sizeof(char*) * countRequiredExtensions));
+  SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, extensions);
   for (size_t n = 0; n < countRequiredExtensions; n++) {
-    r.requiredExtensions.push_back(res[n]);
+    r.requiredExtensions.push_back(extensions[n]);
   }
+  SDL_free(extensions);
 
   vkEnumerateInstanceExtensionProperties(nullptr, &countAvailableExtensions, nullptr);
   r.availableExtensions = std::vector<VkExtensionProperties>(countAvailableExtensions, VkExtensionProperties {});
@@ -135,7 +137,7 @@ VulkanExtensions getExtensions(bool enableValidation) {
   }
 
   for (size_t n = 0; n < r.requiredExtensions.size(); ++n) {
-    LOG_INFO(L"GLFW required extension: %S", r.requiredExtensions[n]);
+    LOG_INFO(L"SDL2 required extension: %S", r.requiredExtensions[n]);
   }
 
   for (const auto& ext: r.availableExtensions) {
@@ -655,7 +657,7 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
 static VkPhysicalDeviceProperties g_PhysicalDeviceProperties;
 static VkInstance                 g_VkInstance;
 
-VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool enableValidation) {
+VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
   auto obj = new VulkanObj;
 
@@ -684,7 +686,7 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool enableVali
       .apiVersion         = VK_API_VERSION_1_3,
   };
 
-  auto extensions = getExtensions(enableValidation);
+  auto extensions = getExtensions(window, enableValidation);
 
   VkInstanceCreateInfo const instInfo {
       .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -713,8 +715,8 @@ VulkanObj* initVulkan(GLFWwindow* window, VkSurfaceKHR& surface, bool enableVali
   }
   // -
 
-  if (auto result = glfwCreateWindowSurface(obj->deviceInfo.instance, window, NULL, &surface); result != VK_SUCCESS) {
-    LOG_CRIT(L"glfwCreateWindowSurface() Error:%S", string_VkResult(result));
+  if (auto result = SDL_Vulkan_CreateSurface(window, obj->deviceInfo.instance, &surface); result != true) {
+    LOG_CRIT(L"SDL_Vulkan_CreateSurface() Error:%S", SDL_GetError());
   }
 
   VulkanQueues queues;

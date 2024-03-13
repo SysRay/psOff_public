@@ -20,8 +20,8 @@ enum class SceNpPlatformType : int {
 enum class SceNpState { UNKNOWN = 0, SIGNED_OUT, SIGNED_IN };
 enum class SceNpGamePresenceStatus { OFFLINE, ONLINE };
 enum class SceNpReachabilityState { UNAVAILABLE = 0, AVAILABLE, REACHABLE };
-
 enum class SceNpServiceLabel : uint32_t { DEFAULT = 0x00000000, INVALID = 0xFFFFFFFF };
+
 struct SceNpTitleId {
   char id[SCE_NP_TITLE_ID_LEN + 1];
 };

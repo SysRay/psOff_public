@@ -1,6 +1,6 @@
 #pragma once
-#include "common.h"
 #include "codes.h"
+#include "common.h"
 
 enum class SCE_IME_MAX {
   PREEDIT_LENGTH          = 30,
@@ -433,6 +433,7 @@ struct SceImeParamExtended {
   uint32_t                extKeyboardMode;
   int8_t                  reserved[60];
 };
+
 struct SceImeKeyboardParam {
   uint32_t           option;
   int8_t             reserved1[4];

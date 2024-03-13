@@ -57,6 +57,7 @@ struct SceAvPlayerVideoEx {
 
   uint8_t reserved1[37];
 };
+
 struct SceAvPlayerTimedTextEx {
   uint8_t languageCode[4];
   uint8_t reserved[12];

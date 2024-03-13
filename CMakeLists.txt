@@ -37,6 +37,7 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, ex
 #
 include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
+  ${PRJ_SRC_DIR}/third_party/SDL2/include
   ${PRJ_SRC_DIR}/modules_include
   ${PRJ_SRC_DIR}/tools/logging
   ${PRJ_SRC_DIR}

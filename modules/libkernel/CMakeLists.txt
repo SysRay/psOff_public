@@ -15,7 +15,7 @@ add_library(${libName} SHARED
   pthread.cpp
 )
 
-add_dependencies(${libName} core third_party)
+add_dependencies(${libName} core third_party boost)
 target_link_libraries(${libName} PRIVATE
   core.lib
   libboost_thread

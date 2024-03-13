@@ -1,8 +1,8 @@
 #include "common.h"
 #include "logging.h"
-#include "portaudio.h"
 #include "types.h"
 
+#include <SDL.h>
 #include <array>
 #include <chrono>
 #include <mutex>
@@ -14,13 +14,14 @@ struct PortOut {
   bool                   open           = false;
   int                    userId         = 0;
   SceAudioOutPortType    type           = SceAudioOutPortType::MAIN;
+  uint8_t                sampleSize     = 0;
   uint32_t               samplesNum     = 0;
   uint32_t               freq           = 0;
   SceAudioOutParamFormat format         = SceAudioOutParamFormat::FLOAT_MONO;
   uint64_t               lastOutputTime = 0;
   int                    channelsNum    = 0;
   int                    volume[8]      = {};
-  PaStream*              stream         = nullptr;
+  SDL_AudioDeviceID      device         = 0;
 };
 
 struct Pimpl {
@@ -34,13 +35,18 @@ Pimpl* getData() {
   return &obj;
 }
 
-PaError writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
+int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return 0;
+  if (!port.open || ptr == nullptr) return 0;
 
   port.lastOutputTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  if (Pa_IsStreamActive(port.stream) != 1) Pa_StartStream(port.stream);
-  return Pa_WriteStream(port.stream, ptr, port.samplesNum);
+
+  if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
+
+  while (SDL_GetQueuedAudioSize(port.device) > 0)
+    SDL_Delay(0);
+
+  return SDL_QueueAudio(port.device, ptr, port.samplesNum * port.sampleSize * port.channelsNum);
 }
 } // namespace
 
@@ -50,8 +56,7 @@ EXPORT const char* MODULE_NAME = "libSceAudioOut";
 
 EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   (void)getData();
-  Pa_Initialize();
-  return Ok;
+  return SDL_InitSubSystem(SDL_INIT_AUDIO) == 0 ? Ok : Err::NOT_INIT;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, SceAudioOutParamFormat format) {
@@ -73,39 +78,47 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     port.format         = format;
     port.lastOutputTime = 0;
 
-    PaSampleFormat sampleFormat;
+    SDL_AudioFormat sampleFormat;
     switch (format) {
       case SceAudioOutParamFormat::S16_MONO:
-        sampleFormat     = paInt16;
+        sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 1;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_MONO:
-        sampleFormat     = paFloat32;
+        sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 1;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_STEREO:
-        sampleFormat     = paInt16;
+        sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 2;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_STEREO:
-        sampleFormat     = paFloat32;
+        sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 2;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH:
-        sampleFormat     = paInt16;
+        sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 8;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH:
-        sampleFormat     = paFloat32;
+        sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 8;
+        port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH_STD:
-        sampleFormat     = paInt16;
+        sampleFormat     = AUDIO_S16SYS;
         port.channelsNum = 8;
+        port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH_STD:
-        sampleFormat     = paFloat32;
+        sampleFormat     = AUDIO_F32SYS;
         port.channelsNum = 8;
+        port.sampleSize  = 4;
         break;
     }
 
@@ -113,17 +126,21 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       port.volume[i] = 32768;
     }
 
-    PaStreamParameters const outParams {
-        .device                    = Pa_GetDefaultOutputDevice(), /* default output device */
-        .channelCount              = port.channelsNum,
-        .sampleFormat              = sampleFormat,
-        .suggestedLatency          = Pa_GetDeviceInfo(outParams.device)->defaultLowOutputLatency,
-        .hostApiSpecificStreamInfo = NULL,
-    };
+    SDL_AudioSpec fmt {.freq     = static_cast<int>(freq),
+                       .format   = sampleFormat,
+                       .channels = static_cast<uint8_t>(port.channelsNum),
+                       .samples  = static_cast<uint16_t>(port.samplesNum),
+                       .callback = nullptr,
+                       .userdata = nullptr};
 
-    if (auto err = Pa_OpenStream(&port.stream, NULL, &outParams, freq, port.samplesNum, paNoFlag, NULL, NULL); err != Ok) {
-      return err;
-    }
+    char*         dname;
+    SDL_AudioSpec fmt_curr;
+    SDL_GetDefaultAudioInfo(&dname, &fmt_curr, 0);
+    LOG_INFO(L"Opening audio device: %S\n", dname);
+    auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
+    if (devId <= 0) return devId;
+    SDL_PauseAudioDevice(devId, 0);
+    port.device = devId;
 
     return id + 1;
   }
@@ -140,8 +157,9 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
   auto& port = pimpl->portsOut[handle - 1];
   if (port.open) {
     port.open = false;
-    if (Pa_IsStreamActive(port.stream) == 1) {
-      Pa_CloseStream(port.stream);
+
+    if (port.device > 0) {
+      SDL_CloseAudioDevice(port.device);
     }
   }
   return Ok;
@@ -188,7 +206,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
 
   // std::unique_lock const lock(pimpl->mutexInt); // dont block, causes audio artifacts
   for (uint32_t i = 0; i < num; i++) {
-    if (auto err = writeOut(pimpl, param[i].handle, param[i].ptr); err != paNoError) return err;
+    if (auto err = writeOut(pimpl, param[i].handle, param[i].ptr); err != 0) return err;
   }
   return Ok;
 }

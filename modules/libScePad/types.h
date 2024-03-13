@@ -160,6 +160,7 @@ struct ScePadColor {
 
 struct ScePadTouchPadInformation {
   float pixelDensity;
+
   struct {
     uint16_t x;
     uint16_t y;
@@ -203,6 +204,7 @@ struct ScePadDeviceClassData {
       uint8_t gear;
       uint8_t reserved[1];
     } steeringWheel;
+
     struct {
       uint8_t toneNumber;
       uint8_t whammyBar;
@@ -213,6 +215,7 @@ struct ScePadDeviceClassData {
       uint8_t fretSolo;
       uint8_t reserved[11];
     } guitar;
+
     struct {
       uint8_t snare;
 
