@@ -56,7 +56,7 @@ bool Config::load() {
       std::ifstream log_file(path);
       j = json::parse(log_file, nullptr, true, true);
     } catch (const json::exception& e) {
-      LOG_ERR(L"Failed to open %S: %S", fname, e.what());
+      LOG_ERR(L"Failed to open %S: %S", fname.data(), e.what());
 
       std::filesystem::path newp(path);
       newp.replace_extension(".back");
