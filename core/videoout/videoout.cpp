@@ -634,7 +634,7 @@ std::thread VideoOut::createSDLThread() {
           auto const title = getTitle(index, 0, 0, window.fliprate);
 
           window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
-                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
+                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
