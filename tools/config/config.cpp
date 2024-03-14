@@ -3,6 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "logging.h"
+
 #include <fstream>
 
 LOG_DEFINE_MODULE(Config);
@@ -36,17 +37,12 @@ IConfig* accessConfig() {
 
 std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSaveFlags flag) {
   switch (flag) {
-    case ConfigSaveFlags::LOGGING:
-      return std::make_pair(std::move(boost::unique_lock(m_mutex_logging)), &m_logging);
-    case ConfigSaveFlags::GRAPHICS:
-      return std::make_pair(std::move(boost::unique_lock(m_mutex_graphics)), &m_graphics);
-    case ConfigSaveFlags::AUDIO:
-      return std::make_pair(std::move(boost::unique_lock(m_mutex_audio)), &m_audio);
-    case ConfigSaveFlags::CONTROLS:
-      return std::make_pair(std::move(boost::unique_lock(m_mutex_controls)), &m_controls);
+    case ConfigSaveFlags::LOGGING: return std::make_pair(std::move(boost::unique_lock(m_mutex_logging)), &m_logging);
+    case ConfigSaveFlags::GRAPHICS: return std::make_pair(std::move(boost::unique_lock(m_mutex_graphics)), &m_graphics);
+    case ConfigSaveFlags::AUDIO: return std::make_pair(std::move(boost::unique_lock(m_mutex_audio)), &m_audio);
+    case ConfigSaveFlags::CONTROLS: return std::make_pair(std::move(boost::unique_lock(m_mutex_controls)), &m_controls);
 
-    default:
-      throw std::exception("Invalid bit flag");
+    default: throw std::exception("Invalid bit flag");
   }
 }
 
@@ -67,55 +63,29 @@ bool Config::load() {
       std::filesystem::rename(path, newp);
 
       j = defaults;
-      if (dflag != ConfigSaveFlags::NONE)
-        this->save((uint32_t)dflag);
+      if (dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
     }
   };
 
-  load("logging.json", m_logging, {
-    {"sink", "baical"}
-  }, ConfigSaveFlags::LOGGING);
-  load("graphics.json", m_graphics, {
-  }, ConfigSaveFlags::GRAPHICS);
-  load("audio.json", m_audio, {
-    {"volume", 0.5f},
-    {"device", "[default]"}
-  }, ConfigSaveFlags::AUDIO);
-  load("controls.json", m_controls, {
-    {"type", "gamepad"},
-    {"keybinds", {
-      {"triangle", ""},
-      {"square", ""},
-      {"circle", ""},
-      {"cross", ""},
-      {"dpad_up", ""},
-      {"dpad_down", ""},
-      {"dpad_left", ""},
-      {"dpad_right", ""},
-      {"options", ""},
-      {"touchpad", ""},
-      {"l1", ""},
-      {"l2", ""},
-      {"l3", ""},
-      {"r1", ""},
-      {"r2", ""},
-      {"r3", ""},
-      {"lx-", ""},
-      {"lx+", ""},
-      {"ly-", ""},
-      {"ly+", ""},
-      {"rx-", ""},
-      {"rx+", ""},
-      {"ry-", ""},
-      {"ry+", ""},
-    }}
-  }, ConfigSaveFlags::CONTROLS);
+  load("logging.json", m_logging, {{"sink", "baical"}}, ConfigSaveFlags::LOGGING);
+  load("graphics.json", m_graphics, {}, ConfigSaveFlags::GRAPHICS);
+  load("audio.json", m_audio, {{"volume", 0.5f}, {"device", "[default]"}}, ConfigSaveFlags::AUDIO);
+  load("controls.json", m_controls,
+       {{"type", "gamepad"},
+        {"keybinds",
+         {
+             {"triangle", ""}, {"square", ""},   {"circle", ""}, {"cross", ""}, {"dpad_up", ""}, {"dpad_down", ""}, {"dpad_left", ""}, {"dpad_right", ""},
+             {"options", ""},  {"touchpad", ""}, {"l1", ""},     {"l2", ""},    {"l3", ""},      {"r1", ""},        {"r2", ""},        {"r3", ""},
+             {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
+         }}},
+       ConfigSaveFlags::CONTROLS);
 
   return true;
 }
 
 bool Config::save(uint32_t flags) {
-  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) {}
+  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) {
+  }
 
   return true;
 }
