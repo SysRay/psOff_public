@@ -55,7 +55,9 @@ uint32_t getButtons(SDL_GameController* pad) {
   bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
   bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
   bits[(uint32_t)ScePadButtonDataOffset::L1]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
+  bits[(uint32_t)ScePadButtonDataOffset::L2]        = SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 100;
   bits[(uint32_t)ScePadButtonDataOffset::R1]        = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+  bits[(uint32_t)ScePadButtonDataOffset::R2]        = SDL_GameControllerGetAxis(pad, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 100;
   bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_Y);
   bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_B);
   bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_A);
@@ -249,8 +251,8 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   *pPadData = getPadData(handle);
 
   int retVal = std::memcmp((uint8_t*)&pData->controller[handle].prePadData, (uint8_t*)pPadData, offsetof(ScePadData, connected));
-  LOG_TRACE(L"buttons 0x%lx leftStick:%u/%u rightStick:%u/%u diff:%d", pPadData->buttons, pPadData->leftStick.x, pPadData->leftStick.y, pPadData->rightStick.x,
-            pPadData->rightStick.y, retVal);
+  LOG_DEBUG(L"buttons 0x%lx leftStick:%u/%u rightStick:%u/%u L2/R2:%u,%u diff:%d", pPadData->buttons, pPadData->leftStick.x, pPadData->leftStick.y,
+            pPadData->rightStick.x, pPadData->rightStick.y, pPadData->analogButtons.l2, pPadData->analogButtons.r2, retVal);
 
   pData->controller[handle].prePadData = *pPadData;
   return abs(retVal);

@@ -39,14 +39,15 @@ int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   auto& port = pimpl->portsOut[handle - 1];
   if (!port.open || ptr == nullptr) return 0;
 
-  port.lastOutputTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  port.lastOutputTime   = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  const size_t bytesize = port.samplesNum * port.sampleSize * port.channelsNum;
 
   if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
 
-  while (SDL_GetQueuedAudioSize(port.device) > 0)
+  while (SDL_GetQueuedAudioSize(port.device) > bytesize * 2)
     SDL_Delay(0);
 
-  return SDL_QueueAudio(port.device, ptr, port.samplesNum * port.sampleSize * port.channelsNum);
+  return SDL_QueueAudio(port.device, ptr, bytesize);
 }
 } // namespace
 
