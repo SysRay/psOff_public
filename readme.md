@@ -39,7 +39,8 @@ For development:
 
 + Ninja
 + CMake 3.24+
-+ Visual Studio 2019 or newer, it's just for the build environment (uses clang-cl,c++20)
++ Visual Studio 2022, it's just for the build environment (uses clang-cl,c++20)
++ Windows SDK 10.0.22621.0 or newer
 
 ### Installing
 For testing, just download the latest release and install the Vulkan SDK. 
