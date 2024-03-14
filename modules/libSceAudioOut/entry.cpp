@@ -1,6 +1,7 @@
 #include "common.h"
 #include "logging.h"
 #include "types.h"
+// #include "config.h"
 
 #include <SDL.h>
 #include <array>
@@ -136,6 +137,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
     char*         dname;
     SDL_AudioSpec fmt_curr;
+    // accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
     SDL_GetDefaultAudioInfo(&dname, &fmt_curr, 0);
     LOG_INFO(L"Opening audio device: %S\n", dname);
     auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
