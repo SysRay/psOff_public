@@ -4,8 +4,6 @@
 
 #include <fstream>
 
-using json = nlohmann::json;
-
 class Config: public IConfig {
   json         m_logging;
   json         m_graphics;
@@ -17,12 +15,11 @@ class Config: public IConfig {
   boost::mutex m_mutex_controls;
 
   public:
-  Config()          = default;
+  Config();
   virtual ~Config() = default;
 
   std::pair<boost::unique_lock<boost::mutex>, json*> accessModule(ConfigSaveFlags flag);
 
-  virtual bool load();
   virtual bool save(uint32_t flags);
 };
 
@@ -42,19 +39,46 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSa
   }
 }
 
-bool Config::load() {
+bool Config::save(uint32_t flags) {
+  auto save = [this](std::string_view fname, json& j) {
+    auto path = std::string("./config/") + fname.data();
+    try {
+      std::ofstream json_file(path);
+      json_file << std::setw(4) << j;
+      return true;
+    } catch (const json::exception& e) {
+      printf("Failed to save %s: %s\n", fname.data(), e.what());
+      return false;
+    }
+  };
+
+  bool result = true;
+
+  if (!std::filesystem::is_directory("./config/")) std::filesystem::create_directory("./config/");
+  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) result &= save("logging.json", m_logging);
+  if (flags & (uint32_t)ConfigSaveFlags::GRAPHICS) result &= save("graphics.json", m_graphics);
+  if (flags & (uint32_t)ConfigSaveFlags::AUDIO) result &= save("audio.json", m_audio);
+  if (flags & (uint32_t)ConfigSaveFlags::CONTROLS) result &= save("controls.json", m_controls);
+
+  return true;
+}
+
+Config::Config() {
   auto load = [this](std::string_view fname, json& j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
     auto path = std::string("./config/") + fname.data();
 
     try {
       std::ifstream json_file(path);
       j = json::parse(json_file, nullptr, true, true);
+      printf("Config %s loaded successfully\n", fname.data());
     } catch (const json::exception& e) {
       printf("Failed to parse %s: %s\n", fname.data(), e.what());
 
-      std::filesystem::path newp(path);
-      newp.replace_extension(".back");
-      std::filesystem::rename(path, newp);
+      try {
+        std::filesystem::path newp(path);
+        newp.replace_extension(".back");
+        std::filesystem::rename(path, newp);
+      } catch (const std::filesystem::filesystem_error& e) {}
 
       j = defaults;
       if (dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
@@ -73,29 +97,4 @@ bool Config::load() {
              {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
          }}},
        ConfigSaveFlags::CONTROLS);
-
-  return true;
-}
-
-bool Config::save(uint32_t flags) {
-  auto save = [this](std::string_view fname, json& j) {
-    auto path = std::string("./config/") + fname.data();
-    try {
-      std::ofstream json_file(path);
-      json_file << j;
-      return true;
-    } catch (const json::exception& e) {
-      printf("Failed to save %s: %s\n", fname.data(), e.what());
-      return false;
-    }
-  };
-
-  bool result = true;
-
-  if (std::filesystem::is_directory("./config/")) std::filesystem::create_directory("./config/");
-  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) result &= save("logging.json", m_logging);
-  if (flags & (uint32_t)ConfigSaveFlags::GRAPHICS) result &= save("graphics.json", m_graphics);
-  if (flags & (uint32_t)ConfigSaveFlags::AUDIO) result &= save("audio.json", m_audio);
-
-  return true;
 }

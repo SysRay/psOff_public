@@ -1,7 +1,7 @@
 #include "common.h"
 #include "logging.h"
 #include "types.h"
-// #include "config.h"
+#include "tools/config/config.h"
 
 #include <SDL.h>
 #include <array>
@@ -135,10 +135,25 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
                        .callback = nullptr,
                        .userdata = nullptr};
 
-    char*         dname;
-    SDL_AudioSpec fmt_curr;
-    // accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
-    SDL_GetDefaultAudioInfo(&dname, &fmt_curr, 0);
+    const char* dname;
+    auto [lock, jData] = accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
+
+    // lock.lock();
+    if ((*jData)["device"] == "[default]") {
+      SDL_AudioSpec fmt_curr;
+      SDL_GetDefaultAudioInfo((char **)&dname, &fmt_curr, 0);
+    } else {
+      try {
+        std::string jdname;
+        (*jData)["device"].get_to(jdname);
+        dname = jdname.c_str();
+      } catch (const json::exception& e) {
+        LOG_ERR(L"Invalid audio device name: %S", e.what());
+        dname = NULL;
+      }
+    }
+    // lock.unlock();
+
     LOG_INFO(L"Opening audio device: %S\n", dname);
     auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
     if (devId <= 0) return devId;
