@@ -53,10 +53,10 @@ bool Config::load() {
     auto path = std::string("./config/") + fname.data();
 
     try {
-      std::ifstream log_file(path);
-      j = json::parse(log_file, nullptr, true, true);
+      std::ifstream json_file(path);
+      j = json::parse(json_file, nullptr, true, true);
     } catch (const json::exception& e) {
-      LOG_ERR(L"Failed to open %S: %S", fname.data(), e.what());
+      LOG_ERR(L"Failed to parse %S: %S", fname.data(), e.what());
 
       std::filesystem::path newp(path);
       newp.replace_extension(".back");
@@ -84,8 +84,26 @@ bool Config::load() {
 }
 
 bool Config::save(uint32_t flags) {
-  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) {
-  }
+  auto save = [this](std::string_view fname, json& j) {
+    LOG_USE_MODULE(Config);
+
+    auto path = std::string("./config/") + fname.data();
+    try {
+      std::ofstream json_file(path);
+      json_file << j;
+      return true;
+    } catch (const json::exception& e) {
+      LOG_ERR(L"Failed to save %S: %S", fname.data(), e.what());
+      return false;
+    }
+  };
+
+  bool result = true;
+
+  if (std::filesystem::is_directory("./config/")) std::filesystem::create_directory("./config/");
+  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) result &= save("logging.json", m_logging);
+  if (flags & (uint32_t)ConfigSaveFlags::GRAPHICS) result &= save("graphics.json", m_graphics);
+  if (flags & (uint32_t)ConfigSaveFlags::AUDIO) result &= save("audio.json", m_audio);
 
   return true;
 }
