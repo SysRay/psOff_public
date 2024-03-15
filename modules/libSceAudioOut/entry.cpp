@@ -138,7 +138,6 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     const char* dname;
     auto [lock, jData] = accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
 
-    lock.lock();
     if ((*jData)["device"] == "[default]") {
       SDL_AudioSpec fmt_curr;
       SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
@@ -152,7 +151,6 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         dname = NULL;
       }
     }
-    lock.unlock();
 
     LOG_INFO(L"Opening audio device: %S\n", dname);
     auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
