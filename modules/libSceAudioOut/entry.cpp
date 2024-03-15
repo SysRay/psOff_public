@@ -23,6 +23,8 @@ struct PortOut {
   int                    channelsNum    = 0;
   int                    volume[8]      = {};
   SDL_AudioDeviceID      device         = 0;
+  SDL_AudioFormat        sdlFormat      = AUDIO_F32;
+  std::vector<uint8_t>   mixedAudio;
 };
 
 struct Pimpl {
@@ -40,15 +42,23 @@ int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   auto& port = pimpl->portsOut[handle - 1];
   if (!port.open || ptr == nullptr) return 0;
 
-  port.lastOutputTime   = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  const size_t bytesize = port.samplesNum * port.sampleSize * port.channelsNum;
+  port.lastOutputTime       = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  const size_t bytesize_1ch = port.samplesNum * port.sampleSize;
+  const size_t bytesize     = bytesize_1ch * port.channelsNum;
+  auto&        mixed        = port.mixedAudio;
+  std::fill(mixed.begin(), mixed.end(), 0);
+
+  for (size_t i = 0; i < port.channelsNum; i++) {
+    SDL_MixAudioFormat(mixed.data() + i * bytesize_1ch, ((const uint8_t*)ptr) + i * bytesize_1ch, port.sdlFormat, bytesize_1ch,
+                       SDL_MIX_MAXVOLUME * ((float)port.volume[i] / SCE_AUDIO_VOLUME_0DB));
+  }
 
   if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
 
   while (SDL_GetQueuedAudioSize(port.device) > bytesize * 2)
     SDL_Delay(0);
 
-  return SDL_QueueAudio(port.device, ptr, bytesize);
+  return SDL_QueueAudio(port.device, mixed.data(), bytesize);
 }
 } // namespace
 
@@ -80,56 +90,51 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     port.format         = format;
     port.lastOutputTime = 0;
 
-    SDL_AudioFormat sampleFormat;
     switch (format) {
       case SceAudioOutParamFormat::S16_MONO:
-        sampleFormat     = AUDIO_S16SYS;
+        port.sdlFormat   = AUDIO_S16;
         port.channelsNum = 1;
         port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_MONO:
-        sampleFormat     = AUDIO_F32SYS;
+        port.sdlFormat   = AUDIO_F32;
         port.channelsNum = 1;
         port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_STEREO:
-        sampleFormat     = AUDIO_S16SYS;
+        port.sdlFormat   = AUDIO_S16;
         port.channelsNum = 2;
         port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_STEREO:
-        sampleFormat     = AUDIO_F32SYS;
+        port.sdlFormat   = AUDIO_F32;
         port.channelsNum = 2;
         port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH:
-        sampleFormat     = AUDIO_S16SYS;
+        port.sdlFormat   = AUDIO_S16;
         port.channelsNum = 8;
         port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH:
-        sampleFormat     = AUDIO_F32SYS;
+        port.sdlFormat   = AUDIO_F32;
         port.channelsNum = 8;
         port.sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH_STD:
-        sampleFormat     = AUDIO_S16SYS;
+        port.sdlFormat   = AUDIO_S16;
         port.channelsNum = 8;
         port.sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH_STD:
-        sampleFormat     = AUDIO_F32SYS;
+        port.sdlFormat   = AUDIO_F32;
         port.channelsNum = 8;
         port.sampleSize  = 4;
         break;
     }
 
-    for (int i = 0; i < port.channelsNum; i++) {
-      port.volume[i] = 32768;
-    }
-
     SDL_AudioSpec fmt {.freq     = static_cast<int>(freq),
-                       .format   = sampleFormat,
+                       .format   = port.sdlFormat,
                        .channels = static_cast<uint8_t>(port.channelsNum),
                        .samples  = static_cast<uint16_t>(port.samplesNum),
                        .callback = nullptr,
@@ -137,6 +142,17 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
     const char* dname;
     auto [lock, jData] = accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
+    float volume       = 0.0f;
+
+    try {
+      (*jData)["volume"].get_to(volume);
+    } catch (const json::exception& e) {
+      LOG_ERR(L"Invalid audio volume setting: %S", e.what());
+    }
+
+    for (int i = 0; i < port.channelsNum; i++) {
+      port.volume[i] = SCE_AUDIO_VOLUME_0DB * volume;
+    }
 
     if ((*jData)["device"] == "[default]") {
       SDL_AudioSpec fmt_curr;
@@ -155,6 +171,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     LOG_INFO(L"Opening audio device: %S\n", dname);
     auto devId = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0);
     if (devId <= 0) return devId;
+    port.mixedAudio.resize(port.sampleSize * port.samplesNum * port.channelsNum);
     SDL_PauseAudioDevice(devId, 0);
     port.device = devId;
 
@@ -175,6 +192,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
     port.open = false;
 
     if (port.device > 0) {
+      port.mixedAudio.clear();
       SDL_CloseAudioDevice(port.device);
     }
   }
