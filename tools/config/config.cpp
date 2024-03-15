@@ -30,10 +30,10 @@ IConfig* accessConfig() {
 
 std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSaveFlags flag) {
   switch (flag) {
-    case ConfigSaveFlags::LOGGING: return std::make_pair(std::move(boost::unique_lock(m_mutex_logging)), &m_logging);
-    case ConfigSaveFlags::GRAPHICS: return std::make_pair(std::move(boost::unique_lock(m_mutex_graphics)), &m_graphics);
-    case ConfigSaveFlags::AUDIO: return std::make_pair(std::move(boost::unique_lock(m_mutex_audio)), &m_audio);
-    case ConfigSaveFlags::CONTROLS: return std::make_pair(std::move(boost::unique_lock(m_mutex_controls)), &m_controls);
+    case ConfigSaveFlags::LOGGING: return std::make_pair(boost::unique_lock(m_mutex_logging), &m_logging);
+    case ConfigSaveFlags::GRAPHICS: return std::make_pair(boost::unique_lock(m_mutex_graphics), &m_graphics);
+    case ConfigSaveFlags::AUDIO: return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
+    case ConfigSaveFlags::CONTROLS: return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
 
     default: throw std::exception("Invalid bit flag");
   }
@@ -78,7 +78,8 @@ Config::Config() {
         std::filesystem::path newp(path);
         newp.replace_extension(".back");
         std::filesystem::rename(path, newp);
-      } catch (const std::filesystem::filesystem_error& e) {}
+      } catch (const std::filesystem::filesystem_error& e) {
+      }
 
       j = defaults;
       if (dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
