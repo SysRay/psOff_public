@@ -85,7 +85,7 @@ bool Config::save(uint32_t flags) {
       json_file << j;
       return true;
     } catch (const json::exception& e) {
-      printf(L"Failed to save %s: %s\n", fname.data(), e.what());
+      printf("Failed to save %s: %s\n", fname.data(), e.what());
       return false;
     }
   };
