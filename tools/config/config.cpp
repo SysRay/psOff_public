@@ -2,11 +2,7 @@
 #include "config.h"
 #undef __APICALL_EXTERN
 
-#include "logging.h"
-
 #include <fstream>
-
-LOG_DEFINE_MODULE(Config);
 
 using json = nlohmann::json;
 
@@ -48,15 +44,13 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSa
 
 bool Config::load() {
   auto load = [this](std::string_view fname, json& j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
-    LOG_USE_MODULE(Config);
-
     auto path = std::string("./config/") + fname.data();
 
     try {
       std::ifstream json_file(path);
       j = json::parse(json_file, nullptr, true, true);
     } catch (const json::exception& e) {
-      LOG_ERR(L"Failed to parse %S: %S", fname.data(), e.what());
+      printf("Failed to parse %s: %s\n", fname.data(), e.what());
 
       std::filesystem::path newp(path);
       newp.replace_extension(".back");
@@ -85,15 +79,13 @@ bool Config::load() {
 
 bool Config::save(uint32_t flags) {
   auto save = [this](std::string_view fname, json& j) {
-    LOG_USE_MODULE(Config);
-
     auto path = std::string("./config/") + fname.data();
     try {
       std::ofstream json_file(path);
       json_file << j;
       return true;
     } catch (const json::exception& e) {
-      LOG_ERR(L"Failed to save %S: %S", fname.data(), e.what());
+      printf(L"Failed to save %s: %s\n", fname.data(), e.what());
       return false;
     }
   };
