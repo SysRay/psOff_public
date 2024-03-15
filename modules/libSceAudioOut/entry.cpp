@@ -1,7 +1,7 @@
 #include "common.h"
 #include "logging.h"
-#include "types.h"
 #include "tools/config/config.h"
+#include "types.h"
 
 #include <SDL.h>
 #include <array>
