@@ -151,8 +151,8 @@ ScePadData getPadData(int handle) {
 
   data.touchData.touchNum = 0;
   for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pController, 0); f++) {
-    float   x = 0.0f, y = 0.0f, p = 0.0f;
-    auto&   touch = data.touchData.touch[f];
+    float x = 0.0f, y = 0.0f, p = 0.0f;
+    auto& touch = data.touchData.touch[f];
 
     SDL_GameControllerGetTouchpadFinger(pController, 0, f, NULL, &x, &y, &p);
     if (p > 0) {
