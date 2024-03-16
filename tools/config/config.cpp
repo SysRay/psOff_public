@@ -65,7 +65,7 @@ bool Config::save(uint32_t flags) {
 
 Config::Config() {
   auto load = [this](std::string_view fname, json& j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
-    auto path = std::string("./config/") + fname.data();
+    auto path          = std::string("./config/") + fname.data();
     bool should_resave = false;
 
     try {
@@ -82,19 +82,19 @@ Config::Config() {
       } catch (const std::filesystem::filesystem_error& e) {
       }
 
-      j = defaults;
+      j             = defaults;
       should_resave = true;
     }
 
-    for (auto& [dkey, dval] : defaults.items()) {
+    for (auto& [dkey, dval]: defaults.items()) {
       if (j[dkey].is_null() && !dval.is_null()) {
-        j[dkey] = dval;
+        j[dkey]       = dval;
         should_resave = true;
         printf("%s: missing parameter \"%s\" has been added!\n", fname.data(), dkey.c_str());
       }
     }
 
-    for (auto& [ckey, cval] : j.items()) {
+    for (auto& [ckey, cval]: j.items()) {
       if (defaults[ckey].is_null()) {
         j.erase(cval);
         should_resave = true;
@@ -110,24 +110,10 @@ Config::Config() {
   load("audio.json", m_audio, {{"volume", 0.5f}, {"device", "[default]"}}, ConfigSaveFlags::AUDIO);
   load("controls.json", m_controls,
        {{"type", "gamepad"},
-        {"deadzones", json::array({
-          {
-            {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
-            {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}
-          },
-          {
-            {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
-            {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}
-          },
-          {
-            {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
-            {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}
-          },
-          {
-            {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
-            {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}
-          }
-        })},
+        {"deadzones", json::array({{{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}})},
         {"keybinds",
          {
              {"triangle", ""}, {"square", ""},   {"circle", ""}, {"cross", ""}, {"dpad_up", ""}, {"dpad_down", ""}, {"dpad_left", ""}, {"dpad_right", ""},
