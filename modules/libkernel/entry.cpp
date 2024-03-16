@@ -68,11 +68,6 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
   ::exit(code);
 }
 
-struct iovec {
-  void*  iov_base;
-  size_t iov_len;
-};
-
 EXPORT SYSV_ABI size_t __NID(_writev)(int fd, const struct iovec* iov, int iovcn) {
   size_t total = 0;
 

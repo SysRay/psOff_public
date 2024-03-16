@@ -91,3 +91,8 @@ struct rusage_t {
   uint32_t         ru_nvcsw    = 0;
   uint32_t         ru_nivcsw   = 0;
 };
+
+struct iovec {
+  void*  iov_base;
+  size_t iov_len;
+};
