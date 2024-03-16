@@ -1,0 +1,25 @@
+﻿<Window x:Class="psOFF_GUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:psOFF_GUI"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid AllowDrop="True" Drop="MainGrid_Drop">
+        <Grid>
+            <Border CornerRadius="15" BorderBrush="#8e44ad" BorderThickness="5" Margin="50">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#8e44ad" Offset="0"/>
+                        <GradientStop Color="#5d3c8e" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+
+                <TextBlock Name="Pfad" Foreground="Red" Margin="50"></TextBlock>
+            </Border>
+        </Grid>
+        <ContentControl x:Name="contentControl"/>
+        <TextBlock Text="Drop .bin or .elf files here" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="Bold" FontSize="16"/>
+    </Grid>
+</Window>
