@@ -204,7 +204,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
 EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
   auto pimpl = getData();
 
-  boost::unique_lock const lock(pimpl->mutexInt);
+  // boost::unique_lock const lock(pimpl->mutexInt);
   return writeOut(pimpl, handle, ptr);
 }
 
@@ -240,7 +240,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
   auto pimpl = getData();
 
-  boost::unique_lock const lock(pimpl->mutexInt);
+  // boost::unique_lock const lock(pimpl->mutexInt); // dont block, causes audio artifacts
   for (uint32_t i = 0; i < num; i++) {
     if (auto err = writeOut(pimpl, param[i].handle, param[i].ptr); err != 0) return err;
   }

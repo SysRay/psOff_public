@@ -68,16 +68,6 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
   ::exit(code);
 }
 
-EXPORT SYSV_ABI size_t __NID(_writev)(int fd, const struct iovec* iov, int iovcn) {
-  size_t total = 0;
-
-  for (int i = 0; i < iovcn; i++) {
-    total += ::fwrite(iov[i].iov_base, 1, iov[i].iov_len, stdout);
-  }
-
-  return total;
-}
-
 EXPORT SYSV_ABI int __NID(_is_signal_return)(uint64_t* param) {
   if ((uintptr_t)param < 4 * 1024) return 1;
   if (param[0] != 0x48006a40247c8d48 || param[1] != 0x050f000001a1c0c7 || (param[2] & 0xffffff) != 0xfdebf4)
@@ -113,6 +103,25 @@ EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info)
 
   *info = accessRuntimeExport()->mainModuleInfo();
   return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_time, struct timesec* st, unsigned long* dstsec) {
+  const auto* tz      = std::chrono::current_zone();
+  auto        sys_inf = tz->get_info(std::chrono::system_clock::now());
+
+  *local_time = sys_inf.offset.count() + sys_inf.save.count() * 60 + time;
+
+  if (st != nullptr) {
+    st->t       = time;
+    st->westsec = sys_inf.offset.count() * 60;
+    st->dstsec  = sys_inf.save.count() * 60;
+  }
+
+  if (dstsec != nullptr) {
+    *dstsec = sys_inf.save.count() * 60;
+  }
+
+  return 0;
 }
 
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {

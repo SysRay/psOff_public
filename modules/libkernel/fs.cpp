@@ -74,6 +74,10 @@ EXPORT SYSV_ABI size_t __NID(_readv)(int handle, const filesystem::SceKernelIove
   return POSIX_CALL(filesystem::readv(handle, iov, iovcnt));
 }
 
+EXPORT SYSV_ABI size_t __NID(_writev)(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {
+  return POSIX_CALL(filesystem::writev(handle, iov, iovcnt));
+}
+
 EXPORT SYSV_ABI size_t sceKernelWritev(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {
   return filesystem::writev(handle, iov, iovcnt);
 }

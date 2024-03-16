@@ -6,7 +6,7 @@
 using SceKernelModule = int32_t;
 
 using get_thread_atexit_count_func_t = SYSV_ABI int (*)(SceKernelModule);
-using thread_atexit_report_func_t    = SYSV_ABI void (*)(SceKernelModule);
+using thread_atexit_report_func_t    = SYSV_ABI void   (*)(SceKernelModule);
 
 typedef int   SceKernelAioSubmitId;
 typedef void* sigset_t;
@@ -92,7 +92,8 @@ struct rusage_t {
   uint32_t         ru_nivcsw   = 0;
 };
 
-struct iovec {
-  void*  iov_base;
-  size_t iov_len;
+struct timesec {
+  time_t        t;
+  unsigned long westsec;
+  unsigned long dstsec;
 };
