@@ -15,13 +15,19 @@
   ],
   "ccls.index.threads": 0,
 
-  "cmake.buildDirectory": "${workspaceFolder}/_build",
-	"cmake.installPrefix": "_Install",
-	"cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.generator": "Ninja",
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.buildDirectory": "${workspaceFolder}/_build/_Release",
+  "cmake.configureSettings": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_INSTALL_PREFIX": "${workspaceFolder}/_build/_Install",
+    "CMAKE_C_COMPILER": "clang-cl.exe",
+    "CMAKE_CXX_COMPILER": "clang-cl.exe"
+  },
+  "C_Cpp.default.compilerPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
 	"C_Cpp.default.intelliSenseMode": "windows-clang-x64",
 	"C_Cpp.default.cppStandard": "c++20",
 	"C_Cpp.autoAddFileAssociations": false,
-	"cmake.generator": "Ninja",
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "git.ignoredRepositories": [
@@ -29,5 +35,5 @@
     "third_party/optick",
     "third_party/magic_enum",
 		"third_part/SDL2"
-	]
+  ]
 }

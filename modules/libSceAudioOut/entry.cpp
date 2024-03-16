@@ -49,7 +49,8 @@ int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   std::fill(mixed.begin(), mixed.end(), 0);
 
   for (size_t i = 0; i < port.channelsNum; i++) {
-    SDL_MixAudioFormat(mixed.data() + i * bytesize_1ch, ((const uint8_t*)ptr) + i * bytesize_1ch, port.sdlFormat, bytesize_1ch,
+    auto ch_offset = i * bytesize_1ch;
+    SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port.sdlFormat, bytesize_1ch,
                        SDL_MIX_MAXVOLUME * ((float)port.volume[i] / SCE_AUDIO_VOLUME_0DB));
   }
 
