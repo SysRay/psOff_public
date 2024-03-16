@@ -2,4 +2,3 @@
 #include <stdint.h>
 
 namespace Err {} // namespace Err
-
