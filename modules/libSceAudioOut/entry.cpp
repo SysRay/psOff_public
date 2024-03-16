@@ -29,7 +29,7 @@ struct PortOut {
 };
 
 struct Pimpl {
-  std::mutex                        mutexInt;
+  boost::mutex                      mutexInt;
   std::array<PortOut, PORT_OUT_MAX> portsOut;
   Pimpl() = default;
 };
@@ -79,7 +79,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
 
-  std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
 
   for (int id = 0; id < pimpl->portsOut.size(); id++) {
     auto& port = pimpl->portsOut[id];
@@ -187,7 +187,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
 
-  std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
   if (port.open) {
@@ -204,7 +204,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
 EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
   auto pimpl = getData();
 
-  // std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
   return writeOut(pimpl, handle, ptr);
 }
 
@@ -212,7 +212,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
   LOG_USE_MODULE(libSceAudioOut);
   auto pimpl = getData();
 
-  std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
   if (!port.open) return Err::INVALID_PORT;
@@ -240,7 +240,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
   auto pimpl = getData();
 
-  // std::unique_lock const lock(pimpl->mutexInt); // dont block, causes audio artifacts
+  boost::unique_lock const lock(pimpl->mutexInt);
   for (uint32_t i = 0; i < num; i++) {
     if (auto err = writeOut(pimpl, param[i].handle, param[i].ptr); err != 0) return err;
   }
@@ -250,7 +250,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
 EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* outputTime) {
   auto pimpl = getData();
 
-  std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
   if (!port.open) return Err::INVALID_PORT;
@@ -265,7 +265,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mix
 EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortState* state) {
   auto pimpl = getData();
 
-  std::unique_lock const lock(pimpl->mutexInt);
+  boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
 
