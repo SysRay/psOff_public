@@ -130,8 +130,16 @@ EXPORT SYSV_ABI size_t sceKernelPread(int handle, void* buf, size_t nbytes, int6
   return filesystem::pread(handle, buf, nbytes, offset);
 }
 
+EXPORT SYSV_ABI int64_t __NID(_read)(int d, void* buf, uint64_t nbytes) {
+  return POSIX_CALL(filesystem::read(d, buf, nbytes));
+}
+
 EXPORT SYSV_ABI size_t sceKernelPwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
   return filesystem::pwrite(handle, buf, nbytes, offset);
+}
+
+EXPORT SYSV_ABI int __NID(_write)(int handle, const void* buf, size_t nbytes) {
+  return POSIX_CALL(filesystem::write(handle, buf, nbytes));
 }
 
 EXPORT SYSV_ABI int sceKernelMmap(void* addr, size_t len, int prot, filesystem::SceMap flags, int fd, int64_t offset, void** res) {

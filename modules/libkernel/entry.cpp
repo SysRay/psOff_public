@@ -285,20 +285,6 @@ EXPORT SYSV_ABI void sceKernelDebugRaiseException(int reason, int id) {
   LOG_CRIT(L"Exception: reason:0x%lx id:0x%lx", reason, id);
 }
 
-EXPORT SYSV_ABI int __NID(_write)(int d, const char* str, int64_t size) {
-  if (size < 1) return size;
-
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"Kernel: %S", std::string(str, size - 1).data());
-  return (int)size;
-}
-
-EXPORT SYSV_ABI int64_t __NID(_read)(int d, void* buf, uint64_t nbytes) {
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"stdin read");
-  return static_cast<int64_t>(strlen(std::fgets(static_cast<char*>(buf), static_cast<int>(nbytes), stdin)));
-}
-
 EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint64_t dtor_vaddr) {
   LOG_USE_MODULE(libkernel);
   if (m->segment_count == 0) return 0;
