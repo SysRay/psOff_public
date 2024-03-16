@@ -68,6 +68,21 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
   ::exit(code);
 }
 
+struct iovec {
+  void* iov_base;
+  size_t iov_len;
+};
+
+EXPORT SYSV_ABI size_t __NID(_writev)(int fd, const struct iovec* iov, int iovcn) {
+  size_t total = 0;
+
+  for (int i = 0; i < iovcn; i++) {
+    total += ::fwrite(iov[i].iov_base, 1, iov[i].iov_len, stdout);
+  }
+
+  return total;
+}
+
 EXPORT SYSV_ABI int __NID(_is_signal_return)(uint64_t* param) {
   if ((uintptr_t)param < 4 * 1024) return 1;
   if (param[0] != 0x48006a40247c8d48 || param[1] != 0x050f000001a1c0c7 || (param[2] & 0xffffff) != 0xfdebf4)
