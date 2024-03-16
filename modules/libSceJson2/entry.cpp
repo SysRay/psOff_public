@@ -104,5 +104,4 @@ EXPORT SYSV_ABI int32_t __NID_HEX(F9DAC3172012EAEE)() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
-
 }
