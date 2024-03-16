@@ -69,7 +69,7 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
 }
 
 struct iovec {
-  void* iov_base;
+  void*  iov_base;
   size_t iov_len;
 };
 
