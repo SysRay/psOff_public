@@ -30,4 +30,9 @@ EXPORT SYSV_ABI SceCommonDialogStatus sceErrorDialogUpdateStatus(void) {
 EXPORT SYSV_ABI SceCommonDialogStatus sceErrorDialogGetStatus(void) {
   return g_curStatus;
 }
+
+EXPORT SYSV_ABI int32_t sceSaveDataDialogOpen(const void* param) {
+  g_curStatus = SceCommonDialogStatus::FINISHED;
+  return Ok;
+}
 }
