@@ -25,6 +25,7 @@ struct PortOut {
   SDL_AudioDeviceID      device         = 0;
   SDL_AudioFormat        sdlFormat      = AUDIO_F32;
   std::vector<uint8_t>   mixedAudio;
+  float                  volumeModifier;
 };
 
 struct Pimpl {
@@ -45,13 +46,14 @@ int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
   port.lastOutputTime       = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
   const size_t bytesize_1ch = port.samplesNum * port.sampleSize;
   const size_t bytesize     = bytesize_1ch * port.channelsNum;
+  const int    maxVolume    = SDL_MIX_MAXVOLUME * port.volumeModifier;
   auto&        mixed        = port.mixedAudio;
   std::fill(mixed.begin(), mixed.end(), 0);
 
   for (size_t i = 0; i < port.channelsNum; i++) {
     auto ch_offset = i * bytesize_1ch;
     SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port.sdlFormat, bytesize_1ch,
-                       SDL_MIX_MAXVOLUME * ((float)port.volume[i] / SCE_AUDIO_VOLUME_0DB));
+                       maxVolume * ((float)port.volume[i] / SCE_AUDIO_VOLUME_0DB));
   }
 
   if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
@@ -143,16 +145,15 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
     const char* dname;
     auto [lock, jData] = accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
-    float volume       = 0.0f;
 
     try {
-      (*jData)["volume"].get_to(volume);
+      (*jData)["volume"].get_to(port.volumeModifier);
     } catch (const json::exception& e) {
       LOG_ERR(L"Invalid audio volume setting: %S", e.what());
     }
 
     for (int i = 0; i < port.channelsNum; i++) {
-      port.volume[i] = SCE_AUDIO_VOLUME_0DB * volume;
+      port.volume[i] = SCE_AUDIO_VOLUME_0DB;
     }
 
     if ((*jData)["device"] == "[default]") {
