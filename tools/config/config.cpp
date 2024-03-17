@@ -3,16 +3,23 @@
 #undef __APICALL_EXTERN
 
 #include <fstream>
+#include <future>
 
 class Config: public IConfig {
-  json         m_logging;
-  json         m_graphics;
-  json         m_audio;
-  json         m_controls;
+  json m_logging;
+  json m_graphics;
+  json m_audio;
+  json m_controls;
+
   boost::mutex m_mutex_logging;
   boost::mutex m_mutex_graphics;
   boost::mutex m_mutex_audio;
   boost::mutex m_mutex_controls;
+
+  std::future<void> m_future_logging;
+  std::future<void> m_future_graphics;
+  std::future<void> m_future_audio;
+  std::future<void> m_future_controls;
 
   public:
   Config();
@@ -30,10 +37,10 @@ IConfig* accessConfig() {
 
 std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSaveFlags flag) {
   switch (flag) {
-    case ConfigSaveFlags::LOGGING: return std::make_pair(boost::unique_lock(m_mutex_logging), &m_logging);
-    case ConfigSaveFlags::GRAPHICS: return std::make_pair(boost::unique_lock(m_mutex_graphics), &m_graphics);
-    case ConfigSaveFlags::AUDIO: return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
-    case ConfigSaveFlags::CONTROLS: return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
+    case ConfigSaveFlags::LOGGING: m_future_logging.wait(); return std::make_pair(boost::unique_lock(m_mutex_logging), &m_logging);
+    case ConfigSaveFlags::GRAPHICS: m_future_graphics.wait(); return std::make_pair(boost::unique_lock(m_mutex_graphics), &m_graphics);
+    case ConfigSaveFlags::AUDIO: m_future_audio.wait(); return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
+    case ConfigSaveFlags::CONTROLS: m_future_controls.wait(); return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
 
     default: throw std::exception("Invalid bit flag");
   }
@@ -64,13 +71,13 @@ bool Config::save(uint32_t flags) {
 }
 
 Config::Config() {
-  auto load = [this](std::string_view fname, json& j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
+  auto load = [this](std::string_view fname, json* j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
     auto path          = std::string("./config/") + fname.data();
     bool should_resave = false;
 
     try {
       std::ifstream json_file(path);
-      j = json::parse(json_file, nullptr, true, true);
+      *j = json::parse(json_file, nullptr, true, true);
       printf("Config %s loaded successfully\n", fname.data());
     } catch (const json::exception& e) {
       if ((std::filesystem::exists(path))) printf("Failed to parse %s: %s\n", fname.data(), e.what());
@@ -82,21 +89,22 @@ Config::Config() {
       } catch (const std::filesystem::filesystem_error& e) {
       }
 
-      j             = defaults;
+      *j = defaults;
+
       should_resave = true;
     }
 
     for (auto& [dkey, dval]: defaults.items()) {
-      if (j[dkey].is_null() && !dval.is_null()) {
-        j[dkey]       = dval;
+      if ((*j)[dkey].is_null() && !dval.is_null()) {
+        (*j)[dkey]    = dval;
         should_resave = true;
         printf("%s: missing parameter \"%s\" has been added!\n", fname.data(), dkey.c_str());
       }
     }
 
-    for (auto& [ckey, cval]: j.items()) {
+    for (auto& [ckey, cval]: j->items()) {
       if (defaults[ckey].is_null()) {
-        j.erase(cval);
+        j->erase(cval);
         should_resave = true;
         printf("%s: unused parameter \"%s\" has been removed!\n", fname.data(), ckey.c_str());
       }
@@ -105,20 +113,22 @@ Config::Config() {
     if (should_resave && dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
   };
 
-  load("logging.json", m_logging, {{"sink", "baical"}}, ConfigSaveFlags::LOGGING);
-  load("graphics.json", m_graphics, {}, ConfigSaveFlags::GRAPHICS);
-  load("audio.json", m_audio, {{"volume", 0.5f}, {"device", "[default]"}}, ConfigSaveFlags::AUDIO);
-  load("controls.json", m_controls,
-       {{"type", "gamepad"},
-        {"deadzones", json::array({{{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                   {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}})},
-        {"keybinds",
-         {
-             {"triangle", ""}, {"square", ""},   {"circle", ""}, {"cross", ""}, {"dpad_up", ""}, {"dpad_down", ""}, {"dpad_left", ""}, {"dpad_right", ""},
-             {"options", ""},  {"touchpad", ""}, {"l1", ""},     {"l2", ""},    {"l3", ""},      {"r1", ""},        {"r2", ""},        {"r3", ""},
-             {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
-         }}},
-       ConfigSaveFlags::CONTROLS);
+  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "baical"}}), ConfigSaveFlags::LOGGING);
+  m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigSaveFlags::GRAPHICS);
+  m_future_audio =
+      std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigSaveFlags::AUDIO);
+  m_future_controls = std::async(
+      std::launch::async, load, std::string_view("controls.json"), &m_controls,
+      json({{"type", "gamepad"},
+            {"deadzones", json::array({{{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
+                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}})},
+            {"keybinds",
+             {
+                 {"triangle", ""}, {"square", ""},   {"circle", ""}, {"cross", ""}, {"dpad_up", ""}, {"dpad_down", ""}, {"dpad_left", ""}, {"dpad_right", ""},
+                 {"options", ""},  {"touchpad", ""}, {"l1", ""},     {"l2", ""},    {"l3", ""},      {"r1", ""},        {"r2", ""},        {"r3", ""},
+                 {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
+             }}}),
+      ConfigSaveFlags::CONTROLS);
 }
