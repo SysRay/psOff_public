@@ -6,7 +6,7 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-add_dependencies(${libName} third_party)
+add_dependencies(${libName} third_party config)
 
 target_link_libraries(${libName} PRIVATE config.lib SDL2 libboost_thread)
 target_compile_definitions(${libName} PRIVATE BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
