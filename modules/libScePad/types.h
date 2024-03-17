@@ -24,7 +24,7 @@ enum class ScePadButtonDataOffset : uint32_t {
   CIRCLE,
   CROSS,
   SQUARE,
-  TOUCH_PAD,
+  TOUCH_PAD = 20,
   INTERCEPTED,
 };
 

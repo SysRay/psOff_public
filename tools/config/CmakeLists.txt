@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.24)
 
 add_library(config SHARED config.cpp)
 
+target_link_directories(config PRIVATE
+  ${CMAKE_BINARY_DIR}/third_party/install/lib
+)
+
 add_dependencies(config boost)
 
 target_link_libraries(config libboost_thread)

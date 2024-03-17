@@ -9,4 +9,5 @@ target_include_directories(videoout PRIVATE
   ${Vulkan_INCLUDE_DIRS}
   ${PRJ_SRC_DIR}/third_party/optick/src
   ${PRJ_SRC_DIR}/third_party/magic_enum/include
+  ${PRJ_SRC_DIR}/third_party/SDL2/include
 )
