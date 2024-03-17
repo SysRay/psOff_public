@@ -34,7 +34,7 @@ __APICALL bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t
  * @return true
  * @return false
  */
-__APICALL bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage);
+__APICALL bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent);
 
 /**
  * @brief Create a Graphics object.

@@ -243,7 +243,7 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
   }
 
-  copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image); // let gpumemorymanager decide
+  copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image, swapchain.extent2d); // let gpumemorymanager decide
 
   {
     // Change to Present Layout

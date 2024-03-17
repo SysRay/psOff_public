@@ -25,9 +25,9 @@ bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, Vk
   return g_registerDisplayBuffer(vaddr, extent, pitch, format);
 }
 
-bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage) {
+bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent) {
   assert(g_copyDisplayBuffer != nullptr);
-  return g_copyDisplayBuffer(vaddr, transferBuffer, dstImage);
+  return g_copyDisplayBuffer(vaddr, transferBuffer, dstImage, dstExtent);
 }
 
 std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance) {

@@ -16,7 +16,7 @@
 
 using registerDisplayBuffer_t = bool (*)(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
 
-using copyDisplayBuffer_t = bool (*)(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage);
+using copyDisplayBuffer_t = bool (*)(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent);
 
 using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
