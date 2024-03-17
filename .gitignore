@@ -3,3 +3,5 @@ _*/
 !.vscode
 !.github
 .vscode/c_cpp_properties.json
+bin/
+obj/
