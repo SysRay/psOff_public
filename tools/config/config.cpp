@@ -73,7 +73,7 @@ Config::Config() {
       j = json::parse(json_file, nullptr, true, true);
       printf("Config %s loaded successfully\n", fname.data());
     } catch (const json::exception& e) {
-      printf("Failed to parse %s: %s\n", fname.data(), e.what());
+      if ((std::filesystem::exists(path))) printf("Failed to parse %s: %s\n", fname.data(), e.what());
 
       try {
         std::filesystem::path newp(path);
