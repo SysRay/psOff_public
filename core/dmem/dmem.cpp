@@ -8,6 +8,7 @@
 #include "utility/utility.h"
 
 #include <algorithm>
+#include <boost/thread.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <mutex>
@@ -19,6 +20,17 @@ namespace {
 
 static uint64_t getAligned(uint64_t pos, size_t align) {
   return (align != 0 ? (pos + (align - 1)) & ~(align - 1) : pos);
+}
+
+struct pImpl {
+  boost::mutex mutex_;
+
+  std::unordered_map<uint64_t, MappingType> mappings_;
+};
+
+auto getData() {
+  static pImpl obj;
+  return &obj;
 }
 } // namespace
 
@@ -171,6 +183,8 @@ uint64_t FlexibleMemory::alloc(uint64_t vaddr, size_t len, int prot) {
   m_totalAllocated += len;
 
   auto const outAddr = memory::alloc(vaddr, len, prot);
+
+  registerMapping(outAddr, MappingType::Flexible);
   LOG_INFO(L"--> Heap| vaddr:0x%08llx len:%llu prot:0x%x total:0x%08llx -> @0x%08llx", vaddr, len, prot, m_totalAllocated, outAddr);
   return outAddr;
 }
@@ -190,4 +204,26 @@ bool FlexibleMemory::destroy(uint64_t vaddr, uint64_t size) {
 void FlexibleMemory::release(uint64_t start, size_t len) {
   LOG_USE_MODULE(MemoryManager);
   LOG_ERR(L"todo %S", __FUNCTION__);
+}
+
+void registerMapping(uint64_t vaddr, MappingType type) {
+  auto impl = getData();
+
+  boost::unique_lock lock(impl->mutex_);
+
+  impl->mappings_.emplace(std::make_pair(vaddr, type));
+}
+
+MappingType unregisterMapping(uint64_t vaddr) {
+  auto impl = getData();
+
+  boost::unique_lock lock(impl->mutex_);
+
+  if (auto it = impl->mappings_.find((uint64_t)vaddr); it != impl->mappings_.end()) {
+    auto type = it->second;
+    impl->mappings_.erase(it);
+    return it->second;
+  }
+
+  return MappingType::None;
 }

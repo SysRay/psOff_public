@@ -1,5 +1,6 @@
 #include "filesystem.h"
 
+#include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
 #include "core/memory/memory.h"
 #include "logging.h"
@@ -25,11 +26,6 @@ std::pair<DWORD, DWORD> convProtection(int prot) {
 
   return {PAGE_NOACCESS, 0};
 }
-
-auto getMappings() {
-  static std::unordered_map<uint64_t, filesystem::SceMap> obj;
-  return &obj;
-}
 } // namespace
 
 namespace filesystem {
@@ -49,15 +45,16 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   }
 
   if (flags.type == SceMapType::ANON) {
-    *res = (void*)memory::alloc((uint64_t)addr, len, prot);
+    *res = (void*)accessFlexibleMemory().alloc((uint64_t)addr, len, prot); // registers mapping (flexible)
 
-    getMappings()->emplace(std::make_pair((uint64_t)*res, flags));
+    LOG_DEBUG(L"Mmap anon addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return getErr(ErrCode::_EINVAL);
   }
   // -
 
   // Do file mapping
   if (fd < FILE_DESCRIPTOR_MIN) {
+    LOG_DEBUG(L"Mmap error addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return getErr(ErrCode::_EPERM);
   }
 
@@ -78,7 +75,9 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
                                           (len >> 32u),  // maximum object size (high-order DWORD)
                                           (uint32_t)len, // maximum object size (low-order DWORD)
                                           NULL);         // name of mapping object
-  *res                = nullptr;
+
+  *res = nullptr;
+
   if (hFileMapping == NULL) {
     LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
   } else {
@@ -91,6 +90,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
       LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
     } else {
       LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
+      registerMapping((uint64_t)*res, MappingType::File);
     }
   }
 
@@ -106,28 +106,25 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
 int munmap(void* addr, size_t len) {
   LOG_USE_MODULE(filesystem);
 
-  auto mappings = getMappings();
-  if (auto it = mappings->find((uint64_t)addr); it != mappings->end()) {
-    if (it->second.mode == SceMapMode::FIXED) {
-      LOG_ERR(L"todo: munmap fixed 0x%08llx len:0x%08llx", addr, len);
-      return getErr(ErrCode::_EINVAL);
-    }
+  auto type = unregisterMapping((uint64_t)addr);
 
-    if (it->second.mode == SceMapMode::VOID_) {
-      LOG_ERR(L"todo: munmap void 0x%08llx len:0x%08llx", addr, len);
-      return getErr(ErrCode::_EINVAL);
-    }
+  switch (type) {
+    case MappingType::File: {
+      return UnmapViewOfFile(addr) != 0 ? Ok : -1;
+    } break;
 
-    if (it->second.type == SceMapType::ANON) {
-      memory::free((uint64_t)addr);
-      return Ok;
-    }
+    case MappingType::Flexible: {
+      return accessFlexibleMemory().destroy((uint64_t)addr, len) != 0 ? Ok : -1;
+    } break;
 
-    // Is file Mapping
-    return UnmapViewOfFile(addr) != 0 ? Ok : -1;
+    case MappingType::Fixed: {
+      LOG_ERR(L"tod munmap Fixed 0x%08llx 0x%08llx", addr, len);
+    } break;
+
+    case MappingType::None: {
+      LOG_ERR(L"munmap unkown 0x%08llx 0x%08llx", addr, len);
+    } break;
   }
-
-  LOG_ERR(L"munmap unknown 0x%08llx 0x%08llx", addr, len);
   return -1;
 }
 
