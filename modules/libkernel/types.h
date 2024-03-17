@@ -92,7 +92,7 @@ struct rusage_t {
   uint32_t         ru_nivcsw   = 0;
 };
 
-struct timesec {
+struct SceTimesec {
   time_t        t;
   unsigned long westsec;
   unsigned long dstsec;

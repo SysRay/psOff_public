@@ -105,7 +105,7 @@ EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info)
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_time, struct timesec* st, unsigned long* dstsec) {
+EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_time, struct SceTimesec* st, unsigned long* dstsec) {
   const auto* tz      = std::chrono::current_zone();
   auto        sys_inf = tz->get_info(std::chrono::system_clock::now());
 
