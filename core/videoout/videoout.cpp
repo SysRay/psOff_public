@@ -4,7 +4,6 @@
 #include "intern.h"
 #undef __APICALL_EXTERN
 
-#include "core/imports/exports/gpuMemory_types.h"
 #include "core/imports/exports/graphics.h"
 #include "core/imports/imports_func.h"
 #include "core/initParams/initParams.h"
@@ -93,8 +92,6 @@ struct VideoOutConfig {
   std::array<vulkan::SwapchainData, 16> bufferSets;
 
   std::array<int32_t, 16> buffers; // index to bufferSets
-
-  std::array<std::weak_ptr<IGpuImageObject>, 16> displayBuffers;
 
   uint8_t buffersSetsCount = 0;
 
@@ -380,28 +377,8 @@ void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size
 
   auto& swapchain         = window.config.bufferSets[setIndex];
   auto& displayBufferMeta = swapchain.buffers[index];
-  auto& displayBuffer     = window.config.displayBuffers[index];
 
-  // Get the display image
-  std::shared_ptr<IGpuImageObject> image;
-  if (displayBuffer.expired()) {
-    image = getDisplayBuffer(displayBufferMeta.bufferVaddr);
-    if (!image) {
-      LOG_ERR(L"No Display for 0x%08llx:%u", displayBufferMeta.bufferVaddr, displayBufferMeta.bufferSize);
-      return;
-    }
-  } else {
-    image = displayBuffer.lock();
-  }
-  // -
-
-  // todo check if gpu memory is newer or not (commandprocessor submits)
-  if (false) {
-    vulkan::transfer2Display_direct(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, image.get(), index);
-  } else {
-    vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, image->getImage(), image.get(), index);
-  }
-
+  vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, index, displayBufferMeta.bufferVaddr);
   vulkan::submitDisplayTransfer(m_vulkanObj, &displayBufferMeta, waitSema, waitValue);
 }
 
