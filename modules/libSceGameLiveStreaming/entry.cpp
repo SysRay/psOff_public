@@ -20,5 +20,4 @@ EXPORT SYSV_ABI int32_t __NID(sceGameLiveStreamingPermitServerSideRecording)() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
-
 }
