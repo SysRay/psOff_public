@@ -1,6 +1,5 @@
 #pragma once
 
-#include "exports/gpuMemory_types.h"
 #include "exports/graphics.h"
 
 #include <memory>
@@ -17,7 +16,7 @@
 
 using registerDisplayBuffer_t = bool (*)(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
 
-using getDisplayBuffer_t = std::shared_ptr<IGpuImageObject> (*)(uint64_t vaddr);
+using copyDisplayBuffer_t = bool (*)(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent);
 
 using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
@@ -29,7 +28,7 @@ using isGPULocal_t = bool (*)(uint64_t vaddr);
 
 __APICALL void setCallback_registerDisplayBuffer(registerDisplayBuffer_t);
 
-__APICALL void setCallback_getDisplayBuffer(getDisplayBuffer_t);
+__APICALL void setCallback_copyDisplayBuffer(copyDisplayBuffer_t);
 
 __APICALL void setCallback_createGraphics(createGraphics_t);
 

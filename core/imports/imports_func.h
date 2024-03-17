@@ -1,4 +1,3 @@
-#include "exports/gpuMemory_types.h"
 #include "exports/graphics.h"
 
 #include <memory>
@@ -28,12 +27,14 @@
 __APICALL bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
 
 /**
- * @brief Get the Display Buffer object. Dont' call from constructor.
+ * @brief Copy the displaybuffer to swapchain-buffer
  *
- * @param vaddr
- * @return std::shared_ptr<IGpuImageObject>
+ * @param vaddr addr of displaybuffer
+ * @param transferBuffer copy commands are added here
+ * @return true
+ * @return false
  */
-__APICALL std::shared_ptr<IGpuImageObject> getDisplayBuffer(uint64_t vaddr);
+__APICALL bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent);
 
 /**
  * @brief Create a Graphics object.

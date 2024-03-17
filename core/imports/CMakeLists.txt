@@ -1,5 +1,6 @@
 add_library(imports OBJECT
   imports.cpp
+  exit.cpp
 )
 
 add_dependencies(imports third_party psOff_utility initParams)

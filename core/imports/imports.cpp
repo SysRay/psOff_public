@@ -13,7 +13,7 @@
 
 // Change if called from construct is needed
 static registerDisplayBuffer_t g_registerDisplayBuffer = nullptr;
-static getDisplayBuffer_t      g_getDisplayBuffer      = nullptr;
+static copyDisplayBuffer_t     g_copyDisplayBuffer     = nullptr;
 static createGraphics_t        g_createGraphics        = nullptr;
 static runtimeExport_t         g_runtimeExport         = nullptr;
 
@@ -25,9 +25,9 @@ bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, Vk
   return g_registerDisplayBuffer(vaddr, extent, pitch, format);
 }
 
-std::shared_ptr<IGpuImageObject> getDisplayBuffer(uint64_t vaddr) {
-  assert(g_getDisplayBuffer != nullptr);
-  return g_getDisplayBuffer(vaddr);
+bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent) {
+  assert(g_copyDisplayBuffer != nullptr);
+  return g_copyDisplayBuffer(vaddr, transferBuffer, dstImage, dstExtent);
 }
 
 std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance) {
@@ -51,8 +51,8 @@ void setCallback_registerDisplayBuffer(registerDisplayBuffer_t cb) {
   g_registerDisplayBuffer = cb;
 }
 
-void setCallback_getDisplayBuffer(getDisplayBuffer_t cb) {
-  g_getDisplayBuffer = cb;
+void setCallback_copyDisplayBuffer(copyDisplayBuffer_t cb) {
+  g_copyDisplayBuffer = cb;
 }
 
 void setCallback_createGraphics(createGraphics_t cb) {

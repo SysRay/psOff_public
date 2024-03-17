@@ -1,6 +1,6 @@
 #include "vulkanHelper.h"
 
-#include "core/imports/exports/gpuMemory_types.h"
+#include "core/imports/imports_func.h"
 #include "logging.h"
 #include "utility/utility.h"
 
@@ -203,11 +203,12 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
   }
 }
 
-void transfer2Display_direct(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGpuImageObject* image, uint32_t index) {
+void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index, uint64_t vaddrDisplayBuffer) {
   LOG_USE_MODULE(vulkanHelper);
 
   auto& displayBuffer = swapchain.buffers[index];
 
+  // Wait and begin command buffer
   vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence, VK_TRUE, UINT64_MAX);
   vkResetFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence);
 
@@ -223,8 +224,9 @@ void transfer2Display_direct(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::
   if (vkBeginCommandBuffer(cmdBuffer, &beginInfo) != VK_SUCCESS) {
     LOG_CRIT(L"Error vkBeginCommandBuffer");
   }
+  // - begin command buffer
 
-  { // Change layout: transfer dst
+  {
     VkImageMemoryBarrier const barrier {
         .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext               = nullptr,
@@ -241,122 +243,7 @@ void transfer2Display_direct(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
   }
 
-  { // Copy Buffer -> Display
-    VkBufferImageCopy imageCopy {.bufferOffset      = image->getBaseOffset(),
-                                 .bufferRowLength   = 0,
-                                 .bufferImageHeight = image->getExtent().height,
-                                 .imageSubresource =
-                                     {
-                                         .aspectMask     = image->getAspect(),
-                                         .mipLevel       = 0,
-                                         .baseArrayLayer = 0,
-                                         .layerCount     = 1,
-                                     },
-                                 .imageOffset = {0, 0, 0},
-                                 .imageExtent = image->getExtent()};
-
-    vkCmdCopyBufferToImage(cmdBuffer, image->getSrcBuffer(), displayBuffer.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
-  }
-
-  { // Change layout: present
-
-    VkImageMemoryBarrier const barrier {
-        .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext               = nullptr,
-        .srcAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .dstAccessMask       = 0,
-        .oldLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .newLayout           = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-
-        .image            = displayBuffer.image,
-        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
-
-    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-  }
-
-  // End CmdBuffer -> Submit
-  if (vkEndCommandBuffer(cmdBuffer) != VK_SUCCESS) {
-    LOG_CRIT(L"Couldn't end commandbuffer");
-  }
-  // -
-}
-
-void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, VkImage displayImage, IGpuImageObject* image,
-                      uint32_t index) {
-  LOG_USE_MODULE(vulkanHelper);
-
-  auto& displayBuffer = swapchain.buffers[index];
-
-  vkResetCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-
-  // Transfer
-  VkCommandBufferBeginInfo const beginInfo {
-      .sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-      .flags            = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-      .pInheritanceInfo = nullptr,
-  };
-
-  if (vkBeginCommandBuffer(cmdBuffer, &beginInfo) != VK_SUCCESS) {
-    LOG_CRIT(L"Error vkBeginCommandBuffer");
-  }
-
-  {
-    VkImageMemoryBarrier const barrier {.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                                        .pNext               = nullptr,
-                                        .srcAccessMask       = 0,
-                                        .dstAccessMask       = VK_ACCESS_TRANSFER_READ_BIT,
-                                        .oldLayout           = image->getImageLayout(),
-                                        .newLayout           = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-
-                                        .image            = image->getImage(),
-                                        .subresourceRange = image->getSubresource()};
-
-    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-    image->setImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-  }
-
-  {
-    VkImageMemoryBarrier const barrier {
-        .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext               = nullptr,
-        .srcAccessMask       = 0,
-        .dstAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-
-        .image            = swapchain.buffers[index].image,
-        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
-
-    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-  }
-
-  VkImageBlit const blit {
-      .srcSubresource =
-          {
-              .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-              .mipLevel       = 0,
-              .baseArrayLayer = 0,
-              .layerCount     = 1,
-          },
-      .srcOffsets = {{0, 0, 0}, {(int32_t)swapchain.extent2d.width, (int32_t)swapchain.extent2d.height, 1}},
-      .dstSubresource =
-          {
-              .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-              .mipLevel       = 0,
-              .baseArrayLayer = 0,
-              .layerCount     = 1,
-          },
-      .dstOffsets = {{0, 0, 0}, {(int32_t)swapchain.extent2d.width, (int32_t)swapchain.extent2d.height, 1}},
-  };
-
-  vkCmdBlitImage(cmdBuffer, displayImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain.buffers[index].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
-                 VK_FILTER_LINEAR);
+  copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image, swapchain.extent2d); // let gpumemorymanager decide
 
   {
     // Change to Present Layout
@@ -370,7 +257,7 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
-        .image            = swapchain.buffers[index].image,
+        .image            = displayBuffer.image,
         .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
