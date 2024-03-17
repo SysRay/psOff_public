@@ -105,6 +105,25 @@ EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info)
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_time, struct SceTimesec* st, unsigned long* dstsec) {
+  const auto* tz      = std::chrono::current_zone();
+  auto        sys_inf = tz->get_info(std::chrono::system_clock::now());
+
+  *local_time = sys_inf.offset.count() + sys_inf.save.count() * 60 + time;
+
+  if (st != nullptr) {
+    st->t       = time;
+    st->westsec = sys_inf.offset.count() * 60;
+    st->dstsec  = sys_inf.save.count() * 60;
+  }
+
+  if (dstsec != nullptr) {
+    *dstsec = sys_inf.save.count() * 60;
+  }
+
+  return 0;
+}
+
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {
   boost::this_thread::sleep_for(boost::chrono::seconds(seconds));
   return Ok;

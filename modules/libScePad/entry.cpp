@@ -33,16 +33,17 @@ static auto* getData() {
 }
 
 static SDL_GameController* setupPad(int n, int userId) {
-  auto pData  = getData();
-  auto padPtr = SDL_GameControllerOpen(n);
-  if (padPtr == nullptr) return nullptr;
+  auto pData       = getData();
+  auto pController = SDL_GameControllerOpen(n);
+  if (pController == nullptr) return nullptr;
 
-  SDL_GameControllerSetPlayerIndex(padPtr, userId - 1);
+  SDL_GameControllerSetPlayerIndex(pController, userId - 1);
   if (userId > 0) pData->controller[n].userId = userId;
   pData->controller[n].prePadData = ScePadData();
-  pData->controller[n].padPtr     = padPtr;
+  pData->controller[n].padPtr     = pController;
   ++pData->controller[n].countConnect;
-  return padPtr;
+
+  return pController;
 }
 
 uint32_t getButtons(SDL_GameController* pad) {
@@ -89,7 +90,6 @@ ScePadData getPadData(int handle) {
 
   if (pController == nullptr) return ScePadData();
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  // SDL_GameControllerTouch
 
   data = ScePadData {
       .buttons = getButtons(pController),
@@ -151,14 +151,34 @@ ScePadData getPadData(int handle) {
 
   data.touchData.touchNum = 0;
   for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(pController, 0); f++) {
-    uint8_t s = 0;
-    float   x = 0.0f, y = 0.0f;
-    auto&   touch = data.touchData.touch[f];
+    float x = 0.0f, y = 0.0f, p = 0.0f;
 
-    SDL_GameControllerGetTouchpadFinger(pController, 0, f, &s, &x, &y, NULL);
-    if (s > 0) {
-      touch.x = x * 0xFFFF, touch.y = y * 0xFFFF;
-      ++data.touchData.touchNum;
+    SDL_GameControllerGetTouchpadFinger(pController, 0, f, NULL, &x, &y, &p);
+    if (p > 0) {
+      auto& touch = data.touchData.touch[data.touchData.touchNum++];
+      touch.x = x * 0xFFFF, touch.y = y * 0xFFFF, touch.id = f;
+    }
+  }
+
+  if (SDL_GameControllerIsSensorEnabled(pController, SDL_SENSOR_GYRO)) {
+    float gdata[3];
+    if (SDL_GameControllerGetSensorData(pController, SDL_SENSOR_GYRO, gdata, 3) == 0) {
+      auto cr = std::cosf(gdata[2] * 0.5f);
+      auto sr = std::sinf(gdata[2] * 0.5f);
+      auto cp = std::cosf(gdata[0] * 0.5f);
+      auto sp = std::sinf(gdata[0] * 0.5f);
+      auto cy = std::cosf(gdata[1] * 0.5f);
+      auto sy = std::sinf(gdata[1] * 0.5f);
+
+      data.orientation = {
+          .x = sr * cp * cy - cr * sp * sy, .y = cr * sp * cy + sr * cp * sy, .z = cr * cp * sy - sr * sp * cy, .w = cr * cp * cy + sr * sp * sy};
+    }
+  }
+
+  if (SDL_GameControllerIsSensorEnabled(pController, SDL_SENSOR_ACCEL)) {
+    float adata[3];
+    if (SDL_GameControllerGetSensorData(pController, SDL_SENSOR_ACCEL, adata, 3) == 0) {
+      data.acceleration = {.x = adata[0], .y = adata[1], .z = adata[2]};
     }
   }
 
@@ -173,11 +193,15 @@ EXPORT const char* MODULE_NAME = "libScePad";
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
 
-  int32_t ret = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC) == 0 ? Ok : Err::FATAL;
+  int32_t ret = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR) == 0;
   if (SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt") < 0) {
     LOG_WARN(L"Failed to load game controller mappings");
   }
-  return ret;
+
+  SDL_JoystickEventState(SDL_ENABLE);
+  SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
+  SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
+  return ret ? Ok : Err::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
@@ -238,12 +262,11 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   LOG_USE_MODULE(libScePad);
   if (handle < 0) return Err::INVALID_HANDLE;
 
-  auto pData          = getData();
-  auto pController    = &pData->controller[handle];
-  auto pSDLController = pController->padPtr;
-  if (SDL_GameControllerGetAttached(pSDLController) == false) {
-    SDL_GameControllerClose(pSDLController);
-    if ((pSDLController = setupPad(handle, 0)) == nullptr) return Err::DEVICE_NOT_CONNECTED;
+  auto pData       = getData();
+  auto pController = pData->controller[handle].padPtr;
+  if (SDL_GameControllerGetAttached(pController) == false) {
+    SDL_GameControllerClose(pController);
+    if ((pController = setupPad(handle, 0)) == nullptr) return Err::DEVICE_NOT_CONNECTED;
   }
 
   std::unique_lock const lock(pData->m_mutexInt);
@@ -264,7 +287,21 @@ EXPORT SYSV_ABI int scePadReadState(int32_t handle, ScePadData* pData) {
 }
 
 EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
+  LOG_USE_MODULE(libScePad);
   if (handle < 0) return Err::INVALID_HANDLE;
+
+  auto pData       = getData();
+  auto pController = pData->controller[handle].padPtr;
+
+  if (SDL_GameControllerHasSensor(pController, SDL_SENSOR_GYRO)) {
+    if (SDL_GameControllerSetSensorEnabled(pController, SDL_SENSOR_GYRO, (SDL_bool)bEnable) == 0 &&
+        SDL_GameControllerSetSensorEnabled(pController, SDL_SENSOR_ACCEL, (SDL_bool)bEnable) == 0) {
+      LOG_INFO(L"Gyroscope sensor %S successfully!", bEnable ? "enabled" : "disabled");
+    } else {
+      LOG_WARN(L"Failed to enable the gyroscope sensor: %S", SDL_GetError());
+    }
+  }
+
   return Ok;
 }
 

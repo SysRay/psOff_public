@@ -353,8 +353,50 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
 
 size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  if (handle < FILE_DESCRIPTOR_MIN) {
+    if (handle == 0) {
+      size_t count = 0;
+
+      for (int n = 0; n < iovcnt; n++) {
+        count += ::fwrite(iov[n].iov_base, 1, iov[n].iov_len, stdout);
+      }
+
+      return count;
+    }
+
+    return getErr(ErrCode::_EPERM);
+  }
+
+  auto file = accessFileManager().getFile(handle);
+  if (file == nullptr) {
+    return getErr(ErrCode::_EBADF);
+  }
+  if (!(*file)) {
+    LOG_TRACE(L"file end");
+    return 0;
+  }
+
+  size_t count = 0;
+
+  for (int n = 0; n < iovcnt; n++) {
+    auto* item = &iov[n];
+
+    if (item->iov_base == nullptr || item->iov_len == 0) continue;
+
+    auto const start = file->tellp();
+
+    file->write((const char*)item->iov_base, item->iov_len);
+
+    LOG_TRACE(L"KernelWrite[%d]: 0x%08llx:%llu write(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, start);
+
+    count = file->tellp() - start;
+    if (!(*file)) {
+      LOG_TRACE(L"file end");
+      break;
+    }
+  }
+
+  return count;
 }
 
 int fchmod(int fd, SceKernelMode mode) {
