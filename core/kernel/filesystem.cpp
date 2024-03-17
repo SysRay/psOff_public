@@ -354,6 +354,16 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
 size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
   LOG_USE_MODULE(filesystem);
   if (handle < FILE_DESCRIPTOR_MIN) {
+    if (handle == 0) {
+      size_t count = 0;
+
+      for (int n = 0; n < iovcnt; n++) {
+        count += ::fwrite(iov[n].iov_base, 1, iov[n].iov_len, stdout);
+      }
+
+      return count;
+    }
+
     return getErr(ErrCode::_EPERM);
   }
 
