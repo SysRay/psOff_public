@@ -1,4 +1,5 @@
 #pragma once
+#include "core/unwinding/unwind.h"
 #include "modules_include/common.h"
 #include "pthread_types.h"
 #include "utility/utility.h"
@@ -95,12 +96,6 @@ struct DTVKey {
   pthread_key_destructor_func_t destructor = nullptr;
 };
 
-constexpr int _JBLEN_AMD = 20; /* Size of the jmp_buf on AMD64. */
-
-struct sce_jmp_buf {
-  uint64_t _jb[_JBLEN_AMD];
-};
-
 constexpr size_t DTV_SIZE = 20 + DTV_MAX_KEYS * sizeof(DTVKey) / 8;
 
 struct PthreadPrivate {
@@ -121,8 +116,7 @@ struct PthreadPrivate {
 
   bool detached = false; // fake detach
 
-  sce_jmp_buf threadEntryBuf;
-
+  unwinding_jmp_buf _unwinding;
   ~PthreadPrivate() = default;
 };
 

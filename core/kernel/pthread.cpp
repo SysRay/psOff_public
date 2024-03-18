@@ -36,16 +36,10 @@ NT_TIB* getTIB() {
 #endif
 }
 
-using sce_setjmp  = SYSV_ABI int (*)(sce_jmp_buf*);
-using sce_longjmp = SYSV_ABI void (*)(sce_jmp_buf*, int);
-
 struct PImpl {
   boost::mutex mutex;
   DWORD        pageSize = 0;
   PImpl()               = default;
-
-  sce_setjmp  sceSetJmp  = nullptr; /// looked up in libc
-  sce_longjmp sceLongJmp = nullptr; /// looked up in libc
 };
 
 PImpl* getData() {
@@ -113,12 +107,6 @@ void init_pThread() {
 
   auto pimpl      = getData();
   pimpl->pageSize = sSysInfo.dwPageSize;
-
-  pimpl->sceSetJmp  = (decltype(pimpl->sceSetJmp))accessRuntimeExport()->getSymbol("gNQ1V2vfXDE", "libc", "libc");
-  pimpl->sceLongJmp = (decltype(pimpl->sceLongJmp))accessRuntimeExport()->getSymbol("lKEN2IebgJ0", "libc", "libc");
-
-  // assert(pimpl->sceSetJmp != nullptr);
-  // assert(pimpl->sceLongJmp != nullptr);
 }
 } // namespace
 
@@ -1070,10 +1058,10 @@ void exit(void* value) {
   LOG_USE_MODULE(pthread);
 
   auto thread = getPthread(getSelf());
-  LOG_CRIT(L"Currently not supported, exit| %S id:%d", thread->name.data(), thread->unique_id);
 
-  thread->p.interrupt();
-  boost::this_thread::interruption_point();
+  // todo: unwinding
+  thread->arg = value;
+  unwinding_longjmp(&thread->_unwinding);
 }
 
 void raise(ScePthread_obj obj, void* callback, int signo) {
@@ -1247,6 +1235,13 @@ ScePthread setup_thread(void* arg) {
   return thread;
 }
 
+__declspec(noinline) SYSV_ABI void* callEntry(ScePthread thread) {
+  if (unwinding_setjmp(&thread->_unwinding)) {
+    return thread->entry(thread->arg);
+  }
+  return thread->arg;
+}
+
 void* threadWrapper(void* arg) {
   void* ret    = 0;
   auto  thread = setup_thread(arg);
@@ -1255,9 +1250,8 @@ void* threadWrapper(void* arg) {
   int oldType = 0;
   LOG_USE_MODULE(pthread);
 
-  int  resJmp      = 0;
-  auto func_setjmp = getData()->sceSetJmp;
-  ret              = thread->entry(thread->arg);
+  ret = callEntry(thread);
+
   LOG_DEBUG(L"thread done:%d", thread->unique_id);
   return ret;
 }

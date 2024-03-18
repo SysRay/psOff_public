@@ -13,6 +13,7 @@ add_subdirectory(fileManager)
 add_subdirectory(imports)
 add_subdirectory(memory)
 add_subdirectory(dmem)
+add_subdirectory(unwinding)
 
 # Build
 add_library(core SHARED
@@ -25,6 +26,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:imports>
   $<TARGET_OBJECTS:memory>
   $<TARGET_OBJECTS:dmem>
+  $<TARGET_OBJECTS:unwinding>
 )
 
 add_dependencies(core logging boost)
