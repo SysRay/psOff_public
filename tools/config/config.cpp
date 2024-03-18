@@ -96,7 +96,7 @@ Config::Config() {
 
     for (auto& [ckey, cval]: j.items()) {
       if (defaults[ckey].is_null()) {
-        j.erase(cval);
+        j.erase(ckey);
         should_resave = true;
         printf("%s: unused parameter \"%s\" has been removed!\n", fname.data(), ckey.c_str());
       }
@@ -105,7 +105,7 @@ Config::Config() {
     if (should_resave && dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
   };
 
-  load("logging.json", m_logging, {{"sink", "baical"}}, ConfigSaveFlags::LOGGING);
+  load("logging.json", m_logging, {{"sink", "baical"}, {"verbosity", 0}}, ConfigSaveFlags::LOGGING);
   load("graphics.json", m_graphics, {}, ConfigSaveFlags::GRAPHICS);
   load("audio.json", m_audio, {{"volume", 0.5f}, {"device", "[default]"}}, ConfigSaveFlags::AUDIO);
   load("controls.json", m_controls,
