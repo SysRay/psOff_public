@@ -11,7 +11,7 @@ size_t TypeRandom::read(void* buf, size_t nbytes) {
   for (size_t i = 0; i < nbytes; i++)
     cbuf[i] = std::rand() & 0xFF;
 
-  return 0;
+  return nbytes;
 }
 
 size_t TypeRandom::write(void* buf, size_t nbytes) {
