@@ -10,7 +10,7 @@ class IPhysicalMemory {
   CLASS_NO_COPY(IPhysicalMemory);
 
   protected:
-  IPhysicalMemory()         = default;
+  IPhysicalMemory()        = default;
   uint64_t m_availableSize = 5000000000llu; // todo get from system memory
   size_t   m_allocSize     = 0;
 
@@ -45,7 +45,6 @@ class IFlexibleMemory {
 
   public:
   virtual ~IFlexibleMemory() = default;
-
 
   void setConfiguredSize(uint64_t size) { m_configuresSize = size; }
 
@@ -83,6 +82,6 @@ __APICALL void registerMapping(uint64_t vaddr, MappingType type);
  */
 __APICALL MappingType unregisterMapping(uint64_t vaddr);
 
-__APICALL IPhysicalMemory&  accessPysicalMemory();
+__APICALL IPhysicalMemory& accessPysicalMemory();
 __APICALL IFlexibleMemory& accessFlexibleMemory();
 #undef __APICALL
