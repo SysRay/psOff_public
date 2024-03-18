@@ -3,6 +3,7 @@
 #include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
+#include "core/fileManager/types/type_dev.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -26,6 +27,23 @@ std::pair<DWORD, DWORD> convProtection(int prot) {
   }
 
   return {PAGE_NOACCESS, 0};
+}
+
+int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
+  LOG_USE_MODULE(filesystem);
+
+  std::ios_base::openmode mode = std::ios::binary;
+
+  switch (flags.mode) {
+    case filesystem::SceOpenMode::RDONLY: mode |= std::ios::in; break;
+    case filesystem::SceOpenMode::WRONLY: mode |= std::ios::out; break;
+    case filesystem::SceOpenMode::RDWR: mode |= std::ios::out | std::ios::in; break;
+  }
+
+  auto      file   = createType_dev(path, mode);
+  int const handle = accessFileManager().addFile(std::move(file), path, mode);
+  LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, path, mode, kernelMode);
+  return handle;
 }
 } // namespace
 
@@ -178,6 +196,10 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     return getErr(ErrCode::_EINVAL);
   }
 
+  if (std::string_view(path).starts_with("/dev")) {
+    return open_dev(path, flags, kernelMode);
+  }
+
   assert(!flags.fsync && !flags.excl && !flags.dsync && !flags.direct);
 
   auto mapped = accessFileManager().getMappedPath(path);
@@ -218,15 +240,11 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
       return getErr(ErrCode::_ENOENT);
     }
 
-    if (/*normal file*/ true) {
-      auto      file   = createType_file(mappedPath, mode);
-      int const handle = accessFileManager().addFile(std::move(file), mappedPath, mode);
-      LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
+    auto      file   = createType_file(mappedPath, mode);
+    int const handle = accessFileManager().addFile(std::move(file), mappedPath, mode);
+    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
 
-      return handle;
-    }
-
-    return -1;
+    return handle;
   }
 }
 
