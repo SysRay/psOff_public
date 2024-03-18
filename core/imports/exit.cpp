@@ -10,7 +10,6 @@
  */
 
 void core_exit() {
+  // signal handler context
 
-  // Cleanup fixed memory (host&gpu)
-  accessPysicalMemory().deinit();
 }
