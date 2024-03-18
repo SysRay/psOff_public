@@ -1,4 +1,5 @@
 #include "type_dev.h"
+
 #include "type_random.h"
 
 std::unique_ptr<TypeDev> createType_dev(std::filesystem::path path, std::ios_base::openmode mode) {

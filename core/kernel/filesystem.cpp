@@ -2,8 +2,8 @@
 
 #include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
-#include "core/fileManager/types/type_file.h"
 #include "core/fileManager/types/type_dev.h"
+#include "core/fileManager/types/type_file.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
