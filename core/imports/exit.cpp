@@ -2,9 +2,13 @@
 #include "imports_exit.h"
 #undef __APICALL_EXTERN
 
+#include "core/dmem/dmem.h"
+
 /**
  * @brief Exit handling of the core lib
  *
  */
 
-void core_exit() {}
+void core_exit() {
+  // signal handler context
+}
