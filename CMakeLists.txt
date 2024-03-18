@@ -39,7 +39,7 @@ include_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/include
   ${PRJ_SRC_DIR}/modules_include
   ${PRJ_SRC_DIR}/tools/logging
-  ${PRJ_SRC_DIR}/tools/config
+  ${PRJ_SRC_DIR}/tools/config_emu
   ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/install/include
 )
@@ -52,7 +52,7 @@ link_directories(BEFORE
 )
 
 add_subdirectory(tools/logging) # include before link_libraries
-add_subdirectory(tools/config) # include before link_libraries
+add_subdirectory(tools/config_emu) # include before link_libraries
 add_subdirectory(tools/dll2Nids)
 add_dependencies(dll2Nids third_party)
 

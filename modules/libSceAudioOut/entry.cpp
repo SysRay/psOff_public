@@ -1,6 +1,6 @@
 #include "common.h"
+#include "config_emu.h"
 #include "logging.h"
-#include "tools/config/config.h"
 #include "types.h"
 
 #include <SDL.h>
@@ -144,7 +144,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
                        .userdata = nullptr};
 
     const char* dname;
-    auto [lock, jData] = accessConfig()->accessModule(ConfigSaveFlags::AUDIO);
+    auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::AUDIO);
 
     try {
       (*jData)["volume"].get_to(port.volumeModifier);
