@@ -1,6 +1,8 @@
 #include "filesystem.h"
 
+#include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
+#include "core/fileManager/types/type_file.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -25,11 +27,6 @@ std::pair<DWORD, DWORD> convProtection(int prot) {
 
   return {PAGE_NOACCESS, 0};
 }
-
-auto getMappings() {
-  static std::unordered_map<uint64_t, filesystem::SceMap> obj;
-  return &obj;
-}
 } // namespace
 
 namespace filesystem {
@@ -49,15 +46,16 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   }
 
   if (flags.type == SceMapType::ANON) {
-    *res = (void*)memory::alloc((uint64_t)addr, len, prot);
+    *res = (void*)accessFlexibleMemory().alloc((uint64_t)addr, len, prot); // registers mapping (flexible)
 
-    getMappings()->emplace(std::make_pair((uint64_t)*res, flags));
+    LOG_DEBUG(L"Mmap anon addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return getErr(ErrCode::_EINVAL);
   }
   // -
 
   // Do file mapping
   if (fd < FILE_DESCRIPTOR_MIN) {
+    LOG_DEBUG(L"Mmap error addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return getErr(ErrCode::_EPERM);
   }
 
@@ -78,7 +76,9 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
                                           (len >> 32u),  // maximum object size (high-order DWORD)
                                           (uint32_t)len, // maximum object size (low-order DWORD)
                                           NULL);         // name of mapping object
-  *res                = nullptr;
+
+  *res = nullptr;
+
   if (hFileMapping == NULL) {
     LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
   } else {
@@ -91,6 +91,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
       LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
     } else {
       LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
+      registerMapping((uint64_t)*res, MappingType::File);
     }
   }
 
@@ -106,28 +107,26 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
 int munmap(void* addr, size_t len) {
   LOG_USE_MODULE(filesystem);
 
-  auto mappings = getMappings();
-  if (auto it = mappings->find((uint64_t)addr); it != mappings->end()) {
-    if (it->second.mode == SceMapMode::FIXED) {
-      LOG_ERR(L"todo: munmap fixed 0x%08llx len:0x%08llx", addr, len);
-      return getErr(ErrCode::_EINVAL);
-    }
+  // unregister and then delete
+  auto type = unregisterMapping((uint64_t)addr);
 
-    if (it->second.mode == SceMapMode::VOID_) {
-      LOG_ERR(L"todo: munmap void 0x%08llx len:0x%08llx", addr, len);
-      return getErr(ErrCode::_EINVAL);
-    }
+  switch (type) {
+    case MappingType::File: {
+      return UnmapViewOfFile(addr) != 0 ? Ok : -1;
+    } break;
 
-    if (it->second.type == SceMapType::ANON) {
-      memory::free((uint64_t)addr);
-      return Ok;
-    }
+    case MappingType::Flexible: {
+      return accessFlexibleMemory().destroy((uint64_t)addr, len) != 0 ? Ok : -1;
+    } break;
 
-    // Is file Mapping
-    return UnmapViewOfFile(addr) != 0 ? Ok : -1;
+    case MappingType::Fixed: {
+      LOG_ERR(L"tod munmap Fixed 0x%08llx 0x%08llx", addr, len);
+    } break;
+
+    case MappingType::None: {
+      LOG_ERR(L"munmap unkown 0x%08llx 0x%08llx", addr, len);
+    } break;
   }
-
-  LOG_ERR(L"munmap unknown 0x%08llx 0x%08llx", addr, len);
   return -1;
 }
 
@@ -137,17 +136,16 @@ size_t read(int handle, void* buf, size_t nbytes) {
     return getErr(ErrCode::_EPERM);
   }
 
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
   }
-  if (!(*file)) {
+  if (file->isError()) {
     LOG_TRACE(L"file end");
     return 0;
   }
 
-  file->read((char*)buf, nbytes);
-  auto const count = file->gcount();
+  auto const count = file->read((char*)buf, nbytes);
   LOG_TRACE(L"KernelRead[%d]: 0x%08llx:%llu read(%lld)", handle, (uint64_t)buf, nbytes, count);
   return count;
 }
@@ -159,20 +157,18 @@ int64_t write(int handle, const void* buf, size_t nbytes) {
     return getErr(ErrCode::_EPERM);
   }
 
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     LOG_ERR(L"KernelWrite[%d] file==nullptr: 0x%08llx:%llu", handle, (uint64_t)buf, nbytes);
     return getErr(ErrCode::_EBADF);
   }
 
-  auto const start = file->tellp(); // current pos
-  file->write((char*)buf, nbytes);
-  size_t count = file->tellp() - start;
+  size_t const count = file->write((char*)buf, nbytes);
 
   LOG_TRACE(L"KernelWrite[%d]: 0x%08llx:%llu count:%llu", handle, (uint64_t)buf, nbytes, count);
-  if (*file) return count;
 
-  return getErr(ErrCode::_EIO);
+  if (file->isError()) return getErr(ErrCode::_EIO);
+  return count;
 }
 
 int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
@@ -222,11 +218,15 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
       return getErr(ErrCode::_ENOENT);
     }
 
-    auto      file   = std::make_unique<std::fstream>(std::fstream(mappedPath, mode));
-    int const handle = accessFileManager().addFileStream(std::move(file), mappedPath, mode);
-    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
+    if (/*normal file*/ true) {
+      auto      file   = createType_file(mappedPath, mode);
+      int const handle = accessFileManager().addFile(std::move(file), mappedPath, mode);
+      LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
 
-    return handle;
+      return handle;
+    }
+
+    return -1;
   }
 }
 
@@ -291,7 +291,7 @@ void sync(void) {
 
 int fsync(int handle) {
   LOG_USE_MODULE(filesystem);
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     LOG_ERR(L"KernelFsync[%d]", handle);
     return getErr(ErrCode::_EBADF);
@@ -319,11 +319,11 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
     return getErr(ErrCode::_EPERM);
   }
 
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
   }
-  if (!(*file)) {
+  if (file->isError()) {
     LOG_TRACE(L"file end");
     return 0;
   }
@@ -335,14 +335,12 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
 
     if (item->iov_base == nullptr || item->iov_len == 0) continue;
 
-    file->read((char*)item->iov_base, item->iov_len);
-
-    auto const countTemp = file->gcount();
+    auto const countTemp = file->read((char*)item->iov_base, item->iov_len);
 
     LOG_TRACE(L"KernelRead[%d]: 0x%08llx:%llu read(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, countTemp);
 
     count += countTemp;
-    if (!(*file)) {
+    if (file->isError()) {
       LOG_TRACE(L"file end");
       break;
     }
@@ -367,11 +365,11 @@ size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
     return getErr(ErrCode::_EPERM);
   }
 
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
   }
-  if (!(*file)) {
+  if (file->isError()) {
     LOG_TRACE(L"file end");
     return 0;
   }
@@ -383,14 +381,13 @@ size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
 
     if (item->iov_base == nullptr || item->iov_len == 0) continue;
 
-    auto const start = file->tellp();
+    auto const countTemp = file->write(item->iov_base, item->iov_len);
 
-    file->write((const char*)item->iov_base, item->iov_len);
+    LOG_TRACE(L"KernelWrite[%d]: 0x%08llx:%llu write(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, countTemp);
 
-    LOG_TRACE(L"KernelWrite[%d]: 0x%08llx:%llu write(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, start);
+    count += countTemp;
 
-    count = file->tellp() - start;
-    if (!(*file)) {
+    if (file->isError()) {
       LOG_TRACE(L"file end");
       break;
     }
@@ -547,20 +544,20 @@ size_t pread(int handle, void* buf, size_t nbytes, int64_t offset) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     LOG_ERR(L"pread[%d] file==nullptr: 0x%08llx:%llu", handle, (uint64_t)buf, nbytes);
     return getErr(ErrCode::_EBADF);
   }
 
-  file->clear();
-  file->seekg(offset, std::ios::beg);
-  if (!(*file)) {
+  file->clearError();
+  file->lseek(offset, SceWhence::beg);
+  if (file->isError()) {
     return 0;
   }
 
-  file->read((char*)buf, nbytes);
-  auto const count = file->gcount();
+  auto const count = file->read((char*)buf, nbytes);
+
   LOG_TRACE(L"pread[%d]: 0x%08llx:%llu read(%lld) offset:0x%08llx", handle, (uint64_t)buf, nbytes, count, offset);
   return count;
 }
@@ -571,17 +568,19 @@ size_t pwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
   if (handle < FILE_DESCRIPTOR_MIN) {
     return getErr(ErrCode::_EPERM);
   }
-  auto file = accessFileManager().getFile(handle);
+  auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     LOG_ERR(L"write[%d] file==nullptr: 0x%08llx:%llu", handle, (uint64_t)buf, nbytes);
     return getErr(ErrCode::_EBADF);
   }
 
-  file->seekp(offset);
-  file->write((char*)buf, nbytes);
-  if (*file) return Ok;
+  file->clearError();
+  file->lseek(offset, SceWhence::beg);
 
-  return getErr(ErrCode::_EIO);
+  auto const count = file->write((char*)buf, nbytes);
+  if (file->isError()) getErr(ErrCode::_EIO);
+
+  return count;
 }
 
 int64_t lseek(int handle, int64_t offset, int whence) {
@@ -593,27 +592,16 @@ int64_t lseek(int handle, int64_t offset, int whence) {
     return getErr(ErrCode::_EPERM);
   }
 
-  auto file = accessFileManager().getFile(handle);
-  file->clear();
+  auto file = accessFileManager().accessFile(handle);
+  file->clearError();
 
-  // translate to std
-  static int _whence[] = {
-      std::ios::beg,
-      std::ios::cur,
-      std::ios::end,
-  };
-  // -
+  auto const pos = file->lseek(offset, (SceWhence)whence);
 
-  auto const mode = accessFileManager().getMode(handle);
-
-  if ((mode & std::ios::in) > 0) file->seekg(offset, _whence[whence]);
-  if ((mode & std::ios::out) > 0) file->seekp(offset, _whence[whence]);
-
-  if (!*file) {
+  if (file->isError()) {
     LOG_TRACE(L"lseek[%d] einval");
     return getErr(ErrCode::_EIO);
   }
-  return file->tellg();
+  return pos;
 }
 
 int truncate(const char* path, int64_t length) {

@@ -4,6 +4,8 @@
 
 enum class GpuMemoryMode { NoAccess, Read, Write, ReadWrite };
 
+enum class MappingType { None, File, Flexible, Fixed };
+
 class IPysicalMemory {
   CLASS_NO_COPY(IPysicalMemory);
 
@@ -57,6 +59,23 @@ class IFlexibleMemory {
 #else
 #define __APICALL
 #endif
+
+/**
+ * @brief registers mapping (for mmap, mumap)
+ *
+ * @param vaddr
+ * @param type != None
+ * @return __APICALL
+ */
+__APICALL void registerMapping(uint64_t vaddr, MappingType type);
+
+/**
+ * @brief Unregisters mapping and returns the type of the mappin
+ *
+ * @param vaddr
+ * @return None: Mapping didn't exist
+ */
+__APICALL MappingType unregisterMapping(uint64_t vaddr);
 
 __APICALL IPysicalMemory&  accessPysicalMemory();
 __APICALL IFlexibleMemory& accessFlexibleMemory();
