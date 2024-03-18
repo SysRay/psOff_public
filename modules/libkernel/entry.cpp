@@ -326,7 +326,18 @@ EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint6
   return result;
 }
 
+EXPORT SYSV_ABI int sceKernelGetModuleInfo(SceKernelModule handle, SceKernelModuleInfo* r) {
+  if (r == nullptr) return getErr(ErrCode::_EFAULT);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S(%d)", __FUNCTION__, handle);
+  // auto info = accessRuntimeExport()->getModuleInfo(handle); // todo
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelGetModuleInfoFromAddr(uint64_t addr, int n, SceKernelModuleInfoEx* r) {
+  if (r == nullptr) return getErr(ErrCode::_EFAULT);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
   auto info = accessRuntimeExport()->getModuleInfoEx(addr);
   if (info == nullptr) {
     r->id = 0;
@@ -339,7 +350,7 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfoFromAddr(uint64_t addr, int n, SceKern
 
 EXPORT SYSV_ABI int sceKernelGetModuleInfoForUnwind(uint64_t addr, int n, SceModuleUndwindInfo* r) {
   if (r == nullptr) return getErr(ErrCode::_EFAULT);
-  if (r->size <= 303) return getErr(ErrCode::_EINVAL);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
 
   auto info = accessRuntimeExport()->getModuleInfoEx(addr);
   if (info == nullptr) {
