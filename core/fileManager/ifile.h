@@ -6,7 +6,7 @@
 
 enum class FileType {
   File,
-
+  Device,
 };
 
 enum class SceWhence : int {
