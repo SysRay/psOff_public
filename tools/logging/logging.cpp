@@ -2,13 +2,14 @@
 #include "logging.h"
 #undef __APICALL_EXTERN
 
+#include "config.h"
+
 #include <P7_Telemetry.h>
 #include <P7_Trace.h>
 #include <cassert>
 #include <chrono>
 #include <mutex>
 #include <unordered_map>
-#include "config.h"
 
 namespace __Log {
 
@@ -38,22 +39,19 @@ const wchar_t* getParams(std::wstring& params) {
   auto readParam = [&params, jData](std::string_view jsonparam, json::value_t jsontype, std::wstring&& p7param) {
     try {
       std::string temp;
-      int tempi;
+      int         tempi;
 
       const json& field = (*jData)[jsonparam.data()];
 
       switch (jsontype) {
-        case json::value_t::string:
-          field.get_to(temp);
-          break;
+        case json::value_t::string: field.get_to(temp); break;
 
         case json::value_t::number_integer:
           field.get_to(tempi);
           temp = std::to_string(tempi);
           break;
 
-        default:
-          throw std::runtime_error("UNIMPLEMENTED");
+        default: throw std::runtime_error("UNIMPLEMENTED");
       }
 
       params.append(L" ");
@@ -82,8 +80,8 @@ void* __registerLoggingModule(std::wstring&& name) {
         interested in is the trace.
       */
       std::wstring params = L"/P7.Pool=1024 /P7.Files=0";
-      *getClient() = P7_Create_Client(getParams(params));
-      *trace       = P7_Create_Trace(*getClient(), __APPNAME);
+      *getClient()        = P7_Create_Client(getParams(params));
+      *trace              = P7_Create_Trace(*getClient(), __APPNAME);
     }
   }
   IP7_Trace::hModule pModule;
