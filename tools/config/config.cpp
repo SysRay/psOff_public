@@ -104,7 +104,7 @@ Config::Config() {
 
     for (auto& [ckey, cval]: j->items()) {
       if (defaults[ckey].is_null()) {
-        j->erase(cval);
+        j->erase(ckey);
         should_resave = true;
         printf("%s: unused parameter \"%s\" has been removed!\n", fname.data(), ckey.c_str());
       }
@@ -113,7 +113,8 @@ Config::Config() {
     if (should_resave && dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
   };
 
-  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "baical"}}), ConfigSaveFlags::LOGGING);
+  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "baical"}, {"verbosity", 1}}),
+                                 ConfigSaveFlags::LOGGING);
   m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigSaveFlags::GRAPHICS);
   m_future_audio =
       std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigSaveFlags::AUDIO);

@@ -32,6 +32,15 @@ struct SceKernelModuleSegmentInfo {
   int      prot;
 };
 
+struct SceKernelModuleInfo {
+  uint64_t                   size = sizeof(SceKernelModuleInfo);
+  char                       name[255];
+  SceKernelModuleSegmentInfo segments[3];
+  uint32_t                   segment_count;
+  uint32_t                   ref_count;
+  uint8_t                    fingerprint[20];
+};
+
 struct SceKernelModuleInfoEx {
   uint64_t size = sizeof(SceKernelModuleInfoEx);
   char     name[255];
