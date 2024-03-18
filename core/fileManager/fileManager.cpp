@@ -28,11 +28,11 @@ struct UniData {
 };
 
 struct FileData: public UniData {
-  std::unique_ptr<std::fstream> const m_file;
+  std::unique_ptr<IFile> const m_file;
 
   std::ios_base::openmode mode;
 
-  FileData(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode)
+  FileData(std::unique_ptr<IFile>&& file, std::filesystem::path const& path, std::ios_base::openmode mode)
       : UniData(UniData::Type::File, path), m_file(std::move(file)), mode(mode) {}
 
   virtual ~FileData() { m_file->sync(); }
@@ -153,7 +153,7 @@ class FileManager: public IFileManager {
 
   std::filesystem::path const& getGameFilesDir() const final { return m_dirGameFiles; }
 
-  int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) final {
+  int addFile(std::unique_ptr<IFile>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) final {
     std::unique_lock const lock(m_mutext_int);
 
     return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path, mode).release());
@@ -173,7 +173,7 @@ class FileManager: public IFileManager {
     m_openFiles[handle].reset();
   }
 
-  std::fstream* getFile(int handle) final {
+  IFile* accessFile(int handle) final {
     if (handle < FILE_DESCRIPTOR_MIN) return nullptr;
     handle -= FILE_DESCRIPTOR_MIN;
 
