@@ -1,5 +1,5 @@
 #define __APICALL_EXTERN
-#include "config.h"
+#include "config_emu.h"
 #undef __APICALL_EXTERN
 
 #include <fstream>
@@ -25,7 +25,7 @@ class Config: public IConfig {
   Config();
   virtual ~Config() = default;
 
-  std::pair<boost::unique_lock<boost::mutex>, json*> accessModule(ConfigSaveFlags flag);
+  std::pair<boost::unique_lock<boost::mutex>, json*> accessModule(ConfigModFlag flag);
 
   virtual bool save(uint32_t flags);
 };
@@ -35,14 +35,16 @@ IConfig* accessConfig() {
   return &obj;
 }
 
-std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigSaveFlags flag) {
+std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigModFlag flag) {
   switch (flag) {
-    case ConfigSaveFlags::LOGGING: m_future_logging.wait(); return std::make_pair(boost::unique_lock(m_mutex_logging), &m_logging);
-    case ConfigSaveFlags::GRAPHICS: m_future_graphics.wait(); return std::make_pair(boost::unique_lock(m_mutex_graphics), &m_graphics);
-    case ConfigSaveFlags::AUDIO: m_future_audio.wait(); return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
-    case ConfigSaveFlags::CONTROLS: m_future_controls.wait(); return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
+    case ConfigModFlag::LOGGING: m_future_logging.wait(); return std::make_pair(boost::unique_lock(m_mutex_logging), &m_logging);
+    case ConfigModFlag::GRAPHICS: m_future_graphics.wait(); return std::make_pair(boost::unique_lock(m_mutex_graphics), &m_graphics);
+    case ConfigModFlag::AUDIO: m_future_audio.wait(); return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
+    case ConfigModFlag::CONTROLS: m_future_controls.wait(); return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
 
-    default: throw std::exception("Invalid bit flag");
+    default:
+      printf("Invalid bit flag!\n");
+      exit(1);
   }
 }
 
@@ -62,16 +64,16 @@ bool Config::save(uint32_t flags) {
   bool result = true;
 
   if (!std::filesystem::is_directory("./config/")) std::filesystem::create_directory("./config/");
-  if (flags & (uint32_t)ConfigSaveFlags::LOGGING) result &= save("logging.json", m_logging);
-  if (flags & (uint32_t)ConfigSaveFlags::GRAPHICS) result &= save("graphics.json", m_graphics);
-  if (flags & (uint32_t)ConfigSaveFlags::AUDIO) result &= save("audio.json", m_audio);
-  if (flags & (uint32_t)ConfigSaveFlags::CONTROLS) result &= save("controls.json", m_controls);
+  if (flags & (uint32_t)ConfigModFlag::LOGGING) result &= save("logging.json", m_logging);
+  if (flags & (uint32_t)ConfigModFlag::GRAPHICS) result &= save("graphics.json", m_graphics);
+  if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= save("audio.json", m_audio);
+  if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= save("controls.json", m_controls);
 
   return true;
 }
 
 Config::Config() {
-  auto load = [this](std::string_view fname, json* j, json defaults = {}, ConfigSaveFlags dflag = ConfigSaveFlags::NONE) {
+  auto load = [this](std::string_view fname, json* j, json defaults = {}, ConfigModFlag dflag = ConfigModFlag::NONE) {
     auto path          = std::string("./config/") + fname.data();
     bool should_resave = false;
 
@@ -110,14 +112,14 @@ Config::Config() {
       }
     }
 
-    if (should_resave && dflag != ConfigSaveFlags::NONE) this->save((uint32_t)dflag);
+    if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "baical"}, {"verbosity", 1}}),
-                                 ConfigSaveFlags::LOGGING);
-  m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigSaveFlags::GRAPHICS);
+  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}),
+                                 ConfigModFlag::LOGGING);
+  m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigModFlag::GRAPHICS);
   m_future_audio =
-      std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigSaveFlags::AUDIO);
+      std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
   m_future_controls = std::async(
       std::launch::async, load, std::string_view("controls.json"), &m_controls,
       json({{"type", "gamepad"},
@@ -131,5 +133,5 @@ Config::Config() {
                  {"options", ""},  {"touchpad", ""}, {"l1", ""},     {"l2", ""},    {"l3", ""},      {"r1", ""},        {"r2", ""},        {"r3", ""},
                  {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
              }}}),
-      ConfigSaveFlags::CONTROLS);
+      ConfigModFlag::CONTROLS);
 }
