@@ -22,6 +22,8 @@ int64_t TypeRandom::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
 
+void TypeRandom::sync() {}
+
 bool TypeRandom::isError() {
   return false;
 }

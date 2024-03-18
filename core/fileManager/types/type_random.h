@@ -1,12 +1,12 @@
 #pragma once
 
-#include "type_dev.h"
+#include "../ifile.h"
 
 #include <memory>
 
-class TypeRandom: public TypeDev {
+class TypeRandom: public IFile {
   public:
-  TypeRandom(): TypeDev() {}
+  TypeRandom(): IFile(FileType::Device) {}
 
   virtual ~TypeRandom() {}
 
@@ -14,6 +14,7 @@ class TypeRandom: public TypeDev {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
+  void    sync() final;
   bool    isError() final;
   void    clearError() final;
 };

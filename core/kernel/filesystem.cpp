@@ -2,8 +2,8 @@
 
 #include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
-#include "core/fileManager/types/type_dev.h"
 #include "core/fileManager/types/type_file.h"
+#include "core/fileManager/types/type_random.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -27,6 +27,19 @@ std::pair<DWORD, DWORD> convProtection(int prot) {
   }
 
   return {PAGE_NOACCESS, 0};
+}
+
+std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base::openmode mode) {
+  LOG_USE_MODULE(filesystem);
+
+  // todo: /dev/rng?
+  if (path == "/dev/urandom" || path == "/dev/urandom") {
+    return createType_random();
+  } else { // todo: other devices
+    LOG_CRIT(L"%S: unknown device!", path.c_str());
+  }
+
+  return {};
 }
 
 int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {

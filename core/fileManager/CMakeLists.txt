@@ -1,7 +1,6 @@
 add_library(fileManager OBJECT
   fileManager.cpp
   types/type_file.cpp
-  types/type_dev.cpp
   types/type_random.cpp
 )
 
