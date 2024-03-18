@@ -42,17 +42,11 @@ const wchar_t* getParams(std::wstring& params) {
       int         tempi;
 
       switch (jsontype) {
-        case json::value_t::string:
-          field->get_to(temp);
-          break;
+        case json::value_t::string: field->get_to(temp); break;
 
-        case json::value_t::number_integer:
-          temp = std::to_string(field->get_to(tempi));
-          break;
+        case json::value_t::number_integer: temp = std::to_string(field->get_to(tempi)); break;
 
-        default:
-          printf("Missing type handler for json_t(%d)!", (int)jsontype);
-          return false;
+        default: printf("Missing type handler for json_t(%d)!\n", (int)jsontype); return false;
       }
 
       params.append(L" ");

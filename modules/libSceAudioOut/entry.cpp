@@ -1,6 +1,6 @@
 #include "common.h"
-#include "logging.h"
 #include "config_emu.h"
+#include "logging.h"
 #include "types.h"
 
 #include <SDL.h>

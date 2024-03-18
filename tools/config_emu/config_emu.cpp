@@ -42,9 +42,7 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigMo
     case ConfigModFlag::AUDIO: m_future_audio.wait(); return std::make_pair(boost::unique_lock(m_mutex_audio), &m_audio);
     case ConfigModFlag::CONTROLS: m_future_controls.wait(); return std::make_pair(boost::unique_lock(m_mutex_controls), &m_controls);
 
-    default:
-      printf("Invalid bit flag!\n");
-      exit(1);
+    default: printf("Invalid bit flag!\n"); exit(1);
   }
 }
 
@@ -115,8 +113,8 @@ Config::Config() {
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  m_future_logging  = std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}),
-                                 ConfigModFlag::LOGGING);
+  m_future_logging =
+      std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
   m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigModFlag::GRAPHICS);
   m_future_audio =
       std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);

@@ -66,7 +66,7 @@ std::string hexId2nid(std::string_view hexId) {
 
 int main(int argc, char* argv[]) {
   if (argc != 3) {
-    printf("Wrong argument count: filepath, symbolFolder");
+    printf("Wrong argument count: filepath, symbolFolder\n");
     return -1;
   }
 
