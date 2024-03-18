@@ -11,5 +11,4 @@
 
 void core_exit() {
   // signal handler context
-
 }
