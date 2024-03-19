@@ -62,4 +62,10 @@ EXPORT SYSV_ABI int32_t sceNpAuthWaitAsync() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceNpAuthGetIdTokenA() {
+  LOG_USE_MODULE(libSceNpAuth);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }
