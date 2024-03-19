@@ -61,6 +61,27 @@ EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
   return std::memmove(dst, src, n);
 }
 
+EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+
+  return 0;
+}
+
+EXPORT SYSV_ABI int __NID(__cxa_guard_release)(uint64_t* guard_object) {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+
+  return 0;
+}
+
+EXPORT SYSV_ABI int __NID(__cxa_guard_abort)(uint64_t* guard_object) {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+
+  return 0;
+}
+
 EXPORT SYSV_ABI int __NID(__cxa_atexit)(void (*func)(void*), void* arg, int moduleId) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_TRACE(L"%S", __FUNCTION__);
