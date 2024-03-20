@@ -27,6 +27,10 @@ EXPORT SYSV_ABI SceCommonDialogStatus sceImeDialogGetStatus(void) {
   return g_curStatus;
 }
 
+EXPORT SYSV_ABI int32_t sceImeDialogGetPanelSizeExtended() {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceImeDialogGetResult() {
   return Ok;
 }
