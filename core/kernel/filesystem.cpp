@@ -163,9 +163,6 @@ int munmap(void* addr, size_t len) {
 
 size_t read(int handle, void* buf, size_t nbytes) {
   LOG_USE_MODULE(filesystem);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
@@ -183,10 +180,6 @@ size_t read(int handle, void* buf, size_t nbytes) {
 
 int64_t write(int handle, const void* buf, size_t nbytes) {
   LOG_USE_MODULE(filesystem);
-
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
@@ -264,9 +257,6 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
 int close(int handle) {
   LOG_USE_MODULE(filesystem);
   LOG_TRACE(L"Closed[%d]", handle);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   accessFileManager().remove(handle);
   return Ok;
@@ -346,9 +336,6 @@ int fcntl(int fd, int cmd, va_list args) {
 
 size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
   LOG_USE_MODULE(filesystem);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
@@ -359,6 +346,7 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
     return 0;
   }
 
+  // todo: move it to IFile?
   size_t count = 0;
 
   for (int n = 0; n < iovcnt; ++n) {
@@ -382,19 +370,6 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
 
 size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
   LOG_USE_MODULE(filesystem);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    if (handle == 0) {
-      size_t count = 0;
-
-      for (int n = 0; n < iovcnt; n++) {
-        count += ::fwrite(iov[n].iov_base, 1, iov[n].iov_len, stdout);
-      }
-
-      return count;
-    }
-
-    return getErr(ErrCode::_EPERM);
-  }
 
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
@@ -405,6 +380,7 @@ size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
     return 0;
   }
 
+  // todo: move it to IFile?
   size_t count = 0;
 
   for (int n = 0; n < iovcnt; n++) {
@@ -550,22 +526,59 @@ int getdents(int fd, char* buf, int nbytes) {
 
 size_t preadv(int handle, const SceKernelIovec* iov, int iovcnt, int64_t offset) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  LOG_TRACE(L"preadv [%d]", handle);
+
+  if (offset < 0) {
+    return getErr(ErrCode::_EINVAL);
+  }
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"preadv[%d] file==nullptr", handle);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  file->clearError();
+  file->lseek(offset, SceWhence::beg);
+  if (file->isError()) {
+    return 0;
+  }
+
+  auto const count = readv(handle, iov, iovcnt);
+  if (file->isError()) return getErr(ErrCode::_EIO);
+
+  return count;
 }
 
 size_t pwritev(int handle, const SceKernelIovec* iov, int iovcnt, int64_t offset) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  LOG_TRACE(L"pwritev [%d]", handle);
+
+  if (offset < 0) {
+    return getErr(ErrCode::_EINVAL);
+  }
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"pwritev[%d] file==nullptr", handle);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  file->clearError();
+  file->lseek(offset, SceWhence::beg);
+  if (file->isError()) {
+    return 0;
+  }
+
+  auto const count = writev(handle, iov, iovcnt);
+  if (file->isError()) return getErr(ErrCode::_EIO);
+
+  return count;
 }
 
 size_t pread(int handle, void* buf, size_t nbytes, int64_t offset) {
   LOG_USE_MODULE(filesystem);
   LOG_TRACE(L"pread [%d]", handle);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   if (buf == nullptr) {
     return getErr(ErrCode::_EFAULT);
@@ -596,9 +609,6 @@ size_t pread(int handle, void* buf, size_t nbytes, int64_t offset) {
 size_t pwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
   LOG_USE_MODULE(filesystem);
   LOG_TRACE(L"pwrite[%d]: 0x%08llx:%llu", handle, (uint64_t)buf, nbytes);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     LOG_ERR(L"write[%d] file==nullptr: 0x%08llx:%llu", handle, (uint64_t)buf, nbytes);
@@ -609,7 +619,7 @@ size_t pwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
   file->lseek(offset, SceWhence::beg);
 
   auto const count = file->write((char*)buf, nbytes);
-  if (file->isError()) getErr(ErrCode::_EIO);
+  if (file->isError()) return getErr(ErrCode::_EIO);
 
   return count;
 }
@@ -619,9 +629,6 @@ int64_t lseek(int handle, int64_t offset, int whence) {
   LOG_TRACE(L"lseek [%d] 0x%08llx %d", handle, offset, whence);
 
   if (whence > 2) return getErr(ErrCode::_EINVAL);
-  if (handle < FILE_DESCRIPTOR_MIN) {
-    return getErr(ErrCode::_EPERM);
-  }
 
   auto file = accessFileManager().accessFile(handle);
   file->clearError();
