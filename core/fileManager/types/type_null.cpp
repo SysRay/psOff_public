@@ -18,7 +18,6 @@ class ITypeNull: public IFile {
 };
 
 std::unique_ptr<IFile> createType_null() {
-  std::srand(std::time(nullptr));
   return std::make_unique<ITypeNull>();
 }
 

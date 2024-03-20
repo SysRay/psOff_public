@@ -22,7 +22,6 @@ class ITypeOut: public IFile {
 };
 
 std::unique_ptr<IFile> createType_out(SceFileOutChannel ch) {
-  std::srand(std::time(nullptr));
   return std::make_unique<ITypeOut>(ch);
 }
 

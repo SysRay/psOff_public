@@ -21,14 +21,13 @@ class ITypeIn: public IFile {
 };
 
 std::unique_ptr<IFile> createType_in() {
-  std::srand(std::time(nullptr));
   return std::make_unique<ITypeIn>();
 }
 
 size_t ITypeIn::read(void* buf, size_t nbytes) {
   if (nbytes == 0) return 0;
   printf("Emulator awaits your input: ");
-  return ::fread(buf, 1, nbytes, stdin);
+  return std::fread(buf, 1, nbytes, stdin);
 }
 
 size_t ITypeIn::write(void* buf, size_t nbytes) {
