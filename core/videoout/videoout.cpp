@@ -192,6 +192,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   public:
   VideoOut() = default;
 
+  virtual ~VideoOut();
+
   /**
    * @brief Preinit handle 1(index 0) with main window
    * Needed for early vulkan init and with it all the managers
@@ -247,6 +249,15 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 IVideoOut& accessVideoOut() {
   static VideoOut inst;
   return inst;
+}
+
+VideoOut::~VideoOut() {
+  // Logging doesn't work here, even with flush
+  printf("shutdown VideoOut\n");
+
+  // shutdown graphics first (uses vulkan)
+  m_graphics->deinit();
+  m_graphics.reset();
 }
 
 void VideoOut::init() {

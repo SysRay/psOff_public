@@ -104,8 +104,13 @@ void __log(eTrace_Level level, void* hmodule, unsigned short i_wLine, const char
   va_list args = nullptr;
   va_start(args, i_pFormat);
 
-  if (static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(level) >=
+  if (static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(level) ==
       static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(eTrace_Level::err)) {
+    printf("Error:");
+    vwprintf(i_pFormat, args);
+    printf("\n");
+  } else if (static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(level) ==
+             static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(eTrace_Level::crit)) {
     printf("Critical Error:");
     vwprintf(i_pFormat, args);
     printf("\nExiting\n");

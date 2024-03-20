@@ -109,4 +109,10 @@ class IGraphics {
    * @return false
    */
   virtual bool isRunning() const = 0;
+
+  /**
+   * @brief Pre deletion call
+   *
+   */
+  virtual void deinit() = 0;
 };

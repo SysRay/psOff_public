@@ -36,14 +36,17 @@ std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice de
 }
 
 IRuntimeExport* accessRuntimeExport() {
+  assert(g_runtimeExport != nullptr);
   return g_runtimeExport;
 }
 
 bool gpuMemory::notify_allocHeap(uint64_t vaddr, uint64_t size, int memoryProtection) {
+  assert(g_notify_allocHeap != nullptr);
   return g_notify_allocHeap(vaddr, size, memoryProtection);
 }
 
 bool gpuMemory::isGPULocal(uint64_t vaddr) {
+  assert(g_isGPULocal != nullptr);
   return g_isGPULocal(vaddr);
 }
 
