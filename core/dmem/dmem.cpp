@@ -180,8 +180,7 @@ bool PhysicalMemory::Unmap(uint64_t vaddr, uint64_t size) {
 void PhysicalMemory::deinit() {
   for (auto& item: m_objects) {
     if (item.second.isGpu) {
-      // if(isGPU) accessGpuMemory().freeHeap(vaddr); // todo, notify free (should free host memory aswell)
-      memory::free(item.first);
+      // done by gpuMemoryManager
     } else {
       memory::free(item.first);
     }
