@@ -538,13 +538,13 @@ void cbWindow_close(SDL_Window* window) {
   };
 
   const SDL_MessageBoxData mbd {
-    .flags = SDL_MESSAGEBOX_WARNING,
-    .window = window,
-    .title = "Are sure you want to quit?",
-    .message = "All your unsaved progress will be lost!",
-    .numbuttons = 2,
-    .buttons = mbbd,
-    .colorScheme = nullptr
+      .flags       = SDL_MESSAGEBOX_WARNING,
+      .window      = window,
+      .title       = "Are sure you want to quit?",
+      .message     = "All your unsaved progress will be lost!",
+      .numbuttons  = 2,
+      .buttons     = mbbd,
+      .colorScheme = nullptr,
   };
 
   int buttonId = 0;
