@@ -1,4 +1,5 @@
 #include "type_null.h"
+
 #include "modules_include/common.h"
 
 class ITypeNull: public IFile {

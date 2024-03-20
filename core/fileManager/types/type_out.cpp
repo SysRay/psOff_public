@@ -1,4 +1,5 @@
 #include "type_out.h"
+
 #include "logging.h"
 
 LOG_DEFINE_MODULE(filesystem);
@@ -33,20 +34,15 @@ size_t ITypeOut::write(void* buf, size_t nbytes) {
   LOG_USE_MODULE(filesystem);
 
   std::string str((const char*)buf, nbytes);
-  while (str.back() == '\n') str.pop_back();
+  while (str.back() == '\n')
+    str.pop_back();
 
   switch (m_channel) {
-    case SCE_ITYPEOUT_ERROR:
-      LOG_ERR(L"%S", str.c_str());
-      break;
+    case SCE_ITYPEOUT_ERROR: LOG_ERR(L"%S", str.c_str()); break;
 
-    case SCE_ITYPEOUT_TRACE:
-      LOG_TRACE(L"%S", str.c_str());
-      break;
+    case SCE_ITYPEOUT_TRACE: LOG_TRACE(L"%S", str.c_str()); break;
 
-    default:
-      LOG_CRIT(L"Unknown channel: %d", (uint32_t)m_channel);
-      break;
+    default: LOG_CRIT(L"Unknown channel: %d", (uint32_t)m_channel); break;
   }
 
   return nbytes;

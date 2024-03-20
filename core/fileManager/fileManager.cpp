@@ -4,12 +4,11 @@
 
 #include "logging.h"
 #include "magic_enum/magic_enum.hpp"
-#include "utility/utility.h"
-
 #include "types/type_in.h"
+#include "types/type_null.h"
 #include "types/type_out.h"
 #include "types/type_zero.h"
-#include "types/type_null.h"
+#include "utility/utility.h"
 
 #include <algorithm>
 #include <fstream>
@@ -84,6 +83,7 @@ class FileManager: public IFileManager {
 
   public:
   FileManager() { init(); };
+
   virtual ~FileManager() = default;
 
   void init() {
