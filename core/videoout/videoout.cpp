@@ -532,6 +532,23 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
 }
 
 void cbWindow_close(SDL_Window* window) {
+  const SDL_MessageBoxButtonData mbbd[2] {
+      {.flags = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, .buttonid = 0, .text = "Cancel"},
+      {.flags = 0, .buttonid = 1, .text = "Quit"},
+  };
+
+  const SDL_MessageBoxData mbd {
+      .flags       = SDL_MESSAGEBOX_WARNING,
+      .window      = window,
+      .title       = "Are sure you want to quit?",
+      .message     = "All your unsaved progress will be lost!",
+      .numbuttons  = 2,
+      .buttons     = mbbd,
+      .colorScheme = nullptr,
+  };
+
+  int buttonId = 0;
+  if (SDL_ShowMessageBox(&mbd, &buttonId) == 0 && buttonId != 1) return;
   // SDL_DestroyWindow(window.window);
   // Todo submit close event, cleanup
   // m_stop = true;

@@ -175,6 +175,12 @@ int SYSV_ABI sceGnmDrawIndex(uint32_t* cmdOut, uint64_t size, uint32_t index_cou
   return Ok;
 }
 
+int SYSV_ABI sceGnmDrawIndexOffset(uint32_t* cmdOut, uint64_t size, uint32_t index_offset, uint32_t index_count, uint32_t flags) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index_count, uint32_t flags) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);

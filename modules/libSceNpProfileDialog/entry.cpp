@@ -3,7 +3,7 @@
 #include "logging.h"
 #include "types.h"
 
-LOG_DEFINE_MODULE(libSceErrorDialog);
+LOG_DEFINE_MODULE(libSceNpProfileDialog);
 
 namespace {
 static SceCommonDialogStatus g_curStatus = SceCommonDialogStatus::NONE;
@@ -11,32 +11,32 @@ static SceCommonDialogStatus g_curStatus = SceCommonDialogStatus::NONE;
 
 extern "C" {
 
-EXPORT const char* MODULE_NAME = "libSceErrorDialog";
+EXPORT const char* MODULE_NAME = "libSceNpProfileDialog";
 
-EXPORT SYSV_ABI int32_t sceErrorDialogInitialize() {
+EXPORT SYSV_ABI int32_t sceNpProfileDialogInitialize() {
   g_curStatus = SceCommonDialogStatus::INITIALIZED;
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceErrorDialogTerminate(void) {
+EXPORT SYSV_ABI int32_t sceNpProfileDialogTerminate(void) {
   g_curStatus = SceCommonDialogStatus::NONE;
   return Ok;
 }
 
-EXPORT SYSV_ABI SceCommonDialogStatus sceErrorDialogUpdateStatus(void) {
+EXPORT SYSV_ABI SceCommonDialogStatus sceNpProfileDialogUpdateStatus(void) {
   return g_curStatus;
 }
 
-EXPORT SYSV_ABI SceCommonDialogStatus sceErrorDialogGetStatus(void) {
+EXPORT SYSV_ABI SceCommonDialogStatus sceNpProfileDialogGetStatus(void) {
   return g_curStatus;
 }
 
-EXPORT SYSV_ABI int32_t sceErrorDialogOpen(const void* param) {
+EXPORT SYSV_ABI int32_t sceNpProfileDialogOpenA(const void* param) {
   g_curStatus = SceCommonDialogStatus::FINISHED;
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceErrorDialogClose() {
+EXPORT SYSV_ABI int32_t sceNpProfileDialogClose() {
   g_curStatus = SceCommonDialogStatus::FINISHED;
   return Ok;
 }
