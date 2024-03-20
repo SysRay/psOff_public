@@ -80,4 +80,52 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceNgs2GeomApply() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2GeomCalcListener() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2GeomResetListenerParam() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2GeomResetSourceParam() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackCreate() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }
