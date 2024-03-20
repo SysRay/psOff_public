@@ -39,7 +39,7 @@ size_t ITypeOut::write(void* buf, size_t nbytes) {
   switch (m_channel) {
     case SCE_ITYPEOUT_ERROR: LOG_ERR(L"%S", str.c_str()); break;
 
-    case SCE_ITYPEOUT_TRACE: LOG_TRACE(L"%S", str.c_str()); break;
+    case SCE_ITYPEOUT_DEBUG: LOG_DEBUG(L"%S", str.c_str()); break;
 
     default: LOG_CRIT(L"Unknown channel: %d", (uint32_t)m_channel); break;
   }

@@ -90,7 +90,7 @@ class FileManager: public IFileManager {
     // Order of the first three files is important, do not change it!
     assert(addFile(createType_in(), "/dev/stdin", std::ios::out) == 0);
     assert(addFile(createType_out(SCE_ITYPEOUT_ERROR), "/dev/stdout", std::ios::in) == 1);
-    assert(addFile(createType_out(SCE_ITYPEOUT_TRACE), "/dev/stderr", std::ios::in) == 2);
+    assert(addFile(createType_out(SCE_ITYPEOUT_DEBUG), "/dev/stderr", std::ios::in) == 2);
     addFile(createType_zero(), "/dev/zero", std::ios::in);
     addFile(createType_null(), "/dev/null", std::ios::out | std::ios::in);
   }
