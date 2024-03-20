@@ -15,19 +15,21 @@ enum WaveformInfoType {
 
 struct WaveformInfo {
   WaveformInfoType type;
-  char pad[4];
+  char             pad[4];
+
   union WaveformPtr {
     int                  fileHandle;
     SceWaveformUserFunc* userFunc;
     const void*          dataPtr;
   } ud;
+
   size_t size;
-  long offset;
+  long   offset;
 };
 
 EXPORT const char* MODULE_NAME = "libSceNgs2";
 
-EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t, uint32_t, void *) {
+EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t, uint32_t, void*) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -43,9 +45,9 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   LOG_ERR(L"todo %S", __FUNCTION__);
 
   WaveformInfo wi {
-    .type = WAVEFORM_DATA,
-    .ud = {.dataPtr = ptr},
-    .size = size,
+      .type = WAVEFORM_DATA,
+      .ud   = {.dataPtr = ptr},
+      .size = size,
   };
 
   return ProcessWaveData(&wi, wf);
@@ -56,9 +58,9 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, 
   LOG_ERR(L"todo %S", __FUNCTION__);
 
   WaveformInfo wi {
-    .type = WAVEFORM_DATA,
-    .ud = {.fileHandle = 0 /* libSceLibcInternal.prx::fopen(path, "rb") */},
-    .offset = offset,
+      .type   = WAVEFORM_DATA,
+      .ud     = {.fileHandle = 0 /* libSceLibcInternal.prx::fopen(path, "rb") */},
+      .offset = offset,
   };
 
   return ProcessWaveData(&wi, wf);
@@ -73,9 +75,9 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   }
 
   WaveformInfo wi {
-    .type = WAVEFORM_USER,
-    .ud = {.userFunc = user},
-    .size = size,
+      .type = WAVEFORM_USER,
+      .ud   = {.userFunc = user},
+      .size = size,
   };
 
   return ProcessWaveData(&wi, wf);
@@ -112,12 +114,12 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy() {
 }
 
 struct render {
-  void *ptr;
+  void*  ptr;
   size_t size;
-  void* pad[2];
+  void*  pad[2];
 };
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemRender(void *handle, render* param_2, int32_t count) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemRender(void* handle, render* param_2, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
