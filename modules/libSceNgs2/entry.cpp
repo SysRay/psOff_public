@@ -7,18 +7,80 @@ LOG_DEFINE_MODULE(libSceNgs2);
 
 extern "C" {
 
+enum WaveformInfoType {
+  WAVEFORM_FILE,
+  WAVEFORM_DATA,
+  WAVEFORM_USER,
+};
+
+struct WaveformInfo {
+  WaveformInfoType type;
+  char             pad[4];
+
+  union WaveformPtr {
+    int                  fileHandle;
+    SceWaveformUserFunc* userFunc;
+    const void*          dataPtr;
+  } ud;
+
+  size_t size;
+  long   offset;
+};
+
 EXPORT const char* MODULE_NAME = "libSceNgs2";
 
-EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock() {
+EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t, uint32_t, void*) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData() {
+static int32_t ProcessWaveData(WaveformInfo* wi, SceWaveformFormat* wf) {
+  /* todo: Deal with WAV/VAG files */
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceWaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+
+  WaveformInfo wi {
+      .type = WAVEFORM_DATA,
+      .ud   = {.dataPtr = ptr},
+      .size = size,
+  };
+
+  return ProcessWaveData(&wi, wf);
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceWaveformFormat* wf) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+
+  WaveformInfo wi {
+      .type   = WAVEFORM_DATA,
+      .ud     = {.fileHandle = 0 /* libSceLibcInternal.prx::fopen(path, "rb") */},
+      .offset = offset,
+  };
+
+  return ProcessWaveData(&wi, wf);
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size_t size, SceWaveformFormat* wf) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+
+  if (user == nullptr) {
+    return 0x804a0408 /* SCE_NGS2_ERROR_INVALID_WAVEFORM_DATA */;
+  }
+
+  WaveformInfo wi {
+      .type = WAVEFORM_USER,
+      .ud   = {.userFunc = user},
+      .size = size,
+  };
+
+  return ProcessWaveData(&wi, wf);
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator() {
@@ -51,9 +113,22 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemRender() {
+struct render {
+  void*  ptr;
+  size_t size;
+  void*  pad[2];
+};
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemRender(void* handle, render* param_2, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  for (int32_t i = 0; i < count; i++) {
+    if (param_2[i].ptr != nullptr) {
+      std::memset(param_2[i].ptr, 0, param_2[i].size);
+    }
+  }
+
   return Ok;
 }
 
