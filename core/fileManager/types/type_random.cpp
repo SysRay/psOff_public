@@ -1,10 +1,10 @@
 #include "type_random.h"
 
-class ITypeRandom: public IFile {
+class TypeRandom: public IFile {
   public:
-  ITypeRandom(): IFile(FileType::Device) {}
+  TypeRandom(): IFile(FileType::Device) {}
 
-  virtual ~ITypeRandom() {}
+  virtual ~TypeRandom() {}
 
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
@@ -17,10 +17,10 @@ class ITypeRandom: public IFile {
 
 std::unique_ptr<IFile> createType_random() {
   std::srand(std::time(nullptr));
-  return std::make_unique<ITypeRandom>();
+  return std::make_unique<TypeRandom>();
 }
 
-size_t ITypeRandom::read(void* buf, size_t nbytes) {
+size_t TypeRandom::read(void* buf, size_t nbytes) {
   auto cbuf = static_cast<char*>(buf);
 
   for (size_t i = 0; i < nbytes; i++)
@@ -29,18 +29,18 @@ size_t ITypeRandom::read(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-size_t ITypeRandom::write(void* buf, size_t nbytes) {
+size_t TypeRandom::write(void* buf, size_t nbytes) {
   return 0;
 }
 
-int64_t ITypeRandom::lseek(int64_t offset, SceWhence whence) {
+int64_t TypeRandom::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
 
-void ITypeRandom::sync() {}
+void TypeRandom::sync() {}
 
-bool ITypeRandom::isError() {
+bool TypeRandom::isError() {
   return false;
 }
 
-void ITypeRandom::clearError() {}
+void TypeRandom::clearError() {}
