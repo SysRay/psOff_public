@@ -6,4 +6,6 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
+#target_link_libraries(${libName} PRIVATE core.lib)
+
 setupModule(${libName})

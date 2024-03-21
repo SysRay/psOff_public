@@ -1,5 +1,6 @@
 #include "codes.h"
 #include "common.h"
+#include "core/kernel/pthread.h"
 #include "logging.h"
 #include "types.h"
 
@@ -29,7 +30,7 @@ struct WaveformInfo {
 
 EXPORT const char* MODULE_NAME = "libSceNgs2";
 
-EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t, uint32_t, void*) {
+EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -89,7 +90,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackDestroy() {
+EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -101,38 +102,32 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator() {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceSystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle* sh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, sh);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sh, SceNgs2ContextBufferInfo* cbi) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy() {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-struct render {
-  void*  ptr;
-  size_t size;
-  void*  pad[2];
-};
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemRender(void* handle, render* param_2, int32_t count) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sh, SceNgs2RenderBufferInfo* param_2, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
   for (int32_t i = 0; i < count; i++) {
-    if (param_2[i].ptr != nullptr) {
-      std::memset(param_2[i].ptr, 0, param_2[i].size);
+    if (param_2[i].bufferPtr != nullptr) {
+      std::memset(param_2[i].bufferPtr, 0, param_2[i].bufferSize);
     }
   }
 
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples() {
+EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle* sh, uint32_t samplesCount) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -168,13 +163,13 @@ EXPORT SYSV_ABI int32_t sceNgs2GeomCalcListener() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2GeomResetListenerParam() {
+EXPORT SYSV_ABI int32_t sceNgs2GeomResetListenerParam(SceNgs2GeomListenerParam* param) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2GeomResetSourceParam() {
+EXPORT SYSV_ABI int32_t sceNgs2GeomResetSourceParam(SceNgs2GeomSourceParam* param) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

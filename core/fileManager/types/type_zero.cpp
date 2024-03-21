@@ -1,10 +1,10 @@
 #include "type_zero.h"
 
-class ITypeZero: public IFile {
+class TypeZero: public IFile {
   public:
-  ITypeZero(): IFile(FileType::Device) {}
+  TypeZero(): IFile(FileType::Device) {}
 
-  virtual ~ITypeZero() {}
+  virtual ~TypeZero() {}
 
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
@@ -16,10 +16,10 @@ class ITypeZero: public IFile {
 };
 
 std::unique_ptr<IFile> createType_zero() {
-  return std::make_unique<ITypeZero>();
+  return std::make_unique<TypeZero>();
 }
 
-size_t ITypeZero::read(void* buf, size_t nbytes) {
+size_t TypeZero::read(void* buf, size_t nbytes) {
   for (size_t i = 0; i < nbytes; i++) {
     ((char*)buf)[i] = '\0';
   }
@@ -27,18 +27,18 @@ size_t ITypeZero::read(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-size_t ITypeZero::write(void* buf, size_t nbytes) {
+size_t TypeZero::write(void* buf, size_t nbytes) {
   return 0;
 }
 
-int64_t ITypeZero::lseek(int64_t offset, SceWhence whence) {
+int64_t TypeZero::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
 
-void ITypeZero::sync() {}
+void TypeZero::sync() {}
 
-bool ITypeZero::isError() {
+bool TypeZero::isError() {
   return false;
 }
 
-void ITypeZero::clearError() {}
+void TypeZero::clearError() {}
