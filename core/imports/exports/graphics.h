@@ -21,6 +21,7 @@ struct DeviceInfo;
 
 enum class QueueType : uint8_t;
 
+struct QueueInfo;
 } // namespace vulkan
 
 class IEventsGraphics {
@@ -29,7 +30,7 @@ class IEventsGraphics {
 
   virtual vulkan::DeviceInfo* getDeviceInfo() = 0;
 
-  virtual std::pair<VkQueue, uint32_t> getQueue(vulkan::QueueType type) = 0;
+  virtual vulkan::QueueInfo* getQueue(vulkan::QueueType type) = 0;
 };
 
 class IGraphics {

@@ -184,7 +184,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     m_condSDL2.notify_one();
   }
 
-  std::pair<VkQueue, uint32_t> getQueue(vulkan::QueueType type) final;
+  vulkan::QueueInfo* getQueue(vulkan::QueueType type) final;
   // -
   void transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue); // -> Renderer
 
@@ -266,7 +266,7 @@ VideoOut::~VideoOut() {
   m_condSDL2.notify_one();
 
   printf("VideoOut| waiting on gpu idle\n");
-  vkQueueWaitIdle(m_vulkanObj->queues.items[vulkan::getIndex(vulkan::QueueType::present)][0].queue);
+  vkQueueWaitIdle(m_vulkanObj->queues.items[vulkan::getIndex(vulkan::QueueType::present)][0]->queue);
 
   // shutdown graphics first (uses vulkan)
   m_graphics->deinit();
@@ -552,7 +552,7 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
   return setIndex;
 }
 
-std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
+vulkan::QueueInfo* VideoOut::getQueue(vulkan::QueueType type) {
 
   std::unique_lock const lock(m_mutexInt);
 
@@ -561,14 +561,14 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
 
   // Search for least used
   for (auto it = queueInfo.begin()++; it != queueInfo.end(); ++it) {
-    if (it->useCount < bestIt->useCount) {
+    if ((*it)->useCount < (*bestIt)->useCount) {
       bestIt = it;
     }
   }
   // -
 
-  ++bestIt->useCount;
-  return std::make_pair(bestIt->queue, bestIt->family);
+  ++(*bestIt)->useCount;
+  return bestIt->get();
 }
 
 void cbWindow_close(SDL_Window* window) {
@@ -658,7 +658,7 @@ std::thread VideoOut::createSDLThread() {
           auto const title = getTitle(index, 0, 0, window.fliprate);
 
           window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
-                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 

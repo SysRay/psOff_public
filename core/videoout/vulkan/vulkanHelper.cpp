@@ -123,7 +123,7 @@ uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData&
     VkCommandPoolCreateInfo const poolInfo {
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = obj->queues.items[getIndex(QueueType::graphics)][0].family,
+        .queueFamilyIndex = obj->queues.items[getIndex(QueueType::graphics)][0]->family,
     };
 
     if (auto result = vkCreateCommandPool(obj->deviceInfo.device, &poolInfo, nullptr, &swapchainData.commandPool); result != VK_SUCCESS) {
@@ -197,9 +197,13 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
       .pSignalSemaphores    = &displayBuffer->semPresentReady,
   };
 
-  if (VkResult result = vkQueueSubmit(obj->queues.items[getIndex(QueueType::graphics)][0].queue, 1, &submitInfo, displayBuffer->bufferFence);
-      result != VK_SUCCESS) {
-    LOG_CRIT(L"Couldn't vkQueueSubmit Transfer %S", string_VkResult(result));
+  {
+    auto& queue = obj->queues.items[getIndex(QueueType::present)][0];
+
+    std::unique_lock lock(queue->mutex);
+    if (VkResult result = vkQueueSubmit(queue->queue, 1, &submitInfo, displayBuffer->bufferFence); result != VK_SUCCESS) {
+      LOG_CRIT(L"Couldn't vkQueueSubmit Transfer %S", string_VkResult(result));
+    }
   }
 }
 
@@ -291,7 +295,11 @@ bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& in
   {
     OPTICK_GPU_FLIP(&swapchain.swapchain);
     OPTICK_CATEGORY("Present", Optick::Category::Wait);
-    vkQueuePresentKHR(obj->queues.items[getIndex(QueueType::present)][0].queue, &presentInfo);
+
+    auto& queue = obj->queues.items[getIndex(QueueType::present)][0];
+
+    std::unique_lock lock(queue->mutex);
+    vkQueuePresentKHR(queue->queue, &presentInfo);
   }
 
   uint32_t swapchainIndex = 1 + index;
@@ -361,4 +369,10 @@ VKAPI_ATTR void VKAPI_CALL vkCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer comm
 VKAPI_ATTR void VKAPI_CALL vkCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
   static auto fn = (PFN_vkCmdSetAlphaToOneEnableEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetAlphaToOneEnableEXT");
   fn(commandBuffer, alphaToOneEnable);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHostPointer,
+                                                                   VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
+  static auto fn = (PFN_vkGetMemoryHostPointerPropertiesEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkGetMemoryHostPointerPropertiesEXT");
+  return fn(device, handleType, pHostPointer, pMemoryHostPointerProperties);
 }

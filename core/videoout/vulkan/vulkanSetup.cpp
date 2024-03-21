@@ -20,7 +20,7 @@ constexpr std::array requiredExtensions {
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME,
     // VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
-    "VK_KHR_external_memory_win32"};
+    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME, "VK_KHR_external_memory_win32"};
 
 namespace vulkan {
 struct VulkanExtensions {
@@ -33,18 +33,18 @@ struct VulkanExtensions {
   std::vector<VkLayerProperties>     availableLayers;
 };
 
-struct QueueInfo {
-  uint32_t family = 0;
-  uint32_t index  = 0;
-  uint32_t count  = 0;
-
-  bool graphics = false;
-  bool compute  = false;
-  bool transfer = false;
-  bool present  = false;
-};
-
 struct VulkanQueues {
+  struct QueueInfo {
+    uint32_t family = 0;
+    uint32_t index  = 0;
+    uint32_t count  = 0;
+
+    bool graphics = false;
+    bool compute  = false;
+    bool transfer = false;
+    bool present  = false;
+  };
+
   uint32_t               familyCount = 0;
   std::vector<uint32_t>  familyUsed;
   std::vector<QueueInfo> graphics;
@@ -192,7 +192,7 @@ VulkanQueues findQueues(VkPhysicalDevice device, VkSurfaceKHR surface) {
   std::vector<VkQueueFamilyProperties> queueFamilies(qs.familyCount, VkQueueFamilyProperties {});
   vkGetPhysicalDeviceQueueFamilyProperties(device, &qs.familyCount, queueFamilies.data());
 
-  std::vector<QueueInfo> queueInfos;
+  std::vector<VulkanQueues::QueueInfo> queueInfos;
   qs.familyUsed.resize(queueFamilies.size());
 
   for (uint32_t n = 0; n < queueFamilies.size(); ++n) {
@@ -203,7 +203,7 @@ VulkanQueues findQueues(VkPhysicalDevice device, VkSurfaceKHR surface) {
     LOG_DEBUG(L"queue family[%u]: %S [count:%u] [present=%S]", n, string_VkQueueFlags(queue.queueFlags).c_str(), queue.queueCount,
               util::getBoolStr(presentationSupported == VK_TRUE));
 
-    QueueInfo info {
+    VulkanQueues::QueueInfo info {
         .family   = n,
         .count    = queue.queueCount,
         .graphics = (queue.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0,
@@ -216,7 +216,7 @@ VulkanQueues findQueues(VkPhysicalDevice device, VkSurfaceKHR surface) {
   }
 
   // Prio
-  auto gather = [&queueInfos, &qs](uint32_t count, std::vector<QueueInfo>& queue, auto const cmp) {
+  auto gather = [&queueInfos, &qs](uint32_t count, std::vector<VulkanQueues::QueueInfo>& queue, auto const cmp) {
     for (uint32_t i = queue.size(); i < count; i++) {
       if (auto it = std::find_if(queueInfos.begin(), queueInfos.end(), cmp); it != queueInfos.end()) {
         it->index = 0;
@@ -233,17 +233,17 @@ VulkanQueues findQueues(VkPhysicalDevice device, VkSurfaceKHR surface) {
     }
   };
 
-  gather(1, qs.graphics, [](QueueInfo& q) { return q.graphics && q.transfer && q.present; });
-  gather(1, qs.present, [](QueueInfo& q) { return q.graphics && q.transfer && q.present; });
-  gather(1, qs.transfer, [](QueueInfo& q) { return q.transfer && !q.graphics && !q.compute; });
-  gather(1, qs.compute, [](QueueInfo& q) { return q.compute && !q.graphics; });
+  gather(1, qs.graphics, [](VulkanQueues::QueueInfo& q) { return q.graphics && q.transfer && q.present; });
+  gather(1, qs.present, [](VulkanQueues::QueueInfo& q) { return q.graphics && q.transfer && q.present; });
+  gather(1, qs.transfer, [](VulkanQueues::QueueInfo& q) { return q.transfer && !q.graphics && !q.compute; });
+  gather(1, qs.compute, [](VulkanQueues::QueueInfo& q) { return q.compute && !q.graphics; });
   //-
 
   // Fill in whatever is left
-  gather(1, qs.graphics, [](QueueInfo& q) { return q.transfer == true; });
-  gather(1, qs.present, [](QueueInfo& q) { return q.present == true; });
-  gather(1, qs.transfer, [](QueueInfo& q) { return q.graphics == true; });
-  gather(1, qs.compute, [](QueueInfo& q) { return q.compute == true; });
+  gather(1, qs.graphics, [](VulkanQueues::QueueInfo& q) { return q.transfer == true; });
+  gather(1, qs.present, [](VulkanQueues::QueueInfo& q) { return q.present == true; });
+  gather(1, qs.transfer, [](VulkanQueues::QueueInfo& q) { return q.graphics == true; });
+  gather(1, qs.compute, [](VulkanQueues::QueueInfo& q) { return q.compute == true; });
   //
 
   //-
@@ -738,11 +738,11 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
 
   // Create queues
   {
-    auto queueFunc = [](VkDevice device, std::vector<QueueInfo> const queueInfos, std::vector<Queues::Info>& out) {
+    auto queueFunc = [](VkDevice device, std::vector<VulkanQueues::QueueInfo> const queueInfos, std::vector<std::unique_ptr<QueueInfo>>& out) {
       for (auto& item: queueInfos) {
         VkQueue queue;
         vkGetDeviceQueue(device, item.family, item.index, &queue);
-        out.push_back({queue, item.family});
+        out.push_back(std::make_unique<QueueInfo>(queue, item.family));
       }
     };
 

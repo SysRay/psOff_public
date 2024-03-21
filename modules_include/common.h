@@ -148,7 +148,7 @@ enum class ErrCode : int {
 constexpr int getErr(ErrCode err) {
   if ((int)err == Ok) return 0;
 
-  return (int)err == Ok ? 0 : (int32_t)0x80020000 - (int32_t)err;
+  return (int)err == Ok ? 0 : (int32_t)(0x80020000 + (int32_t)err);
 }
 
 #define __NID_HEX_(hexId, funcName) __hex_##hexId
