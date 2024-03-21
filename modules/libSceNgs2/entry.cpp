@@ -97,13 +97,13 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle sh, uint32_t, void*, SceNgs2BufferAllocator* alloc, SceNgs2Handle* outh) {
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sh, uint32_t, void*, SceNgs2BufferAllocator* alloc, SceNgs2Handle* outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle rh, void*) {
+EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -115,22 +115,28 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle* sh) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, sh);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
+  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::INVALID_BUFFER_ALLOCATOR;
+  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+  // todo: dealloc if (*outh) != nullptr
+
+  *outh = new SceNgs2Handle;
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle sh, SceNgs2ContextBufferInfo* cbi) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sh, SceNgs2ContextBufferInfo* cbi) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle sh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
-  if (sh == 0) return Err::INVALID_SYSTEM_HANDLE;
+  if (sh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
   if (rbi->bufferPtr == nullptr) return Err::INVALID_BUFFER_ADDRESS;
   if (rbi->bufferSize == 0) return Err::INVALID_BUFFER_SIZE;
   if (rbi->waveType >= MAX_TYPES) return Err::INVALID_WAVEFORM_TYPE;
@@ -145,7 +151,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle sh, SceNgs2RenderBuffe
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle sh, uint32_t samplesCount) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle* sh, uint32_t samplesCount) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -205,9 +211,13 @@ EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi, SceNgs2Handle* sh) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+
+  *outh = new SceNgs2Handle;
   return Ok;
 }
 

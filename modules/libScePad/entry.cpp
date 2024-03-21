@@ -194,7 +194,7 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePad";
 
-const uint32_t initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
+constexpr uint32_t initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
 
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
@@ -418,7 +418,7 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
   return Ok;
 }
 
-EXPORT SYSV_ABI int scePadTerminate() {
+EXPORT SYSV_ABI void scePadTerminate() {
   SDL_QuitSubSystem(initflags);
 }
 }

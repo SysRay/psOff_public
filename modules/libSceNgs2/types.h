@@ -2,8 +2,6 @@
 #include "..\libSceCommonDialog\types.h"
 #include "codes.h"
 
-typedef int64_t SceNgs2Handle;
-
 enum SceNgs2WaveFormType : uint32_t {
   NONE = 0,
 
@@ -37,6 +35,21 @@ enum SceNgs2ChannelsCount : uint32_t {
   CH_2_0 = 2,
   CH_5_1 = 6,
   CH_7_1 = 8,
+};
+
+struct SceNgs2ContextBufferInfo {
+  void*  hostBuffer;
+  size_t hostBufferSize;
+};
+
+struct SceNgs2BufferAllocator {
+  int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
+  int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
+  void* userData;
+};
+
+struct SceNgs2Handle {
+  SceNgs2ContextBufferInfo cbi;
 };
 
 struct SceNgs2RenderBufferInfo {
@@ -84,26 +97,15 @@ struct SceNgs2WaveformFormat {
 struct SceNgs2SystemOption {
   size_t size;
   char   name[16];
+  uint32_t flags;
   uint32_t : 32;
   uint32_t : 32;
-  uint32_t : 32;
-  uint32_t : 32;
+  uint32_t sampleRate;
   int8_t pad[24];
 };
 
 struct SceNgs2GeomListenerWork;
 struct SceNgs2GeomListenerParam;
-
-struct SceNgs2ContextBufferInfo {
-  void*  hostBuffer;
-  size_t hostBufferSize;
-};
-
-struct SceNgs2BufferAllocator {
-  int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
-  int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void* userData;
-};
 
 typedef int (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
 
