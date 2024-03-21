@@ -779,7 +779,7 @@ void destroySwapchain(VulkanObj* obj, SwapchainData& swapchainData) {
     vkDestroySemaphore(obj->deviceInfo.device, item.semDisplayReady, nullptr);
     vkDestroySemaphore(obj->deviceInfo.device, item.semPresentReady, nullptr);
     vkDestroyFence(obj->deviceInfo.device, item.bufferFence, nullptr);
-    vkDestroyImage(obj->deviceInfo.device, item.image, nullptr);
+    // vkDestroyImage(obj->deviceInfo.device, item.image, nullptr); // swapchain does that
   }
 
   vkDestroyCommandPool(obj->deviceInfo.device, swapchainData.commandPool, nullptr);

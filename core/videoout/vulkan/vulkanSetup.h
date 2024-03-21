@@ -97,7 +97,7 @@ VkInstance const getVkInstance();
 std::string_view const getGPUName();
 
 std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj);
-uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, SwapchainData& swapchainData, uint32_t width, uint32_t height, bool enableVsync); // Swapchain
-void     destroySwapchain(VulkanObj* obj, SwapchainData& swapchainData);
+void createData(VulkanObj* obj, VkSurfaceKHR surface, SwapchainData& swapchainData, uint32_t width, uint32_t height, bool enableVsync); // Swapchain
+void destroySwapchain(VulkanObj* obj, SwapchainData& swapchainData);
 
 } // namespace vulkan

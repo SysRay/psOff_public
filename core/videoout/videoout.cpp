@@ -125,7 +125,9 @@ struct Message {
   MessageType type;
   int         windowIndex = -1;
   bool*       done        = nullptr;
-  uint32_t    index       = 0;
+  uint32_t    setIndex    = 0;
+
+  vulkan::PresentData presentData = {};
 };
 
 std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
@@ -162,14 +164,24 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   // Callback Graphics
   void eventDoFlip(int handle, int index, int64_t flipArg, VkSemaphore waitSema, size_t waitValue) final {
     OPTICK_EVENT();
-    m_graphics->submited();
-    transferDisplay(handle, index, waitSema, waitValue);
+    LOG_USE_MODULE(VideoOut);
 
     std::unique_lock lock(m_mutexInt);
-    auto&            window   = m_windows[handle - 1];
-    uint32_t const   setIndex = window.config.buffers[index];
 
-    auto& flipStatus = m_windows[index].config.flipStatus;
+    m_graphics->submited();
+
+    auto&          window   = m_windows[handle - 1];
+    uint32_t const setIndex = window.config.buffers[index];
+
+    LOG_DEBUG(L"-> eventDoFlip(%d):%u %d", handle, setIndex, index);
+    auto const presentData = transferDisplay(handle, index, waitSema, waitValue);
+    if (presentData.displayReady == nullptr) {
+      LOG_ERR(L"<- submitFlip(%d):%u %d error", handle, setIndex, index);
+      m_graphics->submitDone();
+      return;
+    }
+
+    auto& flipStatus = window.config.flipStatus;
     ++flipStatus.gcQueueNum;
     flipStatus.flipArg = flipArg;
 
@@ -179,14 +191,16 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     flipStatus.submitTsc = curTime;
     // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
-    m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex});
+    m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex, presentData});
     lock.unlock();
     m_condSDL2.notify_one();
+
+    LOG_DEBUG(L"<- eventDoFlip(%d):%u %d", handle, setIndex, index);
   }
 
   vulkan::QueueInfo* getQueue(vulkan::QueueType type) final;
   // -
-  void transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue); // -> Renderer
+  vulkan::PresentData transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue); // -> Renderer
 
   std::thread createSDLThread();
 
@@ -265,23 +279,29 @@ VideoOut::~VideoOut() {
   m_stop = true;
   m_condSDL2.notify_one();
 
-  printf("VideoOut| waiting on gpu idle\n");
-  vkQueueWaitIdle(m_vulkanObj->queues.items[vulkan::getIndex(vulkan::QueueType::present)][0]->queue);
+  for (auto& window: m_windows) {
+    if (window.userId < 0) continue;
+
+    for (size_t n = 0; n < window.config.buffersSetsCount; ++n) {
+      auto& bufferSet = window.config.bufferSets[n];
+      destroySwapchain(m_vulkanObj, bufferSet);
+    }
+  }
 
   // shutdown graphics first (uses vulkan)
   m_graphics->deinit();
   m_graphics.reset();
 
-  printf("VideoOut| Destroy swapchain\n");
-  for (auto& window: m_windows) {
-    if (window.userId < 0) continue;
-    for (size_t n = 0; n < window.config.buffersSetsCount; ++n) {
-      auto& bufferSet = window.config.bufferSets[n];
-      destroySwapchain(m_vulkanObj, bufferSet);
-    }
-    if (window.surface != nullptr) vkDestroySurfaceKHR(m_vulkanObj->deviceInfo.instance, window.surface, nullptr);
-  }
+  printf("VideoOut| waiting on gpu idle\n");
+  vkQueueWaitIdle(m_vulkanObj->queues.items[vulkan::getIndex(vulkan::QueueType::present)][0]->queue);
+
+  // printf("VideoOut| Destroy surface\n");
+  // for (auto& window: m_windows) {
+  //   if (window.userId < 0) continue;
+  //   if (window.surface != nullptr) vkDestroySurfaceKHR(m_vulkanObj->deviceInfo.instance, window.surface, nullptr);
+  // }
   printf("VideoOut| Destroy vulkan\n");
+
   deinitVulkan(m_vulkanObj);
 
   printf("shutdown VideoOut done\n");
@@ -407,7 +427,7 @@ void VideoOut::removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, i
   }
 }
 
-void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue) {
+vulkan::PresentData VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size_t waitValue) {
   LOG_USE_MODULE(VideoOut);
 
   auto&          window   = m_windows[handle - 1];
@@ -415,27 +435,33 @@ void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size
 
   auto& swapchain         = window.config.bufferSets[setIndex];
   auto& displayBufferMeta = swapchain.buffers[index];
-  auto  test              = std::bind(&IGraphics::copyDisplayBuffer, m_graphics.get());
 
-  vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, index, displayBufferMeta.bufferVaddr, m_graphics.get());
-  vulkan::submitDisplayTransfer(m_vulkanObj, &displayBufferMeta, waitSema, waitValue);
+  auto presentData = vulkan::transfer2Display(&displayBufferMeta, m_vulkanObj, swapchain, index, m_graphics.get());
+  if (presentData.displayReady != nullptr) vulkan::submitDisplayTransfer(m_vulkanObj, &displayBufferMeta, &presentData, waitSema, waitValue);
+  return presentData;
 }
 
 void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
   OPTICK_EVENT();
   LOG_USE_MODULE(VideoOut);
 
+  std::unique_lock lock(m_mutexInt);
+
   m_graphics->submited(); // increase internal counter (wait for flip)
 
   auto&          window   = m_windows[handle - 1];
   uint32_t const setIndex = window.config.buffers[index];
 
-  LOG_TRACE(L"submitFlip(%d):%u %d", handle, setIndex, index);
-  std::unique_lock lock(m_mutexInt);
+  LOG_DEBUG(L"-> submitFlip(%d):%u %d", handle, setIndex, index);
 
-  transferDisplay(handle, index, nullptr, 0);
+  auto const presentData = transferDisplay(handle, index, nullptr, 0);
+  if (presentData.displayReady == nullptr) {
+    LOG_ERR(L"<- submitFlip(%d):%u %d error", handle, setIndex, index);
+    m_graphics->submitDone();
+    return;
+  }
 
-  auto& flipStatus = m_windows[index].config.flipStatus;
+  auto& flipStatus = window.config.flipStatus;
   ++flipStatus.gcQueueNum;
   flipStatus.flipArg = flipArg;
 
@@ -445,9 +471,11 @@ void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
   flipStatus.submitTsc = curTime;
   // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
-  m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex});
+  m_messages.push({MessageType::flip, handle - 1, nullptr, setIndex, presentData});
   lock.unlock();
   m_condSDL2.notify_one();
+
+  LOG_DEBUG(L"<- submitFlip(%d):%u %d", handle, setIndex, index);
 }
 
 void VideoOut::getFlipStatus(int handle, void* status) {
@@ -547,8 +575,7 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
       return -1;
   }
 
-  config.flipStatus.currentBuffer =
-      createData(m_vulkanObj, m_windows[handle - 1].surface, bufferSet, _att->width, _att->height, accessInitParams()->useVSYNC());
+  createData(m_vulkanObj, m_windows[handle - 1].surface, bufferSet, _att->width, _att->height, accessInitParams()->useVSYNC());
   return setIndex;
 }
 
@@ -681,7 +708,7 @@ std::thread VideoOut::createSDLThread() {
           m_condDone.notify_one();
         } break;
         case MessageType::flip: {
-          LOG_TRACE(L"-> flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
+          LOG_DEBUG(L"-> flip(%d) set:%u buffer:%u", index, item.setIndex, item.presentData.index);
           OPTICK_FRAME("VideoOut");
           auto& flipStatus = window.config.flipStatus;
           using namespace std::chrono;
@@ -689,7 +716,7 @@ std::thread VideoOut::createSDLThread() {
           lock.unlock();
           {
             OPTICK_EVENT("Present");
-            if (!presentImage(m_vulkanObj, window.config.bufferSets[item.index], (uint32_t&)window.config.flipStatus.currentBuffer)) {
+            if (!presentImage(m_vulkanObj, window.config.bufferSets[item.setIndex], item.presentData)) {
               exit(1);
             }
           }
@@ -721,7 +748,7 @@ std::thread VideoOut::createSDLThread() {
           SDL_SetWindowTitle(window.window, title.c_str());
           func_pollSDL(window.window);
 
-          LOG_TRACE(L"<- flip(%d) set:%u buffer:%u", index, item.index, window.config.flipStatus.currentBuffer);
+          LOG_DEBUG(L"<- flip(%d) set:%u buffer:%u", index, item.setIndex, item.presentData.index);
         } break;
       }
       m_messages.pop();

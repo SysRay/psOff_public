@@ -46,7 +46,7 @@ std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj) {
   return {format, imageColorSpace};
 }
 
-uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData& swapchainData, uint32_t width, uint32_t height, bool enableVsync) {
+void createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData& swapchainData, uint32_t width, uint32_t height, bool enableVsync) {
   LOG_USE_MODULE(vulkanHelper);
 
   uint32_t const numBuffers = swapchainData.buffers.size();
@@ -145,29 +145,10 @@ uint32_t createData(VulkanObj* obj, VkSurfaceKHR surface, vulkan::SwapchainData&
     }
   }
   // - Flip Data
-
-  uint32_t curBufferIndex = 0;
-  // Get first display buffer
-  while (true) {
-    auto result = vkAcquireNextImageKHR(obj->deviceInfo.device, swapchainData.swapchain, UINT64_MAX, swapchainData.buffers[curBufferIndex].semDisplayReady,
-                                        VK_NULL_HANDLE, &curBufferIndex);
-    if (result != VK_SUCCESS) {
-      if (result == VK_NOT_READY) {
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(100ms); // Not init yet or whatever
-        continue;
-      } else
-        LOG_CRIT(L"vkAcquireNextImageKHR err:%S", string_VkResult(result));
-    }
-    break;
-  }
-  // -
-  BOOST_ASSERT_MSG(curBufferIndex == 0, "AcquireNextImage init returned unexpected value");
-
-  return curBufferIndex;
 }
 
-void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displayBuffer, VkSemaphore waitSema, size_t waitValue) {
+void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers const* displayBuffer, PresentData* presentData, VkSemaphore waitSema,
+                           size_t waitValue) {
   LOG_USE_MODULE(vulkanHelper);
 
   size_t   waitValues[] = {0, waitValue};
@@ -180,7 +161,9 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
   };
 
   VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
-  VkSemaphore          sems[]      = {displayBuffer->semDisplayReady, waitSema};
+  VkSemaphore          sems[]      = {presentData->displayReady, waitSema};
+
+  presentData->presentReady = displayBuffer->semPresentReady;
 
   VkSubmitInfo const submitInfo {
       .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -194,7 +177,7 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
       .pCommandBuffers    = &displayBuffer->transferBuffer,
 
       .signalSemaphoreCount = 1,
-      .pSignalSemaphores    = &displayBuffer->semPresentReady,
+      .pSignalSemaphores    = &presentData->presentReady,
   };
 
   {
@@ -207,15 +190,28 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
   }
 }
 
-void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index, uint64_t vaddrDisplayBuffer,
-                      IGraphics* graphics) {
+PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index,
+                             IGraphics* graphics) {
   LOG_USE_MODULE(vulkanHelper);
 
-  auto& displayBuffer = swapchain.buffers[index];
+  PresentData presentData;
+
+  // Get swapchain image
+  presentData.displayReady = displayBuffer->semDisplayReady;
+  if (auto result =
+          vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, (uint64_t)400e6, presentData.displayReady, VK_NULL_HANDLE, &presentData.index);
+      result != VK_SUCCESS) {
+    LOG_ERR(L"vkAcquireNextImageKHR %S", string_VkResult(result));
+    return {};
+  }
+  presentData.swapchainImage = swapchain.buffers[presentData.index].image;
+  // -
+
+  auto cmdBuffer = displayBuffer->transferBuffer;
 
   // Wait and begin command buffer
-  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer.bufferFence);
+  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence);
 
   vkResetCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
@@ -242,13 +238,13 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
-        .image            = displayBuffer.image,
+        .image            = presentData.swapchainImage,
         .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
   }
 
-  graphics->copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image, swapchain.extent2d); // let gpumemorymanager decide
+  graphics->copyDisplayBuffer(displayBuffer->bufferVaddr, cmdBuffer, presentData.swapchainImage, swapchain.extent2d); // let gpumemorymanager decide
 
   {
     // Change to Present Layout
@@ -262,7 +258,7 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
-        .image            = displayBuffer.image,
+        .image            = presentData.swapchainImage,
         .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -274,21 +270,21 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
     LOG_CRIT(L"Couldn't end commandbuffer");
   }
   // -
+
+  return presentData;
 }
 
-bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& index) {
+bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, vulkan::PresentData const& presentData) {
   LOG_USE_MODULE(vulkanHelper);
-
-  auto& displayBuffer = swapchain.buffers[index];
 
   VkPresentInfoKHR const presentInfo {
       .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
       .pNext              = nullptr,
       .waitSemaphoreCount = 1,
-      .pWaitSemaphores    = &displayBuffer.semPresentReady,
+      .pWaitSemaphores    = &presentData.presentReady,
       .swapchainCount     = 1,
       .pSwapchains        = &swapchain.swapchain,
-      .pImageIndices      = &index,
+      .pImageIndices      = &presentData.index,
       .pResults           = nullptr,
   };
 
@@ -302,16 +298,6 @@ bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& in
     vkQueuePresentKHR(queue->queue, &presentInfo);
   }
 
-  uint32_t swapchainIndex = 1 + index;
-  if (swapchainIndex >= swapchain.buffers.size()) swapchainIndex = 0;
-  if (auto result = vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, (uint64_t)400e6, swapchain.buffers[swapchainIndex].semDisplayReady,
-                                          VK_NULL_HANDLE, &index);
-      result != VK_SUCCESS) {
-    LOG_ERR(L"vkAcquireNextImageKHR timeout");
-    return false;
-  }
-
-  BOOST_ASSERT_MSG(swapchainIndex == index, "AcquireNextImage returned unexpected value");
   return true;
 }
 } // namespace vulkan
