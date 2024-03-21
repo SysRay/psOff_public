@@ -23,6 +23,7 @@
 #include <array>
 #include <assert.h>
 #include <format>
+#include <functional>
 #include <list>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
@@ -112,7 +113,7 @@ struct Context {
 
   VideoOutConfig config;
   SDL_Window*    window;
-  VkSurfaceKHR   surface;
+  VkSurfaceKHR   surface = nullptr;
 
   std::list<EventQueue::IKernelEqueue_t> eventFlip;
   std::list<EventQueue::IKernelEqueue_t> eventVblank;
@@ -244,6 +245,13 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   };
 
   std::unique_lock<std::mutex> getSDLLock() const final { return std::unique_lock(m_mutexInt); }
+
+  // ### Gpu memory forwards
+  bool isGPULocal(uint64_t vaddr) final { return m_graphics->isGPULocal(vaddr); }
+
+  bool notify_allocHeap(uint64_t vaddr, uint64_t size, int memoryProtection) final { return m_graphics->notify_allocHeap(vaddr, size, memoryProtection); }
+
+  // --- Gpu memory forwards
 };
 
 IVideoOut& accessVideoOut() {
@@ -253,11 +261,30 @@ IVideoOut& accessVideoOut() {
 
 VideoOut::~VideoOut() {
   // Logging doesn't work here, even with flush
-  printf("shutdown VideoOut\n");
+  printf("shutting down VideoOut\n");
+  m_stop = true;
+  m_condSDL2.notify_one();
+
+  printf("VideoOut| waiting on gpu idle\n");
+  vkQueueWaitIdle(m_vulkanObj->queues.items[vulkan::getIndex(vulkan::QueueType::present)][0].queue);
 
   // shutdown graphics first (uses vulkan)
   m_graphics->deinit();
   m_graphics.reset();
+
+  printf("VideoOut| Destroy swapchain\n");
+  for (auto& window: m_windows) {
+    if (window.userId < 0) continue;
+    for (size_t n = 0; n < window.config.buffersSetsCount; ++n) {
+      auto& bufferSet = window.config.bufferSets[n];
+      destroySwapchain(m_vulkanObj, bufferSet);
+    }
+    if (window.surface != nullptr) vkDestroySurfaceKHR(m_vulkanObj->deviceInfo.instance, window.surface, nullptr);
+  }
+  printf("VideoOut| Destroy vulkan\n");
+  deinitVulkan(m_vulkanObj);
+
+  printf("shutdown VideoOut done\n");
 }
 
 void VideoOut::init() {
@@ -388,8 +415,9 @@ void VideoOut::transferDisplay(int handle, int index, VkSemaphore waitSema, size
 
   auto& swapchain         = window.config.bufferSets[setIndex];
   auto& displayBufferMeta = swapchain.buffers[index];
+  auto  test              = std::bind(&IGraphics::copyDisplayBuffer, m_graphics.get());
 
-  vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, index, displayBufferMeta.bufferVaddr);
+  vulkan::transfer2Display(displayBufferMeta.transferBuffer, m_vulkanObj, swapchain, index, displayBufferMeta.bufferVaddr, m_graphics.get());
   vulkan::submitDisplayTransfer(m_vulkanObj, &displayBufferMeta, waitSema, waitValue);
 }
 
@@ -514,7 +542,8 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
     LOG_INFO(L"+bufferset[%d] buffer:%d vaddr:0x%08llx", setIndex, n, (uint64_t)addresses[n]);
 
     auto [format, colorSpace] = vulkan::getDisplayFormat(m_vulkanObj);
-    if (!registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height}, _att->pitchInPixel, format))
+    if (!m_graphics->registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height}, _att->pitchInPixel,
+                                           format))
       return -1;
   }
 
@@ -543,18 +572,7 @@ std::pair<VkQueue, uint32_t> VideoOut::getQueue(vulkan::QueueType type) {
 }
 
 void cbWindow_close(SDL_Window* window) {
-  // SDL_DestroyWindow(window.window);
-  // Todo submit close event, cleanup
-  // m_stop = true;
-  // lock.unlock();
-  // m_condSDL2.notify_one();
-  // m_threadSDL2.join();
-  // // accessGraphics().stop();
-  // m_graphics.reset();
-  // deinitVulkan(m_vulkanObj);
-
-  exit(0); // just hard exit for now.
-           // todo clean shutdown (file syncs etc.)
+  exit(0); // destructor cleans up.
 }
 
 std::thread VideoOut::createSDLThread() {
@@ -653,7 +671,9 @@ std::thread VideoOut::createSDLThread() {
           lock.unlock();
           {
             OPTICK_EVENT("Present");
-            presentImage(m_vulkanObj, window.config.bufferSets[item.index], (uint32_t&)window.config.flipStatus.currentBuffer);
+            if (!presentImage(m_vulkanObj, window.config.bufferSets[item.index], (uint32_t&)window.config.flipStatus.currentBuffer)) {
+              exit(1);
+            }
           }
           m_graphics->submitDone();
           lock.lock();

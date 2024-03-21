@@ -1,6 +1,6 @@
 #include "vulkanHelper.h"
 
-#include "core/imports/imports_func.h"
+#include "core/imports/exports/graphics.h"
 #include "logging.h"
 #include "utility/utility.h"
 
@@ -203,7 +203,8 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displa
   }
 }
 
-void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index, uint64_t vaddrDisplayBuffer) {
+void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index, uint64_t vaddrDisplayBuffer,
+                      IGraphics* graphics) {
   LOG_USE_MODULE(vulkanHelper);
 
   auto& displayBuffer = swapchain.buffers[index];
@@ -243,7 +244,7 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
     vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
   }
 
-  copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image, swapchain.extent2d); // let gpumemorymanager decide
+  graphics->copyDisplayBuffer(vaddrDisplayBuffer, cmdBuffer, displayBuffer.image, swapchain.extent2d); // let gpumemorymanager decide
 
   {
     // Change to Present Layout
@@ -271,7 +272,7 @@ void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::Swapcha
   // -
 }
 
-void presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& index) {
+bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& index) {
   LOG_USE_MODULE(vulkanHelper);
 
   auto& displayBuffer = swapchain.buffers[index];
@@ -293,12 +294,17 @@ void presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t& in
     vkQueuePresentKHR(obj->queues.items[getIndex(QueueType::present)][0].queue, &presentInfo);
   }
 
-  uint32_t swapchainIndex = ++index;
+  uint32_t swapchainIndex = 1 + index;
   if (swapchainIndex >= swapchain.buffers.size()) swapchainIndex = 0;
-  auto result =
-      vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, UINT64_MAX, swapchain.buffers[swapchainIndex].semDisplayReady, VK_NULL_HANDLE, &index);
+  if (auto result = vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, (uint64_t)400e6, swapchain.buffers[swapchainIndex].semDisplayReady,
+                                          VK_NULL_HANDLE, &index);
+      result != VK_SUCCESS) {
+    LOG_ERR(L"vkAcquireNextImageKHR timeout");
+    return false;
+  }
 
   BOOST_ASSERT_MSG(swapchainIndex == index, "AcquireNextImage returned unexpected value");
+  return true;
 }
 } // namespace vulkan
 

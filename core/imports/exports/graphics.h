@@ -115,4 +115,43 @@ class IGraphics {
    *
    */
   virtual void deinit() = 0;
+
+  /**
+   * @brief Register a display buffer
+   *
+   * @param vaddr
+   * @param extent
+   * @param pitch
+   * @param format
+   * @return true
+   * @return false
+   */
+  virtual bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format) = 0;
+
+  /**
+   * @brief Notify a gpu visible memory range
+   *
+   * @return true: Memory has been allocated successfully
+   */
+  virtual bool notify_allocHeap(uint64_t vaddr, uint64_t size, int memoryProtection) = 0;
+
+  /**
+   * @brief Checks if the vaddr is gpu memory (prev notify_allocHeap)
+   *
+   * @param vaddr
+   * @return true is gpu local memory
+   * @return false
+   */
+  virtual bool isGPULocal(uint64_t vaddr) = 0;
+
+  /**
+   * @brief Records the copy commands for copying the displayBuffer to the dstImage
+   *
+   * @param vaddr
+   * @param cmdBuffer
+   * @param dstImage
+   * @param dstExtent
+   * @return true success
+   */
+  virtual bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer cmdBuffer, VkImage dstImage, VkExtent2D dstExtent) = 0;
 };

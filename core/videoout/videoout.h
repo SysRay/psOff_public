@@ -151,6 +151,22 @@ class IVideoOut {
    * @return std::unique_lock<std::mutex>
    */
   virtual std::unique_lock<std::mutex> getSDLLock() const = 0;
+
+  /**
+   * @brief Notify a gpu visible memory range
+   *
+   * @return true: Memory has been allocated successfully
+   */
+  virtual bool notify_allocHeap(uint64_t vaddr, uint64_t size, int memoryProtection) = 0;
+
+  /**
+   * @brief Checks if the vaddr is gpu memory (prev notify_allocHeap)
+   *
+   * @param vaddr
+   * @return true is gpu local memory
+   * @return false
+   */
+  virtual bool isGPULocal(uint64_t vaddr) = 0;
 };
 
 #if defined(__APICALL_EXTERN)
