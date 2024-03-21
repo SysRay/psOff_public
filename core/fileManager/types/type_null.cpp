@@ -2,11 +2,11 @@
 
 #include "modules_include/common.h"
 
-class ITypeNull: public IFile {
+class TypeNull: public IFile {
   public:
-  ITypeNull(): IFile(FileType::Device) {}
+  TypeNull(): IFile(FileType::Device) {}
 
-  virtual ~ITypeNull() {}
+  virtual ~TypeNull() {}
 
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
@@ -18,25 +18,25 @@ class ITypeNull: public IFile {
 };
 
 std::unique_ptr<IFile> createType_null() {
-  return std::make_unique<ITypeNull>();
+  return std::make_unique<TypeNull>();
 }
 
-size_t ITypeNull::read(void* buf, size_t nbytes) {
+size_t TypeNull::read(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-size_t ITypeNull::write(void* buf, size_t nbytes) {
+size_t TypeNull::write(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-int64_t ITypeNull::lseek(int64_t offset, SceWhence whence) {
+int64_t TypeNull::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
 
-void ITypeNull::sync() {}
+void TypeNull::sync() {}
 
-bool ITypeNull::isError() {
+bool TypeNull::isError() {
   return false;
 }
 
-void ITypeNull::clearError() {}
+void TypeNull::clearError() {}

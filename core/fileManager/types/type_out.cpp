@@ -4,13 +4,13 @@
 
 LOG_DEFINE_MODULE(filesystem);
 
-class ITypeOut: public IFile {
-  const SceFileOutChannel m_channel = SCE_ITYPEOUT_ERROR;
+class TypeOut: public IFile {
+  const SceFileOutChannel m_channel = SCE_TYPEOUT_ERROR;
 
   public:
-  ITypeOut(SceFileOutChannel ch): IFile(FileType::Device), m_channel(ch) {}
+  TypeOut(SceFileOutChannel ch): IFile(FileType::Device), m_channel(ch) {}
 
-  virtual ~ITypeOut() {}
+  virtual ~TypeOut() {}
 
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
@@ -22,14 +22,14 @@ class ITypeOut: public IFile {
 };
 
 std::unique_ptr<IFile> createType_out(SceFileOutChannel ch) {
-  return std::make_unique<ITypeOut>(ch);
+  return std::make_unique<TypeOut>(ch);
 }
 
-size_t ITypeOut::read(void* buf, size_t nbytes) {
+size_t TypeOut::read(void* buf, size_t nbytes) {
   return 0;
 }
 
-size_t ITypeOut::write(void* buf, size_t nbytes) {
+size_t TypeOut::write(void* buf, size_t nbytes) {
   LOG_USE_MODULE(filesystem);
 
   std::string str((const char*)buf, nbytes);
@@ -37,9 +37,9 @@ size_t ITypeOut::write(void* buf, size_t nbytes) {
     str.pop_back();
 
   switch (m_channel) {
-    case SCE_ITYPEOUT_ERROR: LOG_ERR(L"%S", str.c_str()); break;
+    case SCE_TYPEOUT_ERROR: LOG_ERR(L"%S", str.c_str()); break;
 
-    case SCE_ITYPEOUT_DEBUG: LOG_DEBUG(L"%S", str.c_str()); break;
+    case SCE_TYPEOUT_DEBUG: LOG_DEBUG(L"%S", str.c_str()); break;
 
     default: LOG_CRIT(L"Unknown channel: %d", (uint32_t)m_channel); break;
   }
@@ -47,14 +47,14 @@ size_t ITypeOut::write(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-int64_t ITypeOut::lseek(int64_t offset, SceWhence whence) {
+int64_t TypeOut::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
 
-void ITypeOut::sync() {}
+void TypeOut::sync() {}
 
-bool ITypeOut::isError() {
+bool TypeOut::isError() {
   return false;
 }
 
-void ITypeOut::clearError() {}
+void TypeOut::clearError() {}
