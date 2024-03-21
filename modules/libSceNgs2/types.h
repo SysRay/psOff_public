@@ -102,7 +102,7 @@ struct SceNgs2ContextBufferInfo {
 struct SceNgs2BufferAllocator {
   int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void*   userData;
+  void* userData;
 };
 
 typedef int (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
