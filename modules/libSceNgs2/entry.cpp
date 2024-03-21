@@ -1,9 +1,8 @@
 #include "codes.h"
 #include "common.h"
+#include "core/kernel/pthread.h"
 #include "logging.h"
 #include "types.h"
-
-#include "core/kernel/pthread.h"
 
 LOG_DEFINE_MODULE(libSceNgs2);
 
