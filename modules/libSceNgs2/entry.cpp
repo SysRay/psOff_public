@@ -1,5 +1,6 @@
 #include "codes.h"
 #include "common.h"
+#include "core/kernel/filesystem.h"
 #include "core/kernel/pthread.h"
 #include "logging.h"
 #include "types.h"
@@ -30,20 +31,24 @@ struct WaveformInfo {
 
 EXPORT const char* MODULE_NAME = "libSceNgs2";
 
-EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceWaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
+EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceNgs2WaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-static int32_t ProcessWaveData(WaveformInfo* wi, SceWaveformFormat* wf) {
+static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
   /* todo: Deal with WAV/VAG files */
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceWaveformFormat* wf) {
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+
+  if (ptr == nullptr) {
+    return Err::INVALID_WAVEFORM_DATA;
+  }
 
   WaveformInfo wi {
       .type = WAVEFORM_DATA,
@@ -54,25 +59,33 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceWaveformFormat* wf) {
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
 
+  filesystem::SceOpen flags {
+      .mode = filesystem::SceOpenMode::RDONLY,
+  };
+
   WaveformInfo wi {
       .type   = WAVEFORM_DATA,
-      .ud     = {.fileHandle = 0 /* libSceLibcInternal.prx::fopen(path, "rb") */},
+      .ud     = {.fileHandle = filesystem::open(path, flags, {})},
       .offset = offset,
   };
+
+  if (wi.ud.fileHandle == 0) {
+    return Err::INVALID_WAVEFORM_DATA;
+  }
 
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size_t size, SceWaveformFormat* wf) {
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size_t size, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
 
   if (user == nullptr) {
-    return 0x804a0408 /* SCE_NGS2_ERROR_INVALID_WAVEFORM_DATA */;
+    return Err::INVALID_WAVEFORM_DATA;
   }
 
   WaveformInfo wi {
@@ -84,13 +97,13 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator() {
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle sh, uint32_t, void*, SceNgs2BufferAllocator* alloc, SceNgs2Handle* outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
+EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle rh, void*) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -102,32 +115,37 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceSystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle* sh) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle* sh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, sh);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sh, SceNgs2ContextBufferInfo* cbi) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle sh, SceNgs2ContextBufferInfo* cbi) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sh, SceNgs2RenderBufferInfo* param_2, int32_t count) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle sh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+  if (sh == 0) return Err::INVALID_SYSTEM_HANDLE;
+  if (rbi->bufferPtr == nullptr) return Err::INVALID_BUFFER_ADDRESS;
+  if (rbi->bufferSize == 0) return Err::INVALID_BUFFER_SIZE;
+  if (rbi->waveType >= MAX_TYPES) return Err::INVALID_WAVEFORM_TYPE;
+  if (rbi->channelsCount > 8) return Err::INVALID_NUM_CHANNELS;
 
   for (int32_t i = 0; i < count; i++) {
-    if (param_2[i].bufferPtr != nullptr) {
-      std::memset(param_2[i].bufferPtr, 0, param_2[i].bufferSize);
+    if (rbi[i].bufferPtr != nullptr) {
+      std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
     }
   }
 
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle* sh, uint32_t samplesCount) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle sh, uint32_t samplesCount) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -187,7 +205,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreate() {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi, SceNgs2Handle* sh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

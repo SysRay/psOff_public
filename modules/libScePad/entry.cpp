@@ -171,7 +171,11 @@ ScePadData getPadData(int handle) {
       auto sy = std::sinf(gdata[1] * 0.5f);
 
       data.orientation = {
-          .x = sr * cp * cy - cr * sp * sy, .y = cr * sp * cy + sr * cp * sy, .z = cr * cp * sy - sr * sp * cy, .w = cr * cp * cy + sr * sp * sy};
+          .x = sr * cp * cy - cr * sp * sy,
+          .y = cr * sp * cy + sr * cp * sy,
+          .z = cr * cp * sy - sr * sp * cy,
+          .w = cr * cp * cy + sr * sp * sy,
+      };
     }
   }
 
@@ -190,10 +194,12 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePad";
 
+const uint32_t initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
+
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
 
-  int32_t ret = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR) == 0;
+  int32_t ret = SDL_InitSubSystem(initflags) == 0;
   if (SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt") < 0) {
     LOG_WARN(L"Failed to load game controller mappings");
   }
@@ -225,6 +231,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
     LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S", n, userId, SDL_GameControllerNameForIndex(n));
     return n;
   }
+
   return Err::NO_HANDLE;
 }
 
@@ -322,6 +329,7 @@ EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
 
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
+  if (pParam == nullptr) return Err::INVALID_ARG;
 
   auto pData       = getData();
   auto pController = pData->controller[handle].padPtr;
@@ -332,6 +340,7 @@ EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationPara
 
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
   if (handle < 0) return Err::INVALID_HANDLE;
+  if (pParam == nullptr) return Err::INVALID_ARG;
 
   auto pData       = getData();
   auto pController = pData->controller[handle].padPtr;
@@ -407,5 +416,9 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
   LOG_DEBUG(L"todo %S", __FUNCTION__);
   if (handle < 0) return Err::INVALID_HANDLE;
   return Ok;
+}
+
+EXPORT SYSV_ABI int scePadTerminate() {
+  SDL_QuitSubSystem(initflags);
 }
 }
