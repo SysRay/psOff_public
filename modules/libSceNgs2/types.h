@@ -19,7 +19,7 @@ typedef struct SceNgs2ContextBufferInfo {
 typedef struct SceNgs2BufferAllocator {
   int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void*   userData;
+  void* userData;
 } SceNgs2BufferAllocator;
 typedef struct SceNgs2Handle            SceNgs2Handle;
 typedef struct SceNgs2GeomListenerWork  SceNgs2GeomListenerWork;
