@@ -45,7 +45,7 @@ struct SceNgs2ContextBufferInfo {
 struct SceNgs2BufferAllocator {
   int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void* userData;
+  void*   userData;
 };
 
 struct SceNgs2Handle {
@@ -95,13 +95,13 @@ struct SceNgs2WaveformFormat {
 };
 
 struct SceNgs2SystemOption {
-  size_t size;
-  char   name[16];
+  size_t   size;
+  char     name[16];
   uint32_t flags;
   uint32_t : 32;
   uint32_t : 32;
   uint32_t sampleRate;
-  int8_t pad[24];
+  int8_t   pad[24];
 };
 
 struct SceNgs2GeomListenerWork;
