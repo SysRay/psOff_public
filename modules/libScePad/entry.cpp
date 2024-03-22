@@ -214,6 +214,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   LOG_USE_MODULE(libScePad);
 
   auto pData = getData();
+
   std::unique_lock const lock(pData->m_mutexInt);
 
   // Check already opened
