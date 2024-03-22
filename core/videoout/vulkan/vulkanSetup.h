@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <boost/thread/thread.hpp>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -49,6 +50,15 @@ struct SwapchainData {
   VkSwapchainKHR swapchain = nullptr;
   VkFormat       format    = VK_FORMAT_UNDEFINED;
   VkExtent2D     extent2d  = {};
+
+  // present sync
+  uint64_t presentId = 0;
+  uint64_t waitId    = 0;
+
+  boost::mutex              mutexPresent;
+  boost::condition_variable condPresent;
+
+  // -
 
   struct DisplayBuffers {
     uint64_t bufferVaddr = 0;

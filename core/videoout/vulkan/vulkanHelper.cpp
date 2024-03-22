@@ -190,19 +190,40 @@ void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers const* 
   }
 }
 
-PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index,
-                             IGraphics* graphics) {
+PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGraphics* graphics) {
   LOG_USE_MODULE(vulkanHelper);
+
+  // Wait on prev present (only one image is allowed )
+  {
+    boost::unique_lock lock(swapchain.mutexPresent);
+    swapchain.condPresent.wait(lock, [&swapchain] { return swapchain.waitId == swapchain.presentId; });
+    ++swapchain.waitId;
+  }
+  // -
 
   PresentData presentData;
 
+  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence);
+
   // Get swapchain image
   presentData.displayReady = displayBuffer->semDisplayReady;
-  if (auto result =
-          vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, (uint64_t)400e6, presentData.displayReady, VK_NULL_HANDLE, &presentData.index);
-      result != VK_SUCCESS) {
-    LOG_ERR(L"vkAcquireNextImageKHR %S", string_VkResult(result));
-    return {};
+  {
+    int      n      = 2;
+    VkResult result = VK_SUCCESS;
+    for (; n >= 0; --n) {
+      if (result = vkAcquireNextImageKHR(obj->deviceInfo.device, swapchain.swapchain, UINT64_MAX, presentData.displayReady, VK_NULL_HANDLE, &presentData.index);
+          result != VK_SUCCESS) {
+        if (result == VK_NOT_READY) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+      } else
+        break;
+    }
+    if (n <= 0) {
+      LOG_ERR(L"vkAcquireNextImageKHR %S", string_VkResult(result));
+      return {};
+    }
   }
   presentData.swapchainImage = swapchain.buffers[presentData.index].image;
   // -
@@ -210,9 +231,6 @@ PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer,
   auto cmdBuffer = displayBuffer->transferBuffer;
 
   // Wait and begin command buffer
-  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence);
-
   vkResetCommandBuffer(cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
   // Transfer
@@ -297,6 +315,9 @@ bool presentImage(VulkanObj* obj, vulkan::SwapchainData& swapchain, vulkan::Pres
     std::unique_lock lock(queue->mutex);
     vkQueuePresentKHR(queue->queue, &presentInfo);
   }
+
+  ++swapchain.presentId;
+  swapchain.condPresent.notify_all();
 
   return true;
 }

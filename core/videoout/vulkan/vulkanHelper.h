@@ -17,8 +17,7 @@ struct PresentData {
 void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers const* displayBuffer, PresentData* presentData, VkSemaphore waitSema,
                            size_t waitValue);
 
-PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index,
-                             IGraphics* graphics);
+PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGraphics* graphics);
 
 bool presentImage(VulkanObj* obj, SwapchainData& swapchain, vulkan::PresentData const& presentData);
 
