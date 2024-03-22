@@ -122,9 +122,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sy
   if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
   // todo: dealloc if (*outh) != nullptr
-
-  *outh = new SceNgs2Handle;
-  return Ok;
+  return (*outh = new SceNgs2Handle) != nullptr ? 0 : Err::FAIL;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sh, SceNgs2ContextBufferInfo* cbi) {
