@@ -32,7 +32,13 @@ __APICALL void __log(eTrace_Level level, void* hmodule, unsigned short i_wLine, 
  * @brief Call at end to flush messages
  *
  */
-__APICALL void deinit();
+__APICALL void flush();
+
+/**
+ * @brief flush for exception handler
+ *
+ */
+__APICALL void flushExceptional();
 
 __APICALL uint8_t isIgnored(void* module, eTrace_Level level);
 } // namespace __Log

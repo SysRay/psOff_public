@@ -14,26 +14,12 @@
 #define __APICALL
 #endif
 
-using registerDisplayBuffer_t = bool (*)(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
-
-using copyDisplayBuffer_t = bool (*)(uint64_t vaddr, VkCommandBuffer transferBuffer, VkImage dstImage, VkExtent2D dstExtent);
-
 using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
 using runtimeExport_t = class IRuntimeExport*;
 
-using notify_allocHeap_t = bool (*)(uint64_t vaddr, uint64_t size, int memoryProtection);
-
-using isGPULocal_t = bool (*)(uint64_t vaddr);
-
-__APICALL void setCallback_registerDisplayBuffer(registerDisplayBuffer_t);
-
-__APICALL void setCallback_copyDisplayBuffer(copyDisplayBuffer_t);
-
 __APICALL void setCallback_createGraphics(createGraphics_t);
 
 __APICALL void setCallback_accessRuntimeExport(runtimeExport_t);
-__APICALL void setCallback_notify_allocHeap(notify_allocHeap_t);
-__APICALL void setCallback_isGPULocal(isGPULocal_t);
 
 #undef __APICALL

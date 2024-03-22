@@ -14,7 +14,7 @@ struct CxaDestructor {
 
 #pragma pack(1)
 
-struct EntryParams {
+struct alignas(32) EntryParams {
   int         argc;
   uint32_t    pad;
   const char* argv[3];
