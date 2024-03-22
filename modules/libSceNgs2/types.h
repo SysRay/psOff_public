@@ -38,10 +38,10 @@ enum SceNgs2ChannelsCount : uint32_t {
 };
 
 struct SceNgs2ContextBufferInfo {
-  void*  hostBuffer;
-  size_t hostBufferSize;
+  void*     hostBuffer;
+  size_t    hostBufferSize;
   uintptr_t pad[5];
-  void* userData;
+  void*     userData;
 };
 
 struct SceNgs2BufferAllocator {
