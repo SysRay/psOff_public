@@ -2,8 +2,8 @@
 #include "dmem.h"
 #undef __APICALL_EXTERN
 
-#include "core/imports/imports_gpuMemory.h"
 #include "core/memory/memory.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "utility/utility.h"
 
@@ -99,7 +99,7 @@ uintptr_t PhysicalMemory::commit(uint64_t base, uint64_t vaddr, size_t len, size
   m_objects[addr] = MemoryInfo {.isGpu = protGPU != 0, .size = len};
 
   if (protGPU != 0) {
-    if (!gpuMemory::notify_allocHeap(addr, len, prot)) {
+    if (!accessVideoOut().notify_allocHeap(addr, len, prot)) {
       LOG_ERR(L"Commit| Couldn't allocHeap| base:0x%08llx offset:0x%08llx size:%llu alignment:%llu prot:%d -> @%08llx", base, vaddr, len, alignment, prot,
               addr);
       return 0;
@@ -130,7 +130,7 @@ bool PhysicalMemory::Map(uint64_t vaddr, uint64_t physAddr, size_t len, int prot
     m_objects[*outAddr] = MemoryInfo {.isGpu = protGPU != 0, .size = len};
 
     if (protGPU != 0) {
-      if (!gpuMemory::notify_allocHeap(*outAddr, len, prot)) {
+      if (!accessVideoOut().notify_allocHeap(*outAddr, len, prot)) {
         LOG_ERR(L"Map| Couldn't allocHeap vaddr:0x%08llx physAddr:0x%08llx len:0x%08llx prot:0x%x -> out:0x%08llx", vaddr, physAddr, len, prot, *outAddr);
         return false;
       }
@@ -180,8 +180,7 @@ bool PhysicalMemory::Unmap(uint64_t vaddr, uint64_t size) {
 void PhysicalMemory::deinit() {
   for (auto& item: m_objects) {
     if (item.second.isGpu) {
-      // if(isGPU) accessGpuMemory().freeHeap(vaddr); // todo, notify free (should free host memory aswell)
-      memory::free(item.first);
+      // done by gpuMemoryManager
     } else {
       memory::free(item.first);
     }

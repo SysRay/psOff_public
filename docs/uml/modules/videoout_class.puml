@@ -10,8 +10,50 @@ IVideoOut <|-- VideoOut
 user ()- IVideoOut : accessVideoOut()
 
 package emulator{
-interface IGraphics {}
+  class Graphics{}
+  interface IGraphics {}
+
+  interface IManager{
+    accessShaderManager()
+    accessPipelineManager()
+    accessSamplerManager()
+    accessDescriptorManager()
+    accessGpuMemory()
+  }
+
+  class Manager{}
+
+  class IManagerChild{
+    VkDevice
+    VkPhysicalDevice
+    VkInstance
+    manager
+    ---
+    void setDevice()
+    void setParent()
+  }
+
+  class ShaderManager{}
+  class PipelineManager{}
+  class SamplerManager{}
+  class DescriptorManager{}
+  class GpuMemory{}
 }
 
 VideoOut *- IGraphics : createGraphics()
+IGraphics <|-- Graphics
+
+IManager <|-- Manager
+Graphics *- "1" Manager
+
+Manager "1" *- "n" IManagerChild
+
+IManager --o IManagerChild
+
+IManagerChild <|-- ShaderManager
+IManagerChild <|-- PipelineManager
+IManagerChild <|-- SamplerManager
+IManagerChild <|-- DescriptorManager
+IManagerChild <|-- GpuMemory
+
 @enduml

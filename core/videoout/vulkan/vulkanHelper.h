@@ -2,14 +2,24 @@
 
 #include "vulkanSetup.h"
 
-class IGpuImageObject;
+#include <functional>
+
+class IGraphics;
 
 namespace vulkan {
-void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers* displayBuffer, VkSemaphore waitSema, size_t waitValue);
+struct PresentData {
+  VkImage     swapchainImage = nullptr;
+  VkSemaphore displayReady   = nullptr;
+  VkSemaphore presentReady   = nullptr;
+  uint32_t    index          = 0;
+};
 
-void transfer2Display(VkCommandBuffer cmdBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, uint32_t index, uint64_t vaddrDisplayBuffer);
+void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers const* displayBuffer, PresentData* presentData, VkSemaphore waitSema,
+                           size_t waitValue);
 
-void presentImage(VulkanObj* obj, SwapchainData& swapchain, uint32_t& index);
+PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGraphics* graphics);
+
+bool presentImage(VulkanObj* obj, SwapchainData& swapchain, vulkan::PresentData const& presentData);
 
 void waitFlipped(VulkanObj* obj); /// Call before submit
 } // namespace vulkan

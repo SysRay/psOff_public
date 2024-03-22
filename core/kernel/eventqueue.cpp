@@ -80,9 +80,7 @@ int KernelEqueue::waitForEvents(KernelEvent_t ev, int num, SceKernelUseconds con
   boost::unique_lock lock(m_mutex_cond);
 
   int ret = 0;
-  if (micros == nullptr) {
-    ret = getTriggeredEvents(ev, num);
-  } else if (*micros > 0) {
+  if (micros != nullptr && *micros > 0) {
     using namespace std::chrono_literals;
 
     if (m_cond_var.wait_for(lock, boost::chrono::microseconds(*(decltype(micros))micros), [&] {
@@ -173,7 +171,7 @@ int KernelEqueue::wait(KernelEvent_t ev, int num, int* out, const SceKernelUseco
   }
 
   if (time == nullptr) {
-    *out = waitForEvents(ev, num, time);
+    *out = waitForEvents(ev, num, nullptr);
     if (*out == 0) {
       return getErr(ErrCode::_ETIMEDOUT);
     }
