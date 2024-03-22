@@ -91,6 +91,4 @@ EXPORT SYSV_ABI int __NID(_ZN3sce7Toolkit2NP2V26Trophy7Request6UnlockD1Ev)() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
-
-
 }

@@ -73,6 +73,4 @@ EXPORT SYSV_ABI int sceSystemGestureRemoveTouchRecognizer(int32_t handle, void* 
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
-
-
 }
