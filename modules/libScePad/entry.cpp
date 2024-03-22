@@ -214,7 +214,6 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   LOG_USE_MODULE(libScePad);
 
   auto pData = getData();
-
   std::unique_lock const lock(pData->m_mutexInt);
 
   // Check already opened
@@ -226,9 +225,11 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   auto lockSDL2 = accessVideoOut().getSDLLock();
   for (size_t n = 0; n < 16; ++n) {
     if (pData->controller[n].userId >= 0) continue;
-    setupPad(n, userId);
+    auto pController = setupPad(n, userId);
+    char guid[33];
 
-    LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S", n, userId, SDL_GameControllerNameForIndex(n));
+    SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(pController)), guid, 33);
+    LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S guid:%S", n, userId, SDL_GameControllerNameForIndex(n), guid);
     return n;
   }
 
