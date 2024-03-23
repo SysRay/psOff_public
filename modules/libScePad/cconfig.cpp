@@ -1,4 +1,5 @@
 #include "cconfig.h"
+
 #include "logging.h"
 
 #include <SDL.h>
@@ -96,7 +97,7 @@ ControllerConfig::ControllerConfig() {
 
   std::string temps;
 
-  for (auto& [key, val] : (*jData)["keybinds"].items()) {
+  for (auto& [key, val]: (*jData)["keybinds"].items()) {
     auto& mapEntry = m_keymap[(uint32_t)MapControllerKey(key)];
     val.get_to(temps);
     if (temps.size() == 0) {
@@ -107,10 +108,9 @@ ControllerConfig::ControllerConfig() {
     size_t fpos;
     if ((fpos = temps.find("%+")) != std::string::npos) { // Process keybinds with modifier
       std::string mod = temps.substr(0, fpos);
-      mapEntry.key = SDL_GetScancodeFromName(temps.c_str() + fpos + 2);
-      mapEntry.mod = SDL_GetScancodeFromName(mod.c_str());
-      if (mapEntry.mod == 0 || mapEntry.key == 0)
-        LOG_ERR(L"Failed to resolve bind for gpkey:%S, mapEntry(%d,%d)", key.c_str(), mapEntry.key, mapEntry.mod);
+      mapEntry.key    = SDL_GetScancodeFromName(temps.c_str() + fpos + 2);
+      mapEntry.mod    = SDL_GetScancodeFromName(mod.c_str());
+      if (mapEntry.mod == 0 || mapEntry.key == 0) LOG_ERR(L"Failed to resolve bind for gpkey:%S, mapEntry(%d,%d)", key.c_str(), mapEntry.key, mapEntry.mod);
       continue;
     }
 
@@ -124,6 +124,7 @@ ControllerConfig::ControllerConfig() {
 
     try {
       m_pads[i].type = MapControllerType(pad["type"]);
+
       auto& dls = pad["deadzones"]["left_stick"];
       auto& drs = pad["deadzones"]["right_stick"];
 

@@ -4,10 +4,9 @@
 #include "core/videoout/videoout.h"
 #include "logging.h"
 
+#include <SDL.h>
 #include <bitset>
 #include <math.h>
-
-#include <SDL.h>
 
 LOG_DEFINE_MODULE(libScePad_sdl);
 
@@ -31,7 +30,7 @@ class KBDController: public IController {
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
 
-  bool resolveBindFor(const uint8_t* keys, ControllerKey key);
+  bool     resolveBindFor(const uint8_t* keys, ControllerKey key);
   uint32_t getButtons(const uint8_t* keys);
 
   static void init();
@@ -50,7 +49,7 @@ void KBDController::init() {
 
 void KBDController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  m_state  = ControllerState::Closed;
+  m_state = ControllerState::Closed;
 }
 
 bool KBDController::reconnect() {
@@ -86,11 +85,9 @@ uint32_t KBDController::getButtons(const uint8_t* keys) {
   return bits.to_ulong();
 }
 
-#define MAP_ANALOG(_keys, _up, _down) \
-(uint8_t)(resolveBindFor(_keys, _up) ? 0xFF : resolveBindFor(_keys, _down) ? 0x00 : 0x7F)
+#define MAP_ANALOG(_keys, _up, _down) (uint8_t)(resolveBindFor(_keys, _up) ? 0xFF : resolveBindFor(_keys, _down) ? 0x00 : 0x7F)
 
-#define MAP_TRIGGER(_keys, _down) \
-(uint8_t)(resolveBindFor(_keys, _down) ? 0xFF : 0x00)
+#define MAP_TRIGGER(_keys, _down) (uint8_t)(resolveBindFor(_keys, _down) ? 0xFF : 0x00)
 
 bool KBDController::readPadData(ScePadData& data) {
   auto lockSDL2 = accessVideoOut().getSDLLock();

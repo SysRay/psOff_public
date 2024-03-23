@@ -123,27 +123,23 @@ Config::Config() {
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  const json defaultpad = {
-    {"type", "gamepad"},
-    {"deadzones", {
-      {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
-      {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}
-    }}
-  };
+  const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
 
   m_future_logging =
       std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
   m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json::object({}), ConfigModFlag::GRAPHICS);
   m_future_audio =
       std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
-  m_future_controls = std::async(std::launch::async, load, std::string_view("controls.json"), &m_controls, json({
-      {"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
-      {"keybinds", {
-        {"triangle", "i"}, {"square", "j"},   {"circle", "l"}, {"cross", "k"}, {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
-        {"options", "f1"},  {"touchpad", "f4"}, {"l1", "f3"},     {"l2", "f5"},    {"l3", "space"},      {"r1", "f2"},        {"r2", "f6"},        {"r3", "home"},
-        {"lx-", "a"},      {"lx+", "d"},      {"ly-", "w"},    {"ly+", "s"},   {"rx-", "h"},     {"rx+", "f"},       {"ry-", "t"},       {"ry+", "g"},
-      }}
-    }),
-    ConfigModFlag::CONTROLS
-  );
+  m_future_controls = std::async(std::launch::async, load, std::string_view("controls.json"), &m_controls,
+                                 json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
+                                       {"keybinds",
+                                        {
+                                            {"triangle", "i"}, {"square", "j"},       {"circle", "l"},       {"cross", "k"},
+                                            {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
+                                            {"options", "f1"}, {"touchpad", "f4"},    {"l1", "f3"},          {"l2", "f5"},
+                                            {"l3", "space"},   {"r1", "f2"},          {"r2", "f6"},          {"r3", "home"},
+                                            {"lx-", "a"},      {"lx+", "d"},          {"ly-", "w"},          {"ly+", "s"},
+                                            {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
+                                        }}}),
+                                 ConfigModFlag::CONTROLS);
 }

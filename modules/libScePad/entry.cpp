@@ -1,9 +1,9 @@
-#include "common.h"
 #include "cconfig.h"
+#include "common.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
-#include "interfaces/isdl.h"
 #include "interfaces/ikbd.h"
+#include "interfaces/isdl.h"
 #include "interfaces/ixip.h"
 #include "logging.h"
 #include "types.h"
@@ -25,9 +25,10 @@ struct Controller {
 
 struct Pimpl {
   Pimpl(): cfg() {}
+
   std::mutex m_mutexInt;
 
-  ControllerConfig cfg;
+  ControllerConfig                                            cfg;
   std::array<Controller, MAX_CONTROLLERS_COUNT /* Define? */> controller;
 };
 
@@ -69,21 +70,13 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
     pData->controller[n].userId     = userId;
 
     switch (pData->cfg.GetPadType(n)) {
-      case ControllerType::SDL:
-        pController = createController_sdl(&pData->cfg, userId);
-        break;
+      case ControllerType::SDL: pController = createController_sdl(&pData->cfg, userId); break;
 
-      case ControllerType::Xinput:
-        pController = createController_xinput(&pData->cfg, userId);
-        break;
+      case ControllerType::Xinput: pController = createController_xinput(&pData->cfg, userId); break;
 
-      case ControllerType::Keyboard:
-        pController = createController_keyboard(&pData->cfg, userId);
-        break;
+      case ControllerType::Keyboard: pController = createController_keyboard(&pData->cfg, userId); break;
 
-      default:
-        LOG_CRIT(L"Unimplemented controller type!");
-        return Err::FATAL;
+      default: LOG_CRIT(L"Unimplemented controller type!"); return Err::FATAL;
     }
 
     LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S guid:%S", n, userId, pController->getName(), pController->getGUID());

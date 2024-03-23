@@ -1,8 +1,8 @@
 #pragma once
 
+#include "cconfig.h"
 #include "types.h"
 #include "utility/utility.h"
-#include "cconfig.h"
 
 #include <stdint.h>
 

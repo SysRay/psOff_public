@@ -1,7 +1,6 @@
-#include "ikbd.h"
-
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
+#include "ikbd.h"
 #include "logging.h"
 
 #include <bitset>
@@ -47,7 +46,7 @@ void XIPController::init() {
 
 void XIPController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  m_state  = ControllerState::Closed;
+  m_state = ControllerState::Closed;
 }
 
 bool XIPController::reconnect() {

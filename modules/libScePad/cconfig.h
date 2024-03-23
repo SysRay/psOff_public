@@ -15,15 +15,14 @@ class ControllerConfig {
 
   struct Settings {
     ControllerType type;
-    DeadZone ls, rs;
+    DeadZone       ls, rs;
   } m_pads[4];
 
-
   public:
+  auto GetPadType(int n) const { return m_pads[n].type; }
 
-    auto GetPadType(int n) const { return m_pads[n].type; }
-    auto GetBind(ControllerKey key) const { return m_keymap[key]; }
+  auto GetBind(ControllerKey key) const { return m_keymap[key]; }
 
-    ControllerConfig();
-    virtual ~ControllerConfig() = default;
+  ControllerConfig();
+  virtual ~ControllerConfig() = default;
 };
