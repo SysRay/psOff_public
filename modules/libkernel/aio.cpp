@@ -4,21 +4,6 @@
 
 LOG_DEFINE_MODULE(aio);
 
-int x[] = {
-  1,
-
-
-  2,
-
-
-
-  5,
-
-
-
-  10
-};
-
 extern "C" {
 EXPORT SYSV_ABI int sceKernelAioDeleteRequests(SceKernelAioSubmitId id[], int num, int ret[]) {
   LOG_USE_MODULE(aio);
