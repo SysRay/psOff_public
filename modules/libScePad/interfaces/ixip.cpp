@@ -81,7 +81,8 @@ bool XIPController::reconnect() {
   for (DWORD n = 0; n < XUSER_MAX_COUNT; n++) {
     if (m_getCapsFunc(n, XINPUT_FLAG_GAMEPAD, &caps) != ERROR_SUCCESS) continue;
     if (caps.Type != XINPUT_DEVTYPE_GAMEPAD || caps.SubType != XINPUT_DEVSUBTYPE_GAMEPAD) continue;
-    ::strcpy_s(m_guid, "XInput gamepad");
+    ::strcpy_s(m_name, "XInput gamepad");
+    ::strcpy_s(m_guid, "1337deadbeef00000000000000000000");
     m_xRumblePossible = caps.Vibration.wLeftMotorSpeed > 0 || caps.Vibration.wRightMotorSpeed > 0;
     if (caps.Flags & XINPUT_CAPS_NO_NAVIGATION) {
       LOG_WARN(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
