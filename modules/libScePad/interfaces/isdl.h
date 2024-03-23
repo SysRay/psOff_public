@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../icontroller.h"
 #include "../cconfig.h"
+#include "../icontroller.h"
 
 #include <memory>
 
