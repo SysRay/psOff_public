@@ -2,13 +2,13 @@
 
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
-#include "logging.h"
+// #include "logging.h"
 
 #include <SDL.h>
 #include <bitset>
 #include <math.h>
 
-LOG_DEFINE_MODULE(libScePad_sdl);
+// LOG_DEFINE_MODULE(libScePad_kbd);
 
 static bool is_KBD_inited = false;
 

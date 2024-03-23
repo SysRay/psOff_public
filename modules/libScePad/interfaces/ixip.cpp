@@ -6,7 +6,7 @@
 #include <bitset>
 #include <math.h>
 
-LOG_DEFINE_MODULE(libScePad_sdl);
+LOG_DEFINE_MODULE(libScePad_xip);
 
 static bool is_XIP_inited = false;
 
@@ -38,8 +38,11 @@ std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint
 }
 
 void XIPController::init() {
+  LOG_USE_MODULE(libScePad_xip);
+
   if (is_XIP_inited == false) {
     // todo: load xinput
+    LOG_CRIT(L"XInput support is not ready yet");
     is_XIP_inited = true;
   }
 }
