@@ -42,7 +42,7 @@ std::unique_ptr<IController> createController_keyboard(ControllerConfig* cfg, ui
 
 void KBDController::init() {
   if (is_KBD_inited == false) {
-    // todo: kbd init
+    // todo: kbd init ???
     is_KBD_inited = true;
   }
 }
@@ -158,16 +158,16 @@ bool KBDController::readPadData(ScePadData& data) {
 }
 
 bool KBDController::setMotion(bool state) {
-  return true;
+  return false;
 }
 
 bool KBDController::setRumble(const ScePadVibrationParam* pParam) {
-  return true;
+  return false;
 }
 
 bool KBDController::setLED(const ScePadColor* pParam) {
   m_lastColor = *pParam;
-  return true;
+  return false;
 }
 
 bool KBDController::resetLED() {
