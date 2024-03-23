@@ -1,15 +1,17 @@
 #include "cconfig.h"
 
 #include "logging.h"
+#include "types.h"
 
 #include <SDL.h>
+// #include <unordered>
 
 LOG_DEFINE_MODULE(libScePad_config);
 
 ControllerType MapControllerType(json& type) {
   LOG_USE_MODULE(libScePad_config);
 
-  if (type == "keyboard" || type == "kb") {
+  if (type == "keyboard" || type == "kb" || type == "kbd") {
     return ControllerType::Keyboard;
   } else if (type == "sdl" || type == "gamepad") {
     return ControllerType::SDL;
@@ -23,69 +25,46 @@ ControllerType MapControllerType(json& type) {
   return ControllerType::Unknown;
 }
 
-uint32_t MapControllerKey(const std::string& key) {
+static std::unordered_map<std::string_view, ControllerKey> jsonKeys = {
+    {"l3", ControllerKey::L3},
+    {"r3", ControllerKey::R3},
+    {"options", ControllerKey::OPTIONS},
+    {"up", ControllerKey::DPAD_UP},
+    {"right", ControllerKey::DPAD_RIGHT},
+    {"down", ControllerKey::DPAD_DOWN},
+    {"left", ControllerKey::DPAD_LEFT},
+    {"l2", ControllerKey::L2},
+    {"r2", ControllerKey::R2},
+    {"l1", ControllerKey::L1},
+    {"r1", ControllerKey::R1},
+    {"triangle", ControllerKey::TRIANGLE},
+    {"circle", ControllerKey::CIRCLE},
+    {"cross", ControllerKey::CROSS},
+    {"square", ControllerKey::SQUARE},
+    {"touchpad", ControllerKey::TOUCH_PAD},
+    {"dpad_up", ControllerKey::DPAD_UP},
+    {"dpad_down", ControllerKey::DPAD_DOWN},
+    {"dpad_left", ControllerKey::DPAD_LEFT},
+    {"dpad_right", ControllerKey::DPAD_RIGHT},
+    {"lx+", ControllerKey::LX_UP},
+    {"lx-", ControllerKey::LX_DOWN},
+    {"ly+", ControllerKey::LY_UP},
+    {"ly-", ControllerKey::LY_DOWN},
+    {"rx+", ControllerKey::RX_UP},
+    {"rx-", ControllerKey::RX_DOWN},
+    {"ry+", ControllerKey::RY_UP},
+    {"ry-", ControllerKey::RY_DOWN},
+};
+
+ControllerKey MapControllerKey(const std::string& key) {
   LOG_USE_MODULE(libScePad_config);
 
-  if (key == "l3") {
-    return ControllerKey::L3;
-  } else if (key == "r3") {
-    return ControllerKey::R3;
-  } else if (key == "options") {
-    return ControllerKey::OPTIONS;
-  } else if (key == "up") {
-    return ControllerKey::DPAD_UP;
-  } else if (key == "right") {
-    return ControllerKey::DPAD_RIGHT;
-  } else if (key == "down") {
-    return ControllerKey::DPAD_DOWN;
-  } else if (key == "left") {
-    return ControllerKey::DPAD_LEFT;
-  } else if (key == "l2") {
-    return ControllerKey::L2;
-  } else if (key == "r2") {
-    return ControllerKey::R2;
-  } else if (key == "l1") {
-    return ControllerKey::L1;
-  } else if (key == "r1") {
-    return ControllerKey::R1;
-  } else if (key == "triangle") {
-    return ControllerKey::TRIANGLE;
-  } else if (key == "circle") {
-    return ControllerKey::CIRCLE;
-  } else if (key == "cross") {
-    return ControllerKey::CROSS;
-  } else if (key == "square") {
-    return ControllerKey::SQUARE;
-  } else if (key == "touchpad") {
-    return ControllerKey::TOUCH_PAD;
-  } else if (key == "dpad_up") {
-    return ControllerKey::DPAD_UP;
-  } else if (key == "dpad_down") {
-    return ControllerKey::DPAD_DOWN;
-  } else if (key == "dpad_left") {
-    return ControllerKey::DPAD_LEFT;
-  } else if (key == "dpad_right") {
-    return ControllerKey::DPAD_RIGHT;
-  } else if (key == "lx+") {
-    return ControllerKey::LX_UP;
-  } else if (key == "lx-") {
-    return ControllerKey::LX_DOWN;
-  } else if (key == "ly+") {
-    return ControllerKey::LY_UP;
-  } else if (key == "ly-") {
-    return ControllerKey::LY_DOWN;
-  } else if (key == "rx+") {
-    return ControllerKey::RX_UP;
-  } else if (key == "rx-") {
-    return ControllerKey::RX_DOWN;
-  } else if (key == "ry+") {
-    return ControllerKey::RY_UP;
-  } else if (key == "ry-") {
-    return ControllerKey::RY_DOWN;
+  if (jsonKeys.find(key) == jsonKeys.end()) {
+    LOG_CRIT(L"Unknown keytype in controller config: %S", key.c_str());
+    return ControllerKey::UNKNOWN_KEY;
   }
 
-  LOG_CRIT(L"Unknown keytype in controller config: %S", key.c_str());
-  return -1;
+  return jsonKeys[key];
 }
 
 ControllerConfig::ControllerConfig() {

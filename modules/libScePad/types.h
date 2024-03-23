@@ -95,7 +95,7 @@ enum class SceFlightCapability {
   RADAR_CURSOR_STICK = 0x10,
 };
 
-enum ControllerKey : uint32_t {
+enum class ControllerKey : uint32_t {
   L3,
   R3,
   OPTIONS,
@@ -121,7 +121,8 @@ enum ControllerKey : uint32_t {
   RY_UP,
   RY_DOWN,
 
-  CONTROLLER_KEYS_COUNT
+  CONTROLLER_KEYS_COUNT,
+  UNKNOWN_KEY
 };
 
 enum class ControllerType {

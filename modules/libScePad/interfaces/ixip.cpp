@@ -57,25 +57,7 @@ bool XIPController::reconnect() {
 }
 
 uint32_t XIPController::getButtons() {
-  std::bitset<32> bits;
-  bits[(uint32_t)ScePadButtonDataOffset::L3]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::R3]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::OPTIONS]   = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::UP]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::RIGHT]     = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::L1]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::L2]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::R1]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::R2]        = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::SQUARE]    = 0;
-  bits[(uint32_t)ScePadButtonDataOffset::TOUCH_PAD] = 0;
-
-  return bits.to_ulong();
+  return 0; // todo
 }
 
 bool XIPController::readPadData(ScePadData& data) {
