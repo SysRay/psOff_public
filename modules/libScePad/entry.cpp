@@ -96,7 +96,8 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   std::unique_lock const lock(pData->m_mutexInt);
   LOG_INFO(L"<- Pad[%d]", handle);
   pData->controller[handle].userId = -1;
-  pData->controller[handle].padPtr->close();
+  if (pData->controller[handle].padPtr)
+    pData->controller[handle].padPtr->close();
 
   return Ok;
 }
