@@ -1,8 +1,10 @@
 #include "common.h"
-#include "config_emu.h"
+#include "cconfig.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
 #include "interfaces/isdl.h"
+#include "interfaces/ikbd.h"
+#include "interfaces/ixip.h"
 #include "logging.h"
 #include "types.h"
 
@@ -22,9 +24,10 @@ struct Controller {
 };
 
 struct Pimpl {
-  Pimpl() = default;
+  Pimpl(): cfg() {}
   std::mutex m_mutexInt;
 
+  ControllerConfig cfg;
   std::array<Controller, MAX_CONTROLLERS_COUNT /* Define? */> controller;
 };
 
@@ -38,51 +41,10 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePad";
 
-int initGamepadConfig(json* jData) {
-  LOG_USE_MODULE(libScePad);
-
-  // return ret ? Ok : Err::FATAL;
-  return Ok;
-}
-
-int initKeyboardConfig(json* jData) {
-  // SDL_GetKeyFromName();
-  return Err::FATAL;
-}
-
-int initXinputConfig(json* jData) {
-  /* todo: option to switch with config to pure xinput implementation without SDL2 */
-  return Err::FATAL;
-}
-
-int readPadConfig() {
-  LOG_USE_MODULE(libScePad);
-
-  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::CONTROLS);
-  auto& ctype        = (*jData)["type"];
-
-  if (ctype == "gamepad") {
-    return initGamepadConfig(jData);
-  } else if (ctype == "xinput") {
-    return initXinputConfig(jData);
-  } else if (ctype == "keyboard") {
-    return initKeyboardConfig(jData);
-  }
-
-  try {
-    std::string name;
-    ctype.get_to(name);
-    LOG_CRIT(L"Unknown controller type: %S", name.c_str());
-  } catch (const json::exception& e) {
-    LOG_CRIT(L"Failed to read controller configuration: %S", e.what());
-  }
-
-  return Err::FATAL;
-}
-
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
-  return readPadConfig();
+  (void)getData();
+  return Ok;
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
@@ -93,21 +55,35 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   std::unique_lock const lock(pData->m_mutexInt);
 
   // Check already opened
-  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
+  for (uint32_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId == userId) return Err::ALREADY_OPENED;
   }
   // - already open
 
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
+  for (uint32_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     auto& pController = pData->controller[n].padPtr;
 
     pData->controller[n].prePadData = ScePadData();
     pData->controller[n].userId     = userId;
 
-    if (pController == nullptr) {
-      pController = createController_sdl(userId);
+    switch (pData->cfg.GetPadType(n)) {
+      case ControllerType::SDL:
+        pController = createController_sdl(&pData->cfg, userId);
+        break;
+
+      case ControllerType::Xinput:
+        pController = createController_xinput(&pData->cfg, userId);
+        break;
+
+      case ControllerType::Keyboard:
+        pController = createController_keyboard(&pData->cfg, userId);
+        break;
+
+      default:
+        LOG_CRIT(L"Unimplemented controller type!");
+        return Err::FATAL;
     }
 
     LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S guid:%S", n, userId, pController->getName(), pController->getGUID());
@@ -138,7 +114,7 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
   LOG_DEBUG(L"");
   std::unique_lock const lock(pData->m_mutexInt);
 
-  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
+  for (uint32_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId == userId) {
       return n;
     }

@@ -13,17 +13,16 @@ LOG_DEFINE_MODULE(libScePad_sdl);
 static bool is_SDL_inited = false;
 
 class SDLController: public IController {
-  static constexpr uint32_t m_initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
+  static constexpr uint32_t m_initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR | SDLK_0;
   SDL_GameController*       m_padPtr    = nullptr;
 
   public:
-  SDLController(uint32_t userid): IController(ControllerType::SDL, userid) {
+  SDLController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
     init();
-    m_userId = userid;
     reconnect();
   }
 
-  virtual ~SDLController() { deinit(); }
+  virtual ~SDLController() = default;
 
   // ### Interface
   bool reconnect() final;
@@ -37,11 +36,10 @@ class SDLController: public IController {
   uint32_t getButtons();
 
   static void init();
-  static void deinit();
 };
 
-std::unique_ptr<IController> createController_sdl(uint32_t userid) {
-  return std::make_unique<SDLController>(userid);
+std::unique_ptr<IController> createController_sdl(ControllerConfig* cfg, uint32_t userid) {
+  return std::make_unique<SDLController>(cfg, userid);
 }
 
 void SDLController::init() {
@@ -61,15 +59,6 @@ void SDLController::init() {
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
     is_SDL_inited = true;
-  }
-}
-
-void SDLController::deinit() {
-  if (is_SDL_inited == true) {
-    // do not uncomment, crashes for some reason
-    // looks like this destructor being called after SDL_Quit
-    // SDL_QuitSubSystem(m_initflags);
-    is_SDL_inited = false;
   }
 }
 

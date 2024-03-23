@@ -2,21 +2,9 @@
 
 #include "types.h"
 #include "utility/utility.h"
+#include "cconfig.h"
 
 #include <stdint.h>
-
-enum class ControllerType {
-  Keyboard,
-  Xinput,
-  SDL,
-};
-
-enum class ControllerState {
-  Unknown,
-  Connected,
-  Disconnected,
-  Closed,
-};
 
 class IController {
   CLASS_NO_COPY(IController);
@@ -24,14 +12,15 @@ class IController {
 
   protected:
   ControllerType const m_type;
-  ControllerState      m_state = ControllerState::Closed;
+  ControllerState      m_state = ControllerState::Disconnected;
   uint32_t             m_userId;
   uint8_t              m_connectCount;
   ScePadColor          m_lastColor = {0x00, 0x00, 0xFF};
   char                 m_guid[33];
   char                 m_name[33];
+  ControllerConfig*    m_cfg;
 
-  IController(ControllerType type, uint32_t userid): m_type(type), m_userId(userid) {}
+  IController(ControllerType type, ControllerConfig* cfg, uint32_t userid): m_type(type), m_cfg(cfg), m_userId(userid) {}
 
   public:
   virtual ~IController() = default;

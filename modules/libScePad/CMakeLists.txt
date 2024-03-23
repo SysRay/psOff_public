@@ -6,6 +6,9 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp
   interfaces/isdl.cpp
+  interfaces/ixip.cpp
+  interfaces/ikbd.cpp
+  cconfig.cpp
 )
 
 add_dependencies(${libName} core config_emu)

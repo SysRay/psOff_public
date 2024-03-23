@@ -5,4 +5,4 @@
 
 #include <memory>
 
-std::unique_ptr<IController> createController_sdl(ControllerConfig*, uint32_t);
+std::unique_ptr<IController> createController_keyboard(ControllerConfig*, uint32_t);

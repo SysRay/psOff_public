@@ -1,0 +1,82 @@
+{
+  "keybinds": {
+    "circle": "l",
+    "cross": "k",
+    "dpad_down": "down",
+    "dpad_left": "left",
+    "dpad_right": "right",
+    "dpad_up": "up",
+    "l1": "f3",
+    "l2": "f5",
+    "l3": "space",
+    "lx+": "d",
+    "lx-": "a",
+    "ly+": "s",
+    "ly-": "w",
+    "options": "f1",
+    "r1": "f2",
+    "r2": "f6",
+    "r3": "home",
+    "rx+": "f",
+    "rx-": "h",
+    "ry+": "g",
+    "ry-": "t",
+    "square": "j",
+    "touchpad": "f4",
+    "triangle": "i"
+  },
+  "pads": [
+    {
+      "deadzones": {
+        "left_stick": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "right_stick": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "type": "keyboard"
+    },
+    {
+      "deadzones": {
+        "left_stick": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "right_stick": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "type": "gamepad"
+    },
+    {
+      "deadzones": {
+        "left_stick": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "right_stick": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "type": "gamepad"
+    },
+    {
+      "deadzones": {
+        "left_stick": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "right_stick": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "type": "gamepad"
+    }
+  ]
+}
