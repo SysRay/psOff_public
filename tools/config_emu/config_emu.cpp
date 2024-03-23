@@ -73,25 +73,24 @@ bool Config::save(uint32_t flags) {
 Config::Config() {
   auto load = [this](std::string_view fname, json* j, json defaults = {}, ConfigModFlag dflag = ConfigModFlag::NONE) {
     auto path          = std::string("./config/") + fname.data();
-    bool should_resave = false;
+    bool should_resave = false, should_backup = false;
 
     try {
       std::ifstream json_file(path);
       *j = json::parse(json_file, nullptr, true, true);
-      printf("Config %s loaded successfully\n", fname.data());
+
+      if ((*j).type() == defaults.type()) {
+        printf("Config %s loaded successfully\n", fname.data());
+      } else {
+        should_backup = true;
+        should_resave = true;
+      }
     } catch (const json::exception& e) {
       if ((std::filesystem::exists(path))) printf("Failed to parse %s: %s\n", fname.data(), e.what());
 
-      try {
-        std::filesystem::path newp(path);
-        newp.replace_extension(".back");
-        std::filesystem::rename(path, newp);
-      } catch (const std::filesystem::filesystem_error& e) {
-      }
-
-      *j = defaults;
-
+      *j            = defaults;
       should_resave = true;
+      should_backup = true;
     }
 
     for (auto& [dkey, dval]: defaults.items()) {
@@ -105,31 +104,42 @@ Config::Config() {
     for (auto& [ckey, cval]: j->items()) {
       if (defaults[ckey].is_null()) {
         j->erase(ckey);
+        should_backup = true;
         should_resave = true;
         printf("%s: unused parameter \"%s\" has been removed!\n", fname.data(), ckey.c_str());
+      }
+    }
+
+    if (should_backup == true) {
+      try {
+        std::filesystem::path newp(path);
+        newp.replace_extension(".back");
+        std::filesystem::rename(path, newp);
+      } catch (const std::filesystem::filesystem_error& e) {
+        printf("%s: failed to create a backup: %s", path.c_str(), e.what());
       }
     }
 
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
+  const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
+
   m_future_logging =
       std::async(std::launch::async, load, std::string_view("logging.json"), &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
-  m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json({}), ConfigModFlag::GRAPHICS);
+  m_future_graphics = std::async(std::launch::async, load, std::string_view("graphics.json"), &m_graphics, json::object({}), ConfigModFlag::GRAPHICS);
   m_future_audio =
       std::async(std::launch::async, load, std::string_view("audio.json"), &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
-  m_future_controls = std::async(
-      std::launch::async, load, std::string_view("controls.json"), &m_controls,
-      json({{"type", "gamepad"},
-            {"deadzones", json::array({{{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}},
-                                       {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}})},
-            {"keybinds",
-             {
-                 {"triangle", ""}, {"square", ""},   {"circle", ""}, {"cross", ""}, {"dpad_up", ""}, {"dpad_down", ""}, {"dpad_left", ""}, {"dpad_right", ""},
-                 {"options", ""},  {"touchpad", ""}, {"l1", ""},     {"l2", ""},    {"l3", ""},      {"r1", ""},        {"r2", ""},        {"r3", ""},
-                 {"lx-", ""},      {"lx+", ""},      {"ly-", ""},    {"ly+", ""},   {"rx-", ""},     {"rx+", ""},       {"ry-", ""},       {"ry+", ""},
-             }}}),
-      ConfigModFlag::CONTROLS);
+  m_future_controls = std::async(std::launch::async, load, std::string_view("controls.json"), &m_controls,
+                                 json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
+                                       {"keybinds",
+                                        {
+                                            {"triangle", "i"}, {"square", "j"},       {"circle", "l"},       {"cross", "k"},
+                                            {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
+                                            {"options", "f1"}, {"touchpad", "f4"},    {"l1", "f3"},          {"l2", "f5"},
+                                            {"l3", "space"},   {"r1", "f2"},          {"r2", "f6"},          {"r3", "home"},
+                                            {"lx-", "a"},      {"lx+", "d"},          {"ly-", "w"},          {"ly+", "s"},
+                                            {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
+                                        }}}),
+                                 ConfigModFlag::CONTROLS);
 }

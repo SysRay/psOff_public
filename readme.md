@@ -8,7 +8,8 @@
 Runtime and rendering part is private currently.
 Target is to have a standalone framework for shader reconstruction, command buffer translation and managing the GPU memory, for others to use. This project uses it to run "Linux" binaries on windows.
 
-<img src="https://github.com/SysRay/psOff_public/assets/48695846/cd83ba97-b649-4599-b555-24c43e9b8394" width="400"> 
+
+<img width="400" alt="sonic" src="https://github.com/SysRay/psOff_public/assets/48695846/d3c646b9-bb14-4c9f-a2f2-80bc5a184d74">
 <img src="https://github.com/SysRay/psOff_public/assets/48695846/6156412e-569d-4f2a-b8d2-061d6942e107" width="400">
 <img src="https://github.com/SysRay/psOff_public/assets/48695846/7e723874-5bb9-4cb7-bb28-5b0001d81f65" width="400" title="fps is capped internally">
 
