@@ -112,20 +112,6 @@ uint32_t SDLController::getButtons() {
   return bits.to_ulong();
 }
 
-uint8_t scaleAnalogStick(Sint16 value) {
-  // input -32768 (up/left) to 32767 (down/right).
-  // return 0..255
-
-  return 255 * (32768 + value) / (32768 + 32767);
-}
-
-uint8_t scaleAnalogButton(Sint16 value) {
-  // input 0 when released to 32767
-  // return 0..255
-
-  return 255 * value / 32767;
-}
-
 bool SDLController::readPadData(ScePadData& data) {
   auto lockSDL2 = accessVideoOut().getSDLLock();
 
