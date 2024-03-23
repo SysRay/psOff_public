@@ -39,7 +39,7 @@ jobs:
       - uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: .
-          extensions: h,hpp,cpp,c
+          extensions: h,hpp,cpp,c,cc
           clangFormatVersion: 17
 
   build:
