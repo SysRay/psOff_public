@@ -1,7 +1,9 @@
-#include "core/videoout/videoout.h"
-#include "core/timer/timer.h"
 #include "isdl.h"
+
+#include "core/timer/timer.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
+
 #include <SDL.h>
 #include <bitset>
 #include <math.h>
@@ -12,7 +14,7 @@ static bool is_SDL_inited = false;
 
 class SDLController: public IController {
   static constexpr uint32_t m_initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
-  SDL_GameController* m_padPtr          = nullptr;
+  SDL_GameController*       m_padPtr    = nullptr;
 
   public:
   SDLController(uint32_t userid): IController(ControllerType::SDL, userid) {
@@ -21,9 +23,7 @@ class SDLController: public IController {
     reconnect();
   }
 
-  virtual ~SDLController() {
-    SDL_QuitSubSystem(m_initflags);
-  }
+  virtual ~SDLController() { deinit(); }
 
   // ### Interface
   bool reconnect() final;
@@ -37,6 +37,7 @@ class SDLController: public IController {
   uint32_t getButtons();
 
   static void init();
+  static void deinit();
 };
 
 std::unique_ptr<IController> createController_sdl(uint32_t userid) {
@@ -63,8 +64,19 @@ void SDLController::init() {
   }
 }
 
+void SDLController::deinit() {
+  if (is_SDL_inited == true) {
+    // do not uncomment, crashes for some reason
+    // looks like this destructor being called after SDL_Quit
+    // SDL_QuitSubSystem(m_initflags);
+    is_SDL_inited = false;
+  }
+}
+
 void SDLController::close() {
+  if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
   if (m_padPtr != nullptr) SDL_GameControllerClose(m_padPtr);
+  m_state  = ControllerState::Closed;
   m_padPtr = nullptr;
 }
 
@@ -74,10 +86,13 @@ bool SDLController::reconnect() {
   for (int n = 0; n < SDL_NumJoysticks(); n++) {
     m_padPtr = SDL_GameControllerOpen(n);
     if (m_padPtr == nullptr) continue;
+
+    ++m_connectCount;
     m_state = ControllerState::Connected;
     ::strcpy_s(m_name, SDL_GameControllerName(m_padPtr));
     SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
     SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
+    setLED(&m_lastColor); // restore last known LED color
     return true;
   }
 
@@ -124,6 +139,8 @@ uint8_t scaleAnalogButton(Sint16 value) {
 
 bool SDLController::readPadData(ScePadData& data) {
   auto lockSDL2 = accessVideoOut().getSDLLock();
+
+  if (m_state == ControllerState::Closed) return false;
 
   if (SDL_GameControllerGetAttached(m_padPtr) == false) {
     m_state = ControllerState::Disconnected;
@@ -187,7 +204,7 @@ bool SDLController::readPadData(ScePadData& data) {
 
       .connected           = SDL_GameControllerGetAttached(m_padPtr) == true,
       .timestamp           = accessTimer().getTicks(),
-      .connectedCount      = ++m_connectCount,
+      .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,
   };
 
@@ -246,7 +263,7 @@ bool SDLController::setMotion(bool state) {
   return true;
 }
 
-bool SDLController::setRumble(const ScePadVibrationParam *pParam) {
+bool SDLController::setRumble(const ScePadVibrationParam* pParam) {
   SDL_GameControllerRumble(m_padPtr, ((float)pParam->smallMotor / 255.0f) * 0xFFFF, ((float)pParam->largeMotor / 255.0f) * 0xFFFF, -1);
   return true;
 }
@@ -254,11 +271,11 @@ bool SDLController::setRumble(const ScePadVibrationParam *pParam) {
 bool SDLController::setLED(const ScePadColor* pParam) {
   if (SDL_GameControllerHasLED(m_padPtr) == false) return false;
   SDL_GameControllerSetLED(m_padPtr, pParam->r, pParam->g, pParam->b);
+  m_lastColor = *pParam;
   return true;
 }
 
 bool SDLController::resetLED() {
-  if (SDL_GameControllerHasLED(m_padPtr) == false) return false;
-  SDL_GameControllerSetLED(m_padPtr, 0, 0, 0xFF);
-  return true;
+  m_lastColor = {0x00, 0x00, 0xff};
+  return setLED(&m_lastColor);
 }

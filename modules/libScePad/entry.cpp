@@ -1,8 +1,8 @@
 #include "common.h"
+#include "config_emu.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
 #include "interfaces/isdl.h"
-#include "config_emu.h"
 #include "logging.h"
 #include "types.h"
 
@@ -12,8 +12,10 @@
 LOG_DEFINE_MODULE(libScePad);
 
 namespace {
+constexpr uint32_t MAX_CONTROLLERS_COUNT = 16;
+
 struct Controller {
-  int32_t userId       = -1;
+  int32_t userId = -1;
 
   std::unique_ptr<IController> padPtr;
   ScePadData                   prePadData;
@@ -23,27 +25,13 @@ struct Pimpl {
   Pimpl() = default;
   std::mutex m_mutexInt;
 
-  std::array<Controller, 16 /* Define? */> controller;
+  std::array<Controller, MAX_CONTROLLERS_COUNT /* Define? */> controller;
 };
 
 static auto* getData() {
   static Pimpl obj;
   return &obj;
 }
-
-// static SDL_GameController* setupPad(int n, int userId) {
-//   auto pData       = getData();
-//   auto pController = SDL_GameControllerOpen(n);
-//   if (pController == nullptr) return nullptr;
-
-//   SDL_GameControllerSetPlayerIndex(pController, userId - 1);
-//   if (userId > 0) pData->controller[n].userId = userId;
-//   pData->controller[n].prePadData = ScePadData();
-//   pData->controller[n].padPtr     = pController;
-//   ++pData->controller[n].countConnect;
-
-//   return pController;
-// }
 } // namespace
 
 extern "C" {
@@ -71,7 +59,7 @@ int readPadConfig() {
   LOG_USE_MODULE(libScePad);
 
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::CONTROLS);
-  auto& ctype = (*jData)["type"];
+  auto& ctype        = (*jData)["type"];
 
   if (ctype == "gamepad") {
     return initGamepadConfig(jData);
@@ -105,15 +93,18 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   std::unique_lock const lock(pData->m_mutexInt);
 
   // Check already opened
-  for (size_t n = 0; n < 16; ++n) {
+  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId == userId) return Err::ALREADY_OPENED;
   }
   // - already open
 
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  for (size_t n = 0; n < 16; ++n) {
+  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     auto& pController = pData->controller[n].padPtr;
+
+    pData->controller[n].prePadData = ScePadData();
+    pData->controller[n].userId     = userId;
 
     if (pController == nullptr) {
       pController = createController_sdl(userId);
@@ -136,10 +127,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   std::unique_lock const lock(pData->m_mutexInt);
   LOG_INFO(L"<- Pad[%d]", handle);
   pData->controller[handle].userId = -1;
-
   pData->controller[handle].padPtr->close();
-  // SDL_GameControllerClose();
-  // pData->controller[handle].padPtr = nullptr;
 
   return Ok;
 }
@@ -150,7 +138,7 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
   LOG_DEBUG(L"");
   std::unique_lock const lock(pData->m_mutexInt);
 
-  for (size_t n = 0; n < 16; ++n) {
+  for (size_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId == userId) {
       return n;
     }
@@ -162,12 +150,8 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   LOG_USE_MODULE(libScePad);
   if (handle < 0) return Err::INVALID_HANDLE;
 
-  auto pData       = getData();
+  auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  // if (SDL_GameControllerGetAttached(pController) == false) {
-  //   SDL_GameControllerClose(pController);
-  //   if ((pController = setupPad(handle, 0)) == nullptr) return Err::DEVICE_NOT_CONNECTED;
-  // }
 
   std::unique_lock const lock(pData->m_mutexInt);
 
@@ -190,7 +174,7 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
   LOG_USE_MODULE(libScePad);
   if (handle < 0) return Err::INVALID_HANDLE;
 
-  auto pData        = getData();
+  auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
   return pController->setMotion(bEnable);
 }
@@ -214,7 +198,7 @@ EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationPara
   if (handle < 0) return Err::INVALID_HANDLE;
   if (pParam == nullptr) return Err::INVALID_ARG;
 
-  auto pData        = getData();
+  auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
 
   pController->setRumble(pParam);
@@ -225,7 +209,7 @@ EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam)
   if (handle < 0) return Err::INVALID_HANDLE;
   if (pParam == nullptr) return Err::INVALID_ARG;
 
-  auto pData        = getData();
+  auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
 
   if (!pController->setLED(pParam)) return Err::INVALID_LIGHTBAR_SETTING;
@@ -236,7 +220,7 @@ EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam)
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
   if (handle < 0) return Err::INVALID_HANDLE;
 
-  auto pData        = getData();
+  auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
   if (pController->resetLED() == false) return Err::INVALID_LIGHTBAR_SETTING;
 
@@ -300,6 +284,12 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
 }
 
 EXPORT SYSV_ABI void scePadTerminate() {
-  
+  auto pData = getData();
+
+  for (int i = 0; i < MAX_CONTROLLERS_COUNT; i++) {
+    if (auto& ptr = pData->controller[i].padPtr; ptr.get() != nullptr) {
+      ptr->close();
+    }
+  }
 }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utility/utility.h"
 #include "types.h"
+#include "utility/utility.h"
 
 #include <stdint.h>
 
@@ -14,7 +14,8 @@ enum class ControllerType {
 enum class ControllerState {
   Unknown,
   Connected,
-  Disconnected
+  Disconnected,
+  Closed,
 };
 
 class IController {
@@ -23,11 +24,12 @@ class IController {
 
   protected:
   ControllerType const m_type;
-  ControllerState m_state;
-  uint32_t m_userId;
-  uint8_t m_connectCount;
-  char m_guid[33];
-  char m_name[33];
+  ControllerState      m_state = ControllerState::Closed;
+  uint32_t             m_userId;
+  uint8_t              m_connectCount;
+  ScePadColor          m_lastColor = {0x00, 0x00, 0xFF};
+  char                 m_guid[33];
+  char                 m_name[33];
 
   IController(ControllerType type, uint32_t userid): m_type(type), m_userId(userid) {}
 
@@ -35,11 +37,17 @@ class IController {
   virtual ~IController() = default;
 
   auto getUserID() const { return m_userId; }
+
   auto getType() const { return m_type; }
+
   auto getState() const { return m_state; }
+
   auto getName() const { return m_name; }
+
   auto getGUID() const { return m_guid; }
+
   auto getConnectionsCount() const { return m_connectCount; }
+
   auto isConnected() const { return m_state == ControllerState::Connected; }
 
   virtual bool reconnect()                                   = 0;
