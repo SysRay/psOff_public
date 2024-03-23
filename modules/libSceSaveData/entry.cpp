@@ -217,6 +217,10 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
 EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
+
+  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf) return getErr(ErrCode::_EINVAL);
+
+  memset(getParam->data->buf, 0, getParam->data->bufSize);
   return Ok;
 }
 
