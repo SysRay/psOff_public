@@ -204,8 +204,7 @@ bool XIPController::setRumble(const ScePadVibrationParam* pParam) {
   // todo: Handle case with one-motor gamepad. Is that even possible?
   XINPUT_VIBRATION vibe {.wLeftMotorSpeed  = static_cast<WORD>((WORD)pParam->smallMotor * 257),
                          .wRightMotorSpeed = static_cast<WORD>((WORD)pParam->largeMotor * 257)};
-  m_setStateFunc(m_xUserId, &vibe);
-  return true;
+  return m_setStateFunc(m_xUserId, &vibe) == ERROR_SUCCESS;
 }
 
 bool XIPController::setLED(const ScePadColor* pParam) {
