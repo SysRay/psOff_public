@@ -95,6 +95,50 @@ enum class SceFlightCapability {
   RADAR_CURSOR_STICK = 0x10,
 };
 
+enum class ControllerKey : uint32_t {
+  L3,
+  R3,
+  OPTIONS,
+  DPAD_UP,
+  DPAD_RIGHT,
+  DPAD_DOWN,
+  DPAD_LEFT,
+  L2,
+  R2,
+  L1,
+  R1,
+  TRIANGLE,
+  CIRCLE,
+  CROSS,
+  SQUARE,
+  TOUCH_PAD,
+  LX_UP,
+  LX_DOWN,
+  LY_UP,
+  LY_DOWN,
+  RX_UP,
+  RX_DOWN,
+  RY_UP,
+  RY_DOWN,
+
+  CONTROLLER_KEYS_COUNT,
+  UNKNOWN_KEY
+};
+
+enum class ControllerType {
+  Unknown,
+  Keyboard,
+  Xinput,
+  SDL,
+};
+
+enum class ControllerState {
+  Unknown,
+  Connected,
+  Disconnected,
+  Closed,
+};
+
 struct ScePadAnalogStick {
   uint8_t x;
   uint8_t y;
