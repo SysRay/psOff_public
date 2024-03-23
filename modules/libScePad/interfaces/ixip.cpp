@@ -18,13 +18,13 @@ typedef DWORD (*XInputSetStateProc)(DWORD, XINPUT_VIBRATION*);
 typedef DWORD (*XInputGetCapabilitiesProc)(DWORD, DWORD, XINPUT_CAPABILITIES*);
 
 class XIPController: public IController {
-  HMODULE m_lib                           = nullptr;
-  XInputEnableProc   m_enableFunc         = nullptr;
-  XInputGetStateProc m_getStateFunc       = nullptr;
-  XInputSetStateProc m_setStateFunc       = nullptr;
-  XInputGetCapabilitiesProc m_getCapsFunc = nullptr;
-  DWORD m_xUserId                         = -1;
-  bool  m_xRumblePossible                 = false;
+  HMODULE                   m_lib             = nullptr;
+  XInputEnableProc          m_enableFunc      = nullptr;
+  XInputGetStateProc        m_getStateFunc    = nullptr;
+  XInputSetStateProc        m_setStateFunc    = nullptr;
+  XInputGetCapabilitiesProc m_getCapsFunc     = nullptr;
+  DWORD                     m_xUserId         = -1;
+  bool                      m_xRumblePossible = false;
 
   public:
   XIPController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
@@ -44,7 +44,7 @@ class XIPController: public IController {
   bool resetLED() final;
 
   uint32_t getButtons(XINPUT_GAMEPAD* xgp);
-  void init();
+  void     init();
 };
 
 std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint32_t userid) {
@@ -65,7 +65,7 @@ void XIPController::init() {
     return;
   }
 
-  fail:
+fail:
   LOG_CRIT(L"Failed to load XInput: %d", GetLastError());
 }
 
@@ -127,7 +127,7 @@ bool XIPController::readPadData(ScePadData& data) {
   XINPUT_STATE xstate;
   if (m_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
     m_state = ControllerState::Disconnected;
-    data = ScePadData {};
+    data    = ScePadData {};
     return false;
   }
 
@@ -202,10 +202,8 @@ bool XIPController::setRumble(const ScePadVibrationParam* pParam) {
   if (!m_xRumblePossible) return false;
 
   // todo: Handle case with one-motor gamepad. Is that even possible?
-  XINPUT_VIBRATION vibe {
-    .wLeftMotorSpeed = static_cast<WORD>((WORD)pParam->smallMotor * 257),
-    .wRightMotorSpeed = static_cast<WORD>((WORD)pParam->largeMotor * 257)
-  };
+  XINPUT_VIBRATION vibe {.wLeftMotorSpeed  = static_cast<WORD>((WORD)pParam->smallMotor * 257),
+                         .wRightMotorSpeed = static_cast<WORD>((WORD)pParam->largeMotor * 257)};
   m_setStateFunc(m_xUserId, &vibe);
   return true;
 }
