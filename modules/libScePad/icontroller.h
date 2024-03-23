@@ -46,4 +46,18 @@ class IController {
   virtual bool setRumble(const ScePadVibrationParam* pParam) = 0;
   virtual bool setLED(const ScePadColor* pParam)             = 0;
   virtual bool resetLED()                                    = 0;
+
+  static inline uint8_t scaleAnalogStick(int16_t value) {
+    // input -32768 (up/left) to 32767 (down/right).
+    // return 0..255
+
+    return 255 * (32768 + value) / (32768 + 32767);
+  }
+
+  static inline uint8_t scaleAnalogButton(int16_t value) {
+    // input 0 when released to 32767
+    // return 0..255
+
+    return 255 * value / 32767;
+  }
 };
