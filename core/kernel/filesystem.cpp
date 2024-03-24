@@ -14,7 +14,7 @@
 LOG_DEFINE_MODULE(filesystem);
 
 namespace {
-std::pair<DWORD, DWORD> convProtection(int prot) {
+std::pair<uint32_t, uint32_t> convProtection(int prot) {
   switch (prot & 0xf) {
     case 0: return {PAGE_NOACCESS, 0};
     case 1: return {PAGE_READONLY, FILE_MAP_READ};
@@ -92,42 +92,44 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
 
   auto const [fileProt, viewProt] = convProtection(prot);
 
-  auto filepath = accessFileManager().getPath(fd);
+  auto file = accessFileManager().accessFile(fd);
 
-  HANDLE file = CreateFile(filepath.string().c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-
-  if (file == NULL) {
-    LOG_ERR(L" Mmap CreateFile 0x%08llx len:0x%08llx prot:%d flags:%08llx fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
-    return getErr(ErrCode::_EACCES);
+  if (file->getNative() == nullptr) {
+    LOG_ERR(L"Mmap fd:%d no nativeHandle", fd);
+    return getErr(ErrCode::_EMFILE);
   }
 
-  HANDLE hFileMapping = CreateFileMapping(file,
+  uint64_t mappingLength = (fileProt == PAGE_READONLY) || (fileProt == PAGE_EXECUTE_READ) ? 0 : len;
+  auto     lenSplit      = std::bit_cast<std::array<uint32_t, 2>>(mappingLength);
+
+  HANDLE hFileMapping = CreateFileMapping(file->getNative(),
                                           NULL, // default security
                                           fileProt,
-                                          (DWORD)(len >> 32u), // maximum object size (high-order DWORD)
-                                          (DWORD)len,          // maximum object size (low-order DWORD)
-                                          NULL);               // name of mapping object
+                                          lenSplit[1], // maximum object size (high-order DWORD)
+                                          lenSplit[0], // maximum object size (low-order DWORD)
+                                          NULL);       // name of mapping object
 
   *res = nullptr;
 
   if (hFileMapping == NULL) {
-    LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld err:%04x", addr, len, prot, flags, fd, offset,
-            GetLastError());
+    LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld err:%04x", addr, mappingLength, prot, flags, fd,
+            offset, GetLastError());
   } else {
-    *res = MapViewOfFile(hFileMapping,     // handle to file mapping object
-                         viewProt,         // read/write permission
-                         (offset >> 32u),  // high offset
-                         (uint32_t)offset, // low offset
-                         len);             // number of bytes to map
+    auto offsetSplit = std::bit_cast<std::array<uint32_t, 2>>(offset);
+    *res             = MapViewOfFile(hFileMapping,   // handle to file mapping object
+                                     viewProt,       // read/write permission
+                                     offsetSplit[1], // high offset
+                                     offsetSplit[2], // low offset
+                                     mappingLength); // number of bytes to map
     if (*res == NULL) {
-      LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
+      LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld err:%04x", addr, mappingLength, prot, flags, fd,
+              offset, GetLastError());
     } else {
-      LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
+      LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
       registerMapping((uint64_t)*res, MappingType::File);
     }
   }
 
-  CloseHandle(file);
   CloseHandle(hFileMapping); // is kept open internally until mapView is unmapped
 
   if (*res == nullptr) {
