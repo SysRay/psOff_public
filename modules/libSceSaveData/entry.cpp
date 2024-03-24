@@ -150,8 +150,6 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint*
 EXPORT SYSV_ABI int32_t sceSaveDataGetMountInfo(const SceSaveDataMountPoint* mountPoint, SceSaveDataMountInfo* info) {
   info->blocks     = 100000;
   info->freeBlocks = 100000;
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
@@ -177,7 +175,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetParam(const SceSaveDataMountPoint* mountPo
 
     LOG_INFO(L"title:%S subTile:%S detail:%S userParam:%u", p->title, p->subTitle, p->detail, p->userParam);
   } else {
-    LOG_CRIT(L"Not implemented");
+    LOG_ERR(L"Not implemented");
   }
 
   return Ok;

@@ -34,10 +34,7 @@ struct UniData {
 struct FileData: public UniData {
   std::unique_ptr<IFile> const m_file;
 
-  std::ios_base::openmode mode;
-
-  FileData(std::unique_ptr<IFile>&& file, std::filesystem::path const& path, std::ios_base::openmode mode)
-      : UniData(UniData::Type::File, path), m_file(std::move(file)), mode(mode) {}
+  FileData(std::unique_ptr<IFile>&& file, std::filesystem::path const& path): UniData(UniData::Type::File, path), m_file(std::move(file)) {}
 
   virtual ~FileData() { m_file->sync(); }
 };
@@ -88,11 +85,11 @@ class FileManager: public IFileManager {
 
   void init() {
     // Order of the first three files is important, do not change it!
-    assert(addFile(createType_in(), "/dev/stdin", std::ios::out) == 0);
-    assert(addFile(createType_out(SCE_TYPEOUT_ERROR), "/dev/stdout", std::ios::in) == 1);
-    assert(addFile(createType_out(SCE_TYPEOUT_DEBUG), "/dev/stderr", std::ios::in) == 2);
-    addFile(createType_zero(), "/dev/zero", std::ios::in);
-    addFile(createType_null(), "/dev/null", std::ios::out | std::ios::in);
+    assert(addFile(createType_in(), "/dev/stdin") == 0);
+    assert(addFile(createType_out(SCE_TYPEOUT_ERROR), "/dev/stdout") == 1);
+    assert(addFile(createType_out(SCE_TYPEOUT_DEBUG), "/dev/stderr") == 2);
+    addFile(createType_zero(), "/dev/zero");
+    addFile(createType_null(), "/dev/null");
   }
 
   void addMountPoint(std::string_view mountPoint, std::filesystem::path const& root, MountType type) final {
@@ -167,10 +164,10 @@ class FileManager: public IFileManager {
 
   std::filesystem::path const& getGameFilesDir() const final { return m_dirGameFiles; }
 
-  int addFile(std::unique_ptr<IFile>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) final {
+  int addFile(std::unique_ptr<IFile>&& file, std::filesystem::path const& path) final {
     std::unique_lock const lock(m_mutext_int);
 
-    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path, mode).release());
+    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path).release());
   }
 
   int addDirIterator(std::unique_ptr<std::filesystem::directory_iterator>&& it, std::filesystem::path const& path) final {
@@ -190,14 +187,6 @@ class FileManager: public IFileManager {
       return static_cast<FileData*>(m_openFiles[handle].get())->m_file.get();
     }
     return nullptr;
-  }
-
-  std::ios_base::openmode getMode(int handle) final {
-    std::unique_lock const lock(m_mutext_int);
-    if (handle < m_openFiles.size() && m_openFiles[handle] && m_openFiles[handle]->m_type == UniData::Type::File) {
-      return static_cast<FileData*>(m_openFiles[handle].get())->mode;
-    }
-    return {};
   }
 
   std::filesystem::path getPath(int handle) final {

@@ -54,7 +54,7 @@ int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelM
   }
 
   auto      file   = createType_dev(path, mode);
-  int const handle = accessFileManager().addFile(std::move(file), path, mode);
+  int const handle = accessFileManager().addFile(std::move(file), path);
   LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, path, mode, kernelMode);
   return handle;
 }
@@ -86,7 +86,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
 
   // Do file mapping
   if (fd < FILE_DESCRIPTOR_MIN) {
-    LOG_DEBUG(L"Mmap error addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
+    LOG_DEBUG(L"Mmap error addr:0x%08llx len:0x%08llx prot:%d flags:%08llx fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return getErr(ErrCode::_EPERM);
   }
 
@@ -97,21 +97,22 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   HANDLE file = CreateFile(filepath.string().c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
   if (file == NULL) {
-    LOG_ERR(L" Mmap CreateFile 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
+    LOG_ERR(L" Mmap CreateFile 0x%08llx len:0x%08llx prot:%d flags:%08llx fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
     return getErr(ErrCode::_EACCES);
   }
 
   HANDLE hFileMapping = CreateFileMapping(file,
                                           NULL, // default security
                                           fileProt,
-                                          (len >> 32u),  // maximum object size (high-order DWORD)
-                                          (uint32_t)len, // maximum object size (low-order DWORD)
-                                          NULL);         // name of mapping object
+                                          (DWORD)(len >> 32u), // maximum object size (high-order DWORD)
+                                          (DWORD)len,          // maximum object size (low-order DWORD)
+                                          NULL);               // name of mapping object
 
   *res = nullptr;
 
   if (hFileMapping == NULL) {
-    LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld", addr, len, prot, flags, fd, offset);
+    LOG_ERR(L"Mmap CreateFileMapping == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld err:%04x", addr, len, prot, flags, fd, offset,
+            GetLastError());
   } else {
     *res = MapViewOfFile(hFileMapping,     // handle to file mapping object
                          viewProt,         // read/write permission
@@ -168,10 +169,6 @@ size_t read(int handle, void* buf, size_t nbytes) {
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
   }
-  if (file->isError()) {
-    LOG_TRACE(L"file end");
-    return 0;
-  }
 
   auto const count = file->read((char*)buf, nbytes);
   LOG_TRACE(L"KernelRead[%d]: 0x%08llx:%llu read(%lld)", handle, (uint64_t)buf, nbytes, count);
@@ -191,7 +188,9 @@ int64_t write(int handle, const void* buf, size_t nbytes) {
 
   LOG_TRACE(L"KernelWrite[%d]: 0x%08llx:%llu count:%llu", handle, (uint64_t)buf, nbytes, count);
 
-  if (file->isError()) return getErr(ErrCode::_EIO);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
   return count;
 }
 
@@ -214,6 +213,12 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   }
   auto const mappedPath = mapped.value();
 
+  // handle excl (file already exists)
+  if (flags.excl && flags.create && std::filesystem::exists(path)) {
+    return getErr(ErrCode::_EEXIST);
+  }
+  // -
+
   bool isDir = std::filesystem::is_directory(mappedPath);
 
   if (flags.directory || isDir) {
@@ -230,25 +235,18 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
 
     return handle;
   } else {
-    std::ios_base::openmode mode = std::ios::binary;
-
-    switch (flags.mode) {
-      case SceOpenMode::RDONLY: mode |= std::ios::in; break;
-      case SceOpenMode::WRONLY: mode |= std::ios::out; break;
-      case SceOpenMode::RDWR: mode |= std::ios::out | std::ios::in; break;
-    }
-    if (flags.append) mode |= std::ios::app;
-    if (flags.trunc) mode |= std::ios::trunc;
-    if (flags.create) mode |= std::ios::out;
-
-    if ((mode & std::ios::out) == 0 && !std::filesystem::exists(mappedPath)) {
-      LOG_WARN(L"File doesn't exist: %s mode:0x%lx", mappedPath.c_str(), mode);
+    // error if read only input file does not exist
+    if (flags.mode == SceOpenMode::RDONLY && !std::filesystem::exists(mappedPath)) {
+      LOG_WARN(L"File doesn't exist: %s mode:0x%lx", mappedPath.c_str(), flags.mode);
       return getErr(ErrCode::_ENOENT);
     }
 
-    auto      file   = createType_file(mappedPath, mode);
-    int const handle = accessFileManager().addFile(std::move(file), mappedPath, mode);
-    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), mode, kernelMode);
+    auto file = createType_file(mappedPath, flags);
+    if (auto err = file->getErr(); err != Ok) {
+      return getErr((ErrCode)err);
+    }
+    int const handle = accessFileManager().addFile(std::move(file), mappedPath);
+    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), *(int*)&flags, kernelMode);
 
     return handle;
   }
@@ -256,7 +254,10 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
 
 int close(int handle) {
   LOG_USE_MODULE(filesystem);
-  LOG_TRACE(L"Closed[%d]", handle);
+  LOG_INFO(L"Closed[%d]", handle);
+  if (handle < FILE_DESCRIPTOR_MIN) {
+    return getErr(ErrCode::_EPERM);
+  }
 
   accessFileManager().remove(handle);
   return Ok;
@@ -341,10 +342,6 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
   }
-  if (file->isError()) {
-    LOG_TRACE(L"file end");
-    return 0;
-  }
 
   // todo: move it to IFile?
   size_t count = 0;
@@ -359,7 +356,7 @@ size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
     LOG_TRACE(L"KernelRead[%d]: 0x%08llx:%llu read(%lld)", handle, (uint64_t)item->iov_base, item->iov_len, countTemp);
 
     count += countTemp;
-    if (file->isError()) {
+    if (auto err = file->getErr(); err != Ok) {
       LOG_TRACE(L"file end");
       break;
     }
@@ -374,10 +371,6 @@ size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
   auto file = accessFileManager().accessFile(handle);
   if (file == nullptr) {
     return getErr(ErrCode::_EBADF);
-  }
-  if (file->isError()) {
-    LOG_TRACE(L"file end");
-    return 0;
   }
 
   // todo: move it to IFile?
@@ -394,7 +387,7 @@ size_t writev(int handle, const SceKernelIovec* iov, int iovcnt) {
 
     count += countTemp;
 
-    if (file->isError()) {
+    if (auto err = file->getErr(); err != Ok) {
       LOG_TRACE(L"file end");
       break;
     }
@@ -540,12 +533,11 @@ size_t preadv(int handle, const SceKernelIovec* iov, int iovcnt, int64_t offset)
 
   file->clearError();
   file->lseek(offset, SceWhence::beg);
-  if (file->isError()) {
-    return 0;
-  }
 
   auto const count = readv(handle, iov, iovcnt);
-  if (file->isError()) return getErr(ErrCode::_EIO);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
 
   return count;
 }
@@ -566,12 +558,11 @@ size_t pwritev(int handle, const SceKernelIovec* iov, int iovcnt, int64_t offset
 
   file->clearError();
   file->lseek(offset, SceWhence::beg);
-  if (file->isError()) {
-    return 0;
-  }
 
   auto const count = writev(handle, iov, iovcnt);
-  if (file->isError()) return getErr(ErrCode::_EIO);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
 
   return count;
 }
@@ -596,11 +587,11 @@ size_t pread(int handle, void* buf, size_t nbytes, int64_t offset) {
 
   file->clearError();
   file->lseek(offset, SceWhence::beg);
-  if (file->isError()) {
-    return 0;
-  }
 
   auto const count = file->read((char*)buf, nbytes);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
 
   LOG_TRACE(L"pread[%d]: 0x%08llx:%llu read(%lld) offset:0x%08llx", handle, (uint64_t)buf, nbytes, count, offset);
   return count;
@@ -619,7 +610,9 @@ size_t pwrite(int handle, const void* buf, size_t nbytes, int64_t offset) {
   file->lseek(offset, SceWhence::beg);
 
   auto const count = file->write((char*)buf, nbytes);
-  if (file->isError()) return getErr(ErrCode::_EIO);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
 
   return count;
 }
@@ -635,9 +628,8 @@ int64_t lseek(int handle, int64_t offset, int whence) {
 
   auto const pos = file->lseek(offset, (SceWhence)whence);
 
-  if (file->isError()) {
-    LOG_TRACE(L"lseek[%d] einval");
-    return getErr(ErrCode::_EIO);
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
   }
   return pos;
 }
