@@ -36,11 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run clang-format
-        uses: jidicula/clang-format-action@v4.11.0
+      - uses: DoozyX/clang-format-lint-action@v0.17
         with:
-          clang-format-version: 17
-          exclude-regex: (third_party|vk_mem_alloc)
+          source: ./
+          extensions: h,hpp,cpp,c,cc
+          clangFormatVersion: 17
 
   build:
     needs: formatting-check
