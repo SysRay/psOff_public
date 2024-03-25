@@ -1,0 +1,61 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface IFile{
+  -m_type
+  #m_errCode
+  ---
+  auto getType()
+  auto getErr()
+  void clearError()
+
+  -- interface --
+  {abstract} size_t read(void* buf, size_t nbytes)
+  {abstract} size_t write(void* buf, size_t nbytes)
+  {abstract} void sync()
+  {abstract} int64_t lseek(int64_t offset, SceWhence whence)
+  {abstract} void* getNative()
+}
+
+interface IFileManager{
+  {abstract} std::optional<std::filesystem::path> getMappedPath()
+  {abstract} void addMountPoint()
+  {abstract} std::filesystem::path getMountPoint()
+  {abstract} void clearMountPoint()
+  {abstract} void setGameFilesDir()
+  {abstract} std::filesystem::path const& getGameFilesDir() const
+  {abstract} int addFile()
+  {abstract} int addDirIterator()
+  {abstract} void remove()
+  {abstract} IFile* accessFile()
+
+  {abstract} int getDents()
+  {abstract} std::filesystem::path getPath()
+}
+
+class FileManager << (S,#FF7700) Singleton >>{
+
+}
+
+IFileManager <|-- FileManager
+IFile "*"-* FileManager
+
+user ()- IFileManager : accessFileManager()
+user ()- IFile : createType_*()
+
+package types <<Folder>> {
+  class TypeFile{}
+  class TypeZero{}
+  class TypeRandom{}
+  class TypeOut{}
+  class TypeNull{}
+  class TypeIn{}
+}
+
+IFile <|-- TypeFile
+IFile <|-- TypeZero
+IFile <|-- TypeRandom
+IFile <|-- TypeOut
+IFile <|-- TypeNull
+IFile <|-- TypeIn
+@enduml
