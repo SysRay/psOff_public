@@ -8,8 +8,8 @@ target_link_directories(config_emu PRIVATE
 
 add_dependencies(config_emu boost)
 
-target_link_libraries(config_emu libboost_thread)
-target_compile_definitions(config_emu PRIVATE BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
+target_link_libraries(config_emu PUBLIC libboost_thread)
+target_compile_definitions(config_emu PUBLIC BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
 target_compile_options(config_emu PRIVATE "/Zi")
 
 target_include_directories(config_emu PRIVATE
