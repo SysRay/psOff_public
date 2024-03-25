@@ -30,6 +30,8 @@ I don't serve spaghetti only bugs.
 
 
 ## Getting Started
+[wiki: Building psoff](https://github.com/SysRay/psOff_public/wiki/Building-psOff-from-scratch)
+
 ### Dependencies
 + Vulkan SDK 1.3.268.0, minimum
 + Up to date graphic drivers
@@ -43,12 +45,13 @@ For development:
 + Visual Studio 2022, it's just for the build environment (uses clang-cl,c++20)
 + Windows SDK 10.0.22621.0 or newer
 
-Try out [input_ps4](https://github.com/igor725/input_ps4) to see if the emulator and your controller work correctly.
+
 
 ### Installing
 For testing, just download the latest release and install the Vulkan SDK.
 
-### Executing program
+### Executing a program
+
 ```
 .\emulator.exe --h
 .\emulator.exe --file="C:/****/eboot.bin"
@@ -63,6 +66,8 @@ sce_module
 sce_sys
 eboot.bin
 ```
+
+Try out [input_ps4](https://github.com/igor725/input_ps4) to see if the emulator and your controller work correctly
 
 ## Development
 
