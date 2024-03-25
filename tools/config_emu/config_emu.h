@@ -12,6 +12,7 @@ enum class ConfigModFlag : uint32_t {
   GRAPHICS = 2 << 1,
   AUDIO    = 2 << 2,
   CONTROLS = 2 << 3,
+  GENERAL  = 2 << 4,
 };
 
 class IConfig {

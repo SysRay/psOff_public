@@ -41,6 +41,7 @@ class Config: public IConfig {
   Item m_graphics = {"graphics.json"};
   Item m_audio    = {"audio.json"};
   Item m_controls = {"controls.json"};
+  Item m_general  = {"general.json"};
 
   public:
   Config();
@@ -62,6 +63,7 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigMo
     case ConfigModFlag::GRAPHICS: return m_graphics.access();
     case ConfigModFlag::AUDIO: return m_audio.access();
     case ConfigModFlag::CONTROLS: return m_controls.access();
+    case ConfigModFlag::GENERAL: return m_general.access();
 
     default: printf("Invalid bit flag!\n"); exit(1);
   }
@@ -76,6 +78,7 @@ bool Config::save(uint32_t flags) {
   if (flags & (uint32_t)ConfigModFlag::GRAPHICS) result &= m_graphics.save();
   if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= m_audio.save();
   if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= m_controls.save();
+  if (flags & (uint32_t)ConfigModFlag::GENERAL) result &= m_general.save();
 
   return true;
 }
@@ -135,9 +138,12 @@ Config::Config() {
 
   const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
 
-  m_logging._future  = std::async(std::launch::async, load, &m_logging, json({{"sink", "FileTxt"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+  m_logging._future = std::async(std::launch::async, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+
   m_graphics._future = std::async(std::launch::async, load, &m_graphics, json::object({}), ConfigModFlag::GRAPHICS);
-  m_audio._future    = std::async(std::launch::async, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
+
+  m_audio._future = std::async(std::launch::async, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
+
   m_controls._future = std::async(std::launch::async, load, &m_controls,
                                   json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
                                         {"keybinds",
@@ -150,4 +156,6 @@ Config::Config() {
                                              {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
                                          }}}),
                                   ConfigModFlag::CONTROLS);
+
+  m_general._future = std::async(std::launch::async, load, &m_general, json({{"systemlang", 1}}), ConfigModFlag::GENERAL);
 }
