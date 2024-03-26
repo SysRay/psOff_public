@@ -100,7 +100,6 @@ EXPORT SYSV_ABI int32_t sceVideoOutGetVblankStatus(int32_t handle, SceVideoOutVb
 
 EXPORT SYSV_ABI int32_t sceVideoOutIsFlipPending(int32_t handle) {
   return accessVideoOut().getPendingFlips(handle);
-  ;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutGetResolutionStatus(int32_t handle, SceVideoOutResolutionStatus* status) {

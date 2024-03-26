@@ -15,6 +15,7 @@
 #include "modules/libSceVideoOut/types.h"
 #include "modules_include/common.h"
 #include "vulkan/vulkanHelper.h"
+#include "emuictx.h"
 
 #include <queue>
 
@@ -111,6 +112,7 @@ struct Context {
   int      userId   = -1;
   FlipRate fliprate = FlipRate::_60Hz;
 
+  EmUICtx        emui; // Should it be there?
   VideoOutConfig config;
   SDL_Window*    window;
   VkSurfaceKHR   surface = nullptr;
@@ -657,12 +659,13 @@ std::thread VideoOut::createSDLThread() {
     LOG_USE_MODULE(VideoOut);
     LOG_DEBUG(L"Init SDL2 video");
 
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     // SDL polling helper
     auto func_pollSDL = [](auto& window) {
       SDL_Event event;
       while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL2_ProcessEvent(&event);
         switch (event.type) {
           case SDL_WINDOWEVENT:
             switch (event.window.event) {
@@ -724,6 +727,36 @@ std::thread VideoOut::createSDLThread() {
             auto& info  = m_vulkanObj->deviceInfo;
 
             m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
+            // window.emui.init();
+            // ImGui_ImplSDL2_InitForVulkan(window.window);
+
+            // {
+            //   VkDescriptorPoolSize pool_sizes[] =
+            //   {
+            //     { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+            //   };
+            //   VkDescriptorPoolCreateInfo pool_info = {};
+            //   pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            //   pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+            //   pool_info.maxSets = 1;
+            //   pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+            //   pool_info.pPoolSizes = pool_sizes;
+            //   EmUICtx::check(vkCreateDescriptorPool(info.device, &pool_info, window.emui.m_allocCBs, &window.emui.m_dPool));
+            // }
+
+            // ImGui_ImplVulkan_InitInfo init_info {
+            //   .Instance = info.instance,
+            //   .PhysicalDevice = info.physicalDevice,
+            //   .Device = info.device,
+            //   .Queue = , // ???
+            //   .DescriptorPool = window.emui.m_dPool,
+            //   .RenderPass = , // ???
+            //   .MinImageCount = 2,
+            //   .ImageCount = m_vulkanObj->surfaceCapabilities.capabilities.maxImageCount,
+            //   .CheckVkResultFn = &EmUICtx::check,
+            // };
+
+            // ImGui_ImplVulkan_Init(&init_info);
           } else {
             vulkan::createSurface(m_vulkanObj, window.window, window.surface);
           }
