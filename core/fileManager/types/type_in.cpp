@@ -16,8 +16,8 @@ class TypeIn: public IFile {
   size_t  write(void* buf, size_t nbytes) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
-  bool    isError() final;
-  void    clearError() final;
+
+  void* getNative() final { return nullptr; }
 };
 
 std::unique_ptr<IFile> createType_in() {
@@ -39,9 +39,3 @@ int64_t TypeIn::lseek(int64_t offset, SceWhence whence) {
 }
 
 void TypeIn::sync() {}
-
-bool TypeIn::isError() {
-  return false;
-}
-
-void TypeIn::clearError() {}

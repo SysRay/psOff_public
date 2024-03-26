@@ -13,8 +13,8 @@ class TypeNull: public IFile {
   size_t  write(void* buf, size_t nbytes) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
-  bool    isError() final;
-  void    clearError() final;
+
+  void* getNative() final { return nullptr; }
 };
 
 std::unique_ptr<IFile> createType_null() {
@@ -34,9 +34,3 @@ int64_t TypeNull::lseek(int64_t offset, SceWhence whence) {
 }
 
 void TypeNull::sync() {}
-
-bool TypeNull::isError() {
-  return false;
-}
-
-void TypeNull::clearError() {}

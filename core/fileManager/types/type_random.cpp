@@ -11,8 +11,8 @@ class TypeRandom: public IFile {
   size_t  write(void* buf, size_t nbytes) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
-  bool    isError() final;
-  void    clearError() final;
+
+  void* getNative() final { return nullptr; }
 };
 
 std::unique_ptr<IFile> createType_random() {
@@ -38,9 +38,3 @@ int64_t TypeRandom::lseek(int64_t offset, SceWhence whence) {
 }
 
 void TypeRandom::sync() {}
-
-bool TypeRandom::isError() {
-  return false;
-}
-
-void TypeRandom::clearError() {}

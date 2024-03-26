@@ -123,6 +123,7 @@ int KernelEventFlag::wait(uint64_t bits, WaitMode wait_mode, ClearMode clear_mod
         *result = m_bits;
       }
       *ptr_micros = 0;
+      --m_waitingThreads;
       return getErr(ErrCode::_ETIMEDOUT);
     }
   }

@@ -68,11 +68,13 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
   ::exit(code);
 }
 
-EXPORT SYSV_ABI int __NID(_is_signal_return)(uint64_t* param) {
-  if ((uintptr_t)param < 4 * 1024) return 1;
-  if (param[0] != 0x48006a40247c8d48 || param[1] != 0x050f000001a1c0c7 || (param[2] & 0xffffff) != 0xfdebf4)
-    return ((((unsigned long long)(*(char*)&param - 5)) ^ 0xffffffff) == 0x50fca8949) * 2;
-  return 1;
+EXPORT SYSV_ABI uint8_t __NID(_is_signal_return)(int64_t* param) {
+  uint8_t retVal = 0;
+
+  if (((*param != 0x48006a40247c8d48) || (param[1] != 0x50f000001a1c0c7)) || (retVal = 1, (param[2] & 0xffffffU) != 0xfdebf4)) {
+    retVal = ((*(uint64_t*)((int64_t)param + -5) & 0xffffffffff) == 0x50fca8949) * 2;
+  }
+  return retVal;
 }
 
 EXPORT SYSV_ABI int __NID(sigprocmask)(int /*how*/, const void* /*set*/, void* /*oset*/) {

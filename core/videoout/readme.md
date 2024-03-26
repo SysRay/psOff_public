@@ -6,5 +6,5 @@
 
 <div align="center">
 
-![](../../out/docs/uml/modules/videoout_class/videoout_class.svg)
+![](../../out/docs/uml/modules/videoout_class.svg)
 </div>

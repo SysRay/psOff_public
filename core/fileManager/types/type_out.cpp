@@ -17,8 +17,8 @@ class TypeOut: public IFile {
   size_t  write(void* buf, size_t nbytes) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
-  bool    isError() final;
-  void    clearError() final;
+
+  void* getNative() final { return nullptr; }
 };
 
 std::unique_ptr<IFile> createType_out(SceFileOutChannel ch) {
@@ -37,7 +37,11 @@ size_t TypeOut::write(void* buf, size_t nbytes) {
     str.pop_back();
 
   switch (m_channel) {
-    case SCE_TYPEOUT_ERROR: LOG_ERR(L"%S", str.c_str()); break;
+    case SCE_TYPEOUT_ERROR: {
+      printf("Console:%s\n", str.c_str());
+      LOG_DEBUG(L"%S", str.c_str());
+
+    } break;
 
     case SCE_TYPEOUT_DEBUG: LOG_DEBUG(L"%S", str.c_str()); break;
 
@@ -52,9 +56,3 @@ int64_t TypeOut::lseek(int64_t offset, SceWhence whence) {
 }
 
 void TypeOut::sync() {}
-
-bool TypeOut::isError() {
-  return false;
-}
-
-void TypeOut::clearError() {}
