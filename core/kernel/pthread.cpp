@@ -287,8 +287,11 @@ int condInit(ScePthreadCond* cond, const ScePthreadCondattr* attr, const char* n
 
 static int checkCondInit(ScePthreadCond* cond) {
   if (*cond == nullptr) {
+    static boost::mutex mutexInt;
     // Is Static Object -> init
-    *cond = condInit_intern(nullptr);
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*cond == nullptr) *cond = condInit_intern(nullptr);
   }
   return Ok;
 }
@@ -496,8 +499,11 @@ int mutexInit(ScePthreadMutex* mutex, const ScePthreadMutexattr* attr, const cha
 static int checkMutexInit(ScePthreadMutex* mutex) {
   if (mutex == nullptr) return getErr(ErrCode::_EINVAL);
   if (*mutex == nullptr) {
+    static boost::mutex mutexInt;
     // Is Static Object -> init
-    *mutex = mutexInit_intern(nullptr);
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*mutex == nullptr) *mutex = mutexInit_intern(nullptr);
   }
   return Ok;
 }
@@ -622,7 +628,11 @@ int rwlockInit(ScePthreadRwlock* rwlock, const ScePthreadRwlockattr* attr, const
 static int checkRwLockInit(ScePthreadRwlock* rwlock) {
   if (*rwlock == nullptr) {
     // Is Static Object -> init
-    *rwlock = createRwLock_intern(nullptr);
+    static boost::mutex mutexInt;
+    // Is Static Object -> init
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*rwlock == nullptr) *rwlock = createRwLock_intern(nullptr);
   }
   return Ok;
 }
@@ -1004,6 +1014,21 @@ ScePthread_obj& getSelf() {
 
 int getthreadid(void) {
   return getPthread(getSelf())->unique_id;
+}
+
+int once(ScePthreadOnce once_control, pthread_once_init init_routine) {
+  if (once_control == nullptr || init_routine == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto res = mutexLock(&once_control->mutex);
+
+  if (once_control->isInit == 0) {
+    init_routine();
+    once_control->isInit = 1;
+  }
+
+  res = mutexUnlock(&once_control->mutex);
+
+  return Ok;
 }
 
 int rename(ScePthread_obj obj, const char* name) {

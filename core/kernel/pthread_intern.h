@@ -159,3 +159,10 @@ struct PthreadCondPrivate {
 
   ~PthreadCondPrivate() {}
 };
+
+struct PthreadOnce {
+  int32_t isInit; // 0: no, 1: yes
+  int32_t _align;
+
+  PthreadMutexPrivate* mutex;
+};

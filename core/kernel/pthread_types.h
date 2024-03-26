@@ -7,6 +7,8 @@ using pthread_key_destructor_func_t = SYSV_ABI void (*)(void*);
 using thread_dtors_func_t = SYSV_ABI void (*)();
 using thread_clean_func_t = SYSV_ABI void (*)(void*);
 
+using pthread_once_init = SYSV_ABI void (*)();
+
 struct SceSchedParam {
   int sched_priority;
 };
