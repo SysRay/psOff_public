@@ -741,7 +741,6 @@ std::thread VideoOut::createSDLThread() {
           OPTICK_FRAME("VideoOut");
           auto& flipStatus = window.config.flipStatus;
 
-          lock.unlock();
           {
             OPTICK_EVENT("Present");
             if (!presentImage(m_vulkanObj, window.config.bufferSets[item.setIndex], item.presentData)) {
@@ -749,7 +748,6 @@ std::thread VideoOut::createSDLThread() {
             }
           }
           m_graphics->submitDone();
-          lock.lock();
 
           auto&      timer      = accessTimer();
           auto const curTime    = (uint64_t)(1e6 * timer.getTimeS());
