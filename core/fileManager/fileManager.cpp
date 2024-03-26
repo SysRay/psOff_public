@@ -78,6 +78,8 @@ class FileManager: public IFileManager {
   std::filesystem::path                                                                 m_dirGameFiles;
   std::unordered_map<std::string, std::filesystem::path>                                m_mappedPaths;
 
+  bool m_updateSearch = false;
+
   public:
   FileManager() { init(); };
 
@@ -145,6 +147,17 @@ class FileManager: public IFileManager {
 
         if (path.size() >= mountPoint.size() && std::mismatch(mountPoint.begin(), mountPoint.end(), path.begin() + offset).first == mountPoint.end()) {
           if (path[mountPoint.size() + offset] == '/') ++offset; // path.substr() should return relative path
+
+          if (mountType.first == MountType::App && m_updateSearch) {
+            auto const& updateDir = m_mountPointList[MountType::Update].begin()->second;
+            auto const  mapped    = updateDir / path.substr(mountPoint.size() + offset);
+            if (std::filesystem::exists(mapped)) {
+              LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), updateDir.c_str(), path.data());
+              m_mappedPaths[path.data()] = mapped;
+              return mapped;
+            }
+          }
+
           auto const mapped = rootDir / path.substr(mountPoint.size() + offset);
           LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), rootDir.c_str(), path.data());
           m_mappedPaths[path.data()] = mapped;
@@ -249,6 +262,8 @@ class FileManager: public IFileManager {
     }
     return n;
   }
+
+  void enableUpdateSearch() final { m_updateSearch = true; }
 };
 
 IFileManager& accessFileManager() {

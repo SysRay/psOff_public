@@ -21,6 +21,7 @@ class InitParams {
 
   std::string getApplicationPath();
   std::string getApplicationRoot();
+  std::string getUpdateRoot();
 
   bool enableValidation();
   bool useVSYNC();
