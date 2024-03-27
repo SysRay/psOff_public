@@ -401,27 +401,27 @@ void findPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, SurfaceCapabi
     dumpQueues(qs);
 
     if (shaderObj.shaderObject == VK_FALSE) {
-      LOG_WARN(L"shaderObject is not supported");
+      LOG_ERR(L"shaderObject is not supported");
       skipDevice = true;
     }
 
     if (qs.graphics.empty() || qs.compute.empty() || qs.transfer.empty() || qs.present.empty()) {
-      LOG_WARN(L"Not enough queues");
+      LOG_ERR(L"Not enough queues");
       skipDevice = true;
     }
 
     if (colorWriteExt.colorWriteEnable != VK_TRUE) {
-      LOG_WARN(L"colorWriteEnable is not supported");
+      LOG_ERR(L"colorWriteEnable is not supported");
       skipDevice = true;
     }
 
     if (deviceFeatures.features.fragmentStoresAndAtomics != VK_TRUE) {
-      LOG_WARN(L"fragmentStoresAndAtomics is not supported");
+      LOG_ERR(L"fragmentStoresAndAtomics is not supported");
       skipDevice = true;
     }
 
     if (deviceFeatures.features.samplerAnisotropy != VK_TRUE) {
-      LOG_WARN(L"samplerAnisotropy is not supported");
+      LOG_ERR(L"samplerAnisotropy is not supported");
       skipDevice = true;
     }
 
@@ -728,8 +728,9 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
   vkGetPhysicalDeviceProperties(obj->deviceInfo.physicalDevice, &g_PhysicalDeviceProperties);
 
   {
-    auto const text = std::format("Selected GPU:{} api:{}.{}", g_PhysicalDeviceProperties.deviceName,
-                                  VK_API_VERSION_MAJOR(g_PhysicalDeviceProperties.apiVersion), VK_API_VERSION_MINOR(g_PhysicalDeviceProperties.apiVersion));
+    auto const text =
+        std::format("Selected GPU:{} api:{}.{}.{}", g_PhysicalDeviceProperties.deviceName, VK_API_VERSION_MAJOR(g_PhysicalDeviceProperties.apiVersion),
+                    VK_API_VERSION_MINOR(g_PhysicalDeviceProperties.apiVersion), VK_API_VERSION_PATCH(g_PhysicalDeviceProperties.apiVersion));
     printf("%s\n", text.data());
     LOG_INFO(L"%S", text.data());
   }
