@@ -114,6 +114,7 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
       return n;
     }
   }
+
   return Err::NO_HANDLE;
 }
 
@@ -123,6 +124,7 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
+  if (!pController) return Err::INVALID_HANDLE;
 
   std::unique_lock const lock(pData->m_mutexInt);
 
@@ -147,7 +149,9 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  return pController->setMotion(bEnable);
+  if (!pController) return Err::INVALID_HANDLE;
+
+  return pController->setMotion(bEnable) ? Ok : Err::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
@@ -162,7 +166,11 @@ EXPORT SYSV_ABI int scePadSetAngularVelocityDeadbandState(int32_t handle, bool b
 
 EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
   if (handle < 0) return Err::INVALID_HANDLE;
-  return Ok;
+  auto  pData       = getData();
+  auto& pController = pData->controller[handle].padPtr;
+  if (!pController) return Err::INVALID_HANDLE;
+
+  return pController->resetOrientation() ? Ok : Err::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
@@ -171,9 +179,9 @@ EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationPara
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
+  if (!pController) return Err::INVALID_HANDLE;
 
-  pController->setRumble(pParam);
-  return Ok;
+  return pController->setRumble(pParam) ? Ok : Err::INVALID_ARG;
 }
 
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
@@ -182,10 +190,9 @@ EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam)
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
+  if (!pController) return Err::INVALID_HANDLE;
 
-  if (!pController->setLED(pParam)) return Err::INVALID_LIGHTBAR_SETTING;
-
-  return Ok;
+  return pController->setLED(pParam) ? Ok : Err::INVALID_LIGHTBAR_SETTING;
 }
 
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
@@ -193,9 +200,9 @@ EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (pController->resetLED() == false) return Err::INVALID_LIGHTBAR_SETTING;
+  if (!pController) return Err::INVALID_HANDLE;
 
-  return Ok;
+  return pController->resetLED() ? Ok : Err::INVALID_LIGHTBAR_SETTING;
 }
 
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
@@ -216,7 +223,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
     pInfo->stickInfo.deadZoneLeft  = 2; // todo make config
     pInfo->stickInfo.deadZoneRight = 2; // todo make config
     pInfo->connectionType          = (uint8_t)PadPortType::STANDARD;
-    pInfo->connectedCount          = pad.padPtr->getConnectionsCount();
+    pInfo->connectedCount          = pad.padPtr ? pad.padPtr->getConnectionsCount() : 0;
     pInfo->connected               = false;
     pInfo->deviceClass             = ScePadDeviceClass::STANDARD;
     return Ok;
@@ -231,10 +238,10 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   pInfo->stickInfo.deadZoneRight = 2; // todo make config
 
   auto lockSDL2         = accessVideoOut().getSDLLock();
-  pInfo->connectionType = (uint8_t)PadPortType::STANDARD;
+  pInfo->connectionType = pad.padPtr->getPortType();
   pInfo->connectedCount = pad.padPtr->getConnectionsCount();
   pInfo->connected      = pad.padPtr->isConnected();
-  pInfo->deviceClass    = ScePadDeviceClass::STANDARD;
+  pInfo->deviceClass    = pad.padPtr->getClass();
 
   LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);
   return Ok;

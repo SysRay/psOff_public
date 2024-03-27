@@ -39,6 +39,7 @@ class XIPController: public IController {
   void close() final;
   bool readPadData(ScePadData& data) final;
   bool setMotion(bool state) final;
+  bool resetOrientation() final;
   bool setRumble(const ScePadVibrationParam* pParam) final;
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
@@ -195,6 +196,10 @@ bool XIPController::readPadData(ScePadData& data) {
 }
 
 bool XIPController::setMotion(bool state) {
+  return false;
+}
+
+bool XIPController::resetOrientation() {
   return false;
 }
 

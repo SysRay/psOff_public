@@ -26,6 +26,7 @@ class KBDController: public IController {
   void close() final;
   bool readPadData(ScePadData& data) final;
   bool setMotion(bool state) final;
+  bool resetOrientation() final;
   bool setRumble(const ScePadVibrationParam* pParam) final;
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
@@ -158,6 +159,10 @@ bool KBDController::readPadData(ScePadData& data) {
 }
 
 bool KBDController::setMotion(bool state) {
+  return false;
+}
+
+bool KBDController::resetOrientation() {
   return false;
 }
 
