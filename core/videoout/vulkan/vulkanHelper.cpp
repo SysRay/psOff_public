@@ -203,9 +203,6 @@ PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer,
 
   PresentData presentData;
 
-  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence);
-
   // Get swapchain image
   presentData.displayReady = displayBuffer->semDisplayReady;
   {
@@ -222,11 +219,15 @@ PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer,
     }
     if (n <= 0) {
       LOG_ERR(L"vkAcquireNextImageKHR %S", string_VkResult(result));
+      swapchain.waitId--; // would deadlock on next call
       return {};
     }
   }
   presentData.swapchainImage = swapchain.buffers[presentData.index].image;
   // -
+
+  vkWaitForFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(obj->deviceInfo.device, 1, &displayBuffer->bufferFence);
 
   auto cmdBuffer = displayBuffer->transferBuffer;
 
