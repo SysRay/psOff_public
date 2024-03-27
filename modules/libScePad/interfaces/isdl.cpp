@@ -13,8 +13,11 @@ LOG_DEFINE_MODULE(libScePad_sdl);
 static bool is_SDL_inited = false;
 
 class SDLController: public IController {
-  static constexpr uint32_t m_initflags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR | SDLK_0;
-  SDL_GameController*       m_padPtr    = nullptr;
+  static constexpr uint32_t m_initflags     = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
+  SDL_GameController*       m_padPtr        = nullptr;
+  bool                      m_motionEnabled = false;
+  uint64_t                  m_lastTimeStamp = 0;
+  SceFVector3               m_gyroData      = {0.0f, 0.0f, 0.0f};
 
   public:
   SDLController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
@@ -29,6 +32,7 @@ class SDLController: public IController {
   void close() final;
   bool readPadData(ScePadData& data) final;
   bool setMotion(bool state) final;
+  bool resetOrientation() final;
   bool setRumble(const ScePadVibrationParam* pParam) final;
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
@@ -82,6 +86,7 @@ bool SDLController::reconnect() {
     SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
     SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
     setLED(&m_lastColor); // restore last known LED color
+    setMotion(m_motionEnabled);
     return true;
   }
 
@@ -194,23 +199,31 @@ bool SDLController::readPadData(ScePadData& data) {
     }
   }
 
-  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_GYRO)) {
-    float gdata[3];
-    if (SDL_GameControllerGetSensorData(m_padPtr, SDL_SENSOR_GYRO, gdata, 3) == 0) {
-      auto cr = ::cosf(gdata[2] * 0.5f);
-      auto sr = ::sinf(gdata[2] * 0.5f);
-      auto cp = ::cosf(gdata[0] * 0.5f);
-      auto sp = ::sinf(gdata[0] * 0.5f);
-      auto cy = ::cosf(gdata[1] * 0.5f);
-      auto sy = ::sinf(gdata[1] * 0.5f);
+  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_GYRO)) { // todo: fix this
+    float    gdata[3];
+    uint64_t timestamp, tdiff;
+    if (SDL_GameControllerGetSensorDataWithTimestamp(m_padPtr, SDL_SENSOR_GYRO, &timestamp, gdata, 3) == 0 && timestamp != m_lastTimeStamp) {
+      tdiff           = timestamp - m_lastTimeStamp;
+      m_lastTimeStamp = timestamp;
 
-      data.orientation = {
-          .x = sr * cp * cy - cr * sp * sy,
-          .y = cr * sp * cy + sr * cp * sy,
-          .z = cr * cp * sy - sr * sp * cy,
-          .w = cr * cp * cy + sr * sp * sy,
-      };
+      m_gyroData.x += gdata[0] / tdiff;
+      m_gyroData.y += gdata[1] / tdiff;
+      m_gyroData.z += gdata[2] / tdiff;
     }
+
+    auto cr = ::cosf(m_gyroData.x * 0.5f);
+    auto sr = ::sinf(m_gyroData.x * 0.5f);
+    auto cp = ::cosf(m_gyroData.y * 0.5f);
+    auto sp = ::sinf(m_gyroData.y * 0.5f);
+    auto cy = ::cosf(m_gyroData.z * 0.5f);
+    auto sy = ::sinf(m_gyroData.z * 0.5f);
+
+    data.orientation = {
+        .x = sr * cp * cy - cr * sp * sy,
+        .y = cr * sp * cy + sr * cp * sy,
+        .z = cr * cp * sy - sr * sp * cy,
+        .w = cr * cp * cy + sr * sp * sy,
+    };
   }
 
   if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_ACCEL)) {
@@ -225,6 +238,7 @@ bool SDLController::readPadData(ScePadData& data) {
 
 bool SDLController::setMotion(bool state) {
   LOG_USE_MODULE(libScePad_sdl);
+  m_motionEnabled = state;
 
   if (SDL_GameControllerHasSensor(m_padPtr, SDL_SENSOR_GYRO)) {
     if (SDL_GameControllerSetSensorEnabled(m_padPtr, SDL_SENSOR_GYRO, (SDL_bool)state) == 0 &&
@@ -235,6 +249,11 @@ bool SDLController::setMotion(bool state) {
     }
   }
 
+  return true;
+}
+
+bool SDLController::resetOrientation() {
+  m_gyroData = {0.0f, 0.0f, 0.0f};
   return true;
 }
 

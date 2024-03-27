@@ -4,7 +4,6 @@
 #include "types.h"
 
 #include <SDL.h>
-// #include <unordered>
 
 LOG_DEFINE_MODULE(libScePad_config);
 
