@@ -105,9 +105,9 @@ uint32_t SDLController::getButtons() {
   bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
   bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
   bits[(uint32_t)ScePadButtonDataOffset::L1]        = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-  bits[(uint32_t)ScePadButtonDataOffset::L2]        = SDL_GameControllerGetAxis(m_padPtr, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 100;
+  bits[(uint32_t)ScePadButtonDataOffset::L2]        = SDL_GameControllerGetAxis(m_padPtr, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 0;
   bits[(uint32_t)ScePadButtonDataOffset::R1]        = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-  bits[(uint32_t)ScePadButtonDataOffset::R2]        = SDL_GameControllerGetAxis(m_padPtr, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 100;
+  bits[(uint32_t)ScePadButtonDataOffset::R2]        = SDL_GameControllerGetAxis(m_padPtr, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 0;
   bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_Y);
   bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_B);
   bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = SDL_GameControllerGetButton(m_padPtr, SDL_CONTROLLER_BUTTON_A);
@@ -190,6 +190,7 @@ bool SDLController::readPadData(ScePadData& data) {
 
   data.touchData.touchNum = 0;
   for (int f = 0; f < SDL_GameControllerGetNumTouchpadFingers(m_padPtr, 0); f++) {
+    if (data.touchData.touchNum == SCE_PAD_MAX_TOUCH_NUM) break;
     float x = 0.0f, y = 0.0f, p = 0.0f;
 
     SDL_GameControllerGetTouchpadFinger(m_padPtr, 0, f, NULL, &x, &y, &p);
