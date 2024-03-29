@@ -100,7 +100,6 @@ EXPORT SYSV_ABI int32_t sceVideoOutGetVblankStatus(int32_t handle, SceVideoOutVb
 
 EXPORT SYSV_ABI int32_t sceVideoOutIsFlipPending(int32_t handle) {
   return accessVideoOut().getPendingFlips(handle);
-  ;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutGetResolutionStatus(int32_t handle, SceVideoOutResolutionStatus* status) {
@@ -190,7 +189,7 @@ EXPORT SYSV_ABI int32_t sceVideoOutGetEventData(Kernel::EventQueue::KernelEvent_
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutGetEventCount(Kernel::EventQueue::KernelEvent_t ev) {
-  return Ok;
+  return ev->fflags;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutWaitVblank(int32_t handle) {
