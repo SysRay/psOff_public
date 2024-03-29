@@ -39,6 +39,7 @@ class XIPController: public IController {
   void close() final;
   bool readPadData(ScePadData& data) final;
   bool setMotion(bool state) final;
+  bool resetOrientation() final;
   bool setRumble(const ScePadVibrationParam* pParam) final;
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
@@ -107,9 +108,9 @@ uint32_t XIPController::getButtons(XINPUT_GAMEPAD* xgp) {
   bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = xgp->wButtons & XINPUT_GAMEPAD_DPAD_DOWN;
   bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = xgp->wButtons & XINPUT_GAMEPAD_DPAD_LEFT;
   bits[(uint32_t)ScePadButtonDataOffset::L1]        = xgp->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER;
-  bits[(uint32_t)ScePadButtonDataOffset::L2]        = xgp->bLeftTrigger > 2;
+  bits[(uint32_t)ScePadButtonDataOffset::L2]        = xgp->bLeftTrigger > 0;
   bits[(uint32_t)ScePadButtonDataOffset::R1]        = xgp->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER;
-  bits[(uint32_t)ScePadButtonDataOffset::R2]        = xgp->bRightTrigger > 2;
+  bits[(uint32_t)ScePadButtonDataOffset::R2]        = xgp->bRightTrigger > 0;
   bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = xgp->wButtons & XINPUT_GAMEPAD_Y;
   bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = xgp->wButtons & XINPUT_GAMEPAD_B;
   bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = xgp->wButtons & XINPUT_GAMEPAD_A;
@@ -195,6 +196,10 @@ bool XIPController::readPadData(ScePadData& data) {
 }
 
 bool XIPController::setMotion(bool state) {
+  return false;
+}
+
+bool XIPController::resetOrientation() {
   return false;
 }
 
