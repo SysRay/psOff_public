@@ -119,13 +119,13 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
     *res             = MapViewOfFile(hFileMapping,   // handle to file mapping object
                                      viewProt,       // read/write permission
                                      offsetSplit[1], // high offset
-                                     offsetSplit[2], // low offset
+                                     offsetSplit[0], // low offset
                                      mappingLength); // number of bytes to map
     if (*res == NULL) {
-      LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld err:%04x", addr, mappingLength, prot, flags, fd,
+      LOG_ERR(L"Mmap MapViewOfFile == NULL for| 0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld err:%04x", addr, mappingLength, prot, flags, fd,
               offset, GetLastError());
     } else {
-      LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
+      LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
       registerMapping((uint64_t)*res, MappingType::File);
     }
   }

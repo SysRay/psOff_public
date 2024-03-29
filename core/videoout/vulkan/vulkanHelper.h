@@ -5,6 +5,7 @@
 #include <functional>
 
 class IGraphics;
+struct ImageData;
 
 namespace vulkan {
 struct PresentData {
@@ -14,12 +15,13 @@ struct PresentData {
   uint32_t    index          = 0;
 };
 
-void submitDisplayTransfer(VulkanObj* obj, SwapchainData::DisplayBuffers const* displayBuffer, PresentData* presentData, VkSemaphore waitSema,
+std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj);
+
+void submitDisplayTransfer(SwapchainData::DisplayBuffers const* displayBuffer, ImageData const& imageData, QueueInfo const* queue, VkSemaphore waitSema,
                            size_t waitValue);
 
-PresentData transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, VulkanObj* obj, vulkan::SwapchainData& swapchain, IGraphics* graphics);
+void transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, ImageData const& imageData, IGraphics* graphics);
 
-bool presentImage(VulkanObj* obj, SwapchainData& swapchain, vulkan::PresentData const& presentData);
+void presentImage(ImageData const& imageData, VkSwapchainKHR swapchain, QueueInfo const* queue);
 
-void waitFlipped(VulkanObj* obj); /// Call before submit
 } // namespace vulkan

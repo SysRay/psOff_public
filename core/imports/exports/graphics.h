@@ -118,6 +118,12 @@ class IGraphics {
   virtual void deinit() = 0;
 
   /**
+   * @brief Call before deinit, stops all incoming requests
+   *
+   */
+  virtual void stop() = 0;
+
+  /**
    * @brief Register a display buffer
    *
    * @param vaddr

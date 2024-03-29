@@ -96,7 +96,7 @@ struct DTVKey {
   pthread_key_destructor_func_t destructor = nullptr;
 };
 
-constexpr size_t DTV_SIZE = 20 + DTV_MAX_KEYS * sizeof(DTVKey) / 8;
+constexpr size_t DTV_SIZE = DTV_MAX_KEYS;
 
 struct PthreadPrivate {
 

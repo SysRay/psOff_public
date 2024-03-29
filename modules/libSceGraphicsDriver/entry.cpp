@@ -202,13 +202,6 @@ int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index
 
 int32_t SYSV_ABI sceGnmValidateDrawCommandBuffers(uint32_t count, void* dcbGpuAddrs[], uint32_t* dcbSizesInBytes, void* ccbGpuAddrs[],
                                                   uint32_t* ccbSizesInBytes) {
-#if DEBUG
-  LOG_USE_MODULE(libSceGraphicsDriver);
-  for (uint32_t n = 0; n < count; ++n) {
-    if (dcbGpuAddrs != nullptr) LOG_DEBUG(L"Validate DCB[%d] 0x%08llx(0x%u)", n, (uint64_t)dcbGpuAddrs[n], dcbSizesInBytes[n]);
-    if (ccbGpuAddrs != nullptr) LOG_DEBUG(L"Validate CCB[%d] 0x%08llx(0x%u)", n, (uint64_t)ccbGpuAddrs[n], ccbSizesInBytes[n]);
-  }
-#endif
   return Err::VALIDATION_NOT_ENABLED;
 }
 
@@ -415,8 +408,8 @@ uint64_t SYSV_ABI sceGnmGetGpuCoreClockFrequency() {
   return 0x800000000;
 }
 
-int SYSV_ABI sceGnmIsUserPaEnabled() {
-  return 0;
+bool SYSV_ABI sceGnmIsUserPaEnabled() {
+  return false;
 }
 
 void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
@@ -512,7 +505,7 @@ SceWorkloadStatus SYSV_ABI sceGnmCreateWorkloadStream(const char* name, SceWorkl
 SceWorkloadStatus SYSV_ABI sceGnmBeginWorkload(SceWorkloadStream stream, uint64_t* workload) {
   static int32_t count = 0;
   *workload            = ++count;
-  return SceWorkloadStatus::StatusOk;
+  return SceWorkloadStatus::StatusInvalidPointer;
 }
 
 SceWorkloadStatus SYSV_ABI sceGnmEndWorkload(uint64_t workload) {
