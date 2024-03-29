@@ -1,5 +1,6 @@
 #include "imageHandler.h"
 
+#include "core/initParams/initParams.h"
 #include "logging.h"
 #include "vulkan/vulkanSetup.h"
 
@@ -24,6 +25,8 @@ class ImageHandler: public IImageHandler {
   std::vector<VkCommandBuffer> m_commandBuffer;
 
   size_t m_nextIndex = 0;
+
+  uint32_t m_countImages = 0;
 
   std::vector<VkImage> m_scImages;
   // - vulkan
@@ -70,7 +73,7 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
   // Regulate max images
   auto waitId = ++m_waitId;
   LOG_DEBUG(L"waitId:%llu presentCount:%llu", waitId, m_presentCount);
-  m_present_condVar.wait(lock, [this, &waitId] { return m_stop || waitId == m_presentCount; });
+  m_present_condVar.wait(lock, [this, &waitId] { return m_stop || (waitId == m_presentCount && m_countImages < m_maxImages); });
   if (m_stop) return {};
   // -
 
@@ -103,6 +106,7 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
   // - swapchain image
 
   m_nextIndex = (++m_nextIndex) % m_maxImages;
+  ++m_countImages;
 
   imageData.swapchainImage = m_scImages[imageData.index];
 
@@ -130,6 +134,7 @@ void ImageHandler::notify_done(ImageData const& imageData) {
   vkResetCommandBuffer(imageData.cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
   ++m_presentCount;
+  --m_countImages;
   lock.unlock();
 
   m_present_condVar.notify_all();
@@ -166,6 +171,8 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
     auto [displayFormat, displayColorSpace] = getDisplayFormat(obj);
     m_imageFormat                           = displayFormat;
 
+    bool const useVsync = accessInitParams()->useVSYNC();
+
     VkSwapchainCreateInfoKHR const createInfo {
         .sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext                 = nullptr,
@@ -182,7 +189,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .pQueueFamilyIndices   = nullptr,
         .preTransform          = obj->surfaceCapabilities.capabilities.currentTransform,
         .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode           = VK_PRESENT_MODE_FIFO_KHR, // todo config vsync
+        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
         .clipped               = VK_TRUE,
         .oldSwapchain          = nullptr,
     };
