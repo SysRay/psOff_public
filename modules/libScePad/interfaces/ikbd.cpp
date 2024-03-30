@@ -10,12 +10,9 @@
 
 // LOG_DEFINE_MODULE(libScePad_kbd);
 
-static bool is_KBD_inited = false;
-
 class KBDController: public IController {
   public:
   KBDController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
-    init();
     reconnect();
   }
 
@@ -33,19 +30,10 @@ class KBDController: public IController {
 
   bool     resolveBindFor(const uint8_t* keys, ControllerKey key);
   uint32_t getButtons(const uint8_t* keys);
-
-  static void init();
 };
 
 std::unique_ptr<IController> createController_keyboard(ControllerConfig* cfg, uint32_t userid) {
   return std::make_unique<KBDController>(cfg, userid);
-}
-
-void KBDController::init() {
-  if (is_KBD_inited == false) {
-    // todo: kbd init ???
-    is_KBD_inited = true;
-  }
 }
 
 void KBDController::close() {
