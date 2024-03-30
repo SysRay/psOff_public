@@ -10,8 +10,6 @@
 
 LOG_DEFINE_MODULE(libScePad_sdl);
 
-static bool is_SDL_inited = false;
-
 class SDLController: public IController {
   static constexpr uint32_t m_initflags     = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
   SDL_GameController*       m_padPtr        = nullptr;
@@ -47,9 +45,11 @@ std::unique_ptr<IController> createController_sdl(ControllerConfig* cfg, uint32_
 }
 
 void SDLController::init() {
-  LOG_USE_MODULE(libScePad_sdl);
+  static std::once_flag init;
 
-  if (is_SDL_inited == false) {
+  std::call_once(init, [] {
+    LOG_USE_MODULE(libScePad_sdl);
+
     if (SDL_InitSubSystem(m_initflags) != 0) {
       LOG_ERR(L"Failed to initialize SDL subsystem: %S", SDL_GetError());
       return;
@@ -62,8 +62,7 @@ void SDLController::init() {
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
-    is_SDL_inited = true;
-  }
+  });
 }
 
 void SDLController::close() {
