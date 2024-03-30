@@ -10,7 +10,7 @@
 
 LOG_DEFINE_MODULE(libScePad_xip);
 
-typedef void  (*XInputEnableProc)(BOOL);
+typedef void (*XInputEnableProc)(BOOL);
 typedef DWORD (*XInputGetStateProc)(DWORD, XINPUT_STATE*);
 typedef DWORD (*XInputSetStateProc)(DWORD, XINPUT_VIBRATION*);
 typedef DWORD (*XInputGetCapabilitiesProc)(DWORD, DWORD, XINPUT_CAPABILITIES*);

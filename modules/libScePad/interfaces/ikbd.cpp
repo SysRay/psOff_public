@@ -12,9 +12,7 @@
 
 class KBDController: public IController {
   public:
-  KBDController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
-    reconnect();
-  }
+  KBDController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) { reconnect(); }
 
   virtual ~KBDController() = default;
 
