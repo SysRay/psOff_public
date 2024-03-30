@@ -373,6 +373,10 @@ EXPORT SYSV_ABI int scePthreadRename(ScePthread_obj obj, const char* name) {
   return pthread::rename(obj, name);
 }
 
+EXPORT SYSV_ABI int scePthreadOnce(ScePthreadOnce once_control, pthread_once_init init_routine) {
+  return pthread::once(once_control, init_routine);
+}
+
 EXPORT SYSV_ABI int scePthreadGetname(ScePthread_obj obj, char* name) {
   return pthread::getName(obj, name);
 }

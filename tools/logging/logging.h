@@ -32,7 +32,13 @@ __APICALL void __log(eTrace_Level level, void* hmodule, unsigned short i_wLine, 
  * @brief Call at end to flush messages
  *
  */
-__APICALL void deinit();
+__APICALL void flush();
+
+/**
+ * @brief flush for exception handler
+ *
+ */
+__APICALL void flushExceptional();
 
 __APICALL uint8_t isIgnored(void* module, eTrace_Level level);
 } // namespace __Log
@@ -43,15 +49,18 @@ __APICALL uint8_t isIgnored(void* module, eTrace_Level level);
  */
 #define LOG_DEFINE_MODULE(name)                                                                                                                                \
   namespace {                                                                                                                                                  \
-  void* __TRACE_MODULE__DEFINED__##name = __Log::__registerLoggingModule(L#name);                                                                              \
+  void* __TRACE_MODULE__DEFINED__##name() {                                                                                                                    \
+    static void* obj = __Log::__registerLoggingModule(L#name);                                                                                                 \
+    return obj;                                                                                                                                                \
+  }                                                                                                                                                            \
   }
 
 /**
  * @brief Call before logging
  *
  */
-#define LOG_USE_MODULE(name) [[maybe_unused]] void* __TRACE_MODULE = __TRACE_MODULE__DEFINED__##name
-#define LOG_GET_MODULE(name) __TRACE_MODULE__DEFINED__##name
+#define LOG_USE_MODULE(name) [[maybe_unused]] void* __TRACE_MODULE = __TRACE_MODULE__DEFINED__##name()
+#define LOG_GET_MODULE(name) __TRACE_MODULE__DEFINED__##name()
 
 // Logging
 #define LOG_TRACE(...)       __Log::__log(__Log::eTrace_Level::trace, __TRACE_MODULE, (unsigned short)__LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)

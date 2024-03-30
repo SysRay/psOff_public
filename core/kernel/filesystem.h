@@ -5,11 +5,6 @@
 #include <stdint.h>
 
 namespace filesystem {
-enum class SceOpenMode : int32_t {
-  RDONLY = 0,
-  WRONLY = 1,
-  RDWR   = 2,
-};
 
 enum class SceMapMode : uint16_t {
   SHARED       = 0x0001,
@@ -31,27 +26,33 @@ struct SceMap {
   SceMapType type : 4;
 };
 
+enum class SceOpenMode : uint32_t {
+  RDONLY = 0,
+  WRONLY = 1,
+  RDWR   = 2,
+};
+
 struct SceOpen {
   SceOpenMode mode      : 2;
-  int32_t     nonblock  : 1;
-  int32_t     append    : 1;
-  int32_t     shlock    : 1;
-  int32_t     exlock    : 1;
-  int32_t     async     : 1;
-  int32_t     fsync     : 1;
-  int32_t     nofollow  : 1;
-  int32_t     create    : 1;
-  int32_t     trunc     : 1;
-  int32_t     excl      : 1;
-  int32_t     dsync     : 1;
-  int32_t     dummy0    : 1;
-  int32_t     fhaslock  : 1;
-  int32_t     noctty    : 1;
-  int32_t     direct    : 1;
-  int32_t     directory : 1;
-  int32_t     exec      : 1;
-  int32_t     tty_init  : 1;
-  int32_t     cloexec   : 1;
+  uint32_t    nonblock  : 1;
+  uint32_t    append    : 1;
+  uint32_t    shlock    : 1;
+  uint32_t    exlock    : 1;
+  uint32_t    async     : 1;
+  uint32_t    fsync     : 1;
+  uint32_t    nofollow  : 1;
+  uint32_t    create    : 1;
+  uint32_t    trunc     : 1;
+  uint32_t    excl      : 1;
+  uint32_t    dsync     : 1;
+  uint32_t    dummy0    : 1;
+  uint32_t    fhaslock  : 1;
+  uint32_t    noctty    : 1;
+  uint32_t    direct    : 1;
+  uint32_t    directory : 1;
+  uint32_t    exec      : 1;
+  uint32_t    tty_init  : 1;
+  uint32_t    cloexec   : 1;
 };
 
 struct SceKernelStat {

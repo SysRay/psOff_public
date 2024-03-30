@@ -1,4 +1,5 @@
 #include <boost/uuid/detail/sha1.hpp>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 #include <windows.h>
@@ -64,6 +65,10 @@ std::string hexId2nid(std::string_view hexId) {
 }
 
 int main(int argc, char* argv[]) {
+  if (argc != 3) {
+    printf("Wrong argument count: filepath, symbolFolder\n");
+    return -1;
+  }
 
   std::ifstream file;
   file.open(argv[1], std::ios::binary);
@@ -147,6 +152,11 @@ int main(int argc, char* argv[]) {
   // ### Read all symbol names, make nids, store with new offset
   // Read all and change to nids
 
+  std::filesystem::create_directory(argv[2]);
+  std::ofstream fDumpSymbols((std::filesystem::path(argv[2]) / (std::filesystem::path(argv[1]).stem().string() + ".txt")).c_str(), std::ios::trunc);
+
+  auto funcLogSymbol = [&fDumpSymbols](std::string_view nid, std::string_view name) { fDumpSymbols << nid << '\t' << name << '\n'; };
+
   std::vector<std::string> symbols(numNames);
   bool                     hasModuleName = false;
   for (size_t n = 0; n < numNames; n++) {
@@ -160,12 +170,15 @@ int main(int argc, char* argv[]) {
     if (name.starts_with("sce") || name.starts_with("_sce")) {
       // Change to nids
       symbols[n] = name2nid(name);
+      funcLogSymbol(symbols[n], name);
     } else if (name.starts_with("__hex_")) {
       // Change to nids
       symbols[n] = hexId2nid(name.substr(6));
+      funcLogSymbol(symbols[n], "");
     } else if (name.starts_with("__sce_")) {
       // Change to nids
       symbols[n] = name2nid(name.substr(6));
+      funcLogSymbol(symbols[n], name.substr(6));
     } else {
       symbols[n] = std::string(name);
       if (!hasModuleName && name == "MODULE_NAME") {

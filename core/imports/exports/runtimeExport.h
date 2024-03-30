@@ -14,10 +14,10 @@ struct CxaDestructor {
 
 #pragma pack(1)
 
-struct EntryParams {
-  int         argc;
-  uint32_t    pad;
-  const char* argv[3];
+struct alignas(32) EntryParams {
+  int         argc    = 0;
+  uint32_t    pad     = 0;
+  const char* argv[3] = {0, 0, 0};
 };
 
 struct ModulInfo {
@@ -30,6 +30,15 @@ struct SceKernelModuleSegmentInfo {
   uint64_t address;
   uint32_t size;
   int      prot;
+};
+
+struct SceKernelModuleInfo {
+  uint64_t                   size = sizeof(SceKernelModuleInfo);
+  char                       name[255];
+  SceKernelModuleSegmentInfo segments[3];
+  uint32_t                   segment_count;
+  uint32_t                   ref_count;
+  uint8_t                    fingerprint[20];
 };
 
 struct SceKernelModuleInfoEx {

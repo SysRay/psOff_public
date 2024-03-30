@@ -6,5 +6,18 @@
 
 <div align="center">
 
-![](../../out/docs/uml/modules/videoout_class/videoout_class.svg)
+![](../../out/docs/uml/modules/videoout_class.svg)
+</div>
+
+### Swapchain image handling
+
+User calls getImage_blocking() to retrieve the display image. After present notify_done() is called.
+
+getImage_blocking() releases users FIFO. The whole swapchain images are handled by ImageHandler
+
+
+<div align="center">
+
+![](../../out/docs/uml/modules/videout_swapchain.svg)
+
 </div>

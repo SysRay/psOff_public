@@ -1,6 +1,7 @@
 #include "common.h"
 #include "logging.h"
 #include "system_param.h"
+#include "tools/config_emu/config_emu.h"
 #include "types.h"
 
 #include <chrono>
@@ -49,6 +50,21 @@ SystemParamDateFormat getDateFormat() {
     default: return SystemParamDateFormat::DDMMYYYY; // case std::time_get<char>::no_order
   }
 }
+
+SystemParamLang getSystemLanguage() {
+  LOG_USE_MODULE(libSceSystemService);
+  SystemParamLang systemlang = SystemParamLang::EnglishUS;
+  {
+    auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
+
+    try {
+      (*jData)["systemlang"].get_to(systemlang);
+    } catch (const json::exception& e) {
+      LOG_ERR(L"Invalid system language setting: %S", e.what());
+    }
+  }
+  return systemlang;
+}
 } // namespace
 
 extern "C" {
@@ -62,7 +78,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceParamGetInt(SceSystemServiceParamId para
   }
 
   switch (paramId) {
-    case SceSystemServiceParamId::Lang: *value = (int)SystemParamLang::EnglishUS; break;
+    case SceSystemServiceParamId::Lang: *value = (int)getSystemLanguage(); break;
     case SceSystemServiceParamId::DateFormat: *value = (int)getDateFormat(); break;
     case SceSystemServiceParamId::TimeFormat: *value = (int)is24HourFormat(); break;
     case SceSystemServiceParamId::TimeZone: *value = getTimeZoneOffset(); break;

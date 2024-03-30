@@ -1,0 +1,22 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface IImageHandler{
+  + {abstract} ImageData getImage_blocking()
+  + {abstract} void notify_done(ImageData)
+}
+
+class ImageHandler{
+
+}
+
+class ImageData
+
+IImageHandler <|-- ImageHandler
+IImageHandler - ImageData
+
+class VideoOut << (S,#FF7700) Singleton >> {}
+VideoOut *-ImageHandler
+
+user ()- IImageHandler
+@enduml

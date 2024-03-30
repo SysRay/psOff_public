@@ -6,9 +6,10 @@ target_link_directories(logging PRIVATE
   ${CMAKE_BINARY_DIR}/third_party/install/lib
 )
 
-add_dependencies(logging third_party)
+add_dependencies(logging third_party boost config_emu)
 
-target_link_libraries(logging ws2_32 p7)
+target_link_libraries(logging ws2_32 p7 config_emu.lib libboost_thread)
+target_compile_definitions(logging PRIVATE BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
 target_include_directories(logging PRIVATE ${PRJ_SRC_DIR}/third_party/p7/Headers)
 target_compile_options(logging PRIVATE "/Zi")
 

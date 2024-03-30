@@ -15,6 +15,7 @@ struct PthreadMutexattrPrivate;
 struct PthreadRwlockPrivate;
 struct PthreadRwlockattrPrivate;
 struct PthreadPrivate;
+struct PthreadOnce;
 
 using ScePthread_obj        = uint8_t*;
 using ScePthreadAttr        = PthreadAttrPrivate*;
@@ -27,8 +28,8 @@ using ScePthreadMutexattr   = PthreadMutexattrPrivate*;
 using ScePthreadRwlock      = PthreadRwlockPrivate*;
 using ScePthreadRwlockattr  = PthreadRwlockattrPrivate*;
 using ScePthread            = PthreadPrivate*;
-
-using ScePthreadKey = int;
+using ScePthreadOnce        = PthreadOnce*;
+using ScePthreadKey         = int;
 
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)
@@ -165,6 +166,7 @@ __APICALL int getaffinity(ScePthread_obj obj, SceKernelCpumask* mask);
 __APICALL int setaffinity(ScePthread_obj obj, const SceKernelCpumask mask);
 
 __APICALL int getthreadid(void);
+__APICALL int once(ScePthreadOnce once_control, pthread_once_init init_routine);
 
 __APICALL int rename(ScePthread_obj obj, const char* name);
 __APICALL int getName(ScePthread_obj obj, char* name);

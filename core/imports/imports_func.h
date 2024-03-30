@@ -1,4 +1,3 @@
-#include "exports/gpuMemory_types.h"
 #include "exports/graphics.h"
 
 #include <memory>
@@ -14,26 +13,6 @@
 #endif
 
 // All communication  strictly goes through the core library. (May change later)
-
-/**
- * @brief register the displayBuffer for the GPU memory manager. Dont' call from constructor.
- *
- * @param vaddr
- * @param extent
- * @param pitch
- * @param format
- * @return true
- * @return false
- */
-__APICALL bool registerDisplayBuffer(uint64_t vaddr, VkExtent2D extent, uint32_t pitch, VkFormat format);
-
-/**
- * @brief Get the Display Buffer object. Dont' call from constructor.
- *
- * @param vaddr
- * @return std::shared_ptr<IGpuImageObject>
- */
-__APICALL std::shared_ptr<IGpuImageObject> getDisplayBuffer(uint64_t vaddr);
 
 /**
  * @brief Create a Graphics object.

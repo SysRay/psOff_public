@@ -4,6 +4,10 @@
 
 #include "logging.h"
 #include "magic_enum/magic_enum.hpp"
+#include "types/type_in.h"
+#include "types/type_null.h"
+#include "types/type_out.h"
+#include "types/type_zero.h"
 #include "utility/utility.h"
 
 #include <algorithm>
@@ -28,12 +32,9 @@ struct UniData {
 };
 
 struct FileData: public UniData {
-  std::unique_ptr<std::fstream> const m_file;
+  std::unique_ptr<IFile> const m_file;
 
-  std::ios_base::openmode mode;
-
-  FileData(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode)
-      : UniData(UniData::Type::File, path), m_file(std::move(file)), mode(mode) {}
+  FileData(std::unique_ptr<IFile>&& file, std::filesystem::path const& path): UniData(UniData::Type::File, path), m_file(std::move(file)) {}
 
   virtual ~FileData() { m_file->sync(); }
 };
@@ -63,7 +64,7 @@ int insertItem(std::vector<std::unique_ptr<UniData>>& container, UniData* item) 
     index = container.size();
     container.push_back(std::unique_ptr<UniData>(item));
   }
-  return index + FILE_DESCRIPTOR_MIN;
+  return index;
 }
 
 } // namespace
@@ -77,9 +78,21 @@ class FileManager: public IFileManager {
   std::filesystem::path                                                                 m_dirGameFiles;
   std::unordered_map<std::string, std::filesystem::path>                                m_mappedPaths;
 
+  bool m_updateSearch = false;
+
   public:
-  FileManager()          = default;
+  FileManager() { init(); };
+
   virtual ~FileManager() = default;
+
+  void init() {
+    // Order of the first three files is important, do not change it!
+    assert(addFile(createType_in(), "/dev/stdin") == 0);
+    assert(addFile(createType_out(SCE_TYPEOUT_ERROR), "/dev/stdout") == 1);
+    assert(addFile(createType_out(SCE_TYPEOUT_DEBUG), "/dev/stderr") == 2);
+    addFile(createType_zero(), "/dev/zero");
+    addFile(createType_null(), "/dev/null");
+  }
 
   void addMountPoint(std::string_view mountPoint, std::filesystem::path const& root, MountType type) final {
     LOG_USE_MODULE(FileManager);
@@ -134,6 +147,17 @@ class FileManager: public IFileManager {
 
         if (path.size() >= mountPoint.size() && std::mismatch(mountPoint.begin(), mountPoint.end(), path.begin() + offset).first == mountPoint.end()) {
           if (path[mountPoint.size() + offset] == '/') ++offset; // path.substr() should return relative path
+
+          if (mountType.first == MountType::App && m_updateSearch) {
+            auto const& updateDir = m_mountPointList[MountType::Update].begin()->second;
+            auto const  mapped    = updateDir / path.substr(mountPoint.size() + offset);
+            if (std::filesystem::exists(mapped)) {
+              LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), updateDir.c_str(), path.data());
+              m_mappedPaths[path.data()] = mapped;
+              return mapped;
+            }
+          }
+
           auto const mapped = rootDir / path.substr(mountPoint.size() + offset);
           LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), rootDir.c_str(), path.data());
           m_mappedPaths[path.data()] = mapped;
@@ -153,10 +177,10 @@ class FileManager: public IFileManager {
 
   std::filesystem::path const& getGameFilesDir() const final { return m_dirGameFiles; }
 
-  int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) final {
+  int addFile(std::unique_ptr<IFile>&& file, std::filesystem::path const& path) final {
     std::unique_lock const lock(m_mutext_int);
 
-    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path, mode).release());
+    return insertItem(m_openFiles, std::make_unique<FileData>(std::move(file), path).release());
   }
 
   int addDirIterator(std::unique_ptr<std::filesystem::directory_iterator>&& it, std::filesystem::path const& path) final {
@@ -166,17 +190,11 @@ class FileManager: public IFileManager {
   }
 
   void remove(int handle) final {
-    if (handle < FILE_DESCRIPTOR_MIN) return;
-    handle -= FILE_DESCRIPTOR_MIN;
-
     std::unique_lock const lock(m_mutext_int);
     m_openFiles[handle].reset();
   }
 
-  std::fstream* getFile(int handle) final {
-    if (handle < FILE_DESCRIPTOR_MIN) return nullptr;
-    handle -= FILE_DESCRIPTOR_MIN;
-
+  IFile* accessFile(int handle) final {
     std::unique_lock const lock(m_mutext_int);
     if (handle < m_openFiles.size() && m_openFiles[handle] && m_openFiles[handle]->m_type == UniData::Type::File) {
       return static_cast<FileData*>(m_openFiles[handle].get())->m_file.get();
@@ -184,20 +202,7 @@ class FileManager: public IFileManager {
     return nullptr;
   }
 
-  std::ios_base::openmode getMode(int handle) final {
-    if (handle < FILE_DESCRIPTOR_MIN) return {};
-    handle -= FILE_DESCRIPTOR_MIN;
-
-    std::unique_lock const lock(m_mutext_int);
-    if (handle < m_openFiles.size() && m_openFiles[handle] && m_openFiles[handle]->m_type == UniData::Type::File) {
-      return static_cast<FileData*>(m_openFiles[handle].get())->mode;
-    }
-    return {};
-  }
-
   std::filesystem::path getPath(int handle) final {
-    if (handle < FILE_DESCRIPTOR_MIN) return {};
-    handle -= FILE_DESCRIPTOR_MIN;
     std::unique_lock const lock(m_mutext_int);
     if (handle < m_openFiles.size() && m_openFiles[handle]) {
       return m_openFiles[handle]->m_path;
@@ -207,9 +212,6 @@ class FileManager: public IFileManager {
 
   int getDents(int handle, char* buf, int nbytes, int64_t* basep) final {
     LOG_USE_MODULE(FileManager);
-
-    if (handle < FILE_DESCRIPTOR_MIN) return -1;
-    handle -= FILE_DESCRIPTOR_MIN;
 
     std::unique_lock const lock(m_mutext_int);
 
@@ -260,6 +262,8 @@ class FileManager: public IFileManager {
     }
     return n;
   }
+
+  void enableUpdateSearch() final { m_updateSearch = true; }
 };
 
 IFileManager& accessFileManager() {

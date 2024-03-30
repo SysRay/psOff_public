@@ -4,15 +4,19 @@
 
 enum class GpuMemoryMode { NoAccess, Read, Write, ReadWrite };
 
-class IPysicalMemory {
-  CLASS_NO_COPY(IPysicalMemory);
+enum class MappingType { None, File, Flexible, Fixed };
+
+class IPhysicalMemory {
+  CLASS_NO_COPY(IPhysicalMemory);
 
   protected:
-  IPysicalMemory()         = default;
+  IPhysicalMemory()        = default;
   uint64_t m_availableSize = 5000000000llu; // todo get from system memory
   size_t   m_allocSize     = 0;
 
   public:
+  virtual ~IPhysicalMemory() = default;
+
   void getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
     *startOut = size() - m_availableSize;
     *sizeOut  = m_availableSize;
@@ -26,6 +30,7 @@ class IPysicalMemory {
   virtual bool Map(uint64_t vaddr, uint64_t physAddr, size_t len, int prot, bool allocFixed, size_t alignment, uint64_t* outAddr) = 0;
   virtual bool Release(uint64_t start, size_t len, uint64_t* vaddr, uint64_t* size)                                               = 0;
   virtual bool Unmap(uint64_t vaddr, uint64_t size)                                                                               = 0;
+  virtual void deinit()                                                                                                           = 0;
 
   uint64_t const size() const { return m_allocSize; } // use system ram
 };
@@ -39,6 +44,8 @@ class IFlexibleMemory {
   IFlexibleMemory() = default;
 
   public:
+  virtual ~IFlexibleMemory() = default;
+
   void setConfiguredSize(uint64_t size) { m_configuresSize = size; }
 
   uint64_t size() const { return m_configuresSize; }
@@ -58,6 +65,23 @@ class IFlexibleMemory {
 #define __APICALL
 #endif
 
-__APICALL IPysicalMemory&  accessPysicalMemory();
+/**
+ * @brief registers mapping (for mmap, mumap)
+ *
+ * @param vaddr
+ * @param type != None
+ * @return __APICALL
+ */
+__APICALL void registerMapping(uint64_t vaddr, MappingType type);
+
+/**
+ * @brief Unregisters mapping and returns the type of the mappin
+ *
+ * @param vaddr
+ * @return None: Mapping didn't exist
+ */
+__APICALL MappingType unregisterMapping(uint64_t vaddr);
+
+__APICALL IPhysicalMemory& accessPysicalMemory();
 __APICALL IFlexibleMemory& accessFlexibleMemory();
 #undef __APICALL

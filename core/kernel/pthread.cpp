@@ -36,16 +36,10 @@ NT_TIB* getTIB() {
 #endif
 }
 
-using sce_setjmp  = SYSV_ABI int (*)(sce_jmp_buf*);
-using sce_longjmp = SYSV_ABI void (*)(sce_jmp_buf*, int);
-
 struct PImpl {
   boost::mutex mutex;
   DWORD        pageSize = 0;
   PImpl()               = default;
-
-  sce_setjmp  sceSetJmp  = nullptr; /// looked up in libc
-  sce_longjmp sceLongJmp = nullptr; /// looked up in libc
 };
 
 PImpl* getData() {
@@ -113,12 +107,6 @@ void init_pThread() {
 
   auto pimpl      = getData();
   pimpl->pageSize = sSysInfo.dwPageSize;
-
-  pimpl->sceSetJmp  = (decltype(pimpl->sceSetJmp))accessRuntimeExport()->getSymbol("gNQ1V2vfXDE", "libc", "libc");
-  pimpl->sceLongJmp = (decltype(pimpl->sceLongJmp))accessRuntimeExport()->getSymbol("lKEN2IebgJ0", "libc", "libc");
-
-  // assert(pimpl->sceSetJmp != nullptr);
-  // assert(pimpl->sceLongJmp != nullptr);
 }
 } // namespace
 
@@ -299,8 +287,11 @@ int condInit(ScePthreadCond* cond, const ScePthreadCondattr* attr, const char* n
 
 static int checkCondInit(ScePthreadCond* cond) {
   if (*cond == nullptr) {
+    static boost::mutex mutexInt;
     // Is Static Object -> init
-    *cond = condInit_intern(nullptr);
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*cond == nullptr) *cond = condInit_intern(nullptr);
   }
   return Ok;
 }
@@ -508,8 +499,11 @@ int mutexInit(ScePthreadMutex* mutex, const ScePthreadMutexattr* attr, const cha
 static int checkMutexInit(ScePthreadMutex* mutex) {
   if (mutex == nullptr) return getErr(ErrCode::_EINVAL);
   if (*mutex == nullptr) {
+    static boost::mutex mutexInt;
     // Is Static Object -> init
-    *mutex = mutexInit_intern(nullptr);
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*mutex == nullptr) *mutex = mutexInit_intern(nullptr);
   }
   return Ok;
 }
@@ -634,7 +628,11 @@ int rwlockInit(ScePthreadRwlock* rwlock, const ScePthreadRwlockattr* attr, const
 static int checkRwLockInit(ScePthreadRwlock* rwlock) {
   if (*rwlock == nullptr) {
     // Is Static Object -> init
-    *rwlock = createRwLock_intern(nullptr);
+    static boost::mutex mutexInt;
+    // Is Static Object -> init
+    // race condition on first init -> protect
+    boost::unique_lock lock(mutexInt);
+    if (*rwlock == nullptr) *rwlock = createRwLock_intern(nullptr);
   }
   return Ok;
 }
@@ -1018,6 +1016,21 @@ int getthreadid(void) {
   return getPthread(getSelf())->unique_id;
 }
 
+int once(ScePthreadOnce once_control, pthread_once_init init_routine) {
+  if (once_control == nullptr || init_routine == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto res = mutexLock(&once_control->mutex);
+
+  if (once_control->isInit == 0) {
+    init_routine();
+    once_control->isInit = 1;
+  }
+
+  res = mutexUnlock(&once_control->mutex);
+
+  return Ok;
+}
+
 int rename(ScePthread_obj obj, const char* name) {
   if (obj == nullptr) {
     return getErr(ErrCode::_ESRCH);
@@ -1070,10 +1083,10 @@ void exit(void* value) {
   LOG_USE_MODULE(pthread);
 
   auto thread = getPthread(getSelf());
-  LOG_CRIT(L"Currently not supported, exit| %S id:%d", thread->name.data(), thread->unique_id);
 
-  thread->p.interrupt();
-  boost::this_thread::interruption_point();
+  // todo: unwinding
+  thread->arg = value;
+  unwinding_longjmp(&thread->_unwinding);
 }
 
 void raise(ScePthread_obj obj, void* callback, int signo) {
@@ -1247,6 +1260,13 @@ ScePthread setup_thread(void* arg) {
   return thread;
 }
 
+__declspec(noinline) SYSV_ABI void* callEntry(ScePthread thread) {
+  if (unwinding_setjmp(&thread->_unwinding)) {
+    return thread->entry(thread->arg);
+  }
+  return thread->arg;
+}
+
 void* threadWrapper(void* arg) {
   void* ret    = 0;
   auto  thread = setup_thread(arg);
@@ -1255,9 +1275,8 @@ void* threadWrapper(void* arg) {
   int oldType = 0;
   LOG_USE_MODULE(pthread);
 
-  int  resJmp      = 0;
-  auto func_setjmp = getData()->sceSetJmp;
-  ret              = thread->entry(thread->arg);
+  ret = callEntry(thread);
+
   LOG_DEBUG(L"thread done:%d", thread->unique_id);
   return ret;
 }
