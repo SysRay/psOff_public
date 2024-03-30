@@ -10,8 +10,6 @@
 
 LOG_DEFINE_MODULE(libScePad_sdl);
 
-static bool is_SDL_inited = false;
-
 class SDLController: public IController {
   static constexpr uint32_t m_initflags     = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
   SDL_GameController*       m_padPtr        = nullptr;
@@ -47,23 +45,24 @@ std::unique_ptr<IController> createController_sdl(ControllerConfig* cfg, uint32_
 }
 
 void SDLController::init() {
-  LOG_USE_MODULE(libScePad_sdl);
+  static std::once_flag init;
 
-  if (is_SDL_inited == false) {
+  std::call_once(init, [] {
+    LOG_USE_MODULE(libScePad_sdl);
+
     if (SDL_InitSubSystem(m_initflags) != 0) {
-      LOG_ERR(L"Failed to initialize SDL subsystem!");
+      LOG_ERR(L"Failed to initialize SDL subsystem: %S", SDL_GetError());
       return;
     }
 
     if (SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt") < 0) {
-      LOG_WARN(L"Failed to load game controller mappings");
+      LOG_WARN(L"Failed to load game controller mappings: %S", SDL_GetError());
     }
 
     SDL_JoystickEventState(SDL_ENABLE);
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
-    is_SDL_inited = true;
-  }
+  });
 }
 
 void SDLController::close() {
@@ -122,7 +121,7 @@ bool SDLController::readPadData(ScePadData& data) {
 
   if (m_state == ControllerState::Closed) return false;
 
-  if (SDL_GameControllerGetAttached(m_padPtr) == false) {
+  if (SDL_GameControllerGetAttached(m_padPtr) == SDL_FALSE) {
     m_state = ControllerState::Disconnected;
     if (!reconnect()) {
       data = ScePadData {};
@@ -182,7 +181,7 @@ bool SDLController::readPadData(ScePadData& data) {
 
           },
 
-      .connected           = SDL_GameControllerGetAttached(m_padPtr) == true,
+      .connected           = m_state == ControllerState::Connected,
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,
@@ -200,7 +199,7 @@ bool SDLController::readPadData(ScePadData& data) {
     }
   }
 
-  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_GYRO)) { // todo: fix this
+  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_GYRO) == SDL_TRUE) { // todo: fix this
     float    gdata[3];
     uint64_t timestamp, tdiff;
     if (SDL_GameControllerGetSensorDataWithTimestamp(m_padPtr, SDL_SENSOR_GYRO, &timestamp, gdata, 3) == 0 && timestamp != m_lastTimeStamp) {
@@ -227,7 +226,7 @@ bool SDLController::readPadData(ScePadData& data) {
     };
   }
 
-  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_ACCEL)) {
+  if (SDL_GameControllerIsSensorEnabled(m_padPtr, SDL_SENSOR_ACCEL) == SDL_TRUE) {
     float adata[3];
     if (SDL_GameControllerGetSensorData(m_padPtr, SDL_SENSOR_ACCEL, adata, 3) == 0) {
       data.acceleration = {.x = adata[0], .y = adata[1], .z = adata[2]};
@@ -241,16 +240,17 @@ bool SDLController::setMotion(bool state) {
   LOG_USE_MODULE(libScePad_sdl);
   m_motionEnabled = state;
 
-  if (SDL_GameControllerHasSensor(m_padPtr, SDL_SENSOR_GYRO)) {
+  if (SDL_GameControllerHasSensor(m_padPtr, SDL_SENSOR_GYRO) == SDL_TRUE) {
     if (SDL_GameControllerSetSensorEnabled(m_padPtr, SDL_SENSOR_GYRO, (SDL_bool)state) == 0 &&
         SDL_GameControllerSetSensorEnabled(m_padPtr, SDL_SENSOR_ACCEL, (SDL_bool)state) == 0) {
       LOG_INFO(L"Gyroscope sensor %S successfully!", state ? "enabled" : "disabled");
+      return true;
     } else {
       LOG_WARN(L"Failed to enable the gyroscope sensor: %S", SDL_GetError());
     }
   }
 
-  return true;
+  return false;
 }
 
 bool SDLController::resetOrientation() {
@@ -259,12 +259,11 @@ bool SDLController::resetOrientation() {
 }
 
 bool SDLController::setRumble(const ScePadVibrationParam* pParam) {
-  SDL_GameControllerRumble(m_padPtr, ((float)pParam->smallMotor / 255.0f) * 0xFFFF, ((float)pParam->largeMotor / 255.0f) * 0xFFFF, -1);
-  return true;
+  return SDL_GameControllerRumble(m_padPtr, ((float)pParam->smallMotor / 255.0f) * 0xFFFF, ((float)pParam->largeMotor / 255.0f) * 0xFFFF, -1) == 0;
 }
 
 bool SDLController::setLED(const ScePadColor* pParam) {
-  if (SDL_GameControllerHasLED(m_padPtr) == false) return false;
+  if (SDL_GameControllerHasLED(m_padPtr) == SDL_FALSE) return false;
   SDL_GameControllerSetLED(m_padPtr, pParam->r, pParam->g, pParam->b);
   m_lastColor = *pParam;
   return true;

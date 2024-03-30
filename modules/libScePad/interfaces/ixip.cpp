@@ -10,21 +10,20 @@
 
 LOG_DEFINE_MODULE(libScePad_xip);
 
-static bool is_XIP_inited = false;
-
 typedef void (*XInputEnableProc)(BOOL);
 typedef DWORD (*XInputGetStateProc)(DWORD, XINPUT_STATE*);
 typedef DWORD (*XInputSetStateProc)(DWORD, XINPUT_VIBRATION*);
 typedef DWORD (*XInputGetCapabilitiesProc)(DWORD, DWORD, XINPUT_CAPABILITIES*);
 
+static HMODULE                   xip_lib          = nullptr;
+static XInputEnableProc          xip_enableFunc   = nullptr;
+static XInputGetStateProc        xip_getStateFunc = nullptr;
+static XInputSetStateProc        xip_setStateFunc = nullptr;
+static XInputGetCapabilitiesProc xip_getCapsFunc  = nullptr;
+
 class XIPController: public IController {
-  HMODULE                   m_lib             = nullptr;
-  XInputEnableProc          m_enableFunc      = nullptr;
-  XInputGetStateProc        m_getStateFunc    = nullptr;
-  XInputSetStateProc        m_setStateFunc    = nullptr;
-  XInputGetCapabilitiesProc m_getCapsFunc     = nullptr;
-  DWORD                     m_xUserId         = -1;
-  bool                      m_xRumblePossible = false;
+  DWORD m_xUserId         = -1;
+  bool  m_xRumblePossible = false;
 
   public:
   XIPController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
@@ -53,21 +52,25 @@ std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint
 }
 
 void XIPController::init() {
-  LOG_USE_MODULE(libScePad_xip);
+  static std::once_flag init;
 
-  if (is_XIP_inited == false) {
-    if ((m_lib = LoadLibrary(XINPUT_DLL_A)) == nullptr) goto fail;
-    if ((m_enableFunc = (XInputEnableProc)GetProcAddress(m_lib, "XInputEnable")) == nullptr) goto fail;
-    if ((m_getStateFunc = (XInputGetStateProc)GetProcAddress(m_lib, "XInputGetState")) == nullptr) goto fail;
-    if ((m_setStateFunc = (XInputSetStateProc)GetProcAddress(m_lib, "XInputSetState")) == nullptr) goto fail;
-    if ((m_getCapsFunc = (XInputGetCapabilitiesProc)GetProcAddress(m_lib, "XInputGetCapabilities")) == nullptr) goto fail;
-    is_XIP_inited = true;
-    m_enableFunc(TRUE);
-    return;
-  }
+  std::call_once(init, [] {
+    LOG_USE_MODULE(libScePad_xip);
 
-fail:
-  LOG_CRIT(L"Failed to load XInput: %d", GetLastError());
+    auto initFunc = [] {
+      if ((xip_lib = LoadLibrary(XINPUT_DLL_A)) == nullptr) return false;
+      if ((xip_enableFunc = (XInputEnableProc)GetProcAddress(xip_lib, "XInputEnable")) == nullptr) return false;
+      if ((xip_getStateFunc = (XInputGetStateProc)GetProcAddress(xip_lib, "XInputGetState")) == nullptr) return false;
+      if ((xip_setStateFunc = (XInputSetStateProc)GetProcAddress(xip_lib, "XInputSetState")) == nullptr) return false;
+      if ((xip_getCapsFunc = (XInputGetCapabilitiesProc)GetProcAddress(xip_lib, "XInputGetCapabilities")) == nullptr) return false;
+      xip_enableFunc(TRUE);
+      return true;
+    };
+
+    if (!initFunc()) {
+      LOG_CRIT(L"Failed to load XInput: %d", GetLastError());
+    }
+  });
 }
 
 void XIPController::close() {
@@ -80,7 +83,7 @@ bool XIPController::reconnect() {
 
   XINPUT_CAPABILITIES caps;
   for (DWORD n = 0; n < XUSER_MAX_COUNT; n++) {
-    if (m_getCapsFunc(n, XINPUT_FLAG_GAMEPAD, &caps) != ERROR_SUCCESS) continue;
+    if (xip_getCapsFunc(n, XINPUT_FLAG_GAMEPAD, &caps) != ERROR_SUCCESS) continue;
     if (caps.Type != XINPUT_DEVTYPE_GAMEPAD || caps.SubType != XINPUT_DEVSUBTYPE_GAMEPAD) continue;
     ::strcpy_s(m_name, "XInput gamepad");
     ::strcpy_s(m_guid, "1337deadbeef00000000000000000000");
@@ -126,7 +129,7 @@ bool XIPController::readPadData(ScePadData& data) {
   if (m_state == ControllerState::Closed) return false;
 
   XINPUT_STATE xstate;
-  if (m_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
+  if (xip_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
     m_state = ControllerState::Disconnected;
     data    = ScePadData {};
     return false;
@@ -209,7 +212,7 @@ bool XIPController::setRumble(const ScePadVibrationParam* pParam) {
   // todo: Handle case with one-motor gamepad. Is that even possible?
   XINPUT_VIBRATION vibe {.wLeftMotorSpeed  = static_cast<WORD>((WORD)pParam->smallMotor * 257),
                          .wRightMotorSpeed = static_cast<WORD>((WORD)pParam->largeMotor * 257)};
-  return m_setStateFunc(m_xUserId, &vibe) == ERROR_SUCCESS;
+  return xip_setStateFunc(m_xUserId, &vibe) == ERROR_SUCCESS;
 }
 
 bool XIPController::setLED(const ScePadColor* pParam) {
