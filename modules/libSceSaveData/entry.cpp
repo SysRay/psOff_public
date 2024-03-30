@@ -213,16 +213,17 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
-  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
-  auto filename     = std::format("SLOT_{}_UID{}.dat", getParam->slotId, getParam->userId);
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* param) {
+  if (param == nullptr || param->data == nullptr || param->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto filename     = std::format("SLOT_{}_UID{}.dat", param->slotId, param->userId);
   auto loadFilePath = accessFileManager().getGameFilesDir() / filename;
 
   filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::RDONLY};
 
   auto file_handle = filesystem::open(loadFilePath.filename().string().c_str(), oflags, 0);
 
-  if (auto data = getParam->data) {
+  if (auto data = param->data) {
     if (filesystem::pread(file_handle, data->buf, data->bufSize, data->offset) != data->bufSize) {
       filesystem::close(file_handle);
       return getErr(ErrCode::_EIO);
@@ -230,7 +231,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
     filesystem::close(file_handle);
   }
 
-  if (auto icon = getParam->icon) {
+  if (auto icon = param->icon) {
     auto loadIconPath = loadFilePath;
     loadIconPath.replace_extension("pic");
 
@@ -245,27 +246,39 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* setParam) {
-  auto filename     = std::format("SLOT_{}_UID{}.dat", setParam->slotId, setParam->userId);
+EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* param) {
+  if (param == nullptr || param->data == nullptr || param->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto filename     = std::format("SLOT_{}_UID{}.dat", param->slotId, param->userId);
   auto saveFilePath = accessFileManager().getGameFilesDir() / filename;
 
   filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::WRONLY, .create = 1};
 
   auto file_handle = filesystem::open(saveFilePath.filename().string().c_str(), oflags, 0);
 
-  for (uint32_t i = 0; i < setParam->dataNum; ++i) {
-    auto& data = setParam->data[i];
-    if (filesystem::pwrite(file_handle, data.buf, data.bufSize, data.offset) != data.bufSize) return getErr(ErrCode::_EIO);
+  for (uint32_t i = 0; i < param->dataNum; ++i) {
+    auto& data = param->data[i];
+    if (data.buf == nullptr) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EINVAL);
+    }
+    if (filesystem::pwrite(file_handle, data.buf, data.bufSize, data.offset) != data.bufSize) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EIO);
+    }
   }
 
   filesystem::close(file_handle);
 
-  if (auto icon = setParam->icon) {
+  if (auto icon = param->icon) {
     auto saveIconPath = saveFilePath;
     saveIconPath.replace_extension("pic");
 
     auto icon_handle = filesystem::open(saveIconPath.filename().string().c_str(), oflags, 0);
-    if (filesystem::write(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) return getErr(ErrCode::_EIO);
+    if (filesystem::write(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) {
+      filesystem::close(icon_handle);
+      return getErr(ErrCode::_EIO);
+    }
     filesystem::close(icon_handle);
   }
 
