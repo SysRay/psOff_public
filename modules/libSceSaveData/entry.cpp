@@ -1,6 +1,7 @@
 #include "codes.h"
 #include "common.h"
 #include "core/fileManager/fileManager.h"
+#include "core/kernel/filesystem.h"
 #include "logging.h"
 #include "types.h"
 
@@ -213,18 +214,61 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
+  auto filename     = std::format("SLOT_{}_UID{}.dat", getParam->slotId, getParam->userId);
+  auto loadFilePath = accessFileManager().getGameFilesDir() / filename;
 
-  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf) return getErr(ErrCode::_EINVAL);
+  filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::RDONLY};
 
-  memset(getParam->data->buf, 0, getParam->data->bufSize);
+  auto file_handle = filesystem::open(loadFilePath.filename().string().c_str(), oflags, 0);
+
+  if (auto data = getParam->data) {
+    if (filesystem::pread(file_handle, data->buf, data->bufSize, data->offset) != data->bufSize) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EIO);
+    }
+    filesystem::close(file_handle);
+  }
+
+  if (auto icon = getParam->icon) {
+    auto loadIconPath = loadFilePath;
+    loadIconPath.replace_extension("pic");
+
+    auto icon_handle = filesystem::open((loadIconPath.filename().string().c_str()), oflags, 0);
+    if (filesystem::read(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) {
+      filesystem::close(icon_handle);
+      return getErr(ErrCode::_EIO);
+    }
+    filesystem::close(icon_handle);
+  }
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* setParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  auto filename     = std::format("SLOT_{}_UID{}.dat", setParam->slotId, setParam->userId);
+  auto saveFilePath = accessFileManager().getGameFilesDir() / filename;
+
+  filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::WRONLY, .create = 1};
+
+  auto file_handle = filesystem::open(saveFilePath.filename().string().c_str(), oflags, 0);
+
+  for (uint32_t i = 0; i < setParam->dataNum; ++i) {
+    auto& data = setParam->data[i];
+    if (filesystem::pwrite(file_handle, data.buf, data.bufSize, data.offset) != data.bufSize) return getErr(ErrCode::_EIO);
+  }
+
+  filesystem::close(file_handle);
+
+  if (auto icon = setParam->icon) {
+    auto saveIconPath = saveFilePath;
+    saveIconPath.replace_extension("pic");
+
+    auto icon_handle = filesystem::open(saveIconPath.filename().string().c_str(), oflags, 0);
+    if (filesystem::write(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) return getErr(ErrCode::_EIO);
+    filesystem::close(icon_handle);
+  }
+
   return Ok;
 }
 
