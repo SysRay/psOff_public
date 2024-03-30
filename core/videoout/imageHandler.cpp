@@ -1,5 +1,6 @@
 #include "imageHandler.h"
 
+#include "core/initParams/initParams.h"
 #include "logging.h"
 #include "vulkan/vulkanSetup.h"
 
@@ -23,7 +24,11 @@ class ImageHandler: public IImageHandler {
   std::vector<VkSemaphore>     m_semsImageCopied;
   std::vector<VkCommandBuffer> m_commandBuffer;
 
+  std::vector<VkFence> m_fenceSubmit;
+
   size_t m_nextIndex = 0;
+
+  uint32_t m_countImages = 0;
 
   std::vector<VkImage> m_scImages;
   // - vulkan
@@ -70,14 +75,16 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
   // Regulate max images
   auto waitId = ++m_waitId;
   LOG_DEBUG(L"waitId:%llu presentCount:%llu", waitId, m_presentCount);
-  m_present_condVar.wait(lock, [this, &waitId] { return m_stop || waitId == m_presentCount; });
+  m_present_condVar.wait(lock, [this, &waitId] { return m_stop || (waitId == m_presentCount && m_countImages < m_maxImages); });
   if (m_stop) return {};
   // -
 
-  ImageData imageData;
-  imageData.semImageReady  = m_semsImageReady[m_nextIndex];
-  imageData.semImageCopied = m_semsImageCopied[m_nextIndex];
-  imageData.cmdBuffer      = m_commandBuffer[m_nextIndex];
+  ImageData imageData {
+      .semImageReady  = m_semsImageReady[m_nextIndex],
+      .semImageCopied = m_semsImageCopied[m_nextIndex],
+      .cmdBuffer      = m_commandBuffer[m_nextIndex],
+      .submitFence    = m_fenceSubmit[m_nextIndex],
+  };
 
   // Get swapchain image
   {
@@ -103,6 +110,7 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
   // - swapchain image
 
   m_nextIndex = (++m_nextIndex) % m_maxImages;
+  ++m_countImages;
 
   imageData.swapchainImage = m_scImages[imageData.index];
 
@@ -125,11 +133,17 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
 
 void ImageHandler::notify_done(ImageData const& imageData) {
   LOG_USE_MODULE(ImageHandler);
-  boost::unique_lock lock(m_mutexInt);
+
+  // vkQueuePresentKHR: amd waits and nvidia doesn't -> manual wait
+  vkWaitForFences(m_device, 1, &imageData.submitFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(m_device, 1, &imageData.submitFence);
 
   vkResetCommandBuffer(imageData.cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
+  boost::unique_lock lock(m_mutexInt);
+
   ++m_presentCount;
+  --m_countImages;
   lock.unlock();
 
   m_present_condVar.notify_all();
@@ -138,18 +152,27 @@ void ImageHandler::notify_done(ImageData const& imageData) {
 void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
   LOG_USE_MODULE(ImageHandler);
 
-  { // Create Display ready sems
+  { // Create Display ready sems and fences
     VkSemaphoreCreateInfo const semCreateInfo {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = 0,
         .flags = 0,
     };
+
+    VkFenceCreateInfo const fenceCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .pNext = 0,
+        .flags = 0,
+    };
+
     m_semsImageReady.resize(m_maxImages);
     m_semsImageCopied.resize(m_maxImages);
+    m_fenceSubmit.resize(m_maxImages);
 
     for (size_t n = 0; n < m_maxImages; ++n) {
       vkCreateSemaphore(m_device, &semCreateInfo, nullptr, &m_semsImageReady[n]);
       vkCreateSemaphore(m_device, &semCreateInfo, nullptr, &m_semsImageCopied[n]);
+      vkCreateFence(obj->deviceInfo.device, &fenceCreateInfo, nullptr, &m_fenceSubmit[n]);
     }
   }
 
@@ -165,6 +188,8 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
 
     auto [displayFormat, displayColorSpace] = getDisplayFormat(obj);
     m_imageFormat                           = displayFormat;
+
+    bool const useVsync = accessInitParams()->useVSYNC();
 
     VkSwapchainCreateInfoKHR const createInfo {
         .sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -182,7 +207,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .pQueueFamilyIndices   = nullptr,
         .preTransform          = obj->surfaceCapabilities.capabilities.currentTransform,
         .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode           = VK_PRESENT_MODE_FIFO_KHR, // todo config vsync
+        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
         .clipped               = VK_TRUE,
         .oldSwapchain          = nullptr,
     };
@@ -229,6 +254,12 @@ void ImageHandler::deinit() {
 
   for (auto& sem: m_semsImageReady) {
     vkDestroySemaphore(m_device, sem, nullptr);
+  }
+  for (auto& sem: m_semsImageCopied) {
+    vkDestroySemaphore(m_device, sem, nullptr);
+  }
+  for (auto& fence: m_fenceSubmit) {
+    vkDestroyFence(m_device, fence, nullptr);
   }
 
   if (m_commandPool != nullptr) vkDestroyCommandPool(m_device, m_commandPool, nullptr);

@@ -15,9 +15,9 @@ struct CxaDestructor {
 #pragma pack(1)
 
 struct alignas(32) EntryParams {
-  int         argc;
-  uint32_t    pad;
-  const char* argv[3];
+  int         argc    = 0;
+  uint32_t    pad     = 0;
+  const char* argv[3] = {0, 0, 0};
 };
 
 struct ModulInfo {
