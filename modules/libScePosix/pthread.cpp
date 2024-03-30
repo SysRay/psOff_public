@@ -339,6 +339,10 @@ EXPORT SYSV_ABI int __NID(getpid)(void) {
   return POSIX_CALL(pthread::getthreadid());
 }
 
+EXPORT SYSV_ABI int __NID(pthread_once)(ScePthreadOnce once_control, pthread_once_init init_routine) {
+  return POSIX_CALL(pthread::once(once_control, init_routine));
+}
+
 EXPORT SYSV_ABI int __NID(pthread_rename_np)(ScePthread_obj obj, const char* name) {
   return POSIX_CALL(pthread::rename(obj, name));
 }

@@ -24,7 +24,7 @@ enum class ScePadButtonDataOffset : uint32_t {
   CIRCLE,
   CROSS,
   SQUARE,
-  TOUCH_PAD,
+  TOUCH_PAD = 20,
   INTERCEPTED,
 };
 
@@ -93,6 +93,50 @@ enum class SceFlightCapability {
   RANGE_KNOB         = 0x04,
   RUDDER_PEDAL       = 0x08,
   RADAR_CURSOR_STICK = 0x10,
+};
+
+enum class ControllerKey : uint32_t {
+  L3,
+  R3,
+  OPTIONS,
+  DPAD_UP,
+  DPAD_RIGHT,
+  DPAD_DOWN,
+  DPAD_LEFT,
+  L2,
+  R2,
+  L1,
+  R1,
+  TRIANGLE,
+  CIRCLE,
+  CROSS,
+  SQUARE,
+  TOUCH_PAD,
+  LX_UP,
+  LX_DOWN,
+  LY_UP,
+  LY_DOWN,
+  RX_UP,
+  RX_DOWN,
+  RY_UP,
+  RY_DOWN,
+
+  CONTROLLER_KEYS_COUNT,
+  UNKNOWN_KEY
+};
+
+enum class ControllerType {
+  Unknown,
+  Keyboard,
+  Xinput,
+  SDL,
+};
+
+enum class ControllerState {
+  Unknown,
+  Connected,
+  Disconnected,
+  Closed,
 };
 
 struct ScePadAnalogStick {

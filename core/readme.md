@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![](../out/docs/uml/modules/coreDeps/coreDeps.svg)
+![](../out/docs/uml/modules/coreDeps.svg)
 </div>
 
 All communication goes through the core library. The callbacks to the emulator are set during startup, before loading and setting up the target library.

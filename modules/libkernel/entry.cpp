@@ -68,11 +68,13 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
   ::exit(code);
 }
 
-EXPORT SYSV_ABI int __NID(_is_signal_return)(uint64_t* param) {
-  if ((uintptr_t)param < 4 * 1024) return 1;
-  if (param[0] != 0x48006a40247c8d48 || param[1] != 0x050f000001a1c0c7 || (param[2] & 0xffffff) != 0xfdebf4)
-    return ((((unsigned long long)(*(char*)&param - 5)) ^ 0xffffffff) == 0x50fca8949) * 2;
-  return 1;
+EXPORT SYSV_ABI uint8_t __NID(_is_signal_return)(int64_t* param) {
+  uint8_t retVal = 0;
+
+  if (((*param != 0x48006a40247c8d48) || (param[1] != 0x50f000001a1c0c7)) || (retVal = 1, (param[2] & 0xffffffU) != 0xfdebf4)) {
+    retVal = ((*(uint64_t*)((int64_t)param + -5) & 0xffffffffff) == 0x50fca8949) * 2;
+  }
+  return retVal;
 }
 
 EXPORT SYSV_ABI int __NID(sigprocmask)(int /*how*/, const void* /*set*/, void* /*oset*/) {
@@ -103,6 +105,25 @@ EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info)
 
   *info = accessRuntimeExport()->mainModuleInfo();
   return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_time, struct SceTimesec* st, unsigned long* dstsec) {
+  const auto* tz      = std::chrono::current_zone();
+  auto        sys_inf = tz->get_info(std::chrono::system_clock::now());
+
+  *local_time = sys_inf.offset.count() + sys_inf.save.count() * 60 + time;
+
+  if (st != nullptr) {
+    st->t       = time;
+    st->westsec = sys_inf.offset.count() * 60;
+    st->dstsec  = sys_inf.save.count() * 60;
+  }
+
+  if (dstsec != nullptr) {
+    *dstsec = sys_inf.save.count() * 60;
+  }
+
+  return 0;
 }
 
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {
@@ -285,20 +306,6 @@ EXPORT SYSV_ABI void sceKernelDebugRaiseException(int reason, int id) {
   LOG_CRIT(L"Exception: reason:0x%lx id:0x%lx", reason, id);
 }
 
-EXPORT SYSV_ABI int __NID(_write)(int d, const char* str, int64_t size) {
-  if (size < 1) return size;
-
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"Kernel: %S", std::string(str, size - 1).data());
-  return (int)size;
-}
-
-EXPORT SYSV_ABI int64_t __NID(_read)(int d, void* buf, uint64_t nbytes) {
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"stdin read");
-  return static_cast<int64_t>(strlen(std::fgets(static_cast<char*>(buf), static_cast<int>(nbytes), stdin)));
-}
-
 EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint64_t dtor_vaddr) {
   LOG_USE_MODULE(libkernel);
   if (m->segment_count == 0) return 0;
@@ -321,7 +328,18 @@ EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint6
   return result;
 }
 
+EXPORT SYSV_ABI int sceKernelGetModuleInfo(SceKernelModule handle, SceKernelModuleInfo* r) {
+  if (r == nullptr) return getErr(ErrCode::_EFAULT);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S(%d)", __FUNCTION__, handle);
+  // auto info = accessRuntimeExport()->getModuleInfo(handle); // todo
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelGetModuleInfoFromAddr(uint64_t addr, int n, SceKernelModuleInfoEx* r) {
+  if (r == nullptr) return getErr(ErrCode::_EFAULT);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
   auto info = accessRuntimeExport()->getModuleInfoEx(addr);
   if (info == nullptr) {
     r->id = 0;
@@ -334,7 +352,7 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfoFromAddr(uint64_t addr, int n, SceKern
 
 EXPORT SYSV_ABI int sceKernelGetModuleInfoForUnwind(uint64_t addr, int n, SceModuleUndwindInfo* r) {
   if (r == nullptr) return getErr(ErrCode::_EFAULT);
-  if (r->size <= 303) return getErr(ErrCode::_EINVAL);
+  if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
 
   auto info = accessRuntimeExport()->getModuleInfoEx(addr);
   if (info == nullptr) {

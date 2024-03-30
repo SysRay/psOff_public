@@ -36,11 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run clang-format
-        uses: jidicula/clang-format-action@v4.11.0
+      - uses: DoozyX/clang-format-lint-action@v0.17
         with:
-          clang-format-version: 17
-          exclude-regex: (third_party|vk_mem_alloc)
+          source: ./
+          extensions: h,hpp,cpp,c,cc
+          clangFormatVersion: 17
 
   build:
     needs: formatting-check
@@ -77,13 +77,20 @@ jobs:
           cache: true
 
       - name: Configure
-        run: cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
+        run: |
+          echo "::add-matcher::tools/matchers/cmake.json"
+          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
 
       - name: Build
-        run: cmake --build _build/_Release -j4
+        run: |
+          echo "::add-matcher::tools/matchers/cmake.json"
+          echo "::add-matcher::tools/matchers/compilers.json"
+          cmake --build _build/_Release -j4
 
       - name: Install
-        run: cmake.exe --install _build/_Release
+        run: |
+          echo "::add-matcher::tools/matchers/cmake.json"
+          cmake.exe --install _build/_Release
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

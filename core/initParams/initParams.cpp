@@ -30,6 +30,7 @@ bool InitParams::init(int argc, char** argv) {
   ("vsync", po::value<bool>()->default_value(true), "Enable vulkan validation layers")
   ("file", po::value<std::string>(), "fullpath to applications binary")
   ("root", po::value<std::string>(), "Applications root")
+  ("update", po::value<std::string>(), "update files folder")
       // clang-format on
       ;
 
@@ -64,6 +65,10 @@ std::string InitParams::getApplicationPath() {
 
 std::string InitParams::getApplicationRoot() {
   return _pImpl->m_vm.count("root") ? _pImpl->m_vm["root"].as<std::string>() : std::string();
+}
+
+std::string InitParams::getUpdateRoot() {
+  return _pImpl->m_vm.count("update") ? _pImpl->m_vm["update"].as<std::string>() : std::string();
 }
 
 bool InitParams::enableValidation() {

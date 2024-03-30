@@ -1,4 +1,5 @@
 #pragma once
+#include "ifile.h"
 #include "utility/utility.h"
 
 #include <filesystem>
@@ -7,13 +8,14 @@
 #include <optional>
 #include <string>
 
-enum class MountType { App, Save, Temp, Data };
+enum class MountType { App, Update, Save, Temp, Data };
 constexpr int FILE_DESCRIPTOR_MIN = 3;
 
-constexpr std::string_view MOUNT_POINT_TEMP = "temp";
-constexpr std::string_view MOUNT_POINT_DATA = "data";
-constexpr std::string_view MOUNT_POINT_APP  = "/app0/";
-constexpr std::string_view SAVE_DATA_POINT  = "/savedata";
+constexpr std::string_view MOUNT_POINT_TEMP   = "temp";
+constexpr std::string_view MOUNT_POINT_DATA   = "data";
+constexpr std::string_view MOUNT_POINT_APP    = "/app0/";
+constexpr std::string_view MOUNT_POINT_UPDATE = "/app1/";
+constexpr std::string_view SAVE_DATA_POINT    = "/savedata";
 
 class IFileManager {
   CLASS_NO_COPY(IFileManager);
@@ -74,13 +76,13 @@ class IFileManager {
   virtual std::filesystem::path const& getGameFilesDir() const = 0;
 
   /**
-   * @brief Add a open fstream.
+   * @brief Add a open file.
    *
    * @param file
    * @param path the mapped path to the file/folder
    * @return int handle of the fstream. used by getFile() etc.
    */
-  virtual int addFileStream(std::unique_ptr<std::fstream>&& file, std::filesystem::path const& path, std::ios_base::openmode mode) = 0;
+  virtual int addFile(std::unique_ptr<IFile>&& file, std::filesystem::path const& path) = 0;
 
   /**
    * @brief Add a directory_iterator
@@ -100,14 +102,12 @@ class IFileManager {
   virtual void remove(int handle) = 0;
 
   /**
-   * @brief Get the File
+   * @brief Get access to the File
    *
    * @param handle
    * @return std::fstream*
    */
-  virtual std::fstream* getFile(int handle) = 0;
-
-  virtual std::ios_base::openmode getMode(int handle) = 0;
+  virtual IFile* accessFile(int handle) = 0;
 
   virtual int getDents(int handle, char* buf, int nbytes, int64_t* basep) = 0;
 
@@ -118,6 +118,8 @@ class IFileManager {
    * @return std::filesystem::path
    */
   virtual std::filesystem::path getPath(int handle) = 0;
+
+  virtual void enableUpdateSearch() = 0;
 };
 
 #if defined(__APICALL_EXTERN)

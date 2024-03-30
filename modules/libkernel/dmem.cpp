@@ -3,8 +3,8 @@
 #include "assert.h"
 #include "common.h"
 #include "core/dmem/dmem.h"
-#include "core/imports/imports_gpuMemory.h"
 #include "core/memory/memory.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "modules_include/common.h"
 #include "types.h"
@@ -172,7 +172,7 @@ EXPORT SYSV_ABI int32_t sceKernelQueryMemoryProtection(uintptr_t addr, uintptr_t
   }
 
   if (prot != nullptr) {
-    if (gpuMemory::isGPULocal(base)) *prot |= 0x30; // GPU read write
+    if (accessVideoOut().isGPULocal(base)) *prot |= 0x30; // GPU read write
     LOG_TRACE(L"query: 0x%08llx prot:%x", (uint64_t)addr, *prot);
   }
 
@@ -203,7 +203,7 @@ EXPORT SYSV_ABI int32_t sceKernelVirtualQuery(const void* addr, int flags, SceKe
     }
   }
 
-  if (gpuMemory::isGPULocal(base)) {
+  if (accessVideoOut().isGPULocal(base)) {
     info->memoryType     = 3;
     info->isDirectMemory = true;
     info->protection |= 0x30; // GPU read write
@@ -264,7 +264,7 @@ EXPORT SYSV_ABI int32_t sceKernelDirectMemoryQuery(uint64_t offset, int flags, Q
     return getErr(ErrCode::_EACCES);
   }
 
-  query_info->memoryType = gpuMemory::isGPULocal(base) ? 3 : 0;
+  query_info->memoryType = accessVideoOut().isGPULocal(base) ? 3 : 0;
 
   LOG_TRACE(L"Query Ok: offset:0x%08llx, flag:%d, infoSize:%llu - start:0x%08llx, end:0x%08llx, type:%d", offset, flags, infoSize, query_info->start,
             query_info->end, query_info->memoryType);
