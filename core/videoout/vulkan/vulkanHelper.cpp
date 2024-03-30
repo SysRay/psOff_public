@@ -80,7 +80,7 @@ void submitDisplayTransfer(SwapchainData::DisplayBuffers const* displayBuffer, I
 
   {
     std::unique_lock lock(queue->mutex);
-    if (VkResult result = vkQueueSubmit(queue->queue, 1, &submitInfo, nullptr); result != VK_SUCCESS) {
+    if (VkResult result = vkQueueSubmit(queue->queue, 1, &submitInfo, imageData.submitFence); result != VK_SUCCESS) {
       LOG_CRIT(L"Couldn't vkQueueSubmit Transfer %S", string_VkResult(result));
     }
   }

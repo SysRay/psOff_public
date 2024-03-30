@@ -10,6 +10,8 @@ struct ImageData {
   VkSemaphore     semImageCopied = nullptr; /// Image has been copied, ready to swap
   VkCommandBuffer cmdBuffer      = nullptr; /// Commandbuffer to  be used for transer etc. Already called begin!
 
+  VkFence submitFence; /// used for the cmdBuffer queue submit
+
   VkExtent2D extent;
   uint32_t   index = 0;
 };
