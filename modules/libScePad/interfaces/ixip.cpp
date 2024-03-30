@@ -15,16 +15,15 @@ typedef DWORD (*XInputGetStateProc)(DWORD, XINPUT_STATE*);
 typedef DWORD (*XInputSetStateProc)(DWORD, XINPUT_VIBRATION*);
 typedef DWORD (*XInputGetCapabilitiesProc)(DWORD, DWORD, XINPUT_CAPABILITIES*);
 
-static bool                      is_XIP_inited    = false;
+static HMODULE                   xip_lib          = nullptr;
 static XInputEnableProc          xip_enableFunc   = nullptr;
 static XInputGetStateProc        xip_getStateFunc = nullptr;
 static XInputSetStateProc        xip_setStateFunc = nullptr;
 static XInputGetCapabilitiesProc xip_getCapsFunc  = nullptr;
 
 class XIPController: public IController {
-  HMODULE m_lib             = nullptr;
-  DWORD   m_xUserId         = -1;
-  bool    m_xRumblePossible = false;
+  DWORD m_xUserId         = -1;
+  bool  m_xRumblePossible = false;
 
   public:
   XIPController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
@@ -53,20 +52,25 @@ std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint
 }
 
 void XIPController::init() {
-  auto err = []() {
-    LOG_USE_MODULE(libScePad_xip);
-    LOG_CRIT(L"Failed to load XInput: %d", GetLastError());
-  };
+  static std::once_flag init;
 
-  if (is_XIP_inited == false) {
-    if ((m_lib = LoadLibrary(XINPUT_DLL_A)) == nullptr) return err();
-    if ((xip_enableFunc = (XInputEnableProc)GetProcAddress(m_lib, "XInputEnable")) == nullptr) return err();
-    if ((xip_getStateFunc = (XInputGetStateProc)GetProcAddress(m_lib, "XInputGetState")) == nullptr) return err();
-    if ((xip_setStateFunc = (XInputSetStateProc)GetProcAddress(m_lib, "XInputSetState")) == nullptr) return err();
-    if ((xip_getCapsFunc = (XInputGetCapabilitiesProc)GetProcAddress(m_lib, "XInputGetCapabilities")) == nullptr) return err();
-    is_XIP_inited = true;
-    xip_enableFunc(TRUE);
-  }
+  std::call_once(init, [] {
+    LOG_USE_MODULE(libScePad_xip);
+
+    auto initFunc = [] {
+      if ((xip_lib = LoadLibrary(XINPUT_DLL_A)) == nullptr) return false;
+      if ((xip_enableFunc = (XInputEnableProc)GetProcAddress(xip_lib, "XInputEnable")) == nullptr) return false;
+      if ((xip_getStateFunc = (XInputGetStateProc)GetProcAddress(xip_lib, "XInputGetState")) == nullptr) return false;
+      if ((xip_setStateFunc = (XInputSetStateProc)GetProcAddress(xip_lib, "XInputSetState")) == nullptr) return false;
+      if ((xip_getCapsFunc = (XInputGetCapabilitiesProc)GetProcAddress(xip_lib, "XInputGetCapabilities")) == nullptr) return false;
+      xip_enableFunc(TRUE);
+      return true;
+    };
+
+    if (!initFunc()) {
+      LOG_CRIT(L"Failed to load XInput: %d", GetLastError());
+    }
+  });
 }
 
 void XIPController::close() {
