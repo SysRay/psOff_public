@@ -34,6 +34,8 @@ jobs:
   formatting-check:
     name: Formatting check
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: DoozyX/clang-format-lint-action@v0.17
@@ -41,6 +43,30 @@ jobs:
           source: ./
           extensions: h,hpp,cpp,c,cc
           clangFormatVersion: 17
+          inplace: true
+
+      - name: Checkout pr
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr checkout ${{ github.event.pull_request.number }}
+
+      - name: Push if needed
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git diff --exit-code; then
+            git config user.name 'github-actions[bot]';
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com';
+            git add .;
+            git commit -m "[skip ci] Fix code formatting";
+            git push;
+          fi
+      - name: Show diff
+        if: ${{ github.event_name != 'pull_request' }}
+        run: git diff --exit-code;
 
   build:
     needs: formatting-check
