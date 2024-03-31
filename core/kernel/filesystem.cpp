@@ -207,8 +207,6 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     return open_dev(path, flags, kernelMode);
   }
 
-  assert(!flags.fsync && !flags.excl && !flags.dsync && !flags.direct);
-
   auto mapped = accessFileManager().getMappedPath(path);
   if (!mapped) {
     return getErr(ErrCode::_EACCES);
@@ -216,7 +214,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   auto const mappedPath = mapped.value();
 
   // handle excl (file already exists)
-  if (flags.excl && flags.create && std::filesystem::exists(path)) {
+  if (flags.excl && flags.create && std::filesystem::exists(mappedPath)) {
     return getErr(ErrCode::_EEXIST);
   }
   // -
