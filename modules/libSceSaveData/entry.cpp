@@ -292,6 +292,8 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
       filesystem::close(param_handle);
       return getErr(ErrCode::_EIO);
     }
+
+    filesystem::close(param_handle);
   }
 
   if (auto icon = getParam->icon) {
@@ -355,6 +357,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet
       filesystem::close(icon_handle);
       return getErr(ErrCode::_EIO);
     }
+
     filesystem::close(icon_handle);
   }
 
