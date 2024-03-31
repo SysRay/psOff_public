@@ -262,6 +262,19 @@ EXPORT SYSV_ABI int32_t sceSaveDataClearProgress(void) {
 EXPORT SYSV_ABI int32_t sceSaveDataGetEventResult(const SceSaveDataEventParam* eventParam, SceSaveDataEvent* event) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
+
+
+
+
+
+
+
+
+
+
+
+
+  
   return Ok;
 }
 }
