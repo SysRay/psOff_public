@@ -64,7 +64,7 @@ jobs:
                 echo "::error::Pushing failed after 10 retries";
                 exit 1;
               fi
-            fi
+            done
           fi
 
       - name: Show diff if needed
