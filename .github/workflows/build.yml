@@ -68,7 +68,10 @@ jobs:
 
       - name: Error if needed
         if: ${{ github.event_name == 'pull_request' }}
-        run: git diff --exit-code;
+        run: |
+          if ! git diff --exit-code; then
+            echo "::warning::Your code will be formatted by the bot, if you let him do the thing. You should allow to run GitHub actions in your fork.";
+          fi
 
   build:
     needs: formatting-check
