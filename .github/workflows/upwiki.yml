@@ -1,0 +1,28 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - wikitest
+    paths:
+      - 'docs/wiki/**'
+
+jobs:
+  update-wiki:
+    name: Update wiki
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main_repo
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki.git
+          path: wiki_repo
+      - run: |
+          rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git
+          cd wiki_repo
+          git add .
+          git commit -m "Update wiki content"
+          git push -f --set-upstream https://${{ github.token }}@github.com/${{ github.repository }}.wiki.git master
