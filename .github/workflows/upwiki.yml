@@ -33,8 +33,9 @@ jobs:
 
       - name: Push wiki content
         run: |
-          rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git
-          cd wiki_repo
-          git add .
-          git commit -m "Update wiki content"
-          git push -f --set-upstream https://${{ secrets.REPO_FULL_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
+          rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git;
+          cd wiki_repo;
+          git add .;
+          if git commit -m "Update wiki content"; then
+            git push -f --set-upstream https://${{ secrets.REPO_FULL_TOKEN }}@github.com/${{ github.repository }}.wiki.git master;
+          fi
