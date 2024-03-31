@@ -17,3 +17,4 @@ Now you'll see the sidebar with all the recommended extensions, you should insta
 
 ![WindowsSandboxClient_2024-03-31_18-53-44](https://github.com/igor725/psOff_public/assets/40758030/f26d29ef-6d83-4dcd-9b6d-54a123f1730f)
 
+It is recommended to restart the VSCode after you finish installing all the recommended extensions.
