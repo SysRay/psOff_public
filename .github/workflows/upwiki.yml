@@ -14,7 +14,8 @@ jobs:
     name: Update wiki
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Pull main repo
+        uses: actions/checkout@v4
         with:
           path: main_repo
 
@@ -28,11 +29,12 @@ jobs:
           mkdir wiki_repo;
           cd wiki_repo;
           git init;
-          git pull https://${{ secrets.WIKI_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          git pull https://${{ secrets.REPO_FULL_TOKEN }}@github.com/${{ github.repository }}.wiki.git
 
-      - run: |
+      - name: Push wiki content
+        run: |
           rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git
           cd wiki_repo
           git add .
           git commit -m "Update wiki content"
-          git push -f --set-upstream https://${{ secrets.WIKI_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
+          git push -f --set-upstream https://${{ secrets.REPO_FULL_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
