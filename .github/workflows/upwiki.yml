@@ -6,6 +6,7 @@ on:
       - main
       - wikitest
     paths:
+      - '.github/workflows/upwiki.yml'
       - 'docs/wiki/**'
 
 jobs:
@@ -18,6 +19,7 @@ jobs:
           path: main_repo
       - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.WIKI_TOKEN }}
           repository: ${{ github.repository }}.wiki.git
           path: wiki_repo
       - run: |
@@ -25,4 +27,4 @@ jobs:
           cd wiki_repo
           git add .
           git commit -m "Update wiki content"
-          git push -f --set-upstream https://${{ github.token }}@github.com/${{ github.repository }}.wiki.git master
+          git push -f --set-upstream https://${{ secrets.WIKI_TOKEN }}@github.com/${{ github.repository }}.wiki.git master
