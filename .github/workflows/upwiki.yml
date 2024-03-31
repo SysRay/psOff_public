@@ -17,11 +17,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: main_repo
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.WIKI_TOKEN }}
-          repository: ${{ github.repository }}.wiki.git
-          path: wiki_repo
+
+      - name: Setup git
+        run: |
+          git config --global user.name github-actions[bot];
+          git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com;
+
+      - name: Pull wiki content
+        run: |
+          mkdir wiki_repo;
+          cd wiki_repo;
+          git init;
+          git pull https://${{ secrets.WIKI_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+
       - run: |
           rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git
           cd wiki_repo
