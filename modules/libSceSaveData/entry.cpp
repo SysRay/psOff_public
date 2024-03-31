@@ -284,7 +284,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
   }
 
   if (auto param = getParam->param) {
-    auto paramname = filename.substr(0, filename.size() - 3 ) + "prm";
+    auto paramname    = filename.substr(0, filename.size() - 3) + "prm";
     auto param_handle = filesystem::open(paramname.c_str(), oflags, 0);
     if (param_handle < 0) return param_handle; // return the error code returned by filesystem::open
 
