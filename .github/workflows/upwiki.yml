@@ -2,9 +2,6 @@ name: build
 
 on:
   push:
-    branches:
-      - main
-      - wikitest
     paths:
       - '.github/workflows/upwiki.yml'
       - 'docs/wiki/**'
