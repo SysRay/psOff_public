@@ -46,12 +46,11 @@ jobs:
           inplace: true
 
       - name: Push if needed
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ! git diff --exit-code; then
-            gh pr checkout ${{ github.event.pull_request.number }};
             git config user.name 'github-actions[bot]';
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com';
             git add .;
@@ -60,16 +59,12 @@ jobs:
             while ! git push; do
               echo "::warning::Failed to push the formatting changes to PR #${{ github.event.pull_request.number }} (retr:$retries)";
               sleep 12s;
-              if [ $((retries++)) -gt 10]; then
+              if [ $((retries++)) -gt 10 ]; then
                 echo "::error::Pushing failed after 10 retries";
                 exit 1;
               fi
             done
           fi
-
-      - name: Show diff if needed
-        if: ${{ github.event_name != 'pull_request' }}
-        run: git diff --exit-code;
 
   build:
     needs: formatting-check
