@@ -107,7 +107,7 @@ __APICALL int     checkReachability(const char* path);
 __APICALL void    sync(void);
 __APICALL int     fsync(int handle);
 __APICALL int     fdatasync(int fd);
-__APICALL int     fcntl(int fd, int cmd, void* args);
+__APICALL int     fcntl(int fd, int cmd, SceVariadicList argp);
 __APICALL size_t  readv(int handle, const SceKernelIovec* iov, int iovcnt);
 __APICALL size_t  writev(int handle, const SceKernelIovec* iov, int iovcnt);
 __APICALL int     fchmod(int fd, SceKernelMode mode);
