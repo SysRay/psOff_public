@@ -11,8 +11,10 @@ class TypeNull: public IFile {
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
-  int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
+  int     ioctl(int request, void* argp) final;
+  int     fcntl(int cmd, void* argp) final;
+  int64_t lseek(int64_t offset, SceWhence whence) final;
 
   void* getNative() final { return nullptr; }
 };
@@ -29,8 +31,16 @@ size_t TypeNull::write(void* buf, size_t nbytes) {
   return nbytes;
 }
 
-int64_t TypeNull::lseek(int64_t offset, SceWhence whence) {
+void TypeNull::sync() {}
+
+int TypeNull::ioctl(int request, void* argp) {
   return -1;
 }
 
-void TypeNull::sync() {}
+int TypeNull::fcntl(int cmd, void* argp) {
+  return -1;
+}
+
+int64_t TypeNull::lseek(int64_t offset, SceWhence whence) {
+  return -1;
+}

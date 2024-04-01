@@ -63,5 +63,23 @@ class IFile {
    */
   virtual int64_t lseek(int64_t offset, SceWhence whence) = 0;
 
+  /**
+   * @brief Manipulates the underlying device parameters of special files.
+   *
+   * @param handle
+   * @param request
+   * @return int error code, 0:no error
+   */
+  virtual int ioctl(int request, void* argp) = 0;
+
+  /**
+   * @brief Performs one of the operations on the open file descriptor.
+   *
+   * @param handle
+   * @param cmd
+   * @return int error code, 0:no error
+   */
+  virtual int fcntl(int cmd, void* argp) = 0;
+
   virtual void* getNative() = 0;
 };

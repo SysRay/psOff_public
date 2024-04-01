@@ -87,6 +87,8 @@ class TypeFile: public IFile {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   void    sync() final;
+  int     ioctl(int request, void* argp) final;
+  int     fcntl(int cmd, void* argp) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
 
   virtual void* getNative() final { return m_file; }
@@ -131,6 +133,14 @@ size_t TypeFile::write(void* buf, size_t nbytes) {
 
 void TypeFile::sync() {
   FlushFileBuffers(m_file);
+}
+
+int TypeFile::ioctl(int request, void* argp) {
+  return 0;
+}
+
+int TypeFile::fcntl(int cmd, void* argp) {
+  return 0;
 }
 
 int64_t TypeFile::lseek(int64_t offset, SceWhence whence) {
