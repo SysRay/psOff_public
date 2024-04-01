@@ -169,7 +169,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState() {
 
 EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags() {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 

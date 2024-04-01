@@ -207,6 +207,10 @@ EXPORT SYSV_ABI int32_t sceSaveDataSyncSaveDataMemory(const SceSaveDataMemorySyn
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory(const SceUserServiceUserId userId, size_t memorySize, const SceSaveDataParam* param) {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemorySetup2* setupParam, SceSaveDataMemorySetupResult* result) {
   if (setupParam == nullptr || setupParam->memorySize == 0 || setupParam->option != SceSaveDataMemoryOption::SET_PARAM) return getErr(ErrCode::_EINVAL);
 
@@ -265,6 +269,12 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory(const SceUserServiceUserId userId, void* buf, const size_t bufSize, const uint64_t offset) {
+  if (buf == nullptr || bufSize == 0) return getErr(ErrCode::_EINVAL);
+  ::memset(buf, 0, bufSize);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
   if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
 
@@ -308,6 +318,10 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
     filesystem::close(icon_handle);
   }
 
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory(const SceUserServiceUserId userId, const void* buf, const size_t bufSize, const uint64_t offset) {
   return Ok;
 }
 
