@@ -5,8 +5,6 @@
 #include "logging.h"
 #include "types.h"
 
-#include <stdarg.h>
-
 LOG_DEFINE_MODULE(mman_posix);
 
 extern "C" {

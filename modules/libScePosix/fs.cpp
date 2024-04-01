@@ -4,8 +4,6 @@
 #include "logging.h"
 #include "types.h"
 
-#include <stdarg.h>
-
 LOG_DEFINE_MODULE(fs_posix);
 
 extern "C" {
@@ -16,6 +14,10 @@ EXPORT SYSV_ABI size_t __NID(read)(int handle, void* buf, size_t nbytes) {
 
 EXPORT SYSV_ABI int64_t __NID(write)(int handle, const void* buf, size_t nbytes) {
   return POSIX_CALL(filesystem::write(handle, buf, nbytes));
+}
+
+EXPORT SYSV_ABI int __NID(ioctl)(int handle, int request, SceVariadicList argp) {
+  return POSIX_CALL(filesystem::ioctl(handle, request, argp));
 }
 
 EXPORT SYSV_ABI int __NID(open)(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
@@ -42,16 +44,8 @@ EXPORT SYSV_ABI int __NID(fsync)(int handle) {
   return POSIX_CALL(filesystem::fsync(handle));
 }
 
-EXPORT SYSV_ABI int __NID(fcntl)(int fd, int cmd, ...) {
-  LOG_USE_MODULE(fs_posix);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  // todo own va_start etc.. for sysv_abi
-  // va_list args;
-  // va_start(args, cmd);
-
-  // return filesystem::fcntl(fd, cmd, args);
-  // va_end(args);
-  return Ok;
+EXPORT SYSV_ABI int __NID(fcntl)(int handle, int cmd, SceVariadicList argp) {
+  return POSIX_CALL(filesystem::fcntl(handle, cmd, argp));
 }
 
 EXPORT SYSV_ABI size_t __NID(readv)(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {

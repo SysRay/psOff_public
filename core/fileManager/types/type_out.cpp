@@ -2,7 +2,7 @@
 
 #include "logging.h"
 
-LOG_DEFINE_MODULE(filesystem);
+LOG_DEFINE_MODULE(IODevice_OUT);
 
 class TypeOut: public IFile {
   const SceFileOutChannel m_channel = SCE_TYPEOUT_ERROR;
@@ -15,8 +15,10 @@ class TypeOut: public IFile {
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
-  int64_t lseek(int64_t offset, SceWhence whence) final;
   void    sync() final;
+  int     ioctl(int request, SceVariadicList argp) final;
+  int     fcntl(int cmd, SceVariadicList argp) final;
+  int64_t lseek(int64_t offset, SceWhence whence) final;
 
   void* getNative() final { return nullptr; }
 };
@@ -30,7 +32,7 @@ size_t TypeOut::read(void* buf, size_t nbytes) {
 }
 
 size_t TypeOut::write(void* buf, size_t nbytes) {
-  LOG_USE_MODULE(filesystem);
+  LOG_USE_MODULE(IODevice_OUT);
 
   std::string str((const char*)buf, nbytes);
   while (str.back() == '\n')
@@ -51,8 +53,16 @@ size_t TypeOut::write(void* buf, size_t nbytes) {
   return nbytes;
 }
 
+void TypeOut::sync() {}
+
+int TypeOut::ioctl(int request, SceVariadicList argp) {
+  return 0;
+}
+
+int TypeOut::fcntl(int cmd, SceVariadicList argp) {
+  return 0;
+}
+
 int64_t TypeOut::lseek(int64_t offset, SceWhence whence) {
   return -1;
 }
-
-void TypeOut::sync() {}

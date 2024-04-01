@@ -3,6 +3,7 @@
 
 constexpr int        Ok = 0;
 typedef unsigned int SceKernelUseconds;
+typedef void*        SceVariadicList;
 
 struct timeval64 {
   uint64_t tv_sec;

@@ -4,6 +4,7 @@
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
 #include "core/fileManager/types/type_random.h"
+#include "core/fileManager/types/type_rng.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -35,6 +36,8 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
   // todo: /dev/rng? No ioctl for now
   if (path == "/dev/urandom" || path == "/dev/urandom") {
     return createType_random();
+  } else if (path == "/dev/rng") {
+    return createType_rng();
   } else { // todo: other devices
     LOG_CRIT(L"%S: unknown device!", path.c_str());
   }
@@ -196,6 +199,26 @@ int64_t write(int handle, const void* buf, size_t nbytes) {
   return count;
 }
 
+int ioctl(int handle, int request, SceVariadicList argp) {
+  LOG_USE_MODULE(filesystem);
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"KernelIoctl[%d] file==nullptr: request:0x%08llx argp:0x%08llx", handle, request, (uint64_t)argp);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  int const ret = file->ioctl(request, argp);
+
+  LOG_TRACE(L"KernelIoctl[%d] request:0x%08llx argp:0x%08llx, ret:%d", handle, request, (uint64_t)argp, ret);
+
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
+
+  return ret;
+}
+
 int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   LOG_USE_MODULE(filesystem);
 
@@ -329,10 +352,24 @@ int fdatasync(int fd) {
   return Ok;
 }
 
-int fcntl(int fd, int cmd, va_list args) {
+int fcntl(int handle, int cmd, SceVariadicList argp) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S %d", __FUNCTION__, fd);
-  return Ok;
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"KernelFcntl[%d] file==nullptr: cmd:0x%08lx argp:0x%08llx", handle, cmd, (uint64_t)argp);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  int const ret = file->fcntl(cmd, argp);
+
+  LOG_TRACE(L"KernelFcntl[%d] request:0x%08llx argp:0x%08lx, ret:%d", handle, cmd, (uint64_t)argp, ret);
+
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
+
+  return ret;
 }
 
 size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {

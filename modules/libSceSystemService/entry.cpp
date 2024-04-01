@@ -156,7 +156,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetDisplaySafeAreaInfo(SceSystemServiceD
   info->ratio = 16.0f / 9.0f;
 
   LOG_USE_MODULE(libSceSystemService);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
