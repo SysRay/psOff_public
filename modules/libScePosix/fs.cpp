@@ -16,7 +16,7 @@ EXPORT SYSV_ABI int64_t __NID(write)(int handle, const void* buf, size_t nbytes)
   return POSIX_CALL(filesystem::write(handle, buf, nbytes));
 }
 
-EXPORT SYSV_ABI int __NID(ioctl)(int handle, int request, void* argp) {
+EXPORT SYSV_ABI int __NID(ioctl)(int handle, int request, SceVariadicList argp) {
   return POSIX_CALL(filesystem::ioctl(handle, request, argp));
 }
 
@@ -44,7 +44,7 @@ EXPORT SYSV_ABI int __NID(fsync)(int handle) {
   return POSIX_CALL(filesystem::fsync(handle));
 }
 
-EXPORT SYSV_ABI int __NID(fcntl)(int handle, int cmd, void* argp) {
+EXPORT SYSV_ABI int __NID(fcntl)(int handle, int cmd, SceVariadicList argp) {
   return POSIX_CALL(filesystem::fcntl(handle, cmd, argp));
 }
 

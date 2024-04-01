@@ -12,8 +12,8 @@ class TypeIn: public IFile {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   void    sync() final;
-  int     ioctl(int request, void* argp) final;
-  int     fcntl(int cmd, void* argp) final;
+  int     ioctl(int request, SceVariadicList argp) final;
+  int     fcntl(int cmd, SceVariadicList argp) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
 
   void* getNative() final { return nullptr; }
@@ -35,11 +35,11 @@ size_t TypeIn::write(void* buf, size_t nbytes) {
 
 void TypeIn::sync() {}
 
-int TypeIn::ioctl(int request, void* argp) {
+int TypeIn::ioctl(int request, SceVariadicList argp) {
   return 0;
 }
 
-int TypeIn::fcntl(int cmd, void* argp) {
+int TypeIn::fcntl(int cmd, SceVariadicList argp) {
   return 0;
 }
 

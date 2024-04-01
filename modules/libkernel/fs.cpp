@@ -52,7 +52,7 @@ EXPORT SYSV_ABI int sceKernelFdatasync(int fd) {
   return filesystem::fdatasync(fd);
 }
 
-EXPORT SYSV_ABI int sceKernelFcntl(int handle, int cmd, void* argp) {
+EXPORT SYSV_ABI int sceKernelFcntl(int handle, int cmd, SceVariadicList argp) {
   return POSIX_CALL(filesystem::fcntl(handle, cmd, argp));
 }
 
@@ -136,7 +136,7 @@ EXPORT SYSV_ABI int __NID(_write)(int handle, const void* buf, size_t nbytes) {
   return POSIX_CALL(filesystem::write(handle, buf, nbytes));
 }
 
-EXPORT SYSV_ABI int __NID(_ioctl)(int handle, int request, void* argp) {
+EXPORT SYSV_ABI int __NID(_ioctl)(int handle, int request, SceVariadicList argp) {
   return POSIX_CALL(filesystem::ioctl(handle, request, argp));
 }
 

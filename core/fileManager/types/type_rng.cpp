@@ -13,8 +13,8 @@ class TypeRNG: public IFile {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   void    sync() final;
-  int     ioctl(int request, void* argp) final;
-  int     fcntl(int cmd, void* argp) final;
+  int     ioctl(int request, SceVariadicList argp) final;
+  int     fcntl(int cmd, SceVariadicList argp) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
 
   void* getNative() final { return nullptr; }
@@ -40,7 +40,7 @@ size_t TypeRNG::write(void* buf, size_t nbytes) {
 
 void TypeRNG::sync() {}
 
-int TypeRNG::ioctl(int request, void* argp) {
+int TypeRNG::ioctl(int request, SceVariadicList argp) {
   LOG_USE_MODULE(IODevice_RNG);
 
   switch (request) {
@@ -54,7 +54,7 @@ int TypeRNG::ioctl(int request, void* argp) {
   return 0;
 }
 
-int TypeRNG::fcntl(int cmd, void* argp) {
+int TypeRNG::fcntl(int cmd, SceVariadicList argp) {
   return 0;
 }
 

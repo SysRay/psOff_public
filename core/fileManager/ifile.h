@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utility/utility.h"
+#include "modules_include/common.h"
 
 #include <stdint.h>
 
@@ -70,7 +71,7 @@ class IFile {
    * @param request
    * @return int error code, 0:no error
    */
-  virtual int ioctl(int request, void* argp) = 0;
+  virtual int ioctl(int request, SceVariadicList argp) = 0;
 
   /**
    * @brief Performs one of the operations on the open file descriptor.
@@ -79,7 +80,7 @@ class IFile {
    * @param cmd
    * @return int error code, 0:no error
    */
-  virtual int fcntl(int cmd, void* argp) = 0;
+  virtual int fcntl(int cmd, SceVariadicList argp) = 0;
 
   virtual void* getNative() = 0;
 };

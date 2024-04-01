@@ -16,8 +16,8 @@ class TypeOut: public IFile {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   void    sync() final;
-  int     ioctl(int request, void* argp) final;
-  int     fcntl(int cmd, void* argp) final;
+  int     ioctl(int request, SceVariadicList argp) final;
+  int     fcntl(int cmd, SceVariadicList argp) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
 
   void* getNative() final { return nullptr; }
@@ -55,11 +55,11 @@ size_t TypeOut::write(void* buf, size_t nbytes) {
 
 void TypeOut::sync() {}
 
-int TypeOut::ioctl(int request, void* argp) {
+int TypeOut::ioctl(int request, SceVariadicList argp) {
   return 0;
 }
 
-int TypeOut::fcntl(int cmd, void* argp) {
+int TypeOut::fcntl(int cmd, SceVariadicList argp) {
   return 0;
 }
 

@@ -199,7 +199,7 @@ int64_t write(int handle, const void* buf, size_t nbytes) {
   return count;
 }
 
-int ioctl(int handle, int request, void* argp) {
+int ioctl(int handle, int request, SceVariadicList argp) {
   LOG_USE_MODULE(filesystem);
 
   auto file = accessFileManager().accessFile(handle);
@@ -352,7 +352,7 @@ int fdatasync(int fd) {
   return Ok;
 }
 
-int fcntl(int handle, int cmd, void* argp) {
+int fcntl(int handle, int cmd, SceVariadicList argp) {
   LOG_USE_MODULE(filesystem);
 
   auto file = accessFileManager().accessFile(handle);

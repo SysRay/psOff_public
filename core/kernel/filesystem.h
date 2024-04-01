@@ -97,7 +97,7 @@ typedef struct Sce_iovec SceKernelIovec;
 __APICALL int     mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset, void** res);
 __APICALL int     munmap(void* address, size_t len);
 __APICALL size_t  read(int handle, void* buf, size_t nbytes);
-__APICALL int     ioctl(int handle, int request, void* argp);
+__APICALL int     ioctl(int handle, int request, SceVariadicList argp);
 __APICALL int64_t write(int handle, const void* buf, size_t nbytes);
 __APICALL int     open(const char* path, SceOpen flags, SceKernelMode kernelMode);
 __APICALL int     close(int handle);
