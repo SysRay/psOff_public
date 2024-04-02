@@ -631,6 +631,8 @@ vulkan::QueueInfo* VideoOut::getQueue(vulkan::QueueType type) {
 }
 
 void cbWindow_close(SDL_Window* window) {
+  LOG_USE_MODULE(VideoOut);
+
   const SDL_MessageBoxButtonData mbbd[2] {
       {.flags = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, .buttonid = 0, .text = "Cancel"},
       {.flags = 0, .buttonid = 1, .text = "Quit"},
@@ -646,10 +648,13 @@ void cbWindow_close(SDL_Window* window) {
       .colorScheme = nullptr,
   };
 
-  int buttonId = 0;
-  if (SDL_ShowMessageBox(&mbd, &buttonId) == 0 && buttonId != 1) return;
+  int buttonId = -1;
+  if (SDL_ShowMessageBox(&mbd, &buttonId) != 0) {
+    LOG_ERR(L"SDL_ShowMessageBox error: %S", SDL_GetError());
+    return;
+  }
 
-  exit(0); // destructor cleans up.
+  if (buttonId == 1) exit(0); // destructor cleans up.
 }
 
 std::thread VideoOut::createSDLThread() {
