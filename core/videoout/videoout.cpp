@@ -650,7 +650,7 @@ void cbWindow_close(SDL_Window* window) {
 
   int buttonId = -1;
   if (SDL_ShowMessageBox(&mbd, &buttonId) != 0) {
-    if (buttonId != 0) LOG_ERR(L"SDL_ShowMessageBox error: %S", SDL_GetError());
+    LOG_ERR(L"SDL_ShowMessageBox error: %S", SDL_GetError());
     return;
   }
 
