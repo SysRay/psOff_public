@@ -54,6 +54,13 @@ class IVideoOut {
   virtual void setFliprate(int handle, int rate) = 0;
 
   /**
+   * @brief Returns the current display's safe area
+   *
+   * @param area
+   */
+  virtual void getSafeAreaRatio(float* area) = 0;
+
+  /**
    * @brief Add a VIDEO_OUT_EVENT for the window
    *
    * @param handle

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "system_param.h"
 #include "tools/config_emu/config_emu.h"
@@ -153,10 +154,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetDisplaySafeAreaInfo(SceSystemServiceD
     return Err::SERVICE_ERROR_PARAMETER;
   }
 
-  info->ratio = 16.0f / 9.0f;
-
-  LOG_USE_MODULE(libSceSystemService);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
+  accessVideoOut().getSafeAreaRatio(&info->ratio);
   return Ok;
 }
 

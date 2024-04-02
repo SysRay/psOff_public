@@ -154,7 +154,7 @@ struct SceSaveDataDirNameSearchResult {
 
 struct SceSaveDataMemorySync {
   int32_t                     userId;
-  uint32_t                    slotId;
+  uint32_t                    slotId; // Values: 0...3
   SceSaveDataMemorySyncOption option;
   uint8_t                     reserved[28];
 };
@@ -203,7 +203,7 @@ struct SceSaveDataMemorySetup2 {
   size_t                  iconMemorySize;
   const SceSaveDataParam* initParam;
   const SceSaveDataIcon*  initIcon;
-  uint32_t                slotId;
+  uint32_t                slotId; // Values: 0...3
   uint8_t                 reserved[20];
 };
 
@@ -218,7 +218,7 @@ struct SceSaveDataMemoryGet2 {
   SceSaveDataMemoryData* data;
   SceSaveDataParam*      param;
   SceSaveDataIcon*       icon;
-  uint32_t               slotId;
+  uint32_t               slotId; // Values: 0...3
   uint8_t                reserved[28];
 };
 
@@ -229,7 +229,7 @@ struct SceSaveDataMemorySet2 {
   const SceSaveDataParam*      param;
   const SceSaveDataIcon*       icon;
   uint32_t                     dataNum;
-  uint32_t                     slotId;
+  uint32_t                     slotId; // Values: 0...3
   uint8_t                      reserved[24];
 };
 

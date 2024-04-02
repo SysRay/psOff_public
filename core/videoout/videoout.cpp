@@ -246,6 +246,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     }
   }
 
+  void getSafeAreaRatio(float* area) final {
+    auto ext = m_imageHandler.get()->getExtent();
+    if (area != nullptr) *area = ext.width / (float)ext.height;
+  }
+
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
 
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;

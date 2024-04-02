@@ -207,10 +207,6 @@ EXPORT SYSV_ABI int32_t sceSaveDataSyncSaveDataMemory(const SceSaveDataMemorySyn
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory(const SceUserServiceUserId userId, size_t memorySize, const SceSaveDataParam* param) {
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemorySetup2* setupParam, SceSaveDataMemorySetupResult* result) {
   if (setupParam == nullptr || setupParam->memorySize == 0 || setupParam->option != SceSaveDataMemoryOption::SET_PARAM) return getErr(ErrCode::_EINVAL);
 
@@ -269,13 +265,21 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory(const SceUserServiceUserId userId, void* buf, const size_t bufSize, const uint64_t offset) {
-  if (buf == nullptr || bufSize == 0) return getErr(ErrCode::_EINVAL);
-  ::memset(buf, 0, bufSize);
-  return Ok;
+EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory(const SceUserServiceUserId userId, size_t memorySize, const SceSaveDataParam* param) {
+  const SceSaveDataMemorySetup2 ssdms2 {
+      .option         = SceSaveDataMemoryOption::SET_PARAM,
+      .userId         = userId,
+      .memorySize     = memorySize,
+      .iconMemorySize = 0,
+      .initParam      = param,
+      .initIcon       = nullptr,
+      .slotId         = 0,
+  };
+
+  return sceSaveDataSetupSaveDataMemory2(&ssdms2, nullptr);
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(const SceSaveDataMemoryGet2* getParam) {
   if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
 
   auto filename = std::format("SLOT{}_UID{}.dat", getParam->slotId, getParam->userId);
@@ -321,8 +325,21 @@ EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* get
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory(const SceUserServiceUserId userId, const void* buf, const size_t bufSize, const uint64_t offset) {
-  return Ok;
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory(const SceUserServiceUserId userId, void* buf, const size_t bufSize, const int64_t offset) {
+  if (buf == nullptr || bufSize == 0) return getErr(ErrCode::_EINVAL);
+  SceSaveDataMemoryData ssdmd {
+      .buf     = buf,
+      .bufSize = bufSize,
+      .offset  = offset,
+  };
+  const SceSaveDataMemoryGet2 ssdmg2 {
+      .userId = userId,
+      .data   = &ssdmd,
+      .param  = nullptr,
+      .icon   = nullptr,
+      .slotId = 0,
+  };
+  return sceSaveDataGetSaveDataMemory2(&ssdmg2);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* setParam) {
@@ -376,6 +393,23 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet
   }
 
   return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory(const SceUserServiceUserId userId, const void* buf, const size_t bufSize, const int64_t offset) {
+  SceSaveDataMemoryData ssdmd {
+      .buf     = (void*)buf,
+      .bufSize = bufSize,
+      .offset  = offset,
+  };
+  const SceSaveDataMemorySet2 ssdms2 {
+      .userId  = userId,
+      .data    = &ssdmd,
+      .param   = nullptr,
+      .icon    = nullptr,
+      .dataNum = 1,
+      .slotId  = 0,
+  };
+  return sceSaveDataSetSaveDataMemory2(&ssdms2);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataRestoreBackupData(const SceSaveDataRestoreBackupData* restore) {
