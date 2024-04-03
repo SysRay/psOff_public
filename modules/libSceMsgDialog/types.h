@@ -8,7 +8,7 @@ enum class SceMsgDialogMode {
   SCE_MSG_DIALOG_MODE_SYSTEM_MSG,
 };
 
-enum class SceMsgDialogButton: int32_t {
+enum class SceMsgDialogButton : int32_t {
   ID_INVALID = 0,
   ID_OK      = 1,
   ID_YES     = 1,

@@ -42,7 +42,7 @@ enum class SceNgs2ChannelsCount : uint32_t {
 };
 
 enum class SceNgs2VoiceParam : uint32_t {
-  SET_MATRIX_LEVELS	= 1,
+  SET_MATRIX_LEVELS = 1,
   SET_PORT_VOLUME,
   SET_PORT_MATRIX,
   SET_PORT_DELAY,
@@ -138,8 +138,8 @@ struct SceNgs2GeomSourceParam {
 };
 
 struct SceNgs2VoiceParamHead {
-  uint16_t size;
-  int16_t  next;
+  uint16_t          size;
+  int16_t           next;
   SceNgs2VoiceParam id;
 };
 
