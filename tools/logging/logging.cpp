@@ -66,7 +66,7 @@ const wchar_t* getParams(std::wstring& params) {
   return params.c_str();
 }
 
-void* __registerLoggingModule(std::wstring&& name) {
+void* __registerLoggingModule(std::wstring_view name) {
   auto trace = getTrace();
   {
     const std::unique_lock lock(getMutex());
