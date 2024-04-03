@@ -158,19 +158,19 @@ enum class SceImePanelPriority {
   ACCENT   = 3,
 };
 
-typedef enum SceImeCaretMovementDirection {
-  MOVE_STILL     = 0,
-  MOVE_LEFT      = 1,
-  MOVE_RIGHT     = 2,
-  MOVE_UP        = 3,
-  MOVE_DOWN      = 4,
-  MOVE_HOME      = 5,
-  MOVE_END       = 6,
-  MOVE_PAGE_UP   = 7,
-  MOVE_PAGE_DOWN = 8,
-  MOVE_TOP       = 9,
-  MOVE_BOTTOM    = 10,
-} SceImeCaretMovementDirection;
+enum class SceImeCaretMovementDirection {
+  STILL     = 0,
+  LEFT      = 1,
+  RIGHT     = 2,
+  UP        = 3,
+  DOWN      = 4,
+  HOME      = 5,
+  END       = 6,
+  PAGE_UP   = 7,
+  PAGE_DOWN = 8,
+  TOP       = 9,
+  BOTTOM    = 10,
+};
 
 enum class SceImeTextAreaMode {
   DISABLE = 0,

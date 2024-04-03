@@ -6,7 +6,23 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
+target_include_directories(${libName} PRIVATE
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
+)
+
+target_link_directories(${libName} PRIVATE
+  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
+)
+
+set(FFMPEG_LIBS
+  avformat
+  avcodec
+  avutil
+  swscale
+  swresample
+)
+
 add_dependencies(${libName} core)
-target_link_libraries(${libName} PRIVATE core.lib)
+target_link_libraries(${libName} PRIVATE core.lib ${FFMPEG_LIBS})
 
 setupModule(${libName})

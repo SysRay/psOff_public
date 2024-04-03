@@ -42,11 +42,11 @@ struct SceNetMsghdr {
   int             msg_flags;
 };
 
-typedef struct SceNetUdpSndOnSuspend {
+struct SceNetUdpSndOnSuspend {
   int             onoff;
   SceNetSockaddr* addr;
   SceNetSocklen_t addrlen;
 #define SCE_NET_UDP_SND_ON_SUSPEND_DATALEN_MAX (512)
   void*           data;
   SceNetSocklen_t datalen;
-} SceNetUdpSndOnSuspend;
+};

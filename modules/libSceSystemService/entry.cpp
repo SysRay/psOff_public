@@ -200,7 +200,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceDisableSuspendConfirmationDialog() {
   return Ok;
 }
 
-typedef struct SceSystemServiceAbnormalTerminationInfo SceSystemServiceAbnormalTerminationInfo;
+struct SceSystemServiceAbnormalTerminationInfo;
 
 EXPORT SYSV_ABI int32_t sceSystemServiceReportAbnormalTermination(const SceSystemServiceAbnormalTerminationInfo* info) {
   LOG_USE_MODULE(libSceSystemService);
