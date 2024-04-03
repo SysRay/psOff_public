@@ -1,7 +1,7 @@
 # Building psOff modules using VSCode
 
 > [!WARNING]
-> This guide assuming that you have all the Vulkan/MSVC/Clang stuff installed. If you don't have it follow [the first two steps here](https://github.com/igor725/psOff_public/wiki/Building-psOff-from-scratch) and then return to this guide.
+> This guide assuming that you have all the Vulkan/MSVC/Clang stuff installed. If you don't have it follow [the first two steps here](https://github.com/SysRay/psOff_public/wiki/Building-psOff-from-scratch) and then return to this guide.
 
 ## Preparing the environment
 
