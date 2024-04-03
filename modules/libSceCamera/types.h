@@ -56,8 +56,8 @@ struct SceCameraFrameData {
 };
 
 struct SceCameraOpenParam {
-	uint32_t sizeThis;
-	uint32_t reserved1;
-	uint32_t reserved2;
-	uint32_t reserved3;
+  uint32_t sizeThis;
+  uint32_t reserved1;
+  uint32_t reserved2;
+  uint32_t reserved3;
 };
