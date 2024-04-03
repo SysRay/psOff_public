@@ -54,3 +54,10 @@ struct SceCameraFrameData {
   SceCameraMeta          meta;
   void*                  pFramePointerListGarlic[SCE_CAMERA_MAX_DEVICE_NUM][SCE_CAMERA_MAX_FORMAT_LEVEL_NUM];
 };
+
+struct SceCameraOpenParam {
+	uint32_t sizeThis;
+	uint32_t reserved1;
+	uint32_t reserved2;
+	uint32_t reserved3;
+};

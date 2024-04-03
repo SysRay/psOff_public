@@ -1,7 +1,7 @@
 #pragma once
 #include "codes.h"
-#include "modules_include/sceTypes.h"
 #include "modules/libSceCamera/types.h"
+#include "modules_include/sceTypes.h"
 
 enum class SceVrTrackerProfile {
   PROFILE_000 = 0,
