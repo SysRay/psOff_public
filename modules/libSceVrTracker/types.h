@@ -3,47 +3,47 @@
 #include "modules_include/sceTypes.h"
 
 enum class SceVrTrackerProfile {
-  SCE_VR_TRACKER_PROFILE_000 = 0,
-  SCE_VR_TRACKER_PROFILE_100 = 100,
+  PROFILE_000 = 0,
+  PROFILE_100 = 100,
 };
 
 enum class SceVrTrackerExecutionMode {
-  SCE_VR_TRACKER_EXECUTION_MODE_SERIAL   = 0,
-  SCE_VR_TRACKER_EXECUTION_MODE_PARALLEL = 1,
+  SERIAL   = 0,
+  PARALLEL = 1,
 };
 
 enum class SceVrTrackerCalibrationMode {
-  SCE_VR_TRACKER_CALIBRATION_MANUAL = 0,
-  SCE_VR_TRACKER_CALIBRATION_AUTO   = 1,
+  MANUAL = 0,
+  AUTO   = 1,
 };
 
 enum class SceVrTrackerDeviceType {
-  SCE_VR_TRACKER_DEVICE_HMD        = 0,
-  SCE_VR_TRACKER_DEVICE_DUALSHOCK4 = 1,
-  SCE_VR_TRACKER_DEVICE_MOVE       = 2,
-  SCE_VR_TRACKER_DEVICE_GUN        = 3,
+  HMD        = 0,
+  DUALSHOCK4 = 1,
+  MOVE       = 2,
+  GUN        = 3,
 };
 
 enum class SceVrTrackerPreferenceType {
-  SCE_VR_TRACKER_PREFERENCE_FAR_POSITION    = 0,
-  SCE_VR_TRACKER_PREFERENCE_STABLE_POSITION = 1,
+  FAR_POSITION    = 0,
+  STABLE_POSITION = 1,
 };
 
 enum class SceVrTrackerCameraMetaCheckMode {
-  SCE_VR_TRACKER_CAMERA_META_CHECK_ENABLE  = 0,
-  SCE_VR_TRACKER_CAMERA_META_CHECK_DISABLE = 1,
+  ENABLE  = 0,
+  DISABLE = 1,
 };
 
 enum class SceVrTrackerDevicePermitType {
-  SCE_VR_TRACKER_DEVICE_PERMIT_ALL      = 0,
-  SCE_VR_TRACKER_DEVICE_PERMIT_HMD_ONLY = 1,
+  ALL      = 0,
+  HMD_ONLY = 1,
 };
 
 enum SceVrTrackerRobustnessLevel {
-  SCE_VR_TRACKER_ROBUSTNESS_LEVEL_HIGH   = 0,
-  SCE_VR_TRACKER_ROBUSTNESS_LEVEL_LOW    = 3,
-  SCE_VR_TRACKER_ROBUSTNESS_LEVEL_MEDIUM = 6,
-  SCE_VR_TRACKER_ROBUSTNESS_LEVEL_LEGACY = 99,
+  HIGH   = 0,
+  LOW    = 3,
+  MEDIUM = 6,
+  LEGACY = 99,
 };
 
 struct SceVrTrackerCalibrationSettings {
