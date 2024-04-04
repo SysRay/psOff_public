@@ -123,7 +123,13 @@ EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_ti
     *dstsec = sys_inf.save.count() * 60;
   }
 
-  return 0;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelConvertLocaltimeToUtc() {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
 }
 
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {
