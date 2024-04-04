@@ -1,4 +1,4 @@
-set(libName libSceVoiceQoS)
+set(libName libSceVrTracker)
 include(../setupModule.cmake)
 
 project(${libName})

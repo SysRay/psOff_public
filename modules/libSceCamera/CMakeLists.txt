@@ -1,4 +1,4 @@
-set(libName libSceVoiceQoS)
+set(libName libSceCamera)
 include(../setupModule.cmake)
 
 project(${libName})

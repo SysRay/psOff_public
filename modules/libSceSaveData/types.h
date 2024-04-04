@@ -46,7 +46,7 @@ struct SceSaveDataFingerprint {
   char padding[15];
 };
 
-typedef struct _SceSaveDataInitParams3 SceSaveDataInitParams3;
+struct SceSaveDataInitParams3;
 
 struct SceSaveDataMount {
   int         userId;
@@ -233,7 +233,7 @@ struct SceSaveDataMemorySet2 {
   uint8_t                      reserved[24];
 };
 
-typedef struct _SceSaveDataEventParam SceSaveDataEventParam;
+struct SceSaveDataEventParam;
 
 struct SceSaveDataEvent {
   SceSaveDataEventType type;

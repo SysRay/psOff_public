@@ -127,11 +127,11 @@ struct SceVideoOutMode {
   uint32_t _reserved[1];
 };
 
-typedef struct SceVideoOutVrViewCropAdjustment {
+struct SceVideoOutVrViewCropAdjustment {
   int16_t verticalOffset;
   int16_t reserved0;
   int32_t reserved1[3];
-} SceVideoOutVrViewCropAdjustment;
+};
 
 struct SceVideoOutConfigureOptions {
   SceVideoOutVrViewCropAdjustment vrViewCropAdjustment;
