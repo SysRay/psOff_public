@@ -24,7 +24,7 @@ static inline ScePngDecColorSpace map_png_color(int color) {
   LOG_CRIT(L"Unknown png color type");
   return ScePngDecColorSpace::RGB;
 }
-};
+} // namespace
 
 extern "C" {
 
