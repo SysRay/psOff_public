@@ -27,14 +27,19 @@ EXPORT SYSV_ABI int32_t scePngDecDelete(ScePngDecHandle handle) {
 }
 
 EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, ScePngDecImageInfo* ii) {
+  if (param->pngAddr == nullptr) return Err::INVALID_ADDR;
+  if (param->pngSize < 8) return Err::INVALID_SIZE;
   LOG_USE_MODULE(libScePngDec);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t scePngDecQueryMemorySize(const ScePngDecCreateParam* param) {
+  if (param == nullptr) return Err::INVALID_ADDR;
+  if (param->cbSize != sizeof(ScePngDecCreateParam)) return Err::INVALID_SIZE;
+  if (param->maxImageWidth > 1000000) return Err::INVALID_PARAM;
   LOG_USE_MODULE(libScePngDec);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  return 0;
 }
 }
