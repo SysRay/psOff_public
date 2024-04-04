@@ -5,10 +5,7 @@
 
 LOG_DEFINE_MODULE(libScePngDec);
 
-extern "C" {
-
-EXPORT const char* MODULE_NAME = "libScePngDec";
-
+namespace {
 static inline ScePngDecColorSpace map_png_color(int color) {
   LOG_USE_MODULE(libScePngDec);
 
@@ -27,6 +24,11 @@ static inline ScePngDecColorSpace map_png_color(int color) {
   LOG_CRIT(L"Unknown png color type");
   return ScePngDecColorSpace::RGB;
 }
+};
+
+extern "C" {
+
+EXPORT const char* MODULE_NAME = "libScePngDec";
 
 EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam*, void*, uint32_t, ScePngDecHandle* handle) {
   *handle = nullptr;

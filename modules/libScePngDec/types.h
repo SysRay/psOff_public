@@ -1,6 +1,19 @@
 #pragma once
 #include "codes.h"
 
+enum class ScePngDecColorSpace : uint16_t {
+  GRAYSCALE       = 2,
+  RGB             = 3,
+  CLUT            = 4,
+  GRAYSCALE_ALPHA = 18,
+  RGBA            = 19,
+};
+
+enum class ScePngDecPixelFormat : uint16_t {
+  R8G8B8A8 = 0,
+  B8G8R8A8 = 1,
+};
+
 typedef void* ScePngDecHandle;
 
 struct ScePngDecParseParam {
