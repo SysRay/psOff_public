@@ -76,9 +76,9 @@ struct RIFFBuf {
 };
 
 static int readbuf(void* op, uint8_t* buf, int bufsz) {
-  auto rb   = (RIFFBuf*)op;
+  auto rb = (RIFFBuf*)op;
   if (rb->offset > rb->size) return AVERROR_EOF;
-  int  read = std::min(int(rb->size - rb->offset), bufsz);
+  int read = std::min(int(rb->size - rb->offset), bufsz);
   if (read == 0) return AVERROR_EOF;
   ::memcpy(buf, rb->data + rb->offset, read);
   return read;
@@ -144,21 +144,21 @@ static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   wf->offset                        = 0;
   wf->size                          = 0;
 
-  std::vector<AVPacket>* frames = new std::vector<AVPacket>;
+  // std::vector<AVPacket>* frames = new std::vector<AVPacket>;
 
-  AVPacket packet;
-  while (av_read_frame(fmtctx, &packet) >= 0) {
-    if (packet.stream_index == astream->index) {
-      frames->insert(frames->end(), packet);
-    }
-    // av_packet_unref(&packet);
-  }
+  // AVPacket packet;
+  // while (av_read_frame(fmtctx, &packet) >= 0) {
+  //   if (packet.stream_index == astream->index) {
+  //     frames->insert(frames->end(), packet);
+  //   }
+  //   // av_packet_unref(&packet);
+  // }
 
-  wf->numBlocks                     = 1;
-  wf->block[0].userData             = (uintptr_t)frames;
+  // wf->numBlocks         = 1;
+  // wf->block[0].userData = (uintptr_t)frames;
 
-  av_free(avioctx);
-  avformat_close_input(&fmtctx);
+  // av_free(avioctx);
+  // avformat_close_input(&fmtctx);
 
   return Ok;
 }
@@ -243,7 +243,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
-  if ((*outh = new SceNgs2Handle()  /*todo: use passed allocator?*/) != nullptr) {
+  if ((*outh = new SceNgs2Handle() /*todo: use passed allocator?*/) != nullptr) {
     (*outh)->alloc = *alloc;
     (*outh)->owner = sysh;
   }
@@ -273,7 +273,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sy
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
   // todo: dealloc if (*outh) != nullptr
 
-  if((*outh = new SceNgs2Handle /*todo: use passed allocator?*/) != nullptr) {
+  if ((*outh = new SceNgs2Handle /*todo: use passed allocator?*/) != nullptr) {
     (*outh)->alloc = *alloc;
     (*outh)->owner = nullptr;
   }
@@ -320,14 +320,11 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2Voi
     case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: {
       auto param = (SceNgs2SamplerVoiceWaveformBlocksParam*)phead;
       // todo: save wavedata somewhere in voice handle
-    }
-    break;
+    } break;
 
-    case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME:
-      break;
+    case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
 
-    default:
-      LOG_ERR(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
+    default: LOG_ERR(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
   }
 
   return Ok;
