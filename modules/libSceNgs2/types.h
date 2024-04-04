@@ -64,7 +64,9 @@ struct SceNgs2BufferAllocator {
   void* userData;
 };
 
-struct SceNgs2Handle {
+struct SceNgs2Handle { // todo: split this type? Or use union inside it.
+  SceNgs2Handle*           owner;
+  SceNgs2BufferAllocator   alloc;
   SceNgs2ContextBufferInfo cbi;
 };
 
@@ -140,7 +142,7 @@ struct SceNgs2GeomSourceParam {
 struct SceNgs2VoiceParamHead {
   uint16_t          size;
   int16_t           next;
-  SceNgs2VoiceParam id;
+  uint32_t          id;
 };
 
 struct SceNgs2VoiceMatrixLevelsParam {
@@ -178,6 +180,14 @@ struct SceNgs2VoicePatchParam {
 struct SceNgs2VoiceEventParam {
   SceNgs2VoiceParamHead header;
   uint32_t              eventId;
+};
+
+struct SceNgs2SamplerVoiceWaveformBlocksParam {
+	SceNgs2VoiceParamHead header;
+	const void *data;
+	uint32_t flags;
+	uint32_t numBlocks;
+	const SceNgs2WaveformBlock *aBlock;
 };
 
 struct SceNgs2VoiceCallbackInfo {

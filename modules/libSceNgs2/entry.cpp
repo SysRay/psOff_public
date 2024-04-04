@@ -77,6 +77,7 @@ struct RIFFBuf {
 
 static int readbuf(void* op, uint8_t* buf, int bufsz) {
   auto rb   = (RIFFBuf*)op;
+  if (rb->offset > rb->size) return AVERROR_EOF;
   int  read = std::min(int(rb->size - rb->offset), bufsz);
   if (read == 0) return AVERROR_EOF;
   ::memcpy(buf, rb->data + rb->offset, read);
@@ -142,7 +143,19 @@ static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   wf->samplesCount                  = 0;
   wf->offset                        = 0;
   wf->size                          = 0;
-  wf->numBlocks                     = 0;
+
+  std::vector<AVPacket>* frames = new std::vector<AVPacket>;
+
+  AVPacket packet;
+  while (av_read_frame(fmtctx, &packet) >= 0) {
+    if (packet.stream_index == astream->index) {
+      frames->insert(frames->end(), packet);
+    }
+    // av_packet_unref(&packet);
+  }
+
+  wf->numBlocks                     = 1;
+  wf->block[0].userData             = (uintptr_t)frames;
 
   av_free(avioctx);
   avformat_close_input(&fmtctx);
@@ -225,10 +238,17 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t, void*, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
+                                                       SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
-  return Ok;
+
+  if ((*outh = new SceNgs2Handle()  /*todo: use passed allocator?*/) != nullptr) {
+    (*outh)->alloc = *alloc;
+    (*outh)->owner = sysh;
+  }
+
+  return (*outh) != nullptr ? Ok : Err::FAIL;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
@@ -240,6 +260,8 @@ EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+  // todo: write to outh voice handle from rack
+  *outh = nullptr;
   return Ok;
 }
 
@@ -250,7 +272,13 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sy
   if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
   // todo: dealloc if (*outh) != nullptr
-  return (*outh = new SceNgs2Handle) != nullptr ? Ok : Err::FAIL;
+
+  if((*outh = new SceNgs2Handle /*todo: use passed allocator?*/) != nullptr) {
+    (*outh)->alloc = *alloc;
+    (*outh)->owner = nullptr;
+  }
+
+  return (*outh) != nullptr ? Ok : Err::FAIL;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
@@ -274,6 +302,8 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
     }
   }
 
+  // todo: ffmpeg should convert all the wave data to `rbi->waveType`
+
   return Ok;
 }
 
@@ -283,19 +313,33 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle* sysh, uint32
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* sysh, const SceNgs2VoiceParamHead* phead) {
+EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+  switch (phead->id) {
+    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: {
+      auto param = (SceNgs2SamplerVoiceWaveformBlocksParam*)phead;
+      // todo: save wavedata somewhere in voice handle
+    }
+    break;
+
+    case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME:
+      break;
+
+    default:
+      LOG_ERR(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
+  }
+
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* vh, SceNgs2VoiceState* state, size_t size) {
+EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* voh, SceNgs2VoiceState* state, size_t size) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags(SceNgs2Handle* vh, uint32_t* flags) {
+EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags(SceNgs2Handle* voh, uint32_t* flags) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
