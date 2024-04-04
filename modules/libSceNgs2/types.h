@@ -61,7 +61,7 @@ struct SceNgs2ContextBufferInfo {
 struct SceNgs2BufferAllocator {
   int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void*   userData;
+  void* userData;
 };
 
 struct SceNgs2Handle { // todo: split this type? Or use union inside it.
