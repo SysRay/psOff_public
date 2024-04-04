@@ -7,6 +7,7 @@ add_subdirectory(optick)
 add_subdirectory(p7)
 add_subdirectory(SDL2)
 add_subdirectory(libpng)
+add_subdirectory(zlib)
 
 install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
   FILES_MATCHING PATTERN "*.dll"
