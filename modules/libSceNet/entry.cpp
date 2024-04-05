@@ -30,14 +30,12 @@ EXPORT SYSV_ABI int* sceNetErrnoLoc() {
 
 EXPORT SYSV_ABI int sceNetInit(void) {
   WSADATA data = {};
-  if (WSAStartup(MAKEWORD(2, 2), &data) == SOCKET_ERROR)
-    return sce_WSAGetLastError();
+  if (WSAStartup(MAKEWORD(2, 2), &data) == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetTerm(void) {
-  if (WSACleanup() == SOCKET_ERROR)
-    return sce_WSAGetLastError();
+  if (WSACleanup() == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
