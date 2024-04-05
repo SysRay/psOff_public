@@ -32,6 +32,11 @@ EXPORT SYSV_ABI void __NID(_ZNSt8ios_base4InitC1Ev)() {}
  */
 EXPORT SYSV_ABI void __NID(_ZNSt6_WinitC1Ev)() {}
 
+EXPORT SYSV_ABI void __NID(_init_env)() {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+}
+
 EXPORT SYSV_ABI int __NID(vprintf)(const char* str, va_list args) {
   LOG_USE_MODULE(libSceLibcInternal);
 
@@ -64,21 +69,18 @@ EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
 EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_ERR(L"todo %S", __FUNCTION__);
-
   return 0;
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_guard_release)(uint64_t* guard_object) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_ERR(L"todo %S", __FUNCTION__);
-
   return 0;
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_guard_abort)(uint64_t* guard_object) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_ERR(L"todo %S", __FUNCTION__);
-
   return 0;
 }
 

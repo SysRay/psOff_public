@@ -6,4 +6,6 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp epoll.cpp socket.cpp resolver.cpp)
 
+target_link_libraries(${libName} ws2_32)
+
 setupModule(${libName})
