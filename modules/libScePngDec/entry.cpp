@@ -35,8 +35,13 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePngDec";
 
-EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam*, void* mem, uint32_t size, ScePngDecHandle* handle) {
+EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam* param, void* mem, uint32_t size, ScePngDecHandle* handle) {
+  LOG_USE_MODULE(libScePngDec);
+  if (mem == nullptr) return Err::INVALID_ADDR;
+  if (size < sizeof(_PngHandle)) return Err::INVALID_SIZE;
+  if (param->attribute > 1) LOG_CRIT(L"Unhandled attribute");
   auto pngh = (_PngHandle*)mem;
+
   pngh->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   if (pngh->png == nullptr) return Err::FATAL;
 
@@ -145,12 +150,12 @@ EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, S
   png_read_info(png_ptr, info_ptr);
 
   int bitdepth, color, filter, inter, num_trans;
-
   png_get_IHDR(png_ptr, info_ptr, &ii->imageWidth, &ii->imageHeight, &bitdepth, &color, &inter, nullptr, &filter);
 
   ii->colorSpace = map_png_color(color);
   if (inter == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
+
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return Ok;
 }
