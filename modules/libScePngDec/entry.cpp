@@ -6,6 +6,11 @@
 LOG_DEFINE_MODULE(libScePngDec);
 
 namespace {
+struct _PngHandle {
+  png_structp png;
+  png_infop   info;
+};
+
 static inline ScePngDecColorSpace map_png_color(int color) {
   LOG_USE_MODULE(libScePngDec);
 
@@ -30,25 +35,26 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libScePngDec";
 
-EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam*, void*, uint32_t, ScePngDecHandle* handle) {
-  *handle = nullptr;
+EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam*, void* mem, uint32_t size, ScePngDecHandle* handle) {
+  auto pngh = (_PngHandle*)mem;
+  pngh->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+  if (pngh->png == nullptr) return Err::FATAL;
+
+  pngh->info = png_create_info_struct(pngh->png);
+  if (pngh->info == nullptr) {
+    png_destroy_read_struct(&pngh->png, nullptr, nullptr);
+    return false;
+  }
+
+  *handle = pngh;
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecDecodeParam* param, ScePngDecImageInfo* imageInfo) {
-  LOG_USE_MODULE(libScePngDec);
-
   if (param->pngAddr == nullptr || param->imageAddr == nullptr) return Err::INVALID_ADDR;
   if (param->pngSize == 0 || param->imageSize == 0) return Err::INVALID_SIZE;
-
-  auto png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  if (png_ptr == nullptr) return false;
-
-  auto info_ptr = png_create_info_struct(png_ptr);
-  if (info_ptr == nullptr) {
-    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    return false;
-  }
+  if (handle == nullptr) return Err::INVALID_HANDLE;
+  auto pngh = (_PngHandle*)handle;
 
   struct pngreader {
     const uint8_t* data;
@@ -61,7 +67,7 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
   };
 
   // Read png from memory: param->pngAddr, param->pngSize
-  png_set_read_fn(png_ptr, (void*)&pngrd, [](png_structp ps, png_bytep data, png_size_t len) {
+  png_set_read_fn(pngh->png, (void*)&pngrd, [](png_structp ps, png_bytep data, png_size_t len) {
     if (len == 0) return;
     auto pngrd = (pngreader*)png_get_io_ptr(ps);
     if (pngrd->offset + len > pngrd->size) return png_error(ps, "Read error!");
@@ -71,36 +77,38 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
 
   uint32_t w, h;
   int      ct, bi;
-  png_read_info(png_ptr, info_ptr);
-  png_get_IHDR(png_ptr, info_ptr, &w, &h, &bi, &ct, nullptr, nullptr, nullptr);
-  if (bi == 16) png_set_strip_16(png_ptr);
-  if (ct == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png_ptr);
-  if (ct == PNG_COLOR_TYPE_GRAY && bi < 8) png_set_expand_gray_1_2_4_to_8(png_ptr);
-  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png_ptr);
-  if (ct == PNG_COLOR_TYPE_GRAY || ct == PNG_COLOR_TYPE_GRAY_ALPHA) png_set_gray_to_rgb(png_ptr);
-  if (param->pixelFormat == ScePngDecPixelFormat::B8G8R8A8) png_set_bgr(png_ptr);
-  png_read_update_info(png_ptr, info_ptr);
+  png_read_info(pngh->png, pngh->info);
+  png_get_IHDR(pngh->png, pngh->info, &w, &h, &bi, &ct, nullptr, nullptr, nullptr);
+  if (bi == 16) png_set_strip_16(pngh->png);
+  if (ct == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(pngh->png);
+  if (ct == PNG_COLOR_TYPE_GRAY && bi < 8) png_set_expand_gray_1_2_4_to_8(pngh->png);
+  if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(pngh->png);
+  if (ct == PNG_COLOR_TYPE_GRAY || ct == PNG_COLOR_TYPE_GRAY_ALPHA) png_set_gray_to_rgb(pngh->png);
+  if (param->pixelFormat == ScePngDecPixelFormat::B8G8R8A8) png_set_bgr(pngh->png);
+  png_read_update_info(pngh->png, pngh->info);
 
-  png_bytepp row_ptr = (png_bytep*)png_malloc(png_ptr, sizeof(png_bytep) * h);
+  png_bytepp row_ptr = (png_bytep*)png_malloc(pngh->png, sizeof(png_bytep) * h);
   for (int y = 0; y < h; y++) {
-    row_ptr[y] = (png_byte*)png_malloc(png_ptr, png_get_rowbytes(png_ptr, info_ptr));
+    row_ptr[y] = (png_byte*)png_malloc(pngh->png, png_get_rowbytes(pngh->png, pngh->info));
   }
-  png_read_image(png_ptr, row_ptr);
+  png_read_image(pngh->png, row_ptr);
 
   auto ptr = (png_bytep)param->imageAddr;
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w * 4 /*RGBA*/; x++) {
       *ptr++ = row_ptr[y][x];
     }
-    png_free(png_ptr, row_ptr[y]);
+    png_free(pngh->png, row_ptr[y]);
   }
-  png_free(png_ptr, row_ptr);
+  png_free(pngh->png, row_ptr);
 
-  png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t scePngDecDelete(ScePngDecHandle handle) {
+  if (handle == nullptr) return Err::INVALID_HANDLE;
+  auto pngh = *(_PngHandle**)handle;
+  png_destroy_read_struct(&pngh->png, &pngh->info, nullptr);
   return Ok;
 }
 
@@ -151,6 +159,6 @@ EXPORT SYSV_ABI int32_t scePngDecQueryMemorySize(const ScePngDecCreateParam* par
   if (param == nullptr) return Err::INVALID_ADDR;
   if (param->cbSize != sizeof(ScePngDecCreateParam)) return Err::INVALID_SIZE;
   if (param->maxImageWidth > 1000000) return Err::INVALID_PARAM;
-  return 0;
+  return sizeof(_PngHandle);
 }
 }
