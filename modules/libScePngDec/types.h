@@ -7,6 +7,8 @@ enum class ScePngDecColorSpace : uint16_t {
   CLUT            = 4,
   GRAYSCALE_ALPHA = 18,
   RGBA            = 19,
+
+  INVALID = 0xFFFF,
 };
 
 enum class ScePngDecPixelFormat : uint16_t {
