@@ -79,24 +79,23 @@ int KernelEqueue::waitForEvents(KernelEvent_t ev, int num, SceKernelUseconds con
 
   boost::unique_lock lock(m_mutex_cond);
 
-  int ret = 0;
-  if (micros != nullptr && *micros > 0) {
-    using namespace std::chrono_literals;
-
-    if (m_cond_var.wait_for(lock, boost::chrono::microseconds(*(decltype(micros))micros), [&] {
-          ret = getTriggeredEvents(ev, num);
-          return (ret > 0) | m_closed;
-        }) == 0) {
-      // LOG_TRACE(L"waitForEvents timeout");
+  auto hasEvents = [&] {
+    for (auto& ev: m_events) {
+      if (ev.triggered) {
+        return true;
+      }
     }
+    return false;
+  };
+
+  if (micros != nullptr && *micros > 0) {
+    m_cond_var.wait_for(lock, boost::chrono::microseconds(*(decltype(micros))micros), [&] { return hasEvents() | m_closed; });
   } else {
-    m_cond_var.wait(lock, [&] {
-      ret = getTriggeredEvents(ev, num);
-      return (ret > 0) | m_closed;
-    });
+    m_cond_var.wait(lock, [&] { return hasEvents() | m_closed; });
   }
+
   // LOG_TRACE(L"<-waitForEvents: ident:0x%08llx ret:%d", ev->ident, ret);
-  return ret;
+  return getTriggeredEvents(ev, num);
 }
 
 int KernelEqueue::getTriggeredEvents(KernelEvent_t eventList, int num) {
