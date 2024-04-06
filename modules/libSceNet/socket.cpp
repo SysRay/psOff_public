@@ -60,8 +60,11 @@ EXPORT SYSV_ABI int sceNetGetsockname(SceNetId s, SceNetSockaddr* name, SceNetSo
 }
 
 EXPORT SYSV_ABI int sceNetGetsockopt(SceNetId s, int level, int optname, void* optval, SceNetSocklen_t* optlen) {
-  // todo: probably not so cool to make transparent call there
-  return Ok;
+  int _optlen = optlen ? (int)*optlen : sizeof(SceNetSockaddr);
+  int _ret    = getsockopt(s, level, optname, (char*)optval, &_optlen);
+  if (_ret == SOCKET_ERROR) return sce_WSAGetLastError();
+  *optlen = (SceNetSocklen_t)_optlen;
+  return _ret;
 }
 
 EXPORT SYSV_ABI int sceNetListen(SceNetId s, int backlog) {
@@ -104,7 +107,7 @@ EXPORT SYSV_ABI int sceNetSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags
 }
 
 EXPORT SYSV_ABI int sceNetSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) {
-  // todo: probably not so cool to make transparent call there
+  if (setsockopt(s, level, optname, (char*)optval, (int)optlen) == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 

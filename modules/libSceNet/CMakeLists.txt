@@ -4,7 +4,7 @@ include(../setupModule.cmake)
 set(libName libSceNet)
 project(${libName})
 
-add_library(${libName} SHARED entry.cpp epoll.cpp socket.cpp resolver.cpp)
+add_library(${libName} SHARED entry.cpp wepoll.c epoll.cpp socket.cpp resolver.cpp)
 
 target_link_libraries(${libName} ws2_32)
 
