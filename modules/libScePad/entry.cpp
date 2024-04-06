@@ -62,7 +62,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   // - already open
 
   auto lockSDL2 = accessVideoOut().getSDLLock();
-  for (uint32_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
+  for (int n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     auto& pController = pData->controller[n].padPtr;
 
@@ -79,7 +79,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
       default: LOG_CRIT(L"Unimplemented controller type!"); return Err::FATAL;
     }
 
-    LOG_INFO(L"-> Pad[%llu]: userId:%d name:%S guid:%S", n, userId, pController->getName(), pController->getGUID());
+    LOG_INFO(L"-> Pad[%d]: userId:%d name:%S guid:%S", n, userId, pController->getName(), pController->getGUID());
     return n;
   }
 
@@ -151,7 +151,8 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
   auto& pController = pData->controller[handle].padPtr;
   if (!pController) return Err::INVALID_HANDLE;
 
-  return pController->setMotion(bEnable) ? Ok : Err::FATAL;
+  pController->setMotion(bEnable);
+  return Ok;
 }
 
 EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
