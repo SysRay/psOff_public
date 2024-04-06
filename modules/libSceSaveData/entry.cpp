@@ -208,8 +208,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataSyncSaveDataMemory(const SceSaveDataMemorySyn
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemorySetup2* setupParam, SceSaveDataMemorySetupResult* result) {
-  if (setupParam == nullptr || setupParam->memorySize == 0 || setupParam->option != SceSaveDataMemoryOption::SET_PARAM) return getErr(ErrCode::_EINVAL);
-
+  if (setupParam == nullptr || setupParam->memorySize == 0 || setupParam->option.bits.SET_PARAM == 0) return getErr(ErrCode::_EINVAL);
   auto filename = std::format("SLOT{}_UID{}.dat", setupParam->slotId, setupParam->userId);
 
   filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::WRONLY, .create = 1, .excl = 1};
@@ -267,7 +266,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemoryS
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory(const SceUserServiceUserId userId, size_t memorySize, const SceSaveDataParam* param) {
   const SceSaveDataMemorySetup2 ssdms2 {
-      .option         = SceSaveDataMemoryOption::SET_PARAM,
+      .option         = SceSaveDataMemoryOption {.bits = {.SET_PARAM = 1}},
       .userId         = userId,
       .memorySize     = memorySize,
       .iconMemorySize = 0,

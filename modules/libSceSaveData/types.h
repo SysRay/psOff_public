@@ -18,11 +18,18 @@ enum class SceSaveDataSortKey : uint32_t { DIRNAME = 0, USER_PARAM = 1, BLOCKS =
 
 enum class SceSaveDataSortOrder : uint32_t { ASCENT = 0, DESCENT = 1 };
 
-enum class SceSaveDataMemoryOption : uint32_t { NONE = 0x00000000, SET_PARAM = 0x00000001, DOUBLE_BUFFER = 0x00000010 };
-
 enum class SceSaveDataMemorySyncOption : uint32_t { NONE = 0x00000000, BLOCKING = 0x00000001 << 0 };
 
 enum class SceSaveDataEventType : uint32_t { INVALID = 0, UMOUNT_BACKUP_END = 1, BACKUP_END = 2, SAVE_DATA_MEMORY_SYNC_END = 3 };
+
+union SceSaveDataMemoryOption {
+  struct {
+    uint32_t SET_PARAM     : 1;
+    uint32_t DOUBLE_BUFFER : 1;
+  } bits;
+
+  uint32_t bitfield;
+};
 
 /*
  * Structures
