@@ -9,6 +9,7 @@
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
+#include "gamereport.h"
 #include "core/timer/timer.h"
 #include "imageHandler.h"
 #include "logging.h"
@@ -687,6 +688,8 @@ std::thread VideoOut::createSDLThread() {
           case SDL_KEYUP:
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
               cbWindow_close(window);
+            } else if (event.key.keysym.scancode == SDL_SCANCODE_F11) {
+              accessGameReport().ShowReportWindow();
             }
 
           default: break;

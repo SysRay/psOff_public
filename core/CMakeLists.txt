@@ -35,6 +35,7 @@ target_link_libraries(core PRIVATE
   libboost_chrono
   libboost_program_options
   sdl2
+  gamereport.lib
   OptickCore
   psOff_utility
   ${Vulkan_LIBRARIES}
