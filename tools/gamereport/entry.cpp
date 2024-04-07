@@ -29,10 +29,12 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
 
   static const char* messages[2] = {
       "Do you want to file report about the game you running?\n"
-      "If you press \"Yes\", your default browser will be opened.",
+      "If you press \"Yes\", your default browser will be opened.\n\n"
+      "You must have a GitHub account to create an issue!",
 
       "Looks like your emulator just crashed! Do you want to file a game report?\n"
-      "If you press \"Yes\", your default browser will be opened.",
+      "If you press \"Yes\", your default browser will be opened.\n\n"
+      "You must have a GitHub account to create an issue!",
   };
 
   SDL_MessageBoxButtonData btns[2] {
@@ -89,7 +91,7 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
   auto params = link.params();
   params.append({"template", "game_report.yml"});
   if (info->ex != nullptr) params.append({"what-happened", info->ex->what()}); // todo: add stack trace?
-  params.append({"title", std::format("[{}] {}", info->title_id, info->title)});
+  params.append({"title", std::format("[{}]: {}", info->title_id, info->title)});
   params.append({"game-version", info->app_ver});
   params.append({"lib-version", git::CommitSHA1()});
   link.normalize();
