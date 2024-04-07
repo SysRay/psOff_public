@@ -19,23 +19,32 @@ class GameReport: public IGameReport {
   GameReport();
   virtual ~GameReport() = default;
 
-  virtual void ShowReportWindow(const GameReportInfo* info) final;
+  virtual void ShowReportWindow(const Info& info) final;
 };
 
 GameReport::GameReport() {}
 
-void GameReport::ShowReportWindow(const GameReportInfo* info) {
+void GameReport::ShowReportWindow(const Info& info) {
   LOG_USE_MODULE(GameReport);
 
-  static const char* messages[2] = {
-      "Do you want to file report about the game you running?\n"
-      "If you press \"Yes\", your default browser will be opened.\n\n"
-      "You must have a GitHub account to create an issue!",
+  const char* message;
 
-      "Looks like your emulator just crashed! Do you want to file a game report?\n"
-      "If you press \"Yes\", your default browser will be opened.\n\n"
-      "You must have a GitHub account to create an issue!",
-  };
+  switch (info.type) {
+    case USER:
+      message = "Do you want to file report about the game you running?\n"
+                "If you press \"Yes\", your default browser will be opened.\n\n"
+                "You must have a GitHub account to create an issue!";
+      break;
+
+    case EXCEPTION:
+    case MISSING_SYMBOL:
+      message = "Looks like your emulator just crashed! Do you want to file a game report?\n"
+                "If you press \"Yes\", your default browser will be opened.\n\n"
+                "You must have a GitHub account to create an issue!";
+      break;
+
+    default: break;
+  }
 
   SDL_MessageBoxButtonData btns[2] {
       {.flags = 0, .buttonid = 1, .text = "Yes"},
@@ -44,9 +53,9 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
 
   SDL_MessageBoxData mbd {
       .flags      = SDL_MESSAGEBOX_INFORMATION,
-      .window     = info->wnd,
+      .window     = info.wnd,
       .title      = "File a game report",
-      .message    = info->ex != nullptr ? messages[1] : messages[0],
+      .message    = message,
       .numbuttons = 2,
       .buttons    = btns,
   };
@@ -90,9 +99,18 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
 
   auto params = link.params();
   params.append({"template", "game_report.yml"});
-  if (info->ex != nullptr) params.append({"what-happened", info->ex->what()}); // todo: add stack trace?
-  params.append({"title", std::format("[{}]: {}", info->title_id, info->title)});
-  params.append({"game-version", info->app_ver});
+  switch (info.type) {
+    case EXCEPTION:
+      params.append({"what-happened", info.add.ex->what()}); // todo: add stack trace?
+      break;
+    case MISSING_SYMBOL:
+      params.append({"what-happened", info.add.message}); // todo: some formatting?
+      break;
+
+    default: break;
+  }
+  params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
+  params.append({"game-version", info.app_ver});
   params.append({"lib-version", git::CommitSHA1()});
   link.normalize();
 

@@ -693,15 +693,15 @@ std::thread VideoOut::createSDLThread() {
               auto title_id = accessSystemContent().getString("TITLE_ID");
               auto app_ver  = accessSystemContent().getString("APP_VER");
 
-              const IGameReport::GameReportInfo gri {
-                  .title    = title ? title.value().data() : "Your PS4 Game Name",
-                  .title_id = title_id ? title_id.value().data() : "CUSA00000",
-                  .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-                  .wnd      = window,
-                  .ex       = nullptr,
-              };
+              accessGameReport().ShowReportWindow({.title    = title ? title.value().data() : "Your PS4 Game Name",
+                                                   .title_id = title_id ? title_id.value().data() : "CUSA00000",
+                                                   .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+                                                   .wnd      = window,
 
-              accessGameReport().ShowReportWindow(&gri);
+                                                   .type = IGameReport::Type::USER,
+                                                   .add  = {
+                                                        .ex = nullptr,
+                                                   }});
             }
 
           default: break;

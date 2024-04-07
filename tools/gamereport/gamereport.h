@@ -13,15 +13,28 @@ class IGameReport {
   public:
   virtual ~IGameReport() = default;
 
-  struct GameReportInfo {
-    const char*     title;
-    const char*     title_id;
-    const char*     app_ver;
-    SDL_Window*     wnd;
-    std::exception* ex;
+  enum Type {
+    USER,
+    EXCEPTION,
+    MISSING_SYMBOL,
   };
 
-  virtual void ShowReportWindow(const GameReportInfo*) = 0;
+  union AdditionalData {
+    std::exception* ex;
+    const char*     message;
+  };
+
+  struct Info {
+    const char* title;
+    const char* title_id;
+    const char* app_ver;
+    SDL_Window* wnd;
+
+    Type           type;
+    AdditionalData add;
+  };
+
+  virtual void ShowReportWindow(const Info&) = 0;
 };
 
 #ifdef __APICALL_EXTERN
