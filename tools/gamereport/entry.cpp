@@ -63,7 +63,8 @@ void GameReport::ShowReportWindow(const Info& info) {
   int btn = -1;
 
   if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
-    LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S", SDL_GetError());
+    const auto code = GetLastError();
+    LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S (%d)", SDL_GetError(), code);
     return;
   }
 
@@ -86,7 +87,8 @@ void GameReport::ShowReportWindow(const Info& info) {
       btns[1].text   = "Cancel";
 
       if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
-        LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S", SDL_GetError());
+        const auto code = GetLastError();
+        LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S (%d)", SDL_GetError(), code);
         return;
       }
 

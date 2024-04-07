@@ -656,7 +656,8 @@ void cbWindow_close(SDL_Window* window) {
 
   int buttonId = -1;
   if (SDL_ShowMessageBox(&mbd, &buttonId) != 0) {
-    LOG_ERR(L"SDL_ShowMessageBox error: %S", SDL_GetError());
+    const auto code = GetLastError();
+    LOG_ERR(L"Failed to generate SDL MessageBox: %S (%d)", SDL_GetError(), code);
     return;
   }
 
