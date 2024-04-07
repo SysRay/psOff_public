@@ -14,10 +14,11 @@ class IGameReport {
   virtual ~IGameReport() = default;
 
   struct GameReportInfo {
-    const char* title;
-    const char* title_id;
-    const char* app_ver;
-    SDL_Window* wnd;
+    const char*     title;
+    const char*     title_id;
+    const char*     app_ver;
+    SDL_Window*     wnd;
+    std::exception* ex;
   };
 
   virtual void ShowReportWindow(const GameReportInfo*) = 0;

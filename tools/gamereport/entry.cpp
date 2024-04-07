@@ -27,6 +27,14 @@ GameReport::GameReport() {}
 void GameReport::ShowReportWindow(const GameReportInfo* info) {
   LOG_USE_MODULE(GameReport);
 
+  static const char* messages[2] = {
+      "Do you want to file report about the game you running?\n"
+      "If you press \"Yes\", your default browser will be opened.",
+
+      "Looks like your emulator just crashed! Do you want to file a game report?\n"
+      "If you press \"Yes\", your default browser will be opened.",
+  };
+
   SDL_MessageBoxButtonData btns[2] {
       {.flags = 0, .buttonid = 1, .text = "Yes"},
       {.flags = 0, .buttonid = 2, .text = "No"},
@@ -36,11 +44,11 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
       .flags      = SDL_MESSAGEBOX_INFORMATION,
       .window     = info->wnd,
       .title      = "File a game report",
-      .message    = "Do you want to file report about the game you running?\n"
-                    "If you press \"Yes\", your default browser will be opened.",
+      .message    = info->ex != nullptr ? messages[1] : messages[0],
       .numbuttons = 2,
       .buttons    = btns,
   };
+
   int btn = -1;
 
   if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
@@ -80,6 +88,7 @@ void GameReport::ShowReportWindow(const GameReportInfo* info) {
 
   auto params = link.params();
   params.append({"template", "game_report.yml"});
+  if (info->ex != nullptr) params.append({"what-happened", info->ex->what()}); // todo: add stack trace?
   params.append({"title", std::format("[{}] {}", info->title_id, info->title)});
   params.append({"game-version", info->app_ver});
   params.append({"lib-version", git::CommitSHA1()});

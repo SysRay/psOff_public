@@ -698,6 +698,7 @@ std::thread VideoOut::createSDLThread() {
                   .title_id = title_id ? title_id.value().data() : "CUSA00000",
                   .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
                   .wnd      = window,
+                  .ex       = nullptr,
               };
 
               accessGameReport().ShowReportWindow(&gri);
