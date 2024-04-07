@@ -4,6 +4,7 @@ set(SRC
   entry.cpp
 )
 
+set(GIT_WORKING_DIR ${PRJ_SRC_DIR})
 set(PRE_CONFIGURE_FILE "git_ver.cpp.in")
 set(POST_CONFIGURE_FILE "${CMAKE_CURRENT_BINARY_DIR}/git_ver.cpp")
 include(git_watcher.cmake)
