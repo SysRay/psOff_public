@@ -21,15 +21,15 @@ std::pair<Handle_t, int32_t> open(std::filesystem::path path, filesystem::SceOpe
   switch (mode.mode) {
     case filesystem::SceOpenMode::RDONLY: {
       access = GENERIC_READ;
-      if (mode.shlock) shareMode = FILE_SHARE_READ;
+      if (!mode.exlock) shareMode = FILE_SHARE_READ;
     } break;
     case filesystem::SceOpenMode::WRONLY: {
       access = GENERIC_WRITE;
-      if (mode.shlock) shareMode = FILE_SHARE_WRITE;
+      if (!mode.exlock) shareMode = FILE_SHARE_WRITE;
     } break;
     case filesystem::SceOpenMode::RDWR: {
       access = GENERIC_READ | GENERIC_WRITE;
-      if (mode.shlock) shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+      if (!mode.exlock) shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
     } break;
   }
   // -
