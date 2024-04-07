@@ -23,7 +23,7 @@ ExternalProject_Add(third_party
 )
 ExternalProject_Add_StepDependencies(third_party build zlib_project)
 
-set(BOOST_INCLUDE_LIBRARIES "program_options;date_time;interprocess;stacktrace;uuid;beast;signals2;thread")
+set(BOOST_INCLUDE_LIBRARIES "program_options;date_time;interprocess;stacktrace;uuid;beast;signals2;thread;url")
 ExternalProject_Add(boost
   SOURCE_DIR ${PRJ_SRC_DIR}/third_party/boost
   BINARY_DIR ${CMAKE_BINARY_DIR}/third_party/boost

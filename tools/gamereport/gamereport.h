@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utility/utility.h"
 #include "SDL.h"
+#include "utility/utility.h"
 
 class IGameReport {
   CLASS_NO_COPY(IGameReport);
@@ -13,7 +13,14 @@ class IGameReport {
   public:
   virtual ~IGameReport() = default;
 
-  virtual void ShowReportWindow() = 0;
+  struct GameReportInfo {
+    const char* title;
+    const char* title_id;
+    const char* app_ver;
+    SDL_Window* wnd;
+  };
+
+  virtual void ShowReportWindow(const GameReportInfo*) = 0;
 };
 
 #ifdef __APICALL_EXTERN

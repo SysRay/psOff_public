@@ -9,8 +9,8 @@
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
-#include "gamereport.h"
 #include "core/timer/timer.h"
+#include "gamereport.h"
 #include "imageHandler.h"
 #include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
@@ -689,7 +689,18 @@ std::thread VideoOut::createSDLThread() {
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
               cbWindow_close(window);
             } else if (event.key.keysym.scancode == SDL_SCANCODE_F11) {
-              accessGameReport().ShowReportWindow();
+              auto title    = accessSystemContent().getString("TITLE");
+              auto title_id = accessSystemContent().getString("TITLE_ID");
+              auto app_ver  = accessSystemContent().getString("APP_VER");
+
+              const IGameReport::GameReportInfo gri {
+                  .title    = title ? title.value().data() : "Your PS4 Game Name",
+                  .title_id = title_id ? title_id.value().data() : "CUSA00000",
+                  .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+                  .wnd      = window,
+              };
+
+              accessGameReport().ShowReportWindow(&gri);
             }
 
           default: break;
