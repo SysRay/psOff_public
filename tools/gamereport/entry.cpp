@@ -26,6 +26,10 @@ GameReport::GameReport() {}
 
 void GameReport::ShowReportWindow(const Info& info) {
   LOG_USE_MODULE(GameReport);
+  if (m_bEnabled == false) {
+    LOG_WARN(L"[gamereport] Reporting is disabled!");
+    return;
+  }
 
   const char* message;
 

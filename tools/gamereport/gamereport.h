@@ -8,6 +8,7 @@ class IGameReport {
   CLASS_NO_MOVE(IGameReport);
 
   protected:
+  bool m_bEnabled = true;
   IGameReport() = default;
 
   public:
@@ -34,6 +35,7 @@ class IGameReport {
     AdditionalData add;
   };
 
+  void SetStatus(bool enabled) { m_bEnabled = enabled; };
   virtual void ShowReportWindow(const Info&) = 0;
 };
 
