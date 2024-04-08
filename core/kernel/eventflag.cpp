@@ -147,7 +147,7 @@ int KernelEventFlag::wait(uint64_t bits, WaitMode wait_mode, ClearMode clear_mod
   if (m_status == Status::Canceled) {
     return getErr(ErrCode::_ECANCELED);
   } else if (m_status == Status::Deleted) {
-    return getErr(ErrCode::_EACCES);
+    return getErr(ErrCode::_EINTR);
   }
   // -
 
@@ -169,6 +169,7 @@ int deleteEventFlag(IKernelEventFlag_t ef) {
   if (ef == nullptr) {
     return getErr(ErrCode::_ESRCH);
   }
+
   LOG_INFO(L"Deleted ptr:0x%08llx", (uint64_t)ef);
   delete ef;
   return Ok;
