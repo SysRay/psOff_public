@@ -22,6 +22,7 @@
 #include <queue>
 
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <algorithm>
 #include <array>
 #include <assert.h>
@@ -804,6 +805,14 @@ std::thread VideoOut::createSDLThread() {
 
           window.window = SDL_CreateWindow(title.c_str(), win_x, win_y, m_widthTotal, m_heightTotal,
                                            SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | addFlags);
+
+          { // todo: Fix minimize button, now it crashes the emulator.
+            SDL_SysWMinfo wmInfo;
+            SDL_VERSION(&wmInfo.version);
+            SDL_GetWindowWMInfo(window.window, &wmInfo);
+            HWND hwnd = wmInfo.info.win.window;
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
+          }
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
