@@ -36,7 +36,7 @@ EXPORT const char* MODULE_NAME = "libSceNgs2";
 
 EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceNgs2WaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
@@ -324,7 +324,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2Voi
 
     case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
 
-    default: LOG_ERR(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
+    default: LOG_TRACE(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
   }
 
   return Ok;
@@ -332,7 +332,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2Voi
 
 EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* voh, SceNgs2VoiceState* state, size_t size) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
