@@ -448,8 +448,11 @@ int rename(const char* from, const char* to) {
   if (!mapped2) {
     return getErr(ErrCode::_EACCES);
   }
-
-  std::filesystem::rename(*mapped1, *mapped2);
+  try {
+    std::filesystem::rename(*mapped1, *mapped2);
+  } catch (...) {
+    return getErr(ErrCode::_ENFILE);
+  }
   return Ok;
 }
 
