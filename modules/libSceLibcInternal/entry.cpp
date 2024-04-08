@@ -67,6 +67,14 @@ EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
   return std::memmove(dst, src, n);
 }
 
+EXPORT SYSV_ABI errno_t __NID(memcpy_s)(void* dst, size_t dsize, const void* src, size_t count) {
+  return ::memcpy_s(dst, dsize, src, count);
+}
+
+EXPORT SYSV_ABI errno_t __NID(memcmp)(void* mem1, const void* mem2, size_t size) {
+  return ::memcmp(mem1, mem2, size);
+}
+
 EXPORT SYSV_ABI size_t __NID(strlen)(const char* str) {
   return std::strlen(str);
 }
@@ -81,6 +89,14 @@ EXPORT SYSV_ABI char* __NID(strstr)(char* haystack, const char* needle) {
 
 EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t size) {
   return std::strncmp(str1, str2, size);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strcpy_s)(char* dst, size_t size, const char* src) {
+  return ::strcpy_s(dst, size, src);
+}
+
+EXPORT SYSV_ABI float __NID(expf)(float val) {
+  return std::expf(val);
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {

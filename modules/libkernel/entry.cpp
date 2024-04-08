@@ -391,6 +391,11 @@ EXPORT SYSV_ABI int sceKernelGetModuleList(int* modules, size_t size, size_t* si
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceKernelGetCompiledSdkVersion(int* ver) {
+  *ver = 0x7FFFF;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelDlsym(int moduleId, const char* symbol, uint64_t* pAddr) {
   *pAddr = (uint64_t)accessRuntimeExport()->getSymbol(moduleId, symbol, false);
   LOG_USE_MODULE(libkernel);
