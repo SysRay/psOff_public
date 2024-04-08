@@ -10,6 +10,7 @@
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
+#include "gamereport.h"
 #include "imageHandler.h"
 #include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
@@ -655,7 +656,7 @@ void cbWindow_close(SDL_Window* window) {
 
   int buttonId = -1;
   if (SDL_ShowMessageBox(&mbd, &buttonId) != 0) {
-    LOG_ERR(L"SDL_ShowMessageBox error: %S", SDL_GetError());
+    LOG_ERR(L"Failed to generate SDL MessageBox: %S", SDL_GetError());
     return;
   }
 
@@ -687,6 +688,23 @@ std::thread VideoOut::createSDLThread() {
           case SDL_KEYUP:
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
               cbWindow_close(window);
+            } else if (event.key.keysym.scancode == GAMEREPORT_USER_SEND_SCANCODE) {
+              auto title    = accessSystemContent().getString("TITLE");
+              auto title_id = accessSystemContent().getString("TITLE_ID");
+              auto app_ver  = accessSystemContent().getString("APP_VER");
+
+              accessGameReport().ShowReportWindow({
+                  .title    = title ? title.value().data() : "Your PS4 Game Name",
+                  .title_id = title_id ? title_id.value().data() : "CUSA00000",
+                  .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+                  .wnd      = window,
+
+                  .type = IGameReport::Type::USER,
+                  .add =
+                      {
+                          .ex = nullptr,
+                      },
+              });
             }
 
           default: break;

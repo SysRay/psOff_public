@@ -105,7 +105,7 @@ EXPORT SYSV_ABI int32_t scePlayGoGetLanguageMask(ScePlayGoHandle handle, ScePlay
 EXPORT SYSV_ABI int32_t scePlayGoGetProgress(ScePlayGoHandle handle, const ScePlayGoChunkId* chunkIds, uint32_t numberOfEntries,
                                              ScePlayGoProgress* outProgress) {
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_TRACE(L"TODO: %S", __FUNCTION__);
   return Ok;
 }
 
