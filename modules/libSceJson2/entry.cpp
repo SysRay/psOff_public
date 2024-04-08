@@ -104,4 +104,10 @@ EXPORT SYSV_ABI int32_t __NID_HEX(F9DAC3172012EAEE)() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t __NID_HEX(593B587FE70D9D72)() {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }

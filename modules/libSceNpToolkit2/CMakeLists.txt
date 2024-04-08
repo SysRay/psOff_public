@@ -1,4 +1,4 @@
-set(libName libSceNpTookit2)
+set(libName libSceNpToolkit2)
 include(../setupModule.cmake)
 
 project(${libName})

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "common.h"
 #include "core/imports/imports_runtime.h"
 #include "logging.h"
@@ -64,6 +65,22 @@ EXPORT SYSV_ABI void* __NID(memcpy)(void* d, void* s, size_t n) {
 
 EXPORT SYSV_ABI void* __NID(memmove)(void* dst, void const* src, size_t n) {
   return std::memmove(dst, src, n);
+}
+
+EXPORT SYSV_ABI size_t __NID(strlen)(const char* str) {
+  return std::strlen(str);
+}
+
+EXPORT SYSV_ABI char* __NID(strncat)(char* dst, const char* src, size_t size) {
+  return std::strncat(dst, src, size);
+}
+
+EXPORT SYSV_ABI char* __NID(strstr)(char* haystack, const char* needle) {
+  return std::strstr(haystack, needle);
+}
+
+EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t size) {
+  return std::strncmp(str1, str2, size);
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
