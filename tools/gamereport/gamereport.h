@@ -39,6 +39,7 @@ class IGameReport {
   };
 
   void SetStatus(bool enabled) { m_bEnabled = enabled; };
+
   virtual void ShowReportWindow(const Info&) = 0;
 };
 
