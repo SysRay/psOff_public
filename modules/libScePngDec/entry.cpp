@@ -89,7 +89,9 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
   if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(pngh->png);
   if (ct == PNG_COLOR_TYPE_GRAY || ct == PNG_COLOR_TYPE_GRAY_ALPHA) png_set_gray_to_rgb(pngh->png);
   if (param->pixelFormat == ScePngDecPixelFormat::B8G8R8A8) png_set_bgr(pngh->png);
+  if (ct == PNG_COLOR_TYPE_RGB) png_set_add_alpha(pngh->png, 0xFF, PNG_FILLER_AFTER);
   png_read_update_info(pngh->png, pngh->info);
+  png_get_IHDR(pngh->png, pngh->info, &w, &h, &bi, &ct, nullptr, nullptr, nullptr);
 
   png_bytepp row_ptr = (png_bytep*)png_malloc(pngh->png, sizeof(png_bytep) * h);
   for (int y = 0; y < h; y++) {

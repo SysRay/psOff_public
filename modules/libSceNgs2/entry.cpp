@@ -376,6 +376,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
 EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  cbi->hostBufferSize = 100;
   return Ok;
 }
 
@@ -392,6 +393,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2
 EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize(const SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  cbi->hostBufferSize = 100;
   return Ok;
 }
 }
