@@ -11,6 +11,7 @@ class IGameReport {
 
   protected:
   bool m_bEnabled = true;
+
   IGameReport() = default;
 
   public:
