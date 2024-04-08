@@ -138,12 +138,22 @@ int Semaphore::wait_internal(int needCount, uint32_t* pMicros, boost::unique_loc
 
     m_countThreads++;
     if (pMicros != nullptr) {
-      if (!condVar->wait_for(lock, boost::chrono::microseconds(micros),
-                             [this, condVar, needCount] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); })) {
-        LOG_WARN(L"<- KernelSema(%llu) name:%S waitCount:%llu timeout", m_id, m_name.c_str(), waitCount);
-        *pMicros = 0;
-        m_countThreads--;
-        return getErr(ErrCode::_ETIMEDOUT);
+      if (*pMicros == 0) {
+        if (m_count < needCount) {
+          *pMicros = 0;
+          m_countThreads--;
+          m_condState.notify_all();
+          return getErr(ErrCode::_ETIMEDOUT);
+        }
+      } else {
+        if (!condVar->wait_for(lock, boost::chrono::microseconds(micros),
+                               [this, condVar, needCount] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); })) {
+          LOG_WARN(L"<- KernelSema(%llu) name:%S waitCount:%llu timeout", m_id, m_name.c_str(), waitCount);
+          *pMicros = 0;
+          m_countThreads--;
+          m_condState.notify_all();
+          return getErr(ErrCode::_ETIMEDOUT);
+        }
       }
     } else {
       condVar->wait(lock, [this, condVar, needCount] { return m_state != Status::Set || (m_condQueue.front() == condVar && m_count >= needCount); });
