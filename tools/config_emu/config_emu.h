@@ -30,6 +30,16 @@ class IConfig {
   virtual bool save(uint32_t flags) = 0;
 };
 
+template <typename T>
+bool getJsonParam(json* jData, std::string_view param, T& ret) {
+  try {
+    (*jData)[param.data()].get_to(ret);
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
+
 #ifdef __APICALL_EXTERN
 #define __APICALL __declspec(dllexport)
 #else

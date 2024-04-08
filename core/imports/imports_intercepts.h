@@ -1,3 +1,4 @@
+#pragma once
 
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)
@@ -8,11 +9,9 @@
 #endif
 
 /**
- * @brief Called at exit
+ * @brief Called before library setup
  *
+ * @return __APICALL
  */
-__APICALL void core_exit();
-
 __APICALL void core_initIntercepts();
-
 #undef __APICALL

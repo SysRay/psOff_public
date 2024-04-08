@@ -21,17 +21,33 @@ struct VulkanObj;
 struct QueueInfo;
 } // namespace vulkan
 
+class ImageHandlerCB {
+  CLASS_NO_COPY(ImageHandlerCB);
+  CLASS_NO_MOVE(ImageHandlerCB);
+
+  protected:
+  ImageHandlerCB() = default;
+
+  public:
+  virtual ~ImageHandlerCB() = default;
+
+  virtual VkExtent2D getWindowSize() = 0;
+};
+
 class IImageHandler {
   CLASS_NO_COPY(IImageHandler);
   CLASS_NO_MOVE(IImageHandler);
 
   protected:
-  IImageHandler(VkExtent2D extentWindow, vulkan::QueueInfo* queue): m_extentWindow(extentWindow), m_queue(queue) {}
+  IImageHandler(VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback)
+      : m_extentWindow(extentWindow), m_queue(queue), m_callback(callback) {}
 
   VkExtent2D m_extentWindow;
   VkFormat   m_imageFormat;
 
   vulkan::QueueInfo* m_queue;
+
+  ImageHandlerCB* m_callback;
 
   public:
   virtual ~IImageHandler() = default;
@@ -53,4 +69,4 @@ class IImageHandler {
   virtual VkSwapchainKHR getSwapchain() const = 0;
 };
 
-std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue);
+std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback);
