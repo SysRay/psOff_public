@@ -38,6 +38,7 @@ target_link_libraries(core PRIVATE
   gamereport.lib
   OptickCore
   psOff_utility
+  config_emu.lib
   ${Vulkan_LIBRARIES}
 )
 

@@ -138,13 +138,15 @@ Config::Config() {
 
   const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
 
-  m_logging._future = std::async(std::launch::async, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+  m_logging._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
 
-  m_graphics._future = std::async(std::launch::async, load, &m_graphics, json::object({}), ConfigModFlag::GRAPHICS);
+  m_graphics._future = std::async(std::launch::async | std::launch::deferred, load, &m_graphics, json({{"fullscreen", false}}), ConfigModFlag::GRAPHICS);
 
-  m_audio._future = std::async(std::launch::async, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
+  m_audio._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
 
-  m_controls._future = std::async(std::launch::async, load, &m_controls,
+  m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
                                   json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
                                         {"keybinds",
                                          {

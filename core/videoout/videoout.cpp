@@ -4,6 +4,7 @@
 #include "intern.h"
 #undef __APICALL_EXTERN
 
+#include "config_emu.h"
 #include "core/imports/exports/graphics.h"
 #include "core/imports/imports_func.h"
 #include "core/initParams/initParams.h"
@@ -109,7 +110,7 @@ enum class FlipRate {
   _20Hz,
 };
 
-struct Context {
+struct Context: public ImageHandlerCB {
   int      userId   = -1;
   FlipRate fliprate = FlipRate::_60Hz;
 
@@ -119,6 +120,12 @@ struct Context {
 
   std::list<EventQueue::IKernelEqueue_t> eventFlip;
   std::list<EventQueue::IKernelEqueue_t> eventVblank;
+
+  // ## interface
+  VkExtent2D getWindowSize() final {
+    SDL_GetWindowSize(window, (int*)(&config.resolution.paneWidth), (int*)(&config.resolution.paneHeight));
+    return VkExtent2D {config.resolution.paneWidth, config.resolution.paneHeight};
+  }
 };
 
 enum class MessageType { open, close, flip };
@@ -744,8 +751,23 @@ std::thread VideoOut::createSDLThread() {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
 
+          Uint32 addFlags = 0;
+          { // Handle graphic config
+            auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GRAPHICS);
+
+            bool useFullscreen = false;
+            if (!getJsonParam(jData, "fullscreen", useFullscreen)) {
+              LOG_ERR(L"Config| Couldn't load param:fullscreen from graphics");
+            }
+
+            if (useFullscreen)
+              addFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+            else
+              addFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE;
+          }
+
           window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
-                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
+                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | addFlags);
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
 
@@ -756,8 +778,9 @@ std::thread VideoOut::createSDLThread() {
 
             m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
 
-            auto queue     = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
-            m_imageHandler = createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue);
+            auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
+            m_imageHandler =
+                createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
 
             *item.done = true;
