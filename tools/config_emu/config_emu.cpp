@@ -49,7 +49,7 @@ class Config: public IConfig {
 
   std::pair<boost::unique_lock<boost::mutex>, json*> accessModule(ConfigModFlag flag);
 
-  virtual bool save(uint32_t flags);
+  virtual bool save(uint32_t flags) final;
 };
 
 IConfig* accessConfig() {
@@ -141,7 +141,8 @@ Config::Config() {
   m_logging._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
 
-  m_graphics._future = std::async(std::launch::async | std::launch::deferred, load, &m_graphics, json({{"fullscreen", false}}), ConfigModFlag::GRAPHICS);
+  m_graphics._future = std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
+                                  json({{"fullscreen", false}, {"xpos", -1}, {"ypos", -1}, {"width", 1920}, {"height", 1080}}), ConfigModFlag::GRAPHICS);
 
   m_audio._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);

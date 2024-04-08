@@ -156,7 +156,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
 class VideoOut: public IVideoOut, private IEventsGraphics {
   std::array<Context, WindowsMAX> m_windows;
 
-  uint32_t const m_widthTotal = 1920, m_heightTotal = 1080; // todo: make config
+  int32_t m_widthTotal = 1920, m_heightTotal = 1080;
 
   mutable std::mutex m_mutexInt;
   vulkan::VulkanObj* m_vulkanObj = nullptr;
@@ -303,6 +303,9 @@ IVideoOut& accessVideoOut() {
 }
 
 VideoOut::~VideoOut() {
+  printf("saving config files\n");
+  accessConfig()->save((uint32_t)ConfigModFlag::LOGGING | (uint32_t)ConfigModFlag::GRAPHICS | (uint32_t)ConfigModFlag::AUDIO |
+                       (uint32_t)ConfigModFlag::CONTROLS | (uint32_t)ConfigModFlag::GENERAL);
   // Logging doesn't work here, even with flush
   printf("shutting down VideoOut\n");
   m_stop = true;
@@ -670,6 +673,16 @@ void cbWindow_close(SDL_Window* window) {
   if (buttonId == 1) exit(0); // destructor cleans up.
 }
 
+void cbWindow_moveresize(SDL_Window* window) {
+  int w, h, x, y;
+  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GRAPHICS);
+  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowPosition(window, &x, &y);
+
+  (*jData)["width"] = w, (*jData)["height"] = h;
+  (*jData)["xpos"] = x, (*jData)["ypos"] = y;
+}
+
 std::thread VideoOut::createSDLThread() {
   return std::thread([this] {
     util::setThreadName("VideoOut");
@@ -688,6 +701,9 @@ std::thread VideoOut::createSDLThread() {
           case SDL_WINDOWEVENT:
             switch (event.window.event) {
               case SDL_WINDOWEVENT_CLOSE: cbWindow_close(window); break;
+
+              case SDL_WINDOWEVENT_RESIZED:
+              case SDL_WINDOWEVENT_MOVED: cbWindow_moveresize(window); break;
 
               default: break;
             }
@@ -750,6 +766,7 @@ std::thread VideoOut::createSDLThread() {
         case MessageType::open: {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
+          int        win_x = SDL_WINDOWPOS_CENTERED, win_y = SDL_WINDOWPOS_CENTERED;
 
           Uint32 addFlags = 0;
           { // Handle graphic config
@@ -760,13 +777,32 @@ std::thread VideoOut::createSDLThread() {
               LOG_ERR(L"Config| Couldn't load param:fullscreen from graphics");
             }
 
+            auto readCfgIntParam = [jData](const char* param, int& value) {
+              LOG_USE_MODULE(VideoOut);
+
+              if (!getJsonParam(jData, param, value)) {
+                LOG_ERR(L"Config| Couldn't load param:%S from graphics", param);
+              }
+            };
+
+            if (!useFullscreen) {
+              readCfgIntParam("xpos", win_x);
+              readCfgIntParam("ypos", win_y);
+              readCfgIntParam("width", m_widthTotal);
+              readCfgIntParam("height", m_heightTotal);
+              if (win_x == -1) win_x = SDL_WINDOWPOS_CENTERED;
+              if (win_y == -1) win_y = SDL_WINDOWPOS_CENTERED;
+              if (m_widthTotal <= 0) m_widthTotal = 1920;
+              if (m_heightTotal <= 0) m_heightTotal = 1080;
+            }
+
             if (useFullscreen)
               addFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
             else
-              addFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_RESIZABLE;
+              addFlags |= SDL_WINDOW_RESIZABLE;
           }
 
-          window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
+          window.window = SDL_CreateWindow(title.c_str(), win_x, win_y, m_widthTotal, m_heightTotal,
                                            SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | addFlags);
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
