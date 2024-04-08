@@ -1,5 +1,6 @@
 #include "cconfig.h"
 
+#include "gamereport.h"
 #include "logging.h"
 #include "types.h"
 
@@ -66,6 +67,18 @@ ControllerKey MapControllerKey(const std::string& key) {
   return jsonKeys[key];
 }
 
+static SDL_Scancode ParseScanCodeName(const char* key, const char* name) {
+  LOG_USE_MODULE(libScePad_config);
+
+  auto code = SDL_GetScancodeFromName(name);
+  if (code == GAMEREPORT_USER_SEND_SCANCODE) {
+    LOG_ERR(L"Attempt to bind occupied key is prevented, please change your bind for gpkey:%S", key);
+    return SDL_SCANCODE_UNKNOWN;
+  }
+
+  return code;
+}
+
 ControllerConfig::ControllerConfig() {
   LOG_USE_MODULE(libScePad_config);
 
@@ -86,15 +99,15 @@ ControllerConfig::ControllerConfig() {
     size_t fpos;
     if ((fpos = temps.find("%+")) != std::string::npos) { // Process keybinds with modifier
       std::string mod = temps.substr(0, fpos);
-      mapEntry.key    = SDL_GetScancodeFromName(temps.c_str() + fpos + 2);
-      mapEntry.mod    = SDL_GetScancodeFromName(mod.c_str());
+      mapEntry.key    = ParseScanCodeName(key.c_str(), temps.c_str() + fpos + 2);
+      mapEntry.mod    = ParseScanCodeName(key.c_str(), mod.c_str());
       if (mapEntry.mod == 0 || mapEntry.key == 0) LOG_ERR(L"Failed to resolve bind for gpkey:%S, mapEntry(%d,%d)", key.c_str(), mapEntry.key, mapEntry.mod);
       continue;
     }
 
     mapEntry.mod = 0;
-    if ((mapEntry.key = SDL_GetScancodeFromName(temps.c_str())) == 0)
-      LOG_ERR(L"Failed to resolve bind for gpkey:%S, unknown key: %S", key.c_str(), temps.c_str());
+    if ((mapEntry.key = ParseScanCodeName(key.c_str(), temps.c_str())) == 0)
+      LOG_ERR(L"Failed to resolve bind for gpkey:%S, unknown or occupied key: %S", key.c_str(), temps.c_str());
   }
 
   for (int i = 0; i < sizeof(m_pads) / sizeof(*m_pads); i++) {

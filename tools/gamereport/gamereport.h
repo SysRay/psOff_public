@@ -3,6 +3,8 @@
 #include "SDL.h"
 #include "utility/utility.h"
 
+#define GAMEREPORT_USER_SEND_SCANCODE SDL_SCANCODE_F11
+
 class IGameReport {
   CLASS_NO_COPY(IGameReport);
   CLASS_NO_MOVE(IGameReport);

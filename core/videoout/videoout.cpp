@@ -688,7 +688,7 @@ std::thread VideoOut::createSDLThread() {
           case SDL_KEYUP:
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
               cbWindow_close(window);
-            } else if (event.key.keysym.scancode == SDL_SCANCODE_F11) {
+            } else if (event.key.keysym.scancode == GAMEREPORT_USER_SEND_SCANCODE) {
               auto title    = accessSystemContent().getString("TITLE");
               auto title_id = accessSystemContent().getString("TITLE_ID");
               auto app_ver  = accessSystemContent().getString("APP_VER");
