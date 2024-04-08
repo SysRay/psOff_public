@@ -12,7 +12,7 @@ struct CxaDestructor {
   void*                 destructor_object;
 };
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct alignas(32) EntryParams {
   int         argc    = 0;
@@ -65,7 +65,7 @@ struct SceKernelModuleInfoEx {
   uint32_t                   ref_count;
 };
 
-#pragma pack()
+#pragma pack(pop)
 
 class IRuntimeExport {
   CLASS_NO_COPY(IRuntimeExport);

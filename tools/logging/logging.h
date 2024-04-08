@@ -15,7 +15,7 @@
 namespace __Log {
 constexpr wchar_t const* __APPNAME = L"psOff";
 
-__APICALL void* __registerLoggingModule(std::wstring&& name); // For internal usage
+__APICALL void* __registerLoggingModule(std::wstring_view name); // For internal usage
 
 enum class eTrace_Level : uint8_t {
   trace = 0,

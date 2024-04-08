@@ -74,7 +74,7 @@ bool                           readFile(std::ifstream* file, wchar_t const* file
  */
 constexpr std::pair<int, int> getMemoryProtection(int prot) {
   int const protCPU = prot & 0x7;
-  int const protGPU = (prot >> 4u) & 0x2;
+  int const protGPU = (prot >> 4u) & 0x3;
   return std::make_pair(protCPU, protGPU);
 }
 

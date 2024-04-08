@@ -24,3 +24,11 @@ set_target_properties(logging
 )
 
 install(TARGETS logging LIBRARY DESTINATION .)
+
+# Stub
+add_library(logging_stub SHARED logging_stub.cpp)
+set_target_properties(logging_stub
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)

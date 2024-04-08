@@ -733,6 +733,20 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
                     VK_API_VERSION_MINOR(g_PhysicalDeviceProperties.apiVersion), VK_API_VERSION_PATCH(g_PhysicalDeviceProperties.apiVersion));
     printf("%s\n", text.data());
     LOG_INFO(L"%S", text.data());
+
+    // Debug infos
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(obj->deviceInfo.physicalDevice, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+      LOG_DEBUG(L"%u| Memory Type: index:%u flags:%S", i, memProperties.memoryTypes[i].heapIndex,
+                string_VkMemoryPropertyFlags(memProperties.memoryTypes[i].propertyFlags).data());
+    }
+    for (uint32_t i = 0; i < memProperties.memoryHeapCount; i++) {
+      LOG_DEBUG(L"%u| Memory Heap: size:%u flags:%S", i, memProperties.memoryHeaps[i].size,
+                string_VkMemoryHeapFlags(memProperties.memoryHeaps[i].flags).data());
+    }
+    // -
   }
 
   obj->deviceInfo.device = createDevice(obj->deviceInfo.physicalDevice, surface, extensions, queues, enableValidation);
