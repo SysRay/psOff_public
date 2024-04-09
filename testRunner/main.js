@@ -39,7 +39,7 @@ fs.readdir(testsDir, (err, files) => {
       process.exit(1);
     }
 
-    fs.writeSync(md_fd, '# Test results\n\n');
+    fs.writeSync(md_fd, '# Test results🚀\n\n');
     Promise.all(procs).then((values) => {
       values.forEach((ret) => {
         fs.readFile(ret[0], 'utf-8', (err, data) => {
@@ -48,7 +48,8 @@ fs.readdir(testsDir, (err, files) => {
           fs.writeSync(md_fd, '| Test class | ✅ Passed | ❌ Failed | ⏭️Skipped | ⏳Time |\n');
           fs.writeSync(md_fd, '|:-----------|:------:|:------:|:-------:|:----:|\n');
           jdata.testsuites.forEach((test, idx) => {
-            fs.writeSync(md_fd, `|${test.name}|${test.tests - test.failures - test.disabled - test.errors}|${test.failures + test.errors}|${test.disabled}|${test.time}|\n`);
+            const passed = test.tests - test.failures - test.disabled;
+            fs.writeSync(md_fd, `|${test.name}|${passed}|${test.failures}|${test.disabled}|${test.time}|\n`);
           });
         });
       });

@@ -92,11 +92,11 @@ jobs:
           echo "::add-matcher::tools/matchers/cmake.json"
           cmake.exe --install _build/_Release
 
+      - name: Run some tests
+        run: node testRunner\ "$GITHUB_STEP_SUMMARY"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: psOff-libs
           path: _build/_Install/*
-
-      - name: Run some tests
-        run: node testRunner\ "$GITHUB_STEP_SUMMARY"
