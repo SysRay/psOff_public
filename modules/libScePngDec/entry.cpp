@@ -108,7 +108,7 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
   }
   png_free(pngh->png, row_ptr);
 
-  return Ok;
+  return (w > 32767 || h > 32767) ? 0 : ((uint32_t)w << 16) | (uint32_t)h;
 }
 
 EXPORT SYSV_ABI int32_t scePngDecDelete(ScePngDecHandle handle) {
