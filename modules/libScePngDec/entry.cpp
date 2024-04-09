@@ -89,6 +89,7 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
     ii->bitDepth    = bi;
     ii->imageWidth  = w;
     ii->imageHeight = h;
+    ii->imageFlag   = 0;
     ii->colorSpace  = map_png_color(ct);
     if (in == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
     if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
@@ -165,6 +166,8 @@ EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, S
   int bitdepth, color, filter, inter, num_trans;
   png_get_IHDR(png_ptr, info_ptr, &ii->imageWidth, &ii->imageHeight, &bitdepth, &color, &inter, nullptr, &filter);
 
+  ii->imageFlag  = 0;
+  ii->bitDepth = bitdepth;
   ii->colorSpace = map_png_color(color);
   if (inter == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
