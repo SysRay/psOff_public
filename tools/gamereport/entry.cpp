@@ -115,7 +115,7 @@ void GameReport::ShowReportWindow(const Info& info) {
   }
   params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
   params.append({"game-version", info.app_ver});
-  params.append({"lib-version", git::CommitSHA1()});
+  params.append({"lib-version", git::CommitSHA1().data()});
   link.normalize();
 
   ShellExecuteA(nullptr, nullptr, link.buffer().data(), nullptr, nullptr, SW_SHOW);

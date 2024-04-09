@@ -129,7 +129,7 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
       if (result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index); result != VK_SUCCESS) {
         if (result == VK_NOT_READY) {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        } else if (result == VK_SUBOPTIMAL_KHR) {
+        } else if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
           recreate();
           ++numTries;
         }
