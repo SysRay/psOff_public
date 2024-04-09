@@ -58,15 +58,15 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
 
   ssl::context                 ctx(ssl::context::sslv23_client);
   ssl::stream<ip::tcp::socket> sock = {svc, ctx};
-  ip::tcp::resolver            resolver(svc);
-  auto                         resolved = resolver.resolve(link.host(), link.scheme());
   try {
+    ip::tcp::resolver resolver(svc);
+    auto              resolved = resolver.resolve(link.host(), link.scheme());
     boost::asio::connect(sock.lowest_layer(), resolved);
+    sock.handshake(ssl::stream_base::handshake_type::client);
   } catch (boost::system::system_error& ex) {
     LOG_ERR(L"%S", ex.what());
     return -1;
   }
-  sock.handshake(ssl::stream_base::handshake_type::client);
 
   http::request<http::empty_body> req {http::verb::get, link, 11};
   req.set(http::field::host, link.host());
