@@ -93,11 +93,8 @@ jobs:
           cmake.exe --install _build/_Release
 
       - name: Run some tests
-        run: node testRunner\ >> $GITHUB_STEP_SUMMARY
-
-      - name: Test
         shell: bash
-        run: echo "## Test things" >> $GITHUB_STEP_SUMMARY
+        run: echo "`node testRunner\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
