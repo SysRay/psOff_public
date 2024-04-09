@@ -10,8 +10,7 @@ extern "C" {
 
 LOG_DEFINE_MODULE(libSceNgs2);
 
-extern "C" {
-
+namespace {
 enum WaveformInfoType {
   WAVEFORM_FILE,
   WAVEFORM_DATA,
@@ -31,14 +30,6 @@ struct WaveformInfo {
   size_t size;
   long   offset;
 };
-
-EXPORT const char* MODULE_NAME = "libSceNgs2";
-
-EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceNgs2WaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-  return Ok;
-}
 
 static SceNgs2ChannelsCount ParseChanCount(int num) {
   LOG_USE_MODULE(libSceNgs2);
@@ -181,6 +172,17 @@ static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
 
   /* todo: Deal with WAV/VAG files */
   return Err::INVALID_WAVEFORM_DATA;
+}
+} // namespace
+
+extern "C" {
+
+EXPORT const char* MODULE_NAME = "libSceNgs2";
+
+EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceNgs2WaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceNgs2WaveformFormat* wf) {
