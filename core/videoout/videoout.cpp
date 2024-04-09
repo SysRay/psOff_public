@@ -168,8 +168,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   std::thread             m_threadSDL2;
   std::condition_variable m_condSDL2;
   std::condition_variable m_condDone;
-  bool                    m_stop = false;
-  std::queue<Message>     m_messages;
+
+  bool m_stop     = false;
+  bool m_useVsync = true;
+
+  std::queue<Message> m_messages;
 
   uint64_t m_vblankTime = (uint64_t)(1e6 / 59.0); // in us
 
@@ -214,10 +217,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
     m_messages.push({MessageType::flip, handle - 1, nullptr, index, setIndex, *imageData});
-    lock.unlock();
-    m_condSDL2.notify_one();
 
     LOG_DEBUG(L"<- eventDoFlip(%d):%u %d", handle, setIndex, index);
+
+    lock.unlock();
+    if (!m_useVsync) m_condSDL2.notify_one();
   }
 
   vulkan::QueueInfo* getQueue(vulkan::QueueType type) final;
@@ -501,10 +505,11 @@ void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
   // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
   m_messages.push({MessageType::flip, handle - 1, nullptr, index, setIndex, *imageData});
-  lock.unlock();
-  m_condSDL2.notify_one();
 
   LOG_DEBUG(L"<- submitFlip(%d):%u %d", handle, setIndex, index);
+
+  lock.unlock();
+  if (!m_useVsync) m_condSDL2.notify_one();
 }
 
 void VideoOut::doFlip(Context& ctx, int handle) {
@@ -824,6 +829,9 @@ std::thread VideoOut::createSDLThread() {
             m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
 
             auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
+
+            m_useVsync = accessInitParams()->useVSYNC();
+
             m_imageHandler =
                 createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);

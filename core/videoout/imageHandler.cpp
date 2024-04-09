@@ -244,7 +244,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .pQueueFamilyIndices   = nullptr,
         .preTransform          = obj->surfaceCapabilities.capabilities.currentTransform,
         .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
+        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_RELAXED_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
         .clipped               = VK_TRUE,
         .oldSwapchain          = nullptr,
     };

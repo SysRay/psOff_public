@@ -237,6 +237,7 @@ int SYSV_ABI sceGnmSubmitAndFlipCommandBuffersForWorkload(uint64_t workload, uin
 int SYSV_ABI sceGnmSubmitDone() {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
+
   accessVideoOut().getGraphics()->waitSubmitDone();
   return Ok;
 }
@@ -416,7 +417,7 @@ void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
 
-  return 0; // Maps/allocates it afterwards anyway
+  return (void*)0xff0000000; // Maps/allocates it afterwards anyway
 }
 
 // ####   Only used for tracing ########
