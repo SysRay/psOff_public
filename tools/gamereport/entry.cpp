@@ -9,10 +9,10 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <boost/url.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast.hpp>
+#include <boost/url.hpp>
 #include <format>
 #include <shellapi.h>
 #include <unordered_map>
@@ -21,19 +21,19 @@ LOG_DEFINE_MODULE(GameReport)
 
 namespace {
 struct GitHubIssue {
-  int id;
+  int         id;
   std::string labels;
   std::string descr;
 };
 
 static std::unordered_map<std::string, const char*> descrs = {
-  {"issues-audio", "* audio issues (sound is missing, choppy or playing incorrectly);\n"},
-  {"issues-graphics", "* graphics issues (visual artifacts, low framerate, black screen);\n"},
-  {"issues-input", "* input issues (gamepad/keyboard won't work, inpust lag is present);\n"},
-  {"savedata", "* savedata issues (the game won't save your progress);\n"},
-  {"issues-video", "* video issues (ingame videos are decoded incorrectly or not played at all);\n"},
-  {"missing-symbol", "* missing symbol (the game needs functions that we have not yet implemented);\n"},
-  {"nvidia-specific", "* nvidia specific (the game has known issues on NVIDIA cards);\n"},
+    {"issues-audio", "* audio issues (sound is missing, choppy or playing incorrectly);\n"},
+    {"issues-graphics", "* graphics issues (visual artifacts, low framerate, black screen);\n"},
+    {"issues-input", "* input issues (gamepad/keyboard won't work, inpust lag is present);\n"},
+    {"savedata", "* savedata issues (the game won't save your progress);\n"},
+    {"issues-video", "* video issues (ingame videos are decoded incorrectly or not played at all);\n"},
+    {"missing-symbol", "* missing symbol (the game needs functions that we have not yet implemented);\n"},
+    {"nvidia-specific", "* nvidia specific (the game has known issues on NVIDIA cards);\n"},
 };
 
 static const char* retrieve_label_description(std::string& label) {
@@ -56,10 +56,10 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
 
   io_service svc;
 
-  ssl::context ctx(ssl::context::sslv23_client);
+  ssl::context                 ctx(ssl::context::sslv23_client);
   ssl::stream<ip::tcp::socket> sock = {svc, ctx};
-  ip::tcp::resolver resolver(svc);
-  auto resolved = resolver.resolve(link.host(), link.scheme());
+  ip::tcp::resolver            resolver(svc);
+  auto                         resolved = resolver.resolve(link.host(), link.scheme());
   try {
     boost::asio::connect(sock.lowest_layer(), resolved);
   } catch (boost::system::system_error& ex) {
@@ -68,7 +68,7 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
   }
   sock.handshake(ssl::stream_base::handshake_type::client);
 
-  http::request<http::empty_body> req{http::verb::get, link, 11};
+  http::request<http::empty_body> req {http::verb::get, link, 11};
   req.set(http::field::host, link.host());
   req.set(http::field::user_agent, "psOff-http/1.0");
   req.set("X-GitHub-Api-Version", "2022-11-28");
@@ -76,23 +76,22 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
   http::write(sock, req);
 
   http::response<http::string_body> res;
-  flat_buffer buf;
+  flat_buffer                       buf;
   http::read(sock, buf, res);
 
   if (res[http::field::content_type].contains("application/json") && res.result_int() == 200) {
     try {
       json jresp = json::parse(res.body());
       if (jresp["total_count"] < 1) return -1;
-      auto& jissue = jresp["items"][0];
+      auto& jissue  = jresp["items"][0];
       auto& jlabels = jissue["labels"];
 
       std::string tempstr;
-      for (auto it : jlabels) {
+      for (auto it: jlabels) {
         it["name"].get_to(tempstr);
         issue->labels += tempstr + ", ";
 
-        if (auto descr = retrieve_label_description(tempstr))
-          issue->descr += descr;
+        if (auto descr = retrieve_label_description(tempstr)) issue->descr += descr;
       }
       if (auto len = issue->labels.length()) issue->labels.erase(len - 2);
       if (auto len = issue->descr.length()) issue->descr.erase(len - 2);
@@ -108,7 +107,7 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
 
   return 0;
 }
-}
+} // namespace
 
 class GameReport: public IGameReport {
   public:
@@ -161,17 +160,16 @@ void GameReport::ShowReportWindow(const Info& info) {
   };
 
   GitHubIssue issue {
-    .id = -1,
+      .id = -1,
   };
 
   std::string issue_msg;
 
   if (find_issue(info.title_id, &issue) == 0) {
-    issue_msg = std::format(
-      "Looks like we already know about issue(-s) in this game!\n\n"
-      "Issue ID: {}\nIssue labels: {}\nPossible issues:\n{}\n\n"
-      "Do you want to open issue's page?", issue.id, issue.labels, issue.descr
-    );
+    issue_msg   = std::format("Looks like we already know about issue(-s) in this game!\n\n"
+                                "Issue ID: {}\nIssue labels: {}\nPossible issues:\n{}\n\n"
+                                "Do you want to open issue's page?",
+                              issue.id, issue.labels, issue.descr);
     mbd.message = issue_msg.c_str();
   }
 
