@@ -94,7 +94,7 @@ jobs:
 
       - name: Run some tests
         shell: bash
-        run: echo "`node testRunner\`" >> $GITHUB_STEP_SUMMARY
+        run: echo "`node testRunner`" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
