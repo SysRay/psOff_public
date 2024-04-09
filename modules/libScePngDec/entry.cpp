@@ -86,10 +86,10 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
   png_get_IHDR(pngh->png, pngh->info, &w, &h, &bi, &ct, &in, nullptr, nullptr);
 
   if (ii != nullptr) {
-    ii->bitDepth = bi;
-    ii->imageWidth = w;
+    ii->bitDepth    = bi;
+    ii->imageWidth  = w;
     ii->imageHeight = h;
-    ii->colorSpace = map_png_color(ct);
+    ii->colorSpace  = map_png_color(ct);
     if (in == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
     if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
   }
