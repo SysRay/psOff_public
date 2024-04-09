@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "common.h"
 #include "core/imports/imports_runtime.h"
+#include "core/unwinding/unwind.h"
 #include "logging.h"
 #include "types.h"
 
@@ -97,6 +98,10 @@ EXPORT SYSV_ABI errno_t __NID(strcpy_s)(char* dst, size_t size, const char* src)
 
 EXPORT SYSV_ABI float __NID(expf)(float val) {
   return std::expf(val);
+}
+
+EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
+  return 0;
 }
 
 EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
