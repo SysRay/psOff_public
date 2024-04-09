@@ -96,7 +96,7 @@ size_t mutexCounter() {
 void initTLS(ScePthread_obj obj) {
   auto pthread    = getPthread(obj);
   pthread->dtv[0] = 0;
-  std::fill(&pthread->dtv[2], &pthread->dtv[DTV_SIZE - 2], 0); // skip mainprog
+  std::fill(&pthread->dtv[1], &pthread->dtv[DTV_SIZE - 2], 0); // skip mainprog
   pthread->dtv[DTV_SIZE - 1] = XSAVE_CHK_GUARD;
   accessRuntimeExport()->initTLS(obj); // reset tls
 }

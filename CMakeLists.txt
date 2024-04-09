@@ -59,6 +59,12 @@ add_subdirectory(tools/gamereport)
 add_subdirectory(tools/dll2Nids)
 add_dependencies(dll2Nids third_party)
 
+set(TEST_BENCH OFF CACHE BOOL "Enable testing")
+
+if(TEST_BENCH)
+  add_subdirectory(tests)
+endif()
+
 link_libraries(
   logging.lib
 )
