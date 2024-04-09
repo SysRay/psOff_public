@@ -6,6 +6,9 @@ add_subdirectory(optick)
 add_subdirectory(p7)
 add_subdirectory(SDL2)
 
+set(gtest_force_shared_crt on)
+add_subdirectory(googletest)
+
 install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
   FILES_MATCHING PATTERN "*.dll"
 )
