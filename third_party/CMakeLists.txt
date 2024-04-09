@@ -10,6 +10,10 @@ install(DIRECTORY "ffmpeg/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
   FILES_MATCHING PATTERN "*.dll"
 )
 
+install(DIRECTORY "openssl/bin/" DESTINATION "${CMAKE_BINARY_DIR}/bin"
+  FILES_MATCHING PATTERN "*.dll"
+)
+
 set_target_properties(OptickCore
   PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/install/bin"

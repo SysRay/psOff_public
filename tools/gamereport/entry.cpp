@@ -5,14 +5,109 @@
 #include "config_emu.h"
 #include "git_ver.h"
 #include "logging.h"
+#include "third_party/nlohmann/json.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/beast.hpp>
 #include <boost/url.hpp>
 #include <format>
 #include <shellapi.h>
+#include <unordered_map>
 
 LOG_DEFINE_MODULE(GameReport)
+
+namespace {
+struct GitHubIssue {
+  int         id;
+  std::string labels;
+  std::string descr;
+};
+
+static std::unordered_map<std::string, const char*> descrs = {
+    {"issues-audio", "* audio issues (sound is missing, choppy or playing incorrectly);\n"},
+    {"issues-graphics", "* graphics issues (visual artifacts, low framerate, black screen);\n"},
+    {"issues-input", "* input issues (gamepad/keyboard won't work, inpust lag is present);\n"},
+    {"savedata", "* savedata issues (the game won't save your progress);\n"},
+    {"issues-video", "* video issues (ingame videos are decoded incorrectly or not played at all);\n"},
+    {"missing-symbol", "* missing symbol (the game needs functions that we have not yet implemented);\n"},
+    {"nvidia-specific", "* nvidia specific (the game has known issues on NVIDIA cards);\n"},
+};
+
+static const char* retrieve_label_description(std::string& label) {
+  auto it = descrs.find(label);
+  if (it != descrs.end()) return it->second;
+  return nullptr;
+}
+
+static int find_issue(const char* title_id, GitHubIssue* issue) {
+  LOG_USE_MODULE(GameReport);
+  using namespace boost::asio;
+  using namespace boost::beast;
+  using json = nlohmann::json;
+
+  boost::urls::url link("https://api.github.com/search/issues");
+
+  auto params = link.params();
+  params.append({"q", std::format("repo:SysRay/psOff_compatibility is:issue {} in:title", title_id)});
+  link.normalize();
+
+  io_service svc;
+
+  ssl::context                 ctx(ssl::context::sslv23_client);
+  ssl::stream<ip::tcp::socket> sock = {svc, ctx};
+  try {
+    ip::tcp::resolver resolver(svc);
+    auto              resolved = resolver.resolve(link.host(), link.scheme());
+    boost::asio::connect(sock.lowest_layer(), resolved);
+    sock.handshake(ssl::stream_base::handshake_type::client);
+  } catch (boost::system::system_error& ex) {
+    LOG_ERR(L"%S", ex.what());
+    return -1;
+  }
+
+  http::request<http::empty_body> req {http::verb::get, link, 11};
+  req.set(http::field::host, link.host());
+  req.set(http::field::user_agent, "psOff-http/1.0");
+  req.set("X-GitHub-Api-Version", "2022-11-28");
+  // req.set(http::field::authorization, "Bearer @GIT_TOKEN@");
+  http::write(sock, req);
+
+  http::response<http::string_body> res;
+  flat_buffer                       buf;
+  http::read(sock, buf, res);
+
+  if (res[http::field::content_type].contains("application/json") && res.result_int() == 200) {
+    try {
+      json jresp = json::parse(res.body());
+      if (jresp["total_count"] < 1) return -1;
+      auto& jissue  = jresp["items"][0];
+      auto& jlabels = jissue["labels"];
+
+      std::string tempstr;
+      for (auto it: jlabels) {
+        it["name"].get_to(tempstr);
+        issue->labels += tempstr + ", ";
+
+        if (auto descr = retrieve_label_description(tempstr)) issue->descr += descr;
+      }
+      if (auto len = issue->labels.length()) issue->labels.erase(len - 2);
+      if (auto len = issue->descr.length()) issue->descr.erase(len - 2);
+      jissue["number"].get_to(issue->id);
+    } catch (json::exception& ex) {
+      LOG_ERR(L"find_issue => jsonparse error: %S", ex.what());
+      return -1;
+    }
+  } else {
+    LOG_ERR(L"GitHub request error: %S", res.body().c_str());
+    return -1;
+  }
+
+  return 0;
+}
+} // namespace
 
 class GameReport: public IGameReport {
   public:
@@ -64,6 +159,20 @@ void GameReport::ShowReportWindow(const Info& info) {
       .buttons    = btns,
   };
 
+  GitHubIssue issue {
+      .id = -1,
+  };
+
+  std::string issue_msg;
+
+  if (find_issue(info.title_id, &issue) == 0) {
+    issue_msg   = std::format("Looks like we already know about issue(-s) in this game!\n\n"
+                                "Issue ID: {}\nIssue labels: {}\nPossible issues:\n{}\n\n"
+                                "Do you want to open issue's page?",
+                              issue.id, issue.labels, issue.descr);
+    mbd.message = issue_msg.c_str();
+  }
+
   int btn = -1;
 
   if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
@@ -101,24 +210,27 @@ void GameReport::ShowReportWindow(const Info& info) {
 
   boost::urls::url link("https://github.com/SysRay/psOff_compatability/issues/new");
 
-  auto params = link.params();
-  params.append({"template", "game_report.yml"});
-  switch (info.type) {
-    case EXCEPTION:
-      params.append({"what-happened", info.add.ex->what()}); // todo: add stack trace?
-      break;
-    case MISSING_SYMBOL:
-      params.append({"what-happened", info.add.message}); // todo: some formatting?
-      break;
+  if (issue.id == -1) {
+    auto params = link.params();
+    params.append({"template", "game_report.yml"});
+    switch (info.type) {
+      case EXCEPTION:
+        params.append({"what-happened", info.add.ex->what()}); // todo: add stack trace?
+        break;
+      case MISSING_SYMBOL:
+        params.append({"what-happened", info.add.message}); // todo: some formatting?
+        break;
 
-    default: break;
+      default: break;
+    }
+    params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
+    params.append({"game-version", info.app_ver});
+    params.append({"lib-version", git::CommitSHA1().data()});
+  } else {
+    link.set_path(std::format("/SysRay/psOff_compatibility/issues/{}", issue.id));
   }
-  params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
-  params.append({"game-version", info.app_ver});
-  params.append({"lib-version", git::CommitSHA1().data()});
-  link.normalize();
 
-  ShellExecuteA(nullptr, nullptr, link.buffer().data(), nullptr, nullptr, SW_SHOW);
+  ShellExecuteA(nullptr, nullptr, link.normalize().c_str(), nullptr, nullptr, SW_SHOW);
 }
 
 IGameReport& accessGameReport() {
