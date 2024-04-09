@@ -163,7 +163,7 @@ EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, S
 
   png_read_info(png_ptr, info_ptr);
 
-  int bitdepth, color, filter, inter, num_trans;
+  int bitdepth, color, filter, inter;
   png_get_IHDR(png_ptr, info_ptr, &ii->imageWidth, &ii->imageHeight, &bitdepth, &color, &inter, nullptr, &filter);
 
   ii->imageFlag  = 0;
