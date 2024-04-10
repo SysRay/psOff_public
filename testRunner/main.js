@@ -36,6 +36,11 @@ fs.readdir(testsDir, (err, files) => {
   Promise.all(procs).then((values) => {
     values.forEach((ret) => {
       fs.readFile(ret[0], 'utf-8', (err, data) => {
+        if (err !== null) {
+          console.error('Failed to open %s: %s', ret[0], err);
+          return;
+        }
+
         const jdata = JSON.parse(data);
         md_fd.write(`## ${jdata.name} (${jdata.time})\n`);
         md_fd.write('| Test class | ✅ Passed | ❌ Failed | ⏭️Skipped | ⏳Time |\n');

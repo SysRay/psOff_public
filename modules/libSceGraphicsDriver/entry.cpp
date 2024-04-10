@@ -413,6 +413,10 @@ bool SYSV_ABI sceGnmIsUserPaEnabled() {
   return false;
 }
 
+bool SYSV_ABI sceRazorIsLoaded() {
+  return false;
+}
+
 void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
