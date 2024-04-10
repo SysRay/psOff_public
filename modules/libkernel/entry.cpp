@@ -167,6 +167,10 @@ EXPORT SYSV_ABI int sceKernelGettimeofday(SceKernelTimeval* tp) {
   return accessTimer().getTimeofDay(tp);
 }
 
+EXPORT SYSV_ABI int sceKernelGettimezone(SceKernelTimezone* tz) {
+  return accessTimer().getTimeZone(tz);
+}
+
 EXPORT SYSV_ABI int __NID(clock_getres)(SceKernelClockid clockId, SceKernelTimespec* tp) {
   return accessTimer().getTimeRes(clockId, tp);
 }
