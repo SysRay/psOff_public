@@ -33,8 +33,7 @@ std::pair<uint32_t, uint32_t> convProtection(int prot) {
 std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base::openmode mode) {
   LOG_USE_MODULE(filesystem);
 
-  // todo: /dev/rng? No ioctl for now
-  if (path == "/dev/urandom" || path == "/dev/urandom") {
+  if (path == "/dev/random" || path == "/dev/urandom") {
     return createType_random();
   } else if (path == "/dev/rng") {
     return createType_rng();
