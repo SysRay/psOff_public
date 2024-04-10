@@ -267,6 +267,14 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t vo
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNgs2RackLock(SceNgs2Handle* rh) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackUnlock(SceNgs2Handle* rh) {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
