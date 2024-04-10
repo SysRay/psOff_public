@@ -103,9 +103,7 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
       for (auto it: jlabels) {
         it["name"].get_to(tempstr);
 
-        if (auto gstat = retrieve_label_status(tempstr))
-          issue->status = gstat;
-
+        if (auto gstat = retrieve_label_status(tempstr)) issue->status = gstat;
         if (auto descr = retrieve_label_description(tempstr)) issue->descr += descr;
       }
       if (auto len = issue->descr.length()) issue->descr.erase(len - 2);
