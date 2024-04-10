@@ -18,6 +18,11 @@ struct timespec64 {
 typedef struct timeval64  SceKernelTimeval;
 typedef struct timespec64 SceKernelTimespec;
 
+struct SceKernelTimezone {
+  int tz_minuteswest;
+  int tz_dsttime;
+};
+
 struct SceRtcTick {
   uint64_t tick;
 };
