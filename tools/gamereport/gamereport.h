@@ -4,6 +4,7 @@
 #include "utility/utility.h"
 
 #define GAMEREPORT_USER_SEND_SCANCODE SDL_SCANCODE_F11
+#define GAMEREPORT_REPO_NAME          "SysRay/psOff_compatibility"
 
 class IGameReport {
   CLASS_NO_COPY(IGameReport);
@@ -26,6 +27,7 @@ class IGameReport {
   union AdditionalData {
     std::exception* ex;
     const char*     message;
+    const void*     ptr;
   };
 
   struct Info {

@@ -104,6 +104,10 @@ EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
   return 0;
 }
 
+EXPORT SYSV_ABI int __NID(gmtime_s)(tm* tm, const time_t* time) {
+  return ::gmtime_s(tm, time);
+}
+
 EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_ERR(L"todo %S", __FUNCTION__);
