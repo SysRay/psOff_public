@@ -22,18 +22,31 @@ LOG_DEFINE_MODULE(GameReport)
 namespace {
 struct GitHubIssue {
   int         id;
-  std::string labels;
+  std::string status;
   std::string descr;
 };
 
 static std::unordered_map<std::string, const char*> descrs = {
-    {"issues-audio", "* audio issues (sound is missing, choppy or playing incorrectly);\n"},
-    {"issues-graphics", "* graphics issues (visual artifacts, low framerate, black screen);\n"},
-    {"issues-input", "* input issues (gamepad/keyboard won't work, inpust lag is present);\n"},
+    {"audio", "* audio issues (sound is missing, choppy or playing incorrectly);\n"},
+    {"graphics", "* graphics issues (visual artifacts, low framerate, black screen);\n"},
+    {"input", "* input issues (gamepad/keyboard won't work, inpust lag is present);\n"},
     {"savedata", "* savedata issues (the game won't save your progress);\n"},
-    {"issues-video", "* video issues (ingame videos are decoded incorrectly or not played at all);\n"},
+    {"video", "* video issues (ingame videos are decoded incorrectly or not played at all);\n"},
     {"missing-symbol", "* missing symbol (the game needs functions that we have not yet implemented);\n"},
     {"nvidia-specific", "* nvidia specific (the game has known issues on NVIDIA cards);\n"},
+};
+
+static std::unordered_map<std::string, const char*> statuses = {
+    {"status-nothing", "nothing (the game don't initialize properly, not loading atall and/or crashing the emulator)"},
+    {"status-intro", "intro (the game display image but don't make it past the menus)"},
+    {"status-ingame", "igname (the game can't be either finished, have serious glitches or insufficient performance)"},
+    {"status-playable", "playable (the game can be finished with playable performance and no game breaking glitches)"},
+};
+
+static const char* retrieve_label_status(std::string& label) {
+  auto it = statuses.find(label);
+  if (it != statuses.end()) return it->second;
+  return nullptr;
 };
 
 static const char* retrieve_label_description(std::string& label) {
@@ -51,7 +64,7 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
   boost::urls::url link("https://api.github.com/search/issues");
 
   auto params = link.params();
-  params.append({"q", std::format("repo:SysRay/psOff_compatibility is:issue {} in:title", title_id)});
+  params.append({"q", std::format("repo:{} is:issue {} in:title", GAMEREPORT_REPO_NAME, title_id)});
   link.normalize();
 
   io_service svc;
@@ -89,11 +102,10 @@ static int find_issue(const char* title_id, GitHubIssue* issue) {
       std::string tempstr;
       for (auto it: jlabels) {
         it["name"].get_to(tempstr);
-        issue->labels += tempstr + ", ";
 
+        if (auto gstat = retrieve_label_status(tempstr)) issue->status = gstat;
         if (auto descr = retrieve_label_description(tempstr)) issue->descr += descr;
       }
-      if (auto len = issue->labels.length()) issue->labels.erase(len - 2);
       if (auto len = issue->descr.length()) issue->descr.erase(len - 2);
       jissue["number"].get_to(issue->id);
     } catch (json::exception& ex) {
@@ -137,7 +149,7 @@ void GameReport::ShowReportWindow(const Info& info) {
 
     case EXCEPTION:
     case MISSING_SYMBOL:
-      message = "Looks like your emulator just crashed! Do you want to file a game report?\n"
+      message = "We believe your emulator just crashed! Do you want to file a game report?\n"
                 "If you press \"Yes\", your default browser will be opened.\n\n"
                 "You must have a GitHub account to create an issue!";
       break;
@@ -159,20 +171,6 @@ void GameReport::ShowReportWindow(const Info& info) {
       .buttons    = btns,
   };
 
-  GitHubIssue issue {
-      .id = -1,
-  };
-
-  std::string issue_msg;
-
-  if (find_issue(info.title_id, &issue) == 0) {
-    issue_msg   = std::format("Looks like we already know about issue(-s) in this game!\n\n"
-                                "Issue ID: {}\nIssue labels: {}\nPossible issues:\n{}\n\n"
-                                "Do you want to open issue's page?",
-                              issue.id, issue.labels, issue.descr);
-    mbd.message = issue_msg.c_str();
-  }
-
   int btn = -1;
 
   if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
@@ -181,6 +179,27 @@ void GameReport::ShowReportWindow(const Info& info) {
   }
 
   if (btn != 1) return;
+
+  GitHubIssue issue {
+      .id = -1,
+  };
+
+  std::string issue_msg;
+
+  if (find_issue(info.title_id, &issue) == 0) {
+    issue_msg   = std::format("Looks like we already know about issue(-s) in this game!\n\n"
+                                "Game status: {}\nPossible issues:\n{}\n\n"
+                                "Do you want to open issue's page?",
+                              issue.status, issue.descr);
+    mbd.message = issue_msg.c_str();
+
+    if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
+      LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S", SDL_GetError());
+      return;
+    }
+
+    if (btn != 1) return;
+  }
 
   try {
     std::string str;
@@ -206,11 +225,13 @@ void GameReport::ShowReportWindow(const Info& info) {
       if (btn != 1) return;
     }
   } catch (const json::exception& ex) {
+    LOG_ERR(L"Something off with the logging configuration: %S", ex.what());
   }
 
-  boost::urls::url link("https://github.com/SysRay/psOff_compatability/issues/new");
+  boost::urls::url link("https://github.com/");
 
   if (issue.id == -1) {
+    link.set_path(std::format("/{}/issues/new", GAMEREPORT_REPO_NAME));
     auto params = link.params();
     params.append({"template", "game_report.yml"});
     switch (info.type) {
@@ -227,7 +248,7 @@ void GameReport::ShowReportWindow(const Info& info) {
     params.append({"game-version", info.app_ver});
     params.append({"lib-version", git::CommitSHA1().data()});
   } else {
-    link.set_path(std::format("/SysRay/psOff_compatibility/issues/{}", issue.id));
+    link.set_path(std::format("/{}/issues/{}", GAMEREPORT_REPO_NAME, issue.id));
   }
 
   ShellExecuteA(nullptr, nullptr, link.normalize().c_str(), nullptr, nullptr, SW_SHOW);
