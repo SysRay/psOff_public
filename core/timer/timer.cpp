@@ -171,7 +171,7 @@ int Timer::getTimeZone(SceKernelTimezone* tz) {
     _tzset();
     isTZSet = true;
   }
-  
+
   long tz_secswest;
   if (auto err = _get_timezone(&tz_secswest)) return getErr((ErrCode)err);
   if (auto err = _get_daylight(&tz->tz_dsttime)) return getErr((ErrCode)err);

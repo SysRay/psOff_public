@@ -98,7 +98,7 @@ class ITimer {
 
   /**
    * @brief Get the time zone info
-   * 
+   *
    */
   virtual int getTimeZone(SceKernelTimezone* tz) = 0;
 };
