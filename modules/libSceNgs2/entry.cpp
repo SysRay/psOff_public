@@ -154,6 +154,10 @@ static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   return Ok;
 }
 
+static int32_t ParseVAG(const uint8_t* data, size_t size, SceNgs2WaveformFormat* wf) {
+  return Err::INVALID_WAVEFORM_DATA;
+}
+
 static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
 
@@ -162,6 +166,9 @@ static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
       switch (auto ftype = *(uint32_t*)wi->ud.dataPtr) {
         case 0x46464952: // RIFF audio
           return ParseRIFF((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
+
+        case 0x70474156: // VAG audio
+          return ParseVAG((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
 
         default: LOG_ERR(L"Unimplemented filetype: %08x", ftype);
       }
@@ -190,7 +197,7 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
   if (ptr == nullptr) {
-    return Err::INVALID_WAVEFORM_DATA;
+    return Err::INVALID_BUFFER_ADDRESS;
   }
 
   WaveformInfo wi {
@@ -228,7 +235,7 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   LOG_ERR(L"todo %S", __FUNCTION__);
 
   if (user == nullptr) {
-    return Err::INVALID_WAVEFORM_DATA;
+    return Err::INVALID_BUFFER_ADDRESS;
   }
 
   WaveformInfo wi {
