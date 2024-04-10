@@ -148,8 +148,8 @@ static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   // wf->numBlocks         = 1;
   // wf->block[0].userData = (uintptr_t)frames;
 
-  // av_free(avioctx);
-  // avformat_close_input(&fmtctx);
+  av_free(avioctx);
+  avformat_close_input(&fmtctx);
 
   return Ok;
 }
@@ -163,7 +163,7 @@ static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
         case 0x46464952: // RIFF audio
           return ParseRIFF((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
 
-        default: LOG_CRIT(L"Unimplemented filetype: %08x", ftype);
+        default: LOG_ERR(L"Unimplemented filetype: %08x", ftype);
       }
       break;
 
