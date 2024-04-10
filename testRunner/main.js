@@ -41,14 +41,18 @@ fs.readdir(testsDir, (err, files) => {
           return;
         }
 
-        const jdata = JSON.parse(data);
-        md_fd.write(`## ${jdata.name} (${jdata.time})\n`);
-        md_fd.write('| Test class | ✅ Passed | ❌ Failed | ⏭️Skipped | ⏳Time |\n');
-        md_fd.write('|:-----------|:------:|:------:|:-------:|:----:|\n');
-        jdata.testsuites.forEach((test, idx) => {
-          const passed = test.tests - test.failures - test.disabled;
-          md_fd.write(`|${test.name}|${passed}|${test.failures}|${test.disabled}|${test.time}|\n`);
-        });
+        try {
+          const jdata = JSON.parse(data);
+          md_fd.write(`## ${jdata.name} (${jdata.time})\n`);
+          md_fd.write('| Test class | ✅ Passed | ❌ Failed | ⏭️Skipped | ⏳Time |\n');
+          md_fd.write('|:-----------|:------:|:------:|:-------:|:----:|\n');
+          jdata.testsuites.forEach((test, idx) => {
+            const passed = test.tests - test.failures - test.disabled;
+            md_fd.write(`|${test.name}|${passed}|${test.failures}|${test.disabled}|${test.time}|\n`);
+          });
+        } catch (ex) {
+          console.error(ex);
+        }
       });
     });
   });
