@@ -424,6 +424,10 @@ void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
   return (void*)0xff0000000; // Maps/allocates it afterwards anyway
 }
 
+int SYSV_ABI sceGnmValidateCommandBuffers() {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
 // ####   Only used for tracing ########
 // #####################################
 

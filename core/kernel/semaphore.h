@@ -13,19 +13,17 @@ class ISemaphore {
   public:
   virtual ~ISemaphore() = default;
 
-  virtual int cancel(int setCount, int* numWaitingThreads) = 0;
-  virtual int signal(int signalCount)                      = 0;
-  virtual int wait(int needcount, uint32_t* pMicros)       = 0;
-  virtual int try_wait(int needcount, uint32_t* pMicros)   = 0;
-
-  int poll(int needCount) {
-    uint32_t micros = 0;
-    return wait(needCount, &micros);
-  }
+  virtual int cancel(int setCount, int* numCanceled)     = 0;
+  virtual int signal(int signalCount)                    = 0;
+  virtual int wait(int needcount, uint32_t* pMicros)     = 0;
+  virtual int try_wait(int needcount, uint32_t* pMicros) = 0;
+  virtual int poll(int needCount)                        = 0;
 
   virtual std::string_view const getName() const = 0;
 
   virtual size_t getId() const = 0;
+
+  virtual size_t getSignalCounter() const = 0;
 };
 
 #if defined(__APICALL_EXTERN)
@@ -36,6 +34,7 @@ class ISemaphore {
 #define __APICALL
 #endif
 
-__APICALL std::unique_ptr<ISemaphore> createSemaphore(const char* name, bool fifo, int initCount, int maxCount);
+__APICALL std::unique_ptr<ISemaphore> createSemaphore_fifo(const char* name, int initCount, int maxCount);
+__APICALL std::unique_ptr<ISemaphore> createSemaphore_prio(const char* name, int initCount, int maxCount);
 
 #undef __APICALL
