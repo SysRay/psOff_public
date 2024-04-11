@@ -29,7 +29,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:unwinding>
 )
 
-add_dependencies(core logging boost)
+add_dependencies(core logging boost gamereport)
 target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
