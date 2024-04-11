@@ -221,7 +221,7 @@ Config::Config() {
                                          }}}),
                                   ConfigModFlag::CONTROLS);
 
-  m_general._future =
-      std::async(std::launch::async, load, &m_general,
-                 json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof})}}), ConfigModFlag::GENERAL);
+  m_general._future = std::async(std::launch::async, load, &m_general,
+                                 json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
+                                 ConfigModFlag::GENERAL);
 }
