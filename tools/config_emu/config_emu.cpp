@@ -106,21 +106,81 @@ Config::Config() {
       should_backup = true;
     }
 
-    for (auto& [dkey, dval]: defaults.items()) {
-      if ((item->_json)[dkey].is_null() && !dval.is_null()) {
-        (item->_json)[dkey] = dval;
-        should_resave       = true;
-        printf("%s: missing parameter \"%s\" has been added!\n", item->_name.data(), dkey.c_str());
+    std::function<bool(json&, json&)> fixMissing;
+    std::function<bool(json&, json&)> removeUnused;
+
+    /**
+     * @brief This function is necessary since json.items()
+     * translates every key to string. Even the array indexes,
+     * so we have to translate it back to number for arrays.
+     *
+     */
+    auto getVal = [](json& _o, std::string_view key) -> json& {
+      if (_o.is_array()) {
+        int  _tempi;
+        auto res = std::from_chars(key.data(), key.data() + key.size(), _tempi);
+        if (res.ec == std::errc::invalid_argument) {
+          printf("Unreachable scenario!\n"); // At least it should be
+          exit(1);
+        }
+        return _o[_tempi];
       }
+
+      return _o[key];
+    };
+
+    fixMissing = [&should_backup, &getVal, &fixMissing](json& obj, json& def) -> bool {
+      bool missing = false;
+
+      for (auto& [dkey, dval]: def.items()) {
+        json& cval = getVal(obj, dkey);
+
+        if (cval.is_null() && !dval.is_null()) {
+          cval    = dval;
+          missing = true;
+        } else if (dval.is_structured()) {
+          if (cval.is_structured()) { // Function calls itself if json element is array or object
+            missing |= fixMissing(cval, dval);
+            continue;
+          }
+
+          should_backup = true;
+          cval          = dval;
+          missing       = true;
+        }
+      }
+
+      return missing;
+    };
+
+    if (fixMissing(item->_json, defaults)) {
+      should_resave = true;
+      printf("%s: some missing parameters has been added!\n", item->_name.data());
     }
 
-    for (auto& [ckey, cval]: item->_json.items()) {
-      if (defaults[ckey].is_null()) {
-        item->_json.erase(ckey);
-        should_backup = true;
-        should_resave = true;
-        printf("%s: unused parameter \"%s\" has been removed!\n", item->_name.data(), ckey.c_str());
+    // Just the same thing as above, but for removing unused keys this time
+    removeUnused = [&getVal, &removeUnused](json& obj, json& def) -> bool {
+      bool unused = false;
+
+      for (auto& [ckey, cval]: obj.items()) {
+        json& dval = getVal(def, ckey);
+
+        if (dval.is_null()) {
+          obj.erase(ckey);
+          unused = true;
+        } else if (dval.is_structured()) {
+          unused |= removeUnused(cval, dval);
+          continue;
+        }
       }
+
+      return unused;
+    };
+
+    if (removeUnused(item->_json, defaults)) {
+      should_backup = true;
+      should_resave = true;
+      printf("%s: some unused parameters has been removed!\n", item->_name.data());
     }
 
     if (should_backup == true && std::filesystem::exists(path)) {
@@ -136,7 +196,8 @@ Config::Config() {
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
+  const json defaultpad  = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
+  const json defaultprof = {{"name", "Anon"}, {"color", "blue"}};
 
   m_logging._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
@@ -160,5 +221,7 @@ Config::Config() {
                                          }}}),
                                   ConfigModFlag::CONTROLS);
 
-  m_general._future = std::async(std::launch::async, load, &m_general, json({{"systemlang", 1}}), ConfigModFlag::GENERAL);
+  m_general._future =
+      std::async(std::launch::async, load, &m_general,
+                 json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof})}}), ConfigModFlag::GENERAL);
 }
