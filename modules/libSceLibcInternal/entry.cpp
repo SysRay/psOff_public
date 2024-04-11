@@ -5,6 +5,7 @@
 #include "logging.h"
 #include "types.h"
 
+#include <boost/thread.hpp>
 #include <cstdlib>
 #include <vector>
 LOG_DEFINE_MODULE(libSceLibcInternal);
@@ -108,21 +109,39 @@ EXPORT SYSV_ABI int __NID(gmtime_s)(tm* tm, const time_t* time) {
   return ::gmtime_s(tm, time);
 }
 
-EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(uint64_t* guard_object) {
+static boost::recursive_mutex _guard_mtx;
+
+struct GuardObject {
+  bool initHasRun;
+  bool inUse;
+};
+
+EXPORT SYSV_ABI int __NID(__cxa_guard_acquire)(GuardObject* go) {
   LOG_USE_MODULE(libSceLibcInternal);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  if (go->initHasRun) return 0;
+
+  _guard_mtx.lock();
+
+  if (go->initHasRun) {
+    _guard_mtx.unlock();
+    return 0;
+  }
+
+  if (go->inUse) LOG_CRIT(L"initializer for function local static variable called enclosing function");
+
+  go->inUse = true;
+  return 1;
+}
+
+EXPORT SYSV_ABI int __NID(__cxa_guard_release)(GuardObject* go) {
+  go->initHasRun = true;
+  _guard_mtx.unlock();
   return 0;
 }
 
-EXPORT SYSV_ABI int __NID(__cxa_guard_release)(uint64_t* guard_object) {
-  LOG_USE_MODULE(libSceLibcInternal);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return 0;
-}
-
-EXPORT SYSV_ABI int __NID(__cxa_guard_abort)(uint64_t* guard_object) {
-  LOG_USE_MODULE(libSceLibcInternal);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+EXPORT SYSV_ABI int __NID(__cxa_guard_abort)(GuardObject* go) {
+  _guard_mtx.unlock();
+  go->inUse = false;
   return 0;
 }
 
