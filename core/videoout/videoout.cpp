@@ -564,7 +564,7 @@ void VideoOut::vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime) {
   vblank.processTime = curTime;
   ++vblank.count;
 
-  for (auto& item: window.eventFlip) {
+  for (auto& item: window.eventVblank) {
     (void)item->triggerEvent(VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT, reinterpret_cast<void*>(window.config.vblankStatus.count));
   }
 }
