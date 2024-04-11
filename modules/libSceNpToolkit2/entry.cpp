@@ -153,7 +153,6 @@ EXPORT SYSV_ABI int __NID(_ZN3sce7Toolkit2NP2V26Trophy7Request6UnlockD1Ev)() {
   return Ok;
 }
 
-
 /**
  * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::NetworkUtils::NetStateBasic>::Response()
  *
@@ -210,11 +209,13 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching4RoomC1Ev)() {
 }
 
 /**
- * @brief sce::Toolkit::NP::V2::NetworkUtils::getBasicNetworkInfo(sce::Toolkit::NP::V2::NetworkUtils::Request::GetBasicNetworkInfo const&, sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::NetworkUtils::NetStateBasic>*)
+ * @brief sce::Toolkit::NP::V2::NetworkUtils::getBasicNetworkInfo(sce::Toolkit::NP::V2::NetworkUtils::Request::GetBasicNetworkInfo const&,
+ * sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::NetworkUtils::NetStateBasic>*)
  *
  */
 
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V212NetworkUtils19getBasicNetworkInfoERKNS3_7Request19GetBasicNetworkInfoEPNS2_4Core8ResponseINS3_13NetStateBasicEEE)() {
+EXPORT SYSV_ABI int32_t
+__NID(_ZN3sce7Toolkit2NP2V212NetworkUtils19getBasicNetworkInfoERKNS3_7Request19GetBasicNetworkInfoEPNS2_4Core8ResponseINS3_13NetStateBasicEEE)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -276,7 +277,8 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching7Request20SetInitCon
 }
 
 /**
- * @brief sce::Toolkit::NP::V2::Matching::setInitConfiguration(sce::Toolkit::NP::V2::Matching::Request::SetInitConfiguration const&, sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Core::Empty>*)
+ * @brief sce::Toolkit::NP::V2::Matching::setInitConfiguration(sce::Toolkit::NP::V2::Matching::Request::SetInitConfiguration const&,
+ * sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Core::Empty>*)
  *
  */
 
