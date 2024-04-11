@@ -24,7 +24,7 @@ std::unique_ptr<IFile> createType_null() {
 }
 
 size_t TypeNull::read(void* buf, size_t nbytes) {
-  return nbytes;
+  return -1;
 }
 
 size_t TypeNull::write(void* buf, size_t nbytes) {
