@@ -30,7 +30,7 @@ size_t TypeZero::read(void* buf, size_t nbytes) {
 }
 
 size_t TypeZero::write(void* buf, size_t nbytes) {
-  return 0;
+  return nbytes;
 }
 
 void TypeZero::sync() {}

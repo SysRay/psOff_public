@@ -3,8 +3,10 @@
 #include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
+#include "core/fileManager/types/type_null.h"
 #include "core/fileManager/types/type_random.h"
 #include "core/fileManager/types/type_rng.h"
+#include "core/fileManager/types/type_zero.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -37,6 +39,10 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
     return createType_random();
   } else if (path == "/dev/rng") {
     return createType_rng();
+  } else if (path == "/dev/zero") {
+    return createType_zero();
+  } else if (path == "/dev/null") {
+    return createType_null();
   } else { // todo: other devices
     LOG_CRIT(L"%S: unknown device!", path.c_str());
   }
