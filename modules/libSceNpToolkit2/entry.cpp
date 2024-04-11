@@ -153,95 +153,165 @@ EXPORT SYSV_ABI int __NID(_ZN3sce7Toolkit2NP2V26Trophy7Request6UnlockD1Ev)() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(58C6C6855C0C06B4)() {
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::NetworkUtils::NetStateBasic>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_12NetworkUtils13NetStateBasicEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(638F8DA8E21E74E9)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Friend::Friends>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_6Friend7FriendsEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(50E54F00733C647C)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Friend::BlockedUsers>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_6Friend12BlockedUsersEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(77CD34F46FBA6D1C)() {
+/**
+ * @brief sce::Toolkit::NP::V2::NetworkUtils::Request::GetBasicNetworkInfo::GetBasicNetworkInfo()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V212NetworkUtils7Request19GetBasicNetworkInfoC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(605F1F6FAB19BE1E)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::Room::Room()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching4RoomC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(4E91B85064870436)() {
+/**
+ * @brief sce::Toolkit::NP::V2::NetworkUtils::getBasicNetworkInfo(sce::Toolkit::NP::V2::NetworkUtils::Request::GetBasicNetworkInfo const&, sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::NetworkUtils::NetStateBasic>*)
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V212NetworkUtils19getBasicNetworkInfoERKNS3_7Request19GetBasicNetworkInfoEPNS2_4Core8ResponseINS3_13NetStateBasicEEE)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(B71EFC50D1BA6283)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Matching::Room>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_8Matching4RoomEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(816A0A203650C902)() {
+/**
+ * @brief sce::Toolkit::NP::V2::NetworkUtils::Request::GetBasicNetworkInfo::~GetBasicNetworkInfo()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V212NetworkUtils7Request19GetBasicNetworkInfoD1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(0800693AF1D10D52)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Matching::Rooms>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_8Matching5RoomsEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(F322056CA9E17F6F)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::AttributeMetadata::AttributeMetadata()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching17AttributeMetadataC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(61BAC13A7A85D4E8)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::Request::SetInitConfiguration::SetInitConfiguration()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching7Request20SetInitConfigurationC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(CD2E535CE57B90)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::setInitConfiguration(sce::Toolkit::NP::V2::Matching::Request::SetInitConfiguration const&, sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Core::Empty>*)
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching20setInitConfigurationERKNS3_7Request20SetInitConfigurationEPNS2_4Core8ResponseINS8_5EmptyEEE)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(CD2E535CE57B902C)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::Request::SetInitConfiguration::~SetInitConfiguration()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching7Request20SetInitConfigurationD1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(03B5110FB508E5F1)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Matching::AttributeMetadata::~AttributeMetadata()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching17AttributeMetadataD1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(80070E81DD56719E)() {
-  LOG_USE_MODULE(libSceNpToolkit2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
+/**
+ * @brief ???
+ *
+ */
 
 EXPORT SYSV_ABI int32_t __NID_HEX(F53AE1B86CDB7AB4)() {
   LOG_USE_MODULE(libSceNpToolkit2);
@@ -249,43 +319,78 @@ EXPORT SYSV_ABI int32_t __NID_HEX(F53AE1B86CDB7AB4)() {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(960002C58042805C)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::SessionId>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_7Session9SessionIdEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(2DF8DA7BE307EB18)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::Session>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_7Session7SessionEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(4EC11A5B9100EA24)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::SessionId>::reset()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_7Session9SessionIdEE5resetEv)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(741F676AE016B608)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Core::Empty>::reset()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS3_5EmptyEE5resetEv)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(2AA954247FAE01EA)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::Session>::reset()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_7Session7SessionEE5resetEv)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(6FD21800DDAB865A)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::SessionData>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_7Session11SessionDataEEC1Ev)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(65611C8392EA75F9)() {
+/**
+ * @brief sce::Toolkit::NP::V2::Core::ResponseBase::getState() const
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZNK3sce7Toolkit2NP2V24Core12ResponseBase8getStateEv)() {
   LOG_USE_MODULE(libSceNpToolkit2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
