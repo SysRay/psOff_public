@@ -152,7 +152,7 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const c
     // todo: should set sce_net_errno
     if (resolver->interrupted) return Err::ERROR_EFAULT;
     try {
-      for (auto addr : resolver->res.resolve(query)) {
+      for (auto addr: resolver->res.resolve(query)) {
         auto& iaddr   = info->addrs[info->records++];
         iaddr.af      = SCE_NET_AF_INET;
         iaddr.un.addr = addr.endpoint().address().to_v4().to_uint();
