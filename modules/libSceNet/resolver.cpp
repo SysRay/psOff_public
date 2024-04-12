@@ -2,6 +2,7 @@
 #include "config_emu.h"
 #include "logging.h"
 #include "resolverTypes.h"
+#include "socketTypes.h"
 
 #include <Windows.h>
 #include <boost/asio.hpp>
@@ -132,10 +133,39 @@ EXPORT SYSV_ABI int sceNetResolverStartAton(SceNetId rid, const SceNetInAddr_t* 
   return getErr(ErrCode::_ETIMEDOUT);
 }
 
-EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retry, int flags) {
-  TEST_RESOLVER;
+EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retries, int flags) {
   LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  TEST_RESOLVER;
+
+  std::string _hostname(hostname);
+  if (auto _raddr = getPreMap().search(_hostname)) {
+    info->addrs[0].af      = SCE_NET_AF_INET;
+    info->addrs[0].un.addr = _raddr;
+    info->records          = 1;
+    return Ok;
+  }
+
+  auto                     resolver = g_resolvers[rid];
+  ip::tcp::resolver::query query(ip::tcp::v4(), hostname, "0");
+  info->records = 0;
+  for (int cretr = 0; cretr < retries; ++cretr) {
+    // todo: should set sce_net_errno
+    if (resolver->interrupted) return Err::ERROR_EFAULT;
+    try {
+      for (auto addr : resolver->res.resolve(query)) {
+        auto& iaddr = info->addrs[info->records++];
+        iaddr.af = SCE_NET_AF_INET;
+        iaddr.un.addr = addr.endpoint().address().to_v4().to_uint();
+        if (info->records == SCE_NET_RESOLVER_MULTIPLE_RECORDS_MAX) break;
+      }
+      info->records -= 1; // We should decrease value by 1 to get the actual records count
+      info->dns4records = info->records;
+      return Ok;
+    } catch (boost::system::system_error& ex) {
+      LOG_ERR(L"%S: failed to resolve %S (%d/%d): %S", __FUNCTION__, hostname, cretr, retries, ex.what());
+    }
+  }
+
   return getErr(ErrCode::_ETIMEDOUT);
 }
 
