@@ -54,7 +54,7 @@ EXPORT SYSV_ABI int32_t sceUserServiceTerminate() {
 
 EXPORT SYSV_ABI int sceUserServiceGetInitialUser(int* userId) {
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
-  if (!getJsonParam(jData, "userIndex", *userId) || (*userId < 0 || *userId > 3)) *userId = 1;
+  if (!getJsonParam(jData, "userIndex", *userId) || (*userId < 1 || *userId > 3)) *userId = 1;
   return Ok;
 }
 
@@ -81,14 +81,14 @@ EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList*
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t size) {
-  if (userId < 0 || userId > 3 || name == nullptr || size == 0) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3 || name == nullptr || size == 0) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
 
   std::string username = "Anon";
   auto [lock, jData]   = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   try {
     auto& profiles = (*jData)["profiles"];
-    auto& cprofile = profiles[userId];
+    auto& cprofile = profiles[userId - 1];
     cprofile["name"].get_to(username);
   } catch (json::exception& ex) {
   }
@@ -100,14 +100,14 @@ EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t siz
 }
 
 EXPORT SYSV_ABI int32_t sceUserServiceGetUserColor(int userId, UserServiceUserColor* color) {
-  if (userId < 0 || userId > 3) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   std::string _scolor;
 
   try {
     auto& profiles = (*jData)["profiles"];
-    auto& cprofile = profiles[userId];
+    auto& cprofile = profiles[userId - 1];
     cprofile["color"].get_to(_scolor);
   } catch (json::exception& ex) {
   }
