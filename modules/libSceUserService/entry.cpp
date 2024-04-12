@@ -81,7 +81,7 @@ EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList*
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t size) {
-  if (userId < 1 || userId > 3) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3 || name == nullptr || size == 0) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
 
   std::string username = "Anon";
   auto [lock, jData]   = accessConfig()->accessModule(ConfigModFlag::GENERAL);
@@ -93,7 +93,8 @@ EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t siz
   } catch (json::exception& ex) {
   }
 
-  auto const count = username.copy(name, std::min(USER_SERVICE_MAX_USER_NAME_LENGTH, size - 1));
+  if (size < (username.size() + 1)) return Err::USER_SERVICE_ERROR_BUFFER_TOO_SHORT;
+  auto const count = username.copy(name, size - 1);
   name[count]      = '\0';
   return Ok;
 }
