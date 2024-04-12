@@ -297,6 +297,14 @@ EXPORT SYSV_ABI int __NID(pthread_mutexattr_setprotocol)(ScePthreadMutexattr* at
   return POSIX_CALL(pthread::mutexattrSetprotocol(attr, protocol));
 }
 
+EXPORT SYSV_ABI int __NID(pthread_mutexattr_getpshared)(ScePthreadMutexattr* attr, int* pshared) {
+  return POSIX_CALL(pthread::mutexattrGetpshared(attr, pshared));
+}
+
+EXPORT SYSV_ABI int __NID(pthread_mutexattr_setpshared)(ScePthreadMutexattr* attr, int pshared) {
+  return POSIX_CALL(pthread::mutexattrSetpshared(attr, pshared));
+}
+
 EXPORT SYSV_ABI int __NID(pthread_attr_getinheritsched)(const ScePthreadAttr* attr, SceInheritShed* inheritSched) noexcept {
   return POSIX_CALL(pthread::attrGetinheritsched(attr, inheritSched));
 }
