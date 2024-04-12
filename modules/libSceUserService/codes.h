@@ -11,3 +11,5 @@ constexpr int USER_SERVICE_ERROR_NO_EVENT                = -2137653241; /* 0x809
 constexpr int USER_SERVICE_ERROR_NOT_LOGGED_IN           = -2137653239; /* 0x80960009 */
 constexpr int USER_SERVICE_ERROR_BUFFER_TOO_SHORT        = -2137653238; /* 0x8096000A */
 } // namespace Err
+
+constexpr size_t USER_SERVICE_MAX_USER_NAME_LENGTH = 16;

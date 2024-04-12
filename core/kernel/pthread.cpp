@@ -888,6 +888,16 @@ int mutexattrSetprotocol(ScePthreadMutexattr* attr, int protocol) {
   return Ok;
 }
 
+int mutexattrGetpshared(ScePthreadMutexattr* attr, int* pshared) {
+  *pshared = (int)(*attr)->pshared;
+  return Ok;
+}
+
+int mutexattrSetpshared(ScePthreadMutexattr* attr, int pshared) {
+  (*attr)->pshared = (SceMutexShared)pshared;
+  return Ok;
+}
+
 int attrGetinheritsched(const ScePthreadAttr* attr, SceInheritShed* inheritSched) {
   if (inheritSched == nullptr || attr == nullptr || *attr == nullptr) {
     return getErr(ErrCode::_EINVAL);

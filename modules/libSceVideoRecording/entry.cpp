@@ -9,7 +9,7 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceVideoRecording";
 
-EXPORT SYSV_ABI int32_t __NID(sceVideoRecordingSetInfo)() {
+EXPORT SYSV_ABI int32_t sceVideoRecordingSetInfo() {
   LOG_USE_MODULE(libSceVideoRecording);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

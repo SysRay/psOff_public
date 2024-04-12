@@ -146,6 +146,8 @@ __APICALL int mutexGetprioceiling(ScePthreadMutex* mutex, int* prio);
 __APICALL int mutexSetprioceiling(ScePthreadMutex* mutex, int prio, int* oldPrio);
 __APICALL int mutexattrGetprotocol(ScePthreadMutexattr* attr, int* protocol);
 __APICALL int mutexattrSetprotocol(ScePthreadMutexattr* attr, int protocol);
+__APICALL int mutexattrGetpshared(ScePthreadMutexattr* attr, int* pshared);
+__APICALL int mutexattrSetpshared(ScePthreadMutexattr* attr, int pshared);
 
 __APICALL int attrGetinheritsched(const ScePthreadAttr* attr, SceInheritShed* inheritSched);
 __APICALL int attrGetschedparam(const ScePthreadAttr* attr, SceSchedParam* param);

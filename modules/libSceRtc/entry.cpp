@@ -163,9 +163,7 @@ EXPORT SYSV_ABI int sceRtcGetTick(const SceRtcDateTime* pTime, SceRtcTick* pTick
 }
 
 EXPORT SYSV_ABI unsigned int sceRtcGetTickResolution(void) {
-  LOG_USE_MODULE(libSceRtc);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  return 1000000;
 }
 
 EXPORT SYSV_ABI int sceRtcTickAddTicks(SceRtcTick* pTick0, const SceRtcTick* pTick1, int64_t lAdd) {

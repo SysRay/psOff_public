@@ -15,6 +15,7 @@ struct SceSchedParam {
 
 enum class SceMutexProtocol { PRIO_NONE, PRIO_INHERIT, PRIO_PROTECT };
 enum class SceMutexType { DEFAULT, ERRORCHECK, RECURSIVE, NORMAL, ADAPTIVE_NP };
+enum class SceMutexShared { PRIVATE, SHARED };
 
 enum class SceDetachState {
   JOINABLE,
