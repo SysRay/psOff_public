@@ -3,7 +3,6 @@
 #include "socketTypes.h"
 LOG_DEFINE_MODULE(libSceNet);
 
-#define WIN32_LEAN_AND_MEAN
 #include <WS2tcpip.h>
 #include <mutex>
 

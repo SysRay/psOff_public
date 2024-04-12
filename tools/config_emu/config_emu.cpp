@@ -10,11 +10,12 @@ class Item {
   public:
   std::string_view const _name;
 
+  bool              _dontfix; // If this flag is set then load function won't try fix the file according to default object
   json              _json;
   boost::mutex      _mutex;
   std::future<void> _future;
 
-  Item(std::string_view name): _name(name) {}
+  Item(std::string_view name, bool df = false): _name(name), _dontfix(df) {}
 
   std::pair<boost::unique_lock<boost::mutex>, json*> access() {
     _future.wait();
@@ -42,6 +43,7 @@ class Config: public IConfig {
   Item m_audio    = {"audio.json"};
   Item m_controls = {"controls.json"};
   Item m_general  = {"general.json"};
+  Item m_resolve  = {"resolve.json", true /*dontfix flag*/};
 
   public:
   Config();
@@ -64,6 +66,7 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigMo
     case ConfigModFlag::AUDIO: return m_audio.access();
     case ConfigModFlag::CONTROLS: return m_controls.access();
     case ConfigModFlag::GENERAL: return m_general.access();
+    case ConfigModFlag::RESOLVE: return m_resolve.access();
 
     default: printf("Invalid bit flag!\n"); exit(1);
   }
@@ -79,6 +82,7 @@ bool Config::save(uint32_t flags) {
   if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= m_audio.save();
   if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= m_controls.save();
   if (flags & (uint32_t)ConfigModFlag::GENERAL) result &= m_general.save();
+  if (flags & (uint32_t)ConfigModFlag::RESOLVE) result &= m_resolve.save();
 
   return true;
 }
@@ -153,7 +157,7 @@ Config::Config() {
       return missing;
     };
 
-    if (fixMissing(item->_json, defaults)) {
+    if (!item->_dontfix && fixMissing(item->_json, defaults)) {
       should_resave = true;
       printf("%s: some missing parameters has been added!\n", item->_name.data());
     }
@@ -177,7 +181,7 @@ Config::Config() {
       return unused;
     };
 
-    if (removeUnused(item->_json, defaults)) {
+    if (!item->_dontfix && removeUnused(item->_json, defaults)) {
       should_backup = true;
       should_resave = true;
       printf("%s: some unused parameters has been removed!\n", item->_name.data());
@@ -224,4 +228,6 @@ Config::Config() {
   m_general._future = std::async(std::launch::async, load, &m_general,
                                  json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
                                  ConfigModFlag::GENERAL);
+
+  m_resolve._future = std::async(std::launch::async | std::launch::deferred, load, &m_resolve, json({{"localhost", "127.0.0.1"}}), ConfigModFlag::RESOLVE);
 }

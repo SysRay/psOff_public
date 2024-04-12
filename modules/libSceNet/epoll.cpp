@@ -3,7 +3,6 @@
 #include "types.h"
 #include "wepoll.h"
 
-#define WIN32_LEAN_AND_MEAN
 #include <WinSock2.h>
 #include <unordered_map>
 
