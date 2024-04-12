@@ -31,7 +31,7 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingGetCurrentStatus(SceGameLiveStreamin
   LOG_USE_MODULE(libSceGameLiveStreaming);
   LOG_ERR(L"todo %S", __FUNCTION__);
   glss->isOnAir = false;
-  glss->userId = 1;
+  glss->userId  = 1;
   return Ok;
 }
 
@@ -39,7 +39,7 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingGetCurrentStatus2(SceGameLiveStreami
   LOG_USE_MODULE(libSceGameLiveStreaming);
   LOG_ERR(L"todo %S", __FUNCTION__);
   glss2->isOnAir = false;
-  glss2->userId = 1;
+  glss2->userId  = 1;
   return Ok;
 }
 }
