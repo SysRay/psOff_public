@@ -119,7 +119,7 @@ EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataGetAvailableSpaceKb(const SceA
   auto tempFolder = accessFileManager().getMappedPath(mountPoint->data);
   if (tempFolder) {
     auto si = std::filesystem::space(*tempFolder);
-    *avail = si.available / 1000; // bytes => kilobytes
+    *avail  = si.available / 1000; // bytes => kilobytes
   } else {
     LOG_ERR(L"unknown temp folder: %s", tempFolder->c_str());
     *avail = 0;
