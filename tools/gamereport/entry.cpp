@@ -33,6 +33,7 @@ enum Langs : uint32_t {
   FRENCH,
   GERMAN,
   SPANISH,
+  POLISH,
 
   LANGS_MAX
 };
@@ -284,6 +285,49 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "Su configuración de registro parece ser incorrecta, dado que \"sink\" no se ha configurado a \"FileBin\".\n"
         "Reportar fallos sin un registro no es recomendable.",
     },
+    {
+        /* Buttons */
+        "Tak",
+        "Nie",
+        "Anuluj",
+        "OK",
+
+        /* Main window */
+        "Zgłoś raport gry",
+
+        "Czy chcesz zgłosić raport gry, która jest teraz uruchomiona?\n"
+        "Jeśli klikniesz \"Tak\", zostanie otwarta domyślna przeglądarka.\n\n"
+        "Musisz posiadać konto GitHub, żeby stworzyć raport!",
+
+        "Wydaje się że emulator właśnie uległ awarii! Chcesz zgłosić raport gry?\n"
+        "Jeśli klikniesz \"Yes\", zostanie otwarta domyślna przeglądarka.\n\n"
+        "Musisz posiadać konto GitHub, żeby stworzyć raport!",
+
+        /* Issues window */
+        "Wydaje się, że już znamy problemy z tą grą!\n\n"
+        "Obecny status: {}\nMożliwe problemy:\n{}\n\n"
+        "Czy chcesz otworzyć zgłoszony raport gry na Github?",
+
+        "nic (gra nie uruchamia się poprawnie, w ogóle się nie wczytuje i/lub powoduje awarię emulatora)",
+        "intro (gra wyświetla obraz, ale nie przechodzi dalej niż menu)",
+        "w grze (gra nie może zostać ukończona, ma poważne błędy lub niewystarczającą wydajność)",
+        "grywalne (gra może być ukończona z akceptowalną wydajnością i bez poważnych błędów uniemożliwiających rozgrywkę)",
+
+        "* problemy dźwiękowe (brak dźwięku, przerywanie dźwięku lub nieprawidłowe odtwarzanie);\n",
+        "* problemy graficzne (artefakty wizualne, niska wydajność, czarny ekran);\n",
+        "* problemy z kontrolą (kontroler/klawiatura może nie działać, występuje opóźnienie);\n",
+        "* problemy z zapisanymi danymi (gra nie zapisuje postępu gry czy ustawień);\n",
+        "* problemy wideo (wideo w grze jest nieprawidłowo dekodowane lub w ogóle nie jest odtwarzane);\n",
+        "* brakujący symbol (gra potrzebuje funkcji, których jeszcze nie zaimplementowaliśmy);\n",
+        "* specyficzne dla NVIDIA (gra ma znane problemy na kartach graficznych NVIDIA);\n",
+
+        /* Logging warning window */
+        "Ostrzeżenie o rejestrowaniu",
+
+        "Możesz nie być w stanie dostarczyć plików z rejestracji dla problemu, który chcesz zgłosić.\n"
+        "Twoja konfiguracja rejestratora jest błędna, gdyż \"sink\" nie jest równy \"FileBin\".\n"
+        "Tworzenie problemów bez pliku od rejestratora nie jest zalecane.",
+    },
 };
 
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
@@ -298,6 +342,8 @@ static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
     case SystemParamLang::Spanish: out = strings[Langs::SPANISH][str_id]; break;
 
     case SystemParamLang::German: out = strings[Langs::GERMAN][str_id]; break;
+
+    case SystemParamLang::Polish: out = strings[Langs::POLISH][str_id]; break;
 
     default: out = strings[Langs::ENGLISH][str_id];
   }
