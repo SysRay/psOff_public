@@ -86,22 +86,31 @@ PreMap& getPreMap() {
 
 extern "C" {
 EXPORT SYSV_ABI SceNetId sceNetResolverCreate(const char* name, int memid, int flags) {
+  LOG_USE_MODULE(libSceNet);
+
   if (flags != 0) {
     *sceNetErrnoLoc() = NetErrNo::SCE_NET_EINVAL;
     return -1;
   }
-  LOG_USE_MODULE(libSceNet);
-  LOG_TRACE(L"new resolver: %S (memid: %d, flags: %d)", name, memid, flags);
-  static size_t count  = 0;
-  g_resolvers[++count] = new Resolver();
-  if (auto namelen = ::strlen(name)) {
-    if (namelen > sizeof(Resolver::name) - 1) {
-      *sceNetErrnoLoc() = NetErrNo::SCE_NET_ENAMETOOLONG;
-      return -1;
+
+  for (int i = 0; i < 128; i++) {
+    if (g_resolvers[i] == nullptr) {
+      auto resolv = g_resolvers[i] = new Resolver();
+      LOG_TRACE(L"new resolver: %S,%d (memid: %d, flags: %d)", name, i, memid, flags);
+
+      if (auto namelen = ::strlen(name)) {
+        if (namelen > sizeof(Resolver::name) - 1) {
+          *sceNetErrnoLoc() = NetErrNo::SCE_NET_ENAMETOOLONG;
+          return -1;
+        }
+        ::strncpy_s(resolv->name, name, namelen);
+      }
+      return i;
     }
-    ::strncpy_s(g_resolvers[count]->name, name, namelen);
   }
-  return count;
+
+  *sceNetErrnoLoc() = NetErrNo::SCE_NET_EBADF;
+  return -1;
 }
 
 EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, SceNetInAddr_t* addr, int timeout, int retries, int flags) {

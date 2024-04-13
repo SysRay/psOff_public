@@ -6,6 +6,7 @@
 #include "types.h"
 
 #include <mutex>
+#include <lib/zip.h>
 
 LOG_DEFINE_MODULE(libSceSaveData);
 
@@ -28,7 +29,7 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
 
   auto saveDir = std::string(dirName);
   std::transform(saveDir.begin(), saveDir.end(), saveDir.begin(), ::tolower);
-  auto dirSaveFiles = accessFileManager().getGameFilesDir() / SAVE_DATA_POINT.substr(1) / saveDir;
+  auto dirSaveFiles = accessFileManager().getGameFilesDir() / SAVE_DATA_POINT.substr(1) / std::format("UID_{}", userId) / saveDir;
 
   mountResult->mountStatus = 0;
 
@@ -142,10 +143,42 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoin
   return Ok;
 }
 
+static void ziph_this_dir(zip_t* za, std::filesystem::path path, std::filesystem::path currpath) {
+  std::filesystem::path root(currpath);
+  for (auto const& de: std::filesystem::directory_iterator{path}) {
+    auto& dpath = de.path();
+    auto indir = root / dpath.filename();
+    auto zindir = indir.string();
+    std::replace(zindir.begin(), zindir.end(), '\\', '/');
+
+    if (de.is_directory()) {
+      zip_dir_add(za, zindir.c_str(), 0);
+      ziph_this_dir(za, dpath, indir);
+      continue;
+    } else if (de.is_regular_file()) {
+      auto zs = zip_source_file(za, dpath.string().c_str(), 0, 0);
+      if (zip_file_add(za, zindir.c_str(), zs, ZIP_FL_ENC_GUESS) < 0) {
+        zip_source_free(zs);
+      }
+    }
+  }
+}
+
 EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  // todo: backup
+
+  auto zip_path = accessFileManager().getGameFilesDir() / "backup.zip";
+
+  int zerr;
+  if (auto za = zip_open(zip_path.string().c_str(), ZIP_CREATE, &zerr)) {
+    ziph_this_dir(za, accessFileManager().getGameFilesDir() / SAVE_DATA_POINT.substr(1), "");
+    zip_close(za);
+  } else {
+    LOG_ERR(L"Backup failed: %d", zerr);
+    return Err::SAVE_DATA_ERROR_INTERNAL;
+  }
+
   return sceSaveDataUmount(mountPoint);
 }
 
@@ -419,9 +452,25 @@ EXPORT SYSV_ABI int32_t sceSaveDataRestoreBackupData(const SceSaveDataRestoreBac
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataCheckBackupData(const SceSaveDataCheckBackupData* check) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  if (check->titleId != nullptr) return Err::SAVE_DATA_ERROR_INTERNAL;
+
+  // todo: check if savedata directory is already mounted
+
+  auto zip_path = accessFileManager().getGameFilesDir() / "backup.zip";
+  auto zcheckp = std::format("UID_{}/{}", check->userId, check->dirName->data);
+
+  int zerr;
+  if (auto za = zip_open(zip_path.string().c_str(), 0, &zerr)) {
+    struct zip_stat zs;
+    zip_stat_init(&zs);
+    if (zip_stat(za, zcheckp.c_str(), 0, &zs)) {
+      zip_close(za);
+      return Ok;
+    }
+    zip_close(za);
+  }
+
+  return Err::SAVE_DATA_ERROR_NOT_FOUND;
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataBackup(const SceSaveDataBackup* backup) {
