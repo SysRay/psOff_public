@@ -31,6 +31,7 @@ enum Langs : uint32_t {
   ENGLISH,
   RUSSIAN,
   FRENCH,
+  GERMAN,
 
   LANGS_MAX
 };
@@ -196,6 +197,49 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "La configuration de votre enregistreur semble être incorrecte, car \"sink\" n'est pas égal à \"FileBin\".\n"
         "La création de problèmes sans fichier journal n'est pas recommandée.",
     },
+    {
+        /* Buttons */
+        "Ja",
+        "Nein",
+        "Abbrechen",
+        "OK",
+
+        /* Main window */
+        "Spielbericht einreichen",
+
+        "Möchten Sie einen Bericht über das aktuelle Spiel einreichen?\n"
+        "Falls Sie \"Ja\" drücken, öffnet sich Ihr Browser.\n\n"
+        "Sie müssen einen GitHub Account besitzen, um einen Bericht einzureichen!",
+
+        "Wir glauben, dass dein Emulator abgestürzt ist! Möchten Sie einen Bericht einreichen?\n"
+        "Falls Sie \"Ja\" drücken, öffnet sich Ihr Browser.\n\n"
+        "Sie müssen einen GitHub Account besitzen, um einen Bericht einzureichen!",
+
+        /* Issues window */
+        "Es scheint, als wären uns die Probleme in diesem Spiel bereits bekannt!\n\n"
+        "Aktueller Status: {}\nMögliche Probleme:\n{}\n\n"
+        "Möchtest du eine Fehlerseite für ein Spiel auf GitHub öffnen?",
+
+        "nothing (Das Spiel initialisiert nicht richtig, es lädt nicht und/oder lässt den Emulator abstürzen)",
+        "intro (Das Spiel zeigt ein Bild, kommt jedoch nicht weiter als Menüs)",
+        "ingame (Das Spiel kann entweder nicht abgeschlossen werden, erhebliche Fehler aufweisen oder eine unzureichende Leistung haben)",
+        "playable (Das Spiel kann mit einer spielbaren Leistung abgeschlossen werden und weist keine spielentscheidenden Fehler auf)",
+
+        "* Audio-Probleme (Ton fehlt, ist abgehackt oder wird falsch wiedergegeben);\n",
+        "* Grafikprobleme (visuelle Artefakte, niedrige Bildrate, schwarzer Bildschirm);\n",
+        "* Eingabeprobleme (Gamepad/Tastatur funktionieren nicht, Eingabeverzögerung liegt vor);\n",
+        "* Probleme mit den gespeicherten Daten (Das Spiel speichert Ihren Fortschritt oder Ihre Einstellungen nicht);\n",
+        "* Video-Probleme (Ingame-Videos werden falsch dekodiert oder überhaupt nicht abgespielt);\n",
+        "* Fehlendes Symbol (Das Spiel benötigt Funktionen, die wir noch nicht implementiert haben);\n",
+        "* NVIDIA-spezifisch (Das Spiel hat bekannte Probleme auf NVIDIA-Karten);\n",
+
+        /* Logging warning window */
+        "Protokollierungswarnung",
+
+        "Sie können möglicherweise keine Protokolldateien für das Problem bereitstellen, das Sie gerade öffnen möchten.\n"
+        "Ihre Logger-Konfiguration scheint inkorrekt zu sein, da \"sink\" nicht gleich \"FileBin\" ist.\n"
+        "Das Erstellen von Problemen ohne Protokolldatei wird nicht empfohlen.",
+    },
 };
 
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
@@ -204,6 +248,8 @@ static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
 
     case SystemParamLang::French:
     case SystemParamLang::FrenchCA: return strings[Langs::FRENCH][str_id];
+
+    case SystemParamLang::German: return strings[Langs::GERMAN][str_id];
 
     default: return strings[Langs::ENGLISH][str_id];
   }
