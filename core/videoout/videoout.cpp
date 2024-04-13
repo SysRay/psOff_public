@@ -157,7 +157,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
 class VideoOut: public IVideoOut, private IEventsGraphics {
   std::array<Context, WindowsMAX> m_windows;
 
-  int32_t m_widthTotal = 1920, m_heightTotal = 1080;
+  uint32_t m_widthTotal = 1920, m_heightTotal = 1080;
 
   mutable std::mutex m_mutexInt;
   vulkan::VulkanObj* m_vulkanObj = nullptr;
@@ -588,9 +588,9 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
       .tilingMode   = tiling_mode,
       .aspectRatio  = aspect_ratio,
-      .width        = width,
-      .height       = height,
-      .pitchInPixel = pitchInPixel,
+      .width        = m_widthTotal,
+      .height       = m_heightTotal,
+      .pitchInPixel = m_widthTotal,
   };
 }
 
@@ -783,7 +783,7 @@ std::thread VideoOut::createSDLThread() {
               LOG_ERR(L"Config| Couldn't load param:fullscreen from graphics");
             }
 
-            auto readCfgIntParam = [jData](const char* param, int& value) {
+            auto readCfgIntParam = [jData](const char* param, auto& value) {
               LOG_USE_MODULE(VideoOut);
 
               if (!getJsonParam(jData, param, value)) {
@@ -796,6 +796,7 @@ std::thread VideoOut::createSDLThread() {
               readCfgIntParam("ypos", win_y);
               readCfgIntParam("width", m_widthTotal);
               readCfgIntParam("height", m_heightTotal);
+
               if (win_x == -1) win_x = SDL_WINDOWPOS_CENTERED;
               if (win_y == -1) win_y = SDL_WINDOWPOS_CENTERED;
               if (m_widthTotal <= 0) m_widthTotal = 1920;
@@ -820,6 +821,8 @@ std::thread VideoOut::createSDLThread() {
           }
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
+          window.config.resolution.fullWidth  = window.config.resolution.paneWidth;
+          window.config.resolution.fullHeight = window.config.resolution.paneHeight;
 
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
