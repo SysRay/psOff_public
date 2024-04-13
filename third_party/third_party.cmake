@@ -23,7 +23,7 @@ ExternalProject_Add(third_party
   -DCMAKE_C_FLAGS_RELEASE=${CMAKE_C_FLAGS_RELEASE}
   -DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}
 )
-ExternalProject_Add_StepDependencies(third_party build zlib_project)
+ExternalProject_Add_StepDependencies(third_party install zlib_project)
 
 set(BOOST_INCLUDE_LIBRARIES "program_options;date_time;interprocess;stacktrace;uuid;beast;signals2;thread;url;asio")
 ExternalProject_Add(boost
