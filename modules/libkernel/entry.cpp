@@ -242,6 +242,12 @@ EXPORT SYSV_ABI int sceKernelSetFsstParam(int prio, SceKernelCpumask mask) {
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceKernelSetProcessProperty() {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelGetCpumode() {
   return (int)SceKernelCPUMode::CPUMODE_6CPU;
 }

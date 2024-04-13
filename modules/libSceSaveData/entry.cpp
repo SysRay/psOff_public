@@ -145,7 +145,8 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoin
 EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  // todo: backup
+  return sceSaveDataUmount(mountPoint);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataGetMountInfo(const SceSaveDataMountPoint* mountPoint, SceSaveDataMountInfo* info) {
