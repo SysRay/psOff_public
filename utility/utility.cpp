@@ -50,4 +50,10 @@ void setThreadName(std::string_view name) {
 void setThreadName(std::string_view name, void* nativeHandle) {
   auto r = SetThreadDescription((HANDLE)nativeHandle, std::wstring(name.begin(), name.end()).c_str());
 }
+
+int getPageSize(void) {
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return si.dwPageSize;
+}
 } // namespace util

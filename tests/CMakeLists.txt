@@ -1,5 +1,9 @@
 enable_testing()
 
+add_compile_definitions(
+  BOOST_ALL_NO_LIB
+)
+
 link_libraries(gtest_main gmock gmock_main)
 add_link_options(/DEBUG)
 link_directories(
@@ -13,9 +17,8 @@ include_directories(
   ${CMAKE_BINARY_DIR}/third_party/install/include
 
   ${Vulkan_INCLUDE_DIRS}
-  ${PRJ_SRC_DIR}/public_repo
-  ${PRJ_SRC_DIR}/public_repo/third_party
-  ${PRJ_SRC_DIR}/public_repo/tools/logging
+  ${PRJ_SRC_DIR}/third_party
+  ${PRJ_SRC_DIR}/tools/logging
 )
 
 add_subdirectory(core)

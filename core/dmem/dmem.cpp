@@ -79,7 +79,7 @@ bool PhysicalMemory::reserve(uint64_t start, size_t len, size_t alignment, uint6
     m_availableSize -= len;
   }
 
-  LOG_DEBUG(L"Reserve| start:0x%08llx size:%llu alignment:%llu memType:%d -> @%08llx", start, len, alignment, memoryType, *outAddr);
+  LOG_DEBUG(L"Reserve| start:0x%08llx size:%08llx alignment:%llu memType:%d -> @%08llx", start, len, alignment, memoryType, *outAddr);
   return *outAddr != 0;
 }
 
@@ -100,12 +100,12 @@ uintptr_t PhysicalMemory::commit(uint64_t base, uint64_t vaddr, size_t len, size
 
   if (protGPU != 0) {
     if (!accessVideoOut().notify_allocHeap(addr, len, prot)) {
-      LOG_ERR(L"Commit| Couldn't allocHeap| base:0x%08llx offset:0x%08llx size:%llu alignment:%llu prot:%d -> @%08llx", base, vaddr, len, alignment, prot,
+      LOG_ERR(L"Commit| Couldn't allocHeap| base:0x%08llx offset:0x%08llx size:%08llx alignment:%llu prot:%d -> @%08llx", base, vaddr, len, alignment, prot,
               addr);
       return 0;
     }
   }
-  LOG_DEBUG(L"Commit| base:0x%08llx offset:0x%08llx size:%llu alignment:%llu prot:%d -> @%08llx", base, vaddr, len, alignment, prot, addr);
+  LOG_DEBUG(L"Commit| base:0x%08llx offset:0x%08llx size:%08llx alignment:%llu prot:%d -> @%08llx", base, vaddr, len, alignment, prot, addr);
   return addr;
 }
 

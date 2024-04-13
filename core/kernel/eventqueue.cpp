@@ -88,8 +88,8 @@ int KernelEqueue::waitForEvents(KernelEvent_t ev, int num, SceKernelUseconds con
     return false;
   };
 
-  if (micros != nullptr && *micros > 0) {
-    m_cond_var.wait_for(lock, boost::chrono::microseconds(*(decltype(micros))micros), [&] { return hasEvents() | m_closed; });
+  if (micros != nullptr) {
+    m_cond_var.wait_for(lock, boost::chrono::microseconds(*micros), [&] { return hasEvents() | m_closed; });
   } else {
     m_cond_var.wait(lock, [&] { return hasEvents() | m_closed; });
   }
@@ -235,7 +235,7 @@ int KernelEqueue::addEvent(const KernelEqueueEvent& event) {
   LOG_USE_MODULE(EventQueue);
   LOG_INFO(L"(%S) Add Event: ident:0x%08llx, filter:%d", m_name.c_str(), (uint64_t)event.event.ident, event.event.filter);
 
-  std::unique_lock const lock(m_mutex_cond);
+  std::unique_lock lock(m_mutex_cond);
 
   auto it = std::find_if(m_events.begin(), m_events.end(),
                          [=](KernelEqueueEvent const& ev) { return ev.event.ident == event.event.ident && ev.event.filter == event.event.filter; });
@@ -247,6 +247,7 @@ int KernelEqueue::addEvent(const KernelEqueueEvent& event) {
   }
 
   if (event.triggered) {
+    lock.unlock();
     m_cond_var.notify_all();
   }
 
@@ -257,7 +258,7 @@ int KernelEqueue::triggerEvent(uintptr_t ident, int16_t filter, void* trigger_da
   LOG_USE_MODULE(EventQueue);
   LOG_TRACE(L"triggerEvent: ident:0x%08llx, filter:%d", (uint64_t)ident, filter);
 
-  std::unique_lock const lock(m_mutex_cond);
+  std::unique_lock lock(m_mutex_cond);
   auto it = std::find_if(m_events.begin(), m_events.end(), [=](KernelEqueueEvent const& ev) { return ev.event.ident == ident && ev.event.filter == filter; });
 
   if (it != m_events.end()) {
@@ -265,7 +266,9 @@ int KernelEqueue::triggerEvent(uintptr_t ident, int16_t filter, void* trigger_da
       it->filter.trigger_func(&(*it), trigger_data);
     } else {
       it->triggered = true;
+      it->event.fflags++;
     }
+    lock.unlock();
     m_cond_var.notify_all();
     return Ok;
   }

@@ -90,6 +90,8 @@ constexpr std::uint64_t alignDown(uint64_t value, uint64_t alignment) {
 
 void setThreadName(std::string_view name);
 void setThreadName(std::string_view name, void* nativeHandle);
+
+int getPageSize(void);
 } // namespace util
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
