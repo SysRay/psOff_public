@@ -108,6 +108,9 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, 
   LOG_USE_MODULE(libSceNet);
   TEST_RESOLVER;
 
+  auto resolver         = g_resolvers[rid];
+  resolver->internError = 0;
+
   {
     std::string _hostname(hostname);
     if (auto _raddr = getPreMap().search(_hostname)) {
@@ -116,7 +119,6 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, 
     }
   }
 
-  auto                     resolver = g_resolvers[rid];
   ip::tcp::resolver::query query(ip::tcp::v4(), hostname, "0");
   for (int cretr = 0; cretr < retries; ++cretr) {
     if (resolver->interrupted) {
@@ -140,6 +142,9 @@ EXPORT SYSV_ABI int sceNetResolverStartAton(SceNetId rid, const SceNetInAddr_t* 
   TEST_RESOLVER;
   LOG_USE_MODULE(libSceNet);
   LOG_ERR(L"todo %S", __FUNCTION__);
+
+  auto resolver         = g_resolvers[rid];
+  resolver->internError = 0;
 
   {
     auto _hn = getPreMap().reverse_search(*addr);
