@@ -30,6 +30,10 @@ struct GitHubIssue {
 enum Langs : uint32_t {
   ENGLISH,
   RUSSIAN,
+  FRENCH,
+  GERMAN,
+  SPANISH,
+  POLISH,
 
   LANGS_MAX
 };
@@ -91,7 +95,7 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
 
         "nothing (the game don't initialize properly, not loading at all and/or crashing the emulator)",
         "intro (the game display image but don't make it past the menus)",
-        "igname (the game can't be either finished, have serious glitches or insufficient performance)",
+        "ingame (the game can't be either finished, have serious glitches or insufficient performance)",
         "playable (the game can be finished with playable performance and no game breaking glitches)",
 
         "* audio issues (sound is missing, choppy or played incorrectly);\n",
@@ -152,14 +156,201 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "Ваша конфигурация логгера может быть неверна, так как \"sink\" не равен \"FileBin\".\n"
         "Создание репортов без логов не рекомендуется.",
     },
+    {
+        /* Buttons */
+        "Oui",
+        "Non",
+        "Annuler",
+        "D'ACCORD",
+
+        /* Main window */
+        "Déposer un rapport de jeu",
+
+        "Voulez-vous déposer un rapport sur le jeu que vous utilisez actuellement ?\n"
+        "Si vous cliquez sur \"Oui\", votre navigateur par défaut s'ouvrira.\n\n"
+        "Vous devez avoir un compte GitHub pour créer un ticket !",
+
+        "Nous pensons que votre émulateur vient de planter ! Voulez-vous déposer un rapport de jeu ?\n"
+        "Si vous cliquez sur \"Oui\", votre navigateur par défaut s'ouvrira.\n\n"
+        "Vous devez avoir un compte GitHub pour créer un ticket !",
+
+        /* Issues window */
+        "Il semble que nous soyons déjà au courant des problèmes de ce jeu !\n\n"
+        "État actuel : {}\nProblèmes possibles :\n{}\n\n"
+        "Voulez-vous ouvrir la page des problèmes d'un jeu sur GitHub ?",
+
+        "nothing (le jeu ne s'initialise pas correctement, ne se charge pas du tout et/ou plante l'émulateur)",
+        "intro (l'image du jeu affiche mais ne dépasse pas les menus)",
+        "ingame (le jeu ne peut pas être terminé, avoir de sérieux problèmes ou des performances insuffisantes)",
+        "playable (le jeu peut être terminé avec des performances jouables et sans problème de jeu)",
+
+        "* problèmes audio (le son est manquant, saccadé ou mal joué);\n",
+        "* problèmes graphiques (artefacts visuels, faible fréquence d'images, écran noir);\n",
+        "* problèmes de saisie (la manette de jeu/le clavier ne fonctionneront pas, un décalage d'entrée est présent);\n",
+        "* problèmes de données de sauvegarde (le jeu n'enregistre pas votre progression ou vos paramètres) ;\n",
+        "* problèmes vidéo (les vidéos du jeu sont mal décodées ou ne sont pas lues du tout);\n",
+        "* symbole manquant (le jeu a besoin de fonctions que nous n'avons pas encore implémentées);\n",
+        "* Spécifique à NVIDIA (le jeu présente des problèmes connus sur les cartes NVIDIA);\n",
+
+        /* Logging warning window */
+        "Avertissement de journalisation",
+
+        "Vous ne pourrez peut-être pas fournir de fichiers journaux pour le problème que vous êtes sur le point d'ouvrir.\n"
+        "La configuration de votre enregistreur semble être incorrecte, car \"sink\" n'est pas égal à \"FileBin\".\n"
+        "La création de problèmes sans fichier journal n'est pas recommandée.",
+    },
+    {
+        /* Buttons */
+        "Ja",
+        "Nein",
+        "Abbrechen",
+        "OK",
+
+        /* Main window */
+        "Spielbericht einreichen",
+
+        "Möchten Sie einen Bericht über das aktuelle Spiel einreichen?\n"
+        "Falls Sie \"Ja\" drücken, öffnet sich Ihr Browser.\n\n"
+        "Sie müssen einen GitHub Account besitzen, um einen Bericht einzureichen!",
+
+        "Wir glauben, dass dein Emulator abgestürzt ist! Möchten Sie einen Bericht einreichen?\n"
+        "Falls Sie \"Ja\" drücken, öffnet sich Ihr Browser.\n\n"
+        "Sie müssen einen GitHub Account besitzen, um einen Bericht einzureichen!",
+
+        /* Issues window */
+        "Es scheint, als wären uns die Probleme in diesem Spiel bereits bekannt!\n\n"
+        "Aktueller Status: {}\nMögliche Probleme:\n{}\n\n"
+        "Möchtest du eine Fehlerseite für ein Spiel auf GitHub öffnen?",
+
+        "nothing (Das Spiel initialisiert nicht richtig, es lädt nicht und/oder lässt den Emulator abstürzen)",
+        "intro (Das Spiel zeigt ein Bild, kommt jedoch nicht weiter als Menüs)",
+        "ingame (Das Spiel kann entweder nicht abgeschlossen werden, erhebliche Fehler aufweisen oder eine unzureichende Leistung haben)",
+        "playable (Das Spiel kann mit einer spielbaren Leistung abgeschlossen werden und weist keine spielentscheidenden Fehler auf)",
+
+        "* Audio-Probleme (Ton fehlt, ist abgehackt oder wird falsch wiedergegeben);\n",
+        "* Grafikprobleme (visuelle Artefakte, niedrige Bildrate, schwarzer Bildschirm);\n",
+        "* Eingabeprobleme (Gamepad/Tastatur funktionieren nicht, Eingabeverzögerung liegt vor);\n",
+        "* Probleme mit den gespeicherten Daten (Das Spiel speichert Ihren Fortschritt oder Ihre Einstellungen nicht);\n",
+        "* Video-Probleme (Ingame-Videos werden falsch dekodiert oder überhaupt nicht abgespielt);\n",
+        "* Fehlendes Symbol (Das Spiel benötigt Funktionen, die wir noch nicht implementiert haben);\n",
+        "* NVIDIA-spezifisch (Das Spiel hat bekannte Probleme auf NVIDIA-Karten);\n",
+
+        /* Logging warning window */
+        "Protokollierungswarnung",
+
+        "Sie können möglicherweise keine Protokolldateien für das Problem bereitstellen, das Sie gerade öffnen möchten.\n"
+        "Ihre Logger-Konfiguration scheint inkorrekt zu sein, da \"sink\" nicht gleich \"FileBin\" ist.\n"
+        "Das Erstellen von Problemen ohne Protokolldatei wird nicht empfohlen.",
+    },
+    {
+        /* Buttons */
+        "Sí",
+        "No",
+        "Cancelar",
+        "OK",
+
+        /* Main window */
+        "Abrir informe de compatibilidad",
+
+        "Desea hacer un informe de compatibilidad sobre el juego actual?\n"
+        "Si presionas \"Sí\", se abrirá su navegador por defecto.\n\n"
+        "Necesitas una cuenta en GitHub para abrir un informe.",
+
+        "Ha habido un error fatal en psOff. Desea abrir un informe de compatibilidad?\n"
+        "Si presionas \"Sí\", se abrirá su navegador por defecto.\n\n"
+        "Necesitas una cuenta en GitHub para abrir un informe.",
+
+        /* Issues window */
+        "Se ha detectado un fallo en la emulación!\n\n"
+        "Estado actual: {}\nPosibles fallos:\n{}\n\n"
+        "Deseas abrir el reporte de compatibilidad del juego?",
+
+        "nothing (el juego no carga y/o se cuelga el emulador)",
+        "intro (el juego produce imagen pero no funciona más allá del menú)",
+        "ingame (el juego no se puede completar, es inestable o posee un bajo rendimiento)",
+        "playable (el juego se puede completar con buen rendimiento y ningún fallo)",
+
+        "* Problemas de sonido (no hay sonido, está distorsionado o no se reproduce correctamente);\n",
+        "* Problemas gráficos (el juego posee defectos visuales, velocidad inestable o pantalla negra);\n",
+        "* Problemas de entrada (no funciona el mando/teclado, retraso de entrada);\n",
+        "* Problemas de guardado (el juego no es capaz de guardar la partida);\n",
+        "* Problemas de vídeo (las cinemáticas son reproducidas incorrectamente o no son reproducidas);\n",
+        "* Símbolo ausente (el juego necesita símbolos los cuáles no se han implementado aún);\n",
+        "* Problemas con tarjetas NVIDIA (el juego tiene problemas en tarjetas gráficas NVIDIA);\n",
+
+        /* Logging warning window */
+        "Aviso de registro",
+
+        "Puede que no sea capaz de proporcionar archivos de registro para el informe que está por abrir.\n"
+        "Su configuración de registro parece ser incorrecta, dado que \"sink\" no se ha configurado a \"FileBin\".\n"
+        "Reportar fallos sin un registro no es recomendable.",
+    },
+    {
+        /* Buttons */
+        "Tak",
+        "Nie",
+        "Anuluj",
+        "OK",
+
+        /* Main window */
+        "Zgłoś raport gry",
+
+        "Czy chcesz zgłosić raport gry, która jest teraz uruchomiona?\n"
+        "Jeśli klikniesz \"Tak\", zostanie otwarta domyślna przeglądarka.\n\n"
+        "Musisz posiadać konto GitHub, żeby stworzyć raport!",
+
+        "Wydaje się że emulator właśnie uległ awarii! Chcesz zgłosić raport gry?\n"
+        "Jeśli klikniesz \"Yes\", zostanie otwarta domyślna przeglądarka.\n\n"
+        "Musisz posiadać konto GitHub, żeby stworzyć raport!",
+
+        /* Issues window */
+        "Wydaje się, że już znamy problemy z tą grą!\n\n"
+        "Obecny status: {}\nMożliwe problemy:\n{}\n\n"
+        "Czy chcesz otworzyć zgłoszony raport gry na Github?",
+
+        "nic (gra nie uruchamia się poprawnie, w ogóle się nie wczytuje i/lub powoduje awarię emulatora)",
+        "intro (gra wyświetla obraz, ale nie przechodzi dalej niż menu)",
+        "w grze (gra nie może zostać ukończona, ma poważne błędy lub niewystarczającą wydajność)",
+        "grywalne (gra może być ukończona z akceptowalną wydajnością i bez poważnych błędów uniemożliwiających rozgrywkę)",
+
+        "* problemy dźwiękowe (brak dźwięku, przerywanie dźwięku lub nieprawidłowe odtwarzanie);\n",
+        "* problemy graficzne (artefakty wizualne, niska wydajność, czarny ekran);\n",
+        "* problemy z kontrolą (kontroler/klawiatura może nie działać, występuje opóźnienie);\n",
+        "* problemy z zapisanymi danymi (gra nie zapisuje postępu gry czy ustawień);\n",
+        "* problemy wideo (wideo w grze jest nieprawidłowo dekodowane lub w ogóle nie jest odtwarzane);\n",
+        "* brakujący symbol (gra potrzebuje funkcji, których jeszcze nie zaimplementowaliśmy);\n",
+        "* specyficzne dla NVIDIA (gra ma znane problemy na kartach graficznych NVIDIA);\n",
+
+        /* Logging warning window */
+        "Ostrzeżenie o rejestrowaniu",
+
+        "Możesz nie być w stanie dostarczyć plików z rejestracji dla problemu, który chcesz zgłosić.\n"
+        "Twoja konfiguracja rejestratora jest błędna, gdyż \"sink\" nie jest równy \"FileBin\".\n"
+        "Tworzenie problemów bez pliku od rejestratora nie jest zalecane.",
+    },
 };
 
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
-  switch (lang_id) {
-    case SystemParamLang::Russian: return strings[Langs::RUSSIAN][str_id];
+  const char* out = nullptr;
 
-    default: return strings[Langs::ENGLISH][str_id];
+  switch (lang_id) {
+    case SystemParamLang::Russian: out = strings[Langs::RUSSIAN][str_id]; break;
+
+    case SystemParamLang::French:
+    case SystemParamLang::FrenchCA: out = strings[Langs::FRENCH][str_id]; break;
+
+    case SystemParamLang::Spanish: out = strings[Langs::SPANISH][str_id]; break;
+
+    case SystemParamLang::German: out = strings[Langs::GERMAN][str_id]; break;
+
+    case SystemParamLang::Polish: out = strings[Langs::POLISH][str_id]; break;
+
+    default: out = strings[Langs::ENGLISH][str_id];
   }
+
+  if (out == nullptr && (out = strings[Langs::ENGLISH][str_id]) == nullptr) out = "UNKNOWN_LANGUAGE_ID";
+
+  return out;
 }
 
 static std::unordered_map<std::string, LangString> descrs = {
@@ -220,6 +411,7 @@ static int find_issue(SystemParamLang lang_id, const char* title_id, GitHubIssue
   http::request<http::empty_body> req {http::verb::get, link, 11};
   req.set(http::field::host, link.host());
   req.set(http::field::user_agent, "psOff-http/1.0");
+  req.set(http::field::accept, "application/vnd.github+json");
   req.set("X-GitHub-Api-Version", "2022-11-28");
   // req.set(http::field::authorization, "Bearer @GIT_TOKEN@");
   http::write(sock, req);
