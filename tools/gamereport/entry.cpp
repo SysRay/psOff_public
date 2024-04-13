@@ -283,34 +283,26 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "Puede que no sea capaz de proporcionar archivos de registro para el informe que está por abrir.\n"
         "Su configuración de registro parece ser incorrecta, dado que \"sink\" no se ha configurado a \"FileBin\".\n"
         "Reportar fallos sin un registro no es recomendable.",
-    }
+    },
 };
 
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
   const char* out = nullptr;
 
   switch (lang_id) {
-    case SystemParamLang::Russian:
-      out = strings[Langs::RUSSIAN][str_id];
-      break;
+    case SystemParamLang::Russian: out = strings[Langs::RUSSIAN][str_id]; break;
 
     case SystemParamLang::French:
-    case SystemParamLang::FrenchCA:
-      out = strings[Langs::FRENCH][str_id];
-      break;
+    case SystemParamLang::FrenchCA: out = strings[Langs::FRENCH][str_id]; break;
 
-    case SystemParamLang::Spanish:
-      out = strings[Langs::SPANISH][str_id];
-      break;
+    case SystemParamLang::Spanish: out = strings[Langs::SPANISH][str_id]; break;
 
-    case SystemParamLang::German:
-      out = strings[Langs::GERMAN][str_id];
-      break;
+    case SystemParamLang::German: out = strings[Langs::GERMAN][str_id]; break;
 
     default: out = strings[Langs::ENGLISH][str_id];
   }
 
-  if (out == nullptr) out = strings[Langs::ENGLISH][str_id];
+  if (out == nullptr && (out = strings[Langs::ENGLISH][str_id]) == nullptr) out = "UNKNOWN_LANGUAGE_ID";
 
   return out;
 }
