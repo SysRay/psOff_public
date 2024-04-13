@@ -101,6 +101,14 @@ EXPORT SYSV_ABI float __NID(expf)(float val) {
   return std::expf(val);
 }
 
+EXPORT SYSV_ABI float __NID(sinf)(float val) {
+  return std::sinf(val);
+}
+
+EXPORT SYSV_ABI float __NID(cosf)(float val) {
+  return std::cosf(val);
+}
+
 EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
   return 0;
 }
