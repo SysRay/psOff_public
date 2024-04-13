@@ -201,7 +201,9 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
   switch (lang_id) {
     case SystemParamLang::Russian: return strings[Langs::RUSSIAN][str_id];
-    case SystemParamLang::French: return strings[Langs::FRENCH][str_id];
+
+    case SystemParamLang::French:
+    case SystemParamLang::FrenchCA: return strings[Langs::FRENCH][str_id];
 
     default: return strings[Langs::ENGLISH][str_id];
   }
@@ -265,6 +267,7 @@ static int find_issue(SystemParamLang lang_id, const char* title_id, GitHubIssue
   http::request<http::empty_body> req {http::verb::get, link, 11};
   req.set(http::field::host, link.host());
   req.set(http::field::user_agent, "psOff-http/1.0");
+  req.set(http::field::accept, "application/vnd.github+json");
   req.set("X-GitHub-Api-Version", "2022-11-28");
   // req.set(http::field::authorization, "Bearer @GIT_TOKEN@");
   http::write(sock, req);
