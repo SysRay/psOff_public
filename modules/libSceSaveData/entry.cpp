@@ -5,8 +5,8 @@
 #include "logging.h"
 #include "types.h"
 
-#include <mutex>
 #include <lib/zip.h>
+#include <mutex>
 
 LOG_DEFINE_MODULE(libSceSaveData);
 
@@ -145,10 +145,10 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoin
 
 static void ziph_this_dir(zip_t* za, std::filesystem::path path, std::filesystem::path currpath) {
   std::filesystem::path root(currpath);
-  for (auto const& de: std::filesystem::directory_iterator{path}) {
-    auto& dpath = de.path();
-    auto indir = root / dpath.filename();
-    auto zindir = indir.string();
+  for (auto const& de: std::filesystem::directory_iterator {path}) {
+    auto& dpath  = de.path();
+    auto  indir  = root / dpath.filename();
+    auto  zindir = indir.string();
     std::replace(zindir.begin(), zindir.end(), '\\', '/');
 
     if (de.is_directory()) {
@@ -457,7 +457,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataCheckBackupData(const SceSaveDataCheckBackupD
   // todo: check if savedata directory is already mounted
 
   auto zip_path = accessFileManager().getGameFilesDir() / "backup.zip";
-  auto zcheckp = std::format("UID_{}/{}", check->userId, check->dirName->data);
+  auto zcheckp  = std::format("UID_{}/{}", check->userId, check->dirName->data);
 
   int zerr;
   if (auto za = zip_open(zip_path.string().c_str(), 0, &zerr)) {
