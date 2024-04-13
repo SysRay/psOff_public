@@ -14,7 +14,9 @@ LOG_DEFINE_MODULE(libSceNet);
 
 namespace {
 #define TEST_RESOLVER                                                                                                                                          \
-  if (rid < 0 || rid > 128 || g_resolvers[rid] == nullptr) return Err::ERROR_EINVAL
+  if (rid < 0 || rid > 127 || g_resolvers[rid] == nullptr) return Err::ERROR_EINVAL
+
+extern "C" int* sceNetErrnoLoc();
 
 static io_service svc;
 
@@ -22,6 +24,7 @@ struct Resolver {
   char              name[32];
   ip::tcp::resolver res;
   bool              interrupted;
+  int               internError;
 
   Resolver(): res(svc), interrupted(false), name() {}
 };
@@ -83,11 +86,21 @@ PreMap& getPreMap() {
 
 extern "C" {
 EXPORT SYSV_ABI SceNetId sceNetResolverCreate(const char* name, int memid, int flags) {
+  if (flags != 0) {
+    *sceNetErrnoLoc() = NetErrNo::SCE_NET_EINVAL;
+    return -1;
+  }
   LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"new resolver: %S (memid: %d, flags: %d)", name, memid, flags);
   static size_t count  = 0;
   g_resolvers[++count] = new Resolver();
-  if (auto namelen = ::strnlen_s(name, 31)) ::strncpy_s(g_resolvers[count]->name, name, namelen);
+  if (auto namelen = ::strlen(name)) {
+    if (namelen > sizeof(Resolver::name) - 1) {
+      *sceNetErrnoLoc() = NetErrNo::SCE_NET_ENAMETOOLONG;
+      return -1;
+    }
+    ::strncpy_s(g_resolvers[count]->name, name, namelen);
+  }
   return count;
 }
 
@@ -95,17 +108,21 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, 
   LOG_USE_MODULE(libSceNet);
   TEST_RESOLVER;
 
-  std::string _hostname(hostname);
-  if (auto _raddr = getPreMap().search(_hostname)) {
-    *addr = _raddr;
-    return Ok;
+  {
+    std::string _hostname(hostname);
+    if (auto _raddr = getPreMap().search(_hostname)) {
+      *addr = _raddr;
+      return Ok;
+    }
   }
 
   auto                     resolver = g_resolvers[rid];
   ip::tcp::resolver::query query(ip::tcp::v4(), hostname, "0");
   for (int cretr = 0; cretr < retries; ++cretr) {
-    // todo: should set sce_net_errno
-    if (resolver->interrupted) return Err::ERROR_EFAULT;
+    if (resolver->interrupted) {
+      *sceNetErrnoLoc() = NetErrNo::SCE_NET_EINTR;
+      return Err::ERROR_EFAULT;
+    }
     try {
       auto it = resolver->res.resolve(query);
       *addr   = (*it).endpoint().address().to_v4().to_uint();
@@ -115,6 +132,7 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, 
     }
   }
 
+  *sceNetErrnoLoc() = NetErrNo::SCE_NET_RESOLVER_ETIMEDOUT;
   return getErr(ErrCode::_ETIMEDOUT);
 }
 
@@ -123,13 +141,16 @@ EXPORT SYSV_ABI int sceNetResolverStartAton(SceNetId rid, const SceNetInAddr_t* 
   LOG_USE_MODULE(libSceNet);
   LOG_ERR(L"todo %S", __FUNCTION__);
 
-  auto _hn = getPreMap().reverse_search(*addr);
-  if (auto _hnlen = _hn.length()) {
-    if (len <= _hnlen) return Err::ERROR_EINVAL;
-    _hn.copy(hostname, _hnlen + 1);
-    return Ok;
+  {
+    auto _hn = getPreMap().reverse_search(*addr);
+    if (auto _hnlen = _hn.length()) {
+      if (len <= _hnlen) return Err::ERROR_EINVAL;
+      _hn.copy(hostname, _hnlen + 1);
+      return Ok;
+    }
   }
 
+  *sceNetErrnoLoc() = NetErrNo::SCE_NET_RESOLVER_ETIMEDOUT;
   return getErr(ErrCode::_ETIMEDOUT);
 }
 
@@ -137,20 +158,27 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const c
   LOG_USE_MODULE(libSceNet);
   TEST_RESOLVER;
 
-  std::string _hostname(hostname);
-  if (auto _raddr = getPreMap().search(_hostname)) {
-    info->addrs[0].af      = SCE_NET_AF_INET;
-    info->addrs[0].un.addr = _raddr;
-    info->records          = 1;
-    return Ok;
+  auto resolver         = g_resolvers[rid];
+  resolver->internError = 0;
+
+  {
+    std::string _hostname(hostname);
+    if (auto _raddr = getPreMap().search(_hostname)) {
+      info->addrs[0].af      = SCE_NET_AF_INET;
+      info->addrs[0].un.addr = _raddr;
+      info->records          = 1;
+      return Ok;
+    }
   }
 
-  auto                     resolver = g_resolvers[rid];
   ip::tcp::resolver::query query(ip::tcp::v4(), hostname, "0");
   info->records = 0;
   for (int cretr = 0; cretr < retries; ++cretr) {
     // todo: should set sce_net_errno
-    if (resolver->interrupted) return Err::ERROR_EFAULT;
+    if (resolver->interrupted) {
+      resolver->internError = NetErrNo::SCE_NET_EINTR;
+      return Err::ERROR_EFAULT;
+    }
     try {
       for (auto addr: resolver->res.resolve(query)) {
         auto& iaddr   = info->addrs[info->records++];
@@ -166,6 +194,7 @@ EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const c
     }
   }
 
+  *sceNetErrnoLoc() = NetErrNo::SCE_NET_RESOLVER_ETIMEDOUT;
   return getErr(ErrCode::_ETIMEDOUT);
 }
 
@@ -173,7 +202,7 @@ EXPORT SYSV_ABI int sceNetResolverGetError(SceNetId rid, int* result) {
   TEST_RESOLVER;
   LOG_USE_MODULE(libSceNet);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  *result = (int)ErrCode::_ETIMEDOUT;
+  *result = g_resolvers[rid]->internError;
   return Ok;
 }
 

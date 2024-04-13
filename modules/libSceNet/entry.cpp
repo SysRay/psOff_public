@@ -23,7 +23,6 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceNet";
 
 EXPORT SYSV_ABI int* sceNetErrnoLoc() {
-  g_net_errno = sce_WSAGetLastError();
   return &g_net_errno;
 }
 
