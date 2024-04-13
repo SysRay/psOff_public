@@ -38,8 +38,7 @@ NT_TIB* getTIB() {
 
 struct PImpl {
   boost::mutex mutex;
-  DWORD        pageSize = 0;
-  PImpl()               = default;
+  PImpl() = default;
 };
 
 PImpl* getData() {
@@ -102,11 +101,7 @@ void initTLS(ScePthread_obj obj) {
 }
 
 void init_pThread() {
-  SYSTEM_INFO sSysInfo;
-  GetSystemInfo(&sSysInfo); // Initialize the structure.
-
-  auto pimpl      = getData();
-  pimpl->pageSize = sSysInfo.dwPageSize;
+  auto pimpl = getData();
 }
 } // namespace
 
