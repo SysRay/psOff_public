@@ -92,7 +92,7 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
 
         "nothing (the game don't initialize properly, not loading at all and/or crashing the emulator)",
         "intro (the game display image but don't make it past the menus)",
-        "igname (the game can't be either finished, have serious glitches or insufficient performance)",
+        "ingame (the game can't be either finished, have serious glitches or insufficient performance)",
         "playable (the game can be finished with playable performance and no game breaking glitches)",
 
         "* audio issues (sound is missing, choppy or played incorrectly);\n",
