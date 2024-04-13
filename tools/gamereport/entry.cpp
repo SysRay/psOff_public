@@ -32,6 +32,7 @@ enum Langs : uint32_t {
   RUSSIAN,
   FRENCH,
   GERMAN,
+  SPANISH,
 
   LANGS_MAX
 };
@@ -240,19 +241,78 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "Ihre Logger-Konfiguration scheint inkorrekt zu sein, da \"sink\" nicht gleich \"FileBin\" ist.\n"
         "Das Erstellen von Problemen ohne Protokolldatei wird nicht empfohlen.",
     },
+    {
+        /* Buttons */
+        "Sí",
+        "No",
+        "Cancelar",
+        "OK",
+
+        /* Main window */
+        "Abrir informe de compatibilidad",
+
+        "Desea hacer un informe de compatibilidad sobre el juego actual?\n"
+        "Si presionas \"Sí\", se abrirá su navegador por defecto.\n\n"
+        "Necesitas una cuenta en GitHub para abrir un informe.",
+
+        "Ha habido un error fatal en psOff. Desea abrir un informe de compatibilidad?\n"
+        "Si presionas \"Sí\", se abrirá su navegador por defecto.\n\n"
+        "Necesitas una cuenta en GitHub para abrir un informe.",
+
+        /* Issues window */
+        "Se ha detectado un fallo en la emulación!\n\n"
+        "Estado actual: {}\nPosibles fallos:\n{}\n\n"
+        "Deseas abrir el reporte de compatibilidad del juego?",
+
+        "nothing (el juego no carga y/o se cuelga el emulador)",
+        "intro (el juego produce imagen pero no funciona más allá del menú)",
+        "ingame (el juego no se puede completar, es inestable o posee un bajo rendimiento)",
+        "playable (el juego se puede completar con buen rendimiento y ningún fallo)",
+
+        "* Problemas de sonido (no hay sonido, está distorsionado o no se reproduce correctamente);\n",
+        "* Problemas gráficos (el juego posee defectos visuales, velocidad inestable o pantalla negra);\n",
+        "* Problemas de entrada (no funciona el mando/teclado, retraso de entrada);\n",
+        "* Problemas de guardado (el juego no es capaz de guardar la partida);\n",
+        "* Problemas de vídeo (las cinemáticas son reproducidas incorrectamente o no son reproducidas);\n",
+        "* Símbolo ausente (el juego necesita símbolos los cuáles no se han implementado aún);\n",
+        "* Problemas con tarjetas NVIDIA (el juego tiene problemas en tarjetas gráficas NVIDIA);\n",
+
+        /* Logging warning window */
+        "Aviso de registro",
+
+        "Puede que no sea capaz de proporcionar archivos de registro para el informe que está por abrir.\n"
+        "Su configuración de registro parece ser incorrecta, dado que \"sink\" no se ha configurado a \"FileBin\".\n"
+        "Reportar fallos sin un registro no es recomendable.",
+    }
 };
 
 static const char* get_lang_string(SystemParamLang lang_id, LangString str_id) {
+  const char* out = nullptr;
+
   switch (lang_id) {
-    case SystemParamLang::Russian: return strings[Langs::RUSSIAN][str_id];
+    case SystemParamLang::Russian:
+      out = strings[Langs::RUSSIAN][str_id];
+      break;
 
     case SystemParamLang::French:
-    case SystemParamLang::FrenchCA: return strings[Langs::FRENCH][str_id];
+    case SystemParamLang::FrenchCA:
+      out = strings[Langs::FRENCH][str_id];
+      break;
 
-    case SystemParamLang::German: return strings[Langs::GERMAN][str_id];
+    case SystemParamLang::Spanish:
+      out = strings[Langs::SPANISH][str_id];
+      break;
 
-    default: return strings[Langs::ENGLISH][str_id];
+    case SystemParamLang::German:
+      out = strings[Langs::GERMAN][str_id];
+      break;
+
+    default: out = strings[Langs::ENGLISH][str_id];
   }
+
+  if (out == nullptr) out = strings[Langs::ENGLISH][str_id];
+
+  return out;
 }
 
 static std::unordered_map<std::string, LangString> descrs = {
