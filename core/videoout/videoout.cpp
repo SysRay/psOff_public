@@ -584,14 +584,26 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
 
   auto [displayFormat, _] = vulkan::getDisplayFormat(m_vulkanObj);
 
+  // todo: needs gpu memory display image recreate
+  // if (m_widthTotal >= 1920 && m_heightTotal >= 1080) {
+  //   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
+  //       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
+  //       .tilingMode   = tiling_mode,
+  //       .aspectRatio  = aspect_ratio,
+  //       .width        = m_widthTotal,
+  //       .height       = m_heightTotal,
+  //       .pitchInPixel = m_widthTotal,
+  //   };
+  // } else {
   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
       .tilingMode   = tiling_mode,
       .aspectRatio  = aspect_ratio,
-      .width        = m_widthTotal,
-      .height       = m_heightTotal,
-      .pitchInPixel = m_widthTotal,
+      .width        = width,
+      .height       = height,
+      .pitchInPixel = pitchInPixel,
   };
+  //}
 }
 
 int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses, int numBuffer, const void* attribute) {
