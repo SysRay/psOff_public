@@ -1,13 +1,15 @@
 #include "common.h"
 #include "logging.h"
 #include "socketTypes.h"
-LOG_DEFINE_MODULE(libSceNet);
 
-#define WIN32_LEAN_AND_MEAN
 #include <WS2tcpip.h>
 #include <mutex>
 
+LOG_DEFINE_MODULE(libSceNet);
+
 namespace {
+extern "C" int* sceNetErrnoLoc();
+
 static inline int32_t sce_WSAGetLastError() {
   auto win_err = (uint32_t)WSAGetLastError();
   if (win_err == WSANOTINITIALISED) return Err::ERROR_ENOTINIT;
@@ -18,14 +20,20 @@ static inline int32_t sce_WSAGetLastError() {
 extern "C" {
 
 EXPORT SYSV_ABI SceNetId sceNetSocket(const char* name, int family, int type, int protocol) {
-  if (family != SCE_NET_AF_INET) return Err::ERROR_EINVAL;
+  if (family != SCE_NET_AF_INET) {
+    *sceNetErrnoLoc() = NetErrNo::SCE_NET_EPROTONOSUPPORT;
+    return Err::ERROR_EINVAL;
+  }
 
   switch (type) {
     case SCE_NET_SOCK_STREAM:
     case SCE_NET_SOCK_DGRAM:
     case SCE_NET_SOCK_RAW: return socket(AF_INET, type, protocol);
 
-    default: return Err::ERROR_EPROTOTYPE;
+    default: {
+      *sceNetErrnoLoc() = NetErrNo::SCE_NET_EPROTONOSUPPORT;
+      return Err::ERROR_EPROTOTYPE;
+    }
   }
 
   return Ok;

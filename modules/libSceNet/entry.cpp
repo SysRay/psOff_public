@@ -2,7 +2,6 @@
 #include "logging.h"
 #include "types.h"
 
-#define WIN32_LEAN_AND_MEAN
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 
@@ -24,7 +23,6 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceNet";
 
 EXPORT SYSV_ABI int* sceNetErrnoLoc() {
-  g_net_errno = sce_WSAGetLastError();
   return &g_net_errno;
 }
 
