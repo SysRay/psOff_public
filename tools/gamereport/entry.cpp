@@ -572,6 +572,7 @@ void GameReport::ShowReportWindow(const Info& info) {
     }
     params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
     params.append({"game-version", info.app_ver});
+    params.append({"emu-version", info.emu_ver});
     params.append({"lib-version", git::CommitSHA1().data()});
   } else {
     link.set_path(std::format("/{}/issues/{}", GAMEREPORT_REPO_NAME, issue.id));

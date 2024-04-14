@@ -34,6 +34,7 @@ class IGameReport {
     const char* title;
     const char* title_id;
     const char* app_ver;
+    const char* emu_ver;
     SDL_Window* wnd;
 
     Type           type;
