@@ -5,7 +5,7 @@
 #include "logging.h"
 #include "types.h"
 
-#include <lib/zip.h>
+#include <zip.h>
 #include <mutex>
 
 LOG_DEFINE_MODULE(libSceSaveData);
