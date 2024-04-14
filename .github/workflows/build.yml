@@ -58,6 +58,10 @@ jobs:
           name: code-format
           path: formatting.patch
 
+      - name: Error if fixed
+        run: |
+          rm formatting.patch
+          git diff --quiet --exit-code
   build:
     needs: formatting-check
     name: Emulator
