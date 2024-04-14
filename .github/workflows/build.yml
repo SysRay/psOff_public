@@ -64,9 +64,9 @@ jobs:
           rm formatting.patch
           if ! git diff --quiet --exit-code; then
             echo "# Looks like you messed something up!" >> $GITHUB_STEP_SUMMARY
-            echo "1. Download the `code-format` artifact above" >> $GITHUB_STEP_SUMMARY
+            echo "1. Download the \`code-format\` artifact above" >> $GITHUB_STEP_SUMMARY
             echo "2. Unpack the patch file" >> $GITHUB_STEP_SUMMARY
-            echo "3. Use `git apply formatting.patch` command to apply it to your repo" >> $GITHUB_STEP_SUMMARY
+            echo "3. Use \`git apply formatting.patch\` command to apply it to your repo" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
