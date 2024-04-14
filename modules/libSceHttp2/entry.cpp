@@ -14,7 +14,7 @@ EXPORT SYSV_ABI int32_t sceHttp2Init() {
 }
 
 // can be removed with more functions
-EXPORT SYSV_ABI int32_t sceDummyFUNCTION_1() {
+EXPORT SYSV_ABI int32_t __DUMMY(FUNCTION_1)() {
   return Ok;
 }
 }

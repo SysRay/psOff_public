@@ -24,3 +24,7 @@ struct SceGameLiveStreamingStatus2 {
   SceGameLiveStreamingVideoResolution broadcastVideoResolution;
   uint8_t                             reserved[48];
 };
+
+struct SceGameLiveStreamingGuardArea {
+  float _flt[4];
+};
