@@ -25,4 +25,10 @@
  */
 __APICALL std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
+/**
+ * @brief Get the Emulator Version
+ *
+ * @return __APICALL
+ */
+__APICALL std::string_view getEmulatorVersion();
 #undef __APICALL

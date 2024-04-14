@@ -14,6 +14,8 @@
 static createGraphics_t g_createGraphics = nullptr;
 static runtimeExport_t  g_runtimeExport  = nullptr;
 
+static getEmulatorVersion_t g_getEmulatorVersion = nullptr;
+
 std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance) {
   assert(g_createGraphics != nullptr);
   return g_createGraphics(listener, device, physDev, instance);
@@ -24,10 +26,19 @@ IRuntimeExport* accessRuntimeExport() {
   return g_runtimeExport;
 }
 
+std::string_view getEmulatorVersion() {
+  assert(g_getEmulatorVersion != nullptr);
+  return g_getEmulatorVersion();
+}
+
 void setCallback_createGraphics(createGraphics_t cb) {
   g_createGraphics = cb;
 }
 
 void setCallback_accessRuntimeExport(runtimeExport_t cb) {
   g_runtimeExport = cb;
+}
+
+void setCallback_getEmulatorVersion(getEmulatorVersion_t cb) {
+  g_getEmulatorVersion = cb;
 }
