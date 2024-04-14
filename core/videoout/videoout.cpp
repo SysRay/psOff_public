@@ -819,13 +819,13 @@ std::thread VideoOut::createSDLThread() {
 
               if (win_x < 0 || win_y < 0) { // Negative window coords? => Center the window on selected display
                 win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
-                alter = true;
+                alter         = true;
               } else { // Check the saved window position to be valid according with the current displays configuration
                 SDL_Rect db;
                 SDL_GetDisplayBounds(displ, &db);
                 if ((win_x < db.x) || (win_y < db.y) || (win_x + m_widthTotal > db.x + db.w) || (win_y + m_heightTotal > db.y + db.h)) {
                   win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
-                  alter = true;
+                  alter         = true;
                 }
               }
             }
