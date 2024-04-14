@@ -6,7 +6,8 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-add_dependencies(${libName} core third_party boost)
+add_dependencies(${libName} core third_party)
+
 target_link_libraries(${libName} PRIVATE
   core.lib
   libboost_thread

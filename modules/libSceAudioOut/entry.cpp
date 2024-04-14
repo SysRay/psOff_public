@@ -3,7 +3,7 @@
 #include "logging.h"
 #include "types.h"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <array>
 #include <chrono>
 #include <mutex>

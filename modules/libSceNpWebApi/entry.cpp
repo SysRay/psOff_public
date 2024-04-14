@@ -152,4 +152,8 @@ EXPORT SYSV_ABI void sceNpWebApiCheckTimeout(void) {}
 EXPORT SYSV_ABI int32_t sceNpWebApiUtilityParseNpId(const char* pJsonNpId, SceNpId* pNpId) {
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceNpWebApiCreateContext(int32_t libCtxId, SceUserServiceUserId userId) {
+  return Ok;
+}
 }

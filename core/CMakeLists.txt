@@ -29,7 +29,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:unwinding>
 )
 
-add_dependencies(core logging boost config_emu gamereport)
+add_dependencies(core logging third_party config_emu gamereport)
 target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
