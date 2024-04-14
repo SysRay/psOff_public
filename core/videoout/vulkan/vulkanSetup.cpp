@@ -2,8 +2,8 @@
 
 #include "logging.h"
 
-#include <SDL.h>
-#include <SDL_vulkan.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 #include <format>
 #include <utility/utility.h>
 #include <vulkan/vk_enum_string_helper.h>

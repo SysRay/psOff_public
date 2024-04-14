@@ -8,7 +8,7 @@ add_executable(semaphore_test
 
 add_test(NAME semaphore_test COMMAND semaphore_test)
 
-add_dependencies(semaphore_test third_party psOff_utility logging_stub boost)
+add_dependencies(semaphore_test third_party psOff_utility logging_stub)
 
 target_link_libraries(semaphore_test PRIVATE
   logging_stub.lib
@@ -18,8 +18,8 @@ target_link_libraries(semaphore_test PRIVATE
 
 set_target_properties(semaphore_test
   PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
 )

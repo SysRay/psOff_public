@@ -4,11 +4,12 @@
 
 #include "config_emu.h"
 
-#include <P7_Telemetry.h>
-#include <P7_Trace.h>
+#define P7TRACE_NO_VA_ARG_OPTIMIZATION
 #include <cassert>
 #include <chrono>
 #include <mutex>
+#include <p7/P7_Telemetry.h>
+#include <p7/P7_Trace.h>
 #include <unordered_map>
 
 namespace __Log {

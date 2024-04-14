@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
+include(ExternalProject)
+
+set(PSOFF_LIB_VERSION v.0.0)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -43,21 +46,25 @@ include_directories(BEFORE
   ${PRJ_SRC_DIR}/tools/config_emu
   ${PRJ_SRC_DIR}/tools/gamereport
   ${PRJ_SRC_DIR}
-  ${CMAKE_BINARY_DIR}/third_party/install/include
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/include
 )
 
 link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
-  ${CMAKE_BINARY_DIR}/third_party/install/lib
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
   ${CMAKE_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/lib
+  ${CMAKE_BINARY_DIR}/bin
 )
 
-add_subdirectory(tools/logging) # include before link_libraries
-add_subdirectory(tools/config_emu)
-add_subdirectory(tools/gamereport)
-add_subdirectory(tools/dll2Nids)
-add_dependencies(dll2Nids third_party)
+ExternalProject_Add(third_party
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+  INSTALL_COMMAND ""
+  PREFIX ${CMAKE_BINARY_DIR}/third_party
+  BUILD_IN_SOURCE 1
+  URL https://github.com/SysRay/psOff_thirdParty/releases/download/${PSOFF_LIB_VERSION}/psOff-3rd.zip
+)
 
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
 
@@ -65,25 +72,35 @@ if(TEST_BENCH)
   add_subdirectory(tests)
 endif()
 
+# include before link_libraries
+add_subdirectory(tools/logging)
+add_subdirectory(tools/config_emu)
+add_subdirectory(tools/dll2Nids)
+add_dependencies(dll2Nids third_party)
+
+# -
 link_libraries(
   logging.lib
 )
 add_compile_definitions(IMAGE_BASE=${IMAGE_BASE})
 
-# # Projects
-include("third_party/third_party.cmake")
-
 # Internal Projects
 add_subdirectory(modules)
 add_subdirectory(core)
 add_subdirectory(utility)
+add_subdirectory(tools/gamereport)
 
 # #- Projects
 
 # # Install
-install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
+install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/src/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
   FILES_MATCHING PATTERN "*.dll"
 )
-install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/install/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
+  FILES_MATCHING PATTERN "*.dll"
+)
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/" DESTINATION ${CMAKE_INSTALL_PREFIX}
   FILES_MATCHING PATTERN "*.dll"
 )

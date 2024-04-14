@@ -31,6 +31,11 @@ EXPORT SYSV_ABI SceCommonDialogStatus sceNpProfileDialogGetStatus(void) {
   return g_curStatus;
 }
 
+EXPORT SYSV_ABI int32_t sceNpProfileDialogOpen(const void* param) {
+  g_curStatus = SceCommonDialogStatus::FINISHED;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNpProfileDialogOpenA(const void* param) {
   g_curStatus = SceCommonDialogStatus::FINISHED;
   return Ok;

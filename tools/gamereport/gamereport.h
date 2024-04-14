@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SDL.h"
+#include "SDL2/SDL.h"
 #include "utility/utility.h"
 
 #define GAMEREPORT_USER_SEND_SCANCODE SDL_SCANCODE_F11

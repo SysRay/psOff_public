@@ -7,4 +7,4 @@ add_library(kernel OBJECT
   semaphore_fifo.cpp
 )
 
-add_dependencies(kernel third_party boost)
+add_dependencies(kernel third_party)
