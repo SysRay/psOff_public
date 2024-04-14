@@ -207,7 +207,7 @@ Config::Config() {
       std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
 
   m_graphics._future = std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
-                                  json({{"fullscreen", false}, {"xpos", -1}, {"ypos", -1}, {"width", 1920}, {"height", 1080}}), ConfigModFlag::GRAPHICS);
+                                  json({{"fullscreen", false}, {"xpos", -1}, {"ypos", -1}, {"width", 1920}, {"height", 1080}, {"display", 0}}), ConfigModFlag::GRAPHICS);
 
   m_audio._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
