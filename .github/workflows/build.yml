@@ -65,6 +65,10 @@ jobs:
     needs: formatting-check
     name: Emulator
     runs-on: windows-latest
+    if: |
+      always() &&
+      !contains(needs.formatting-check.result, 'failure') &&
+      !contains(needs.formatting-check.result, 'cancelled')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
