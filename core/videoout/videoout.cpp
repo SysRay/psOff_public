@@ -785,7 +785,7 @@ std::thread VideoOut::createSDLThread() {
         case MessageType::open: {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
-          int        win_x = SDL_WINDOWPOS_CENTERED, win_y = SDL_WINDOWPOS_CENTERED;
+          int        win_x = -1, win_y = -1;
           bool       alter = false;
           int        displ = 0;
 
