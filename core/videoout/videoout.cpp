@@ -149,7 +149,8 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
     return "psOFF";
   }();
 
-  return std::format("{}({}): frame={} fps={}(locked:{})", title, handle, frame, fps, magic_enum::enum_name(maxFPS).data());
+  return std::format("{}({}): frame={} fps={}(locked:{}) version:{}", title, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
+                     getEmulatorVersion().data());
 }
 
 } // namespace

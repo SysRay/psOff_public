@@ -13,6 +13,4 @@
  */
 __APICALL void core_exit();
 
-__APICALL void core_initIntercepts();
-
 #undef __APICALL
