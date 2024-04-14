@@ -14,25 +14,16 @@ add_library(gamereport SHARED ${SRC} ${POST_CONFIGURE_FILE})
 
 target_include_directories(gamereport PRIVATE
   ${CMAKE_SOURCE_DIR}
-  ${PRJ_SRC_DIR}/third_party
-  ${CMAKE_BINARY_DIR}/third_party/install/include
-  ${PRJ_SRC_DIR}/third_party/SDL2/include
-  ${PRJ_SRC_DIR}/third_party/openssl/include
 )
 
-target_link_directories(gamereport PRIVATE
-  ${PRJ_SRC_DIR}/third_party/openssl/lib
-  ${CMAKE_BINARY_DIR}/third_party/install/lib
-)
-
-add_dependencies(gamereport third_party boost check_git)
+add_dependencies(gamereport third_party logging check_git)
 target_link_libraries(gamereport PUBLIC libboost_url SDL2 libssl libcrypto logging.lib config_emu.lib)
 target_compile_definitions(gamereport PUBLIC BOOST_ALL_NO_LIB)
 
 set_target_properties(gamereport
   PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/third_party/intall/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
 )
 
 install(TARGETS gamereport LIBRARY DESTINATION .)

@@ -10,12 +10,7 @@ add_library(${libName} SHARED
   entry.cpp entryEx.cpp avplayer.cpp
 )
 
-target_link_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
-)
-
 target_include_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
   ${Vulkan_INCLUDE_DIRS}
 )
 

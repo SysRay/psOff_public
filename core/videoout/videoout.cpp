@@ -21,8 +21,8 @@
 
 #include <queue>
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 #include <algorithm>
 #include <array>
 #include <assert.h>

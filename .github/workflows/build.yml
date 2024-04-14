@@ -52,19 +52,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore cached deps
-        uses: actions/cache@v4
-        id: cache-thirdparty
-        with:
-          path: third_party
-          key: ${{ runner.os }}-submodules
-
-      - name: Update submodules
-        if: steps.cache-thirdparty.outputs.cache-hit != 'true'
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
       - name: Detect MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
