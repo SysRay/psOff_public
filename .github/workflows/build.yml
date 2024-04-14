@@ -36,12 +36,9 @@ jobs:
       contents: write
     name: Formatting check
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Test formatting
         uses: DoozyX/clang-format-lint-action@v0.17
@@ -51,23 +48,20 @@ jobs:
           clangFormatVersion: 17
           inplace: true
 
-      - name: Add & Commit
-        uses: EndBug/add-and-commit@v9.1.4
+      - name: Generate patch file
+        run: |
+          git diff > formatting.patch
+
+      - name: Upload patch
+        uses: actions/upload-artifact@v4
         with:
-          message: Fix formatting
-          committer_name: GitHub Actions
-          committer_email: 41898282+github-actions[bot]@users.noreply.github.com
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: code-format
+          path: formatting.patch
 
   build:
     needs: formatting-check
     name: Emulator
     runs-on: windows-latest
-    if: |
-      always() &&
-      !contains(needs.formatting-check.result, 'failure') &&
-      !contains(needs.formatting-check.result, 'cancelled')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
