@@ -90,7 +90,7 @@ static int64_t seekbuf(void* op, int64_t offset, int whence) {
   return offset;
 }
 
-static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat* wf) {
+static int32_t ParseData(const uint8_t* data, size_t size, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
   AVFormatContext* fmtctx = avformat_alloc_context();
 
@@ -154,25 +154,11 @@ static int32_t ParseRIFF(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   return Ok;
 }
 
-static int32_t ParseVAG(const uint8_t* data, size_t size, SceNgs2WaveformFormat* wf) {
-  return Err::INVALID_WAVEFORM_DATA;
-}
-
 static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
 
   switch (wi->type) {
-    case WAVEFORM_DATA:
-      switch (auto ftype = *(uint32_t*)wi->ud.dataPtr) {
-        case 0x46464952: // RIFF audio
-          return ParseRIFF((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
-
-        case 0x70474156: // VAG audio
-          return ParseVAG((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
-
-        default: LOG_ERR(L"Unimplemented filetype: %08x", ftype);
-      }
-      break;
+    case WAVEFORM_DATA: return ParseData((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
 
     default: LOG_ERR(L"Unimplemented waveform reader: %d", wi->type);
   }
