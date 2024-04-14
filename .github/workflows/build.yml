@@ -48,14 +48,27 @@ jobs:
           clangFormatVersion: 17
           inplace: true
 
-      - name: Add & Commit
-        uses: EndBug/add-and-commit@v9.1.4
+      - name: Generate patch file
+        run: |
+          git diff > formatting.patch
+          find *.patch -type f -size 0 -delete
+
+      - name: Upload patch
+        uses: actions/upload-artifact@v4
         with:
-          message: Fix formatting
-          committer_name: GitHub Actions
-          committer_email: 41898282+github-actions[bot]@users.noreply.github.com
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: code-format
+          path: formatting.patch
+
+      - name: Error if fixed
+        run: |
+          if rm formatting.patch; then
+            echo "# Looks like you messed something up!" >> $GITHUB_STEP_SUMMARY
+            echo "1. Download the \`code-format\` artifact above" >> $GITHUB_STEP_SUMMARY
+            echo "2. Unpack the patch file" >> $GITHUB_STEP_SUMMARY
+            echo "3. Use \`git apply formatting.patch\` command to apply it to your repo" >> $GITHUB_STEP_SUMMARY
+            echo "4. Push the applied changes to your Pull Request" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
   build:
     needs: formatting-check
