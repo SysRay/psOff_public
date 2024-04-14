@@ -158,8 +158,7 @@ static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
 
   switch (wi->type) {
-    case WAVEFORM_DATA:
-      return ParseData((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
+    case WAVEFORM_DATA: return ParseData((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
 
     default: LOG_ERR(L"Unimplemented waveform reader: %d", wi->type);
   }
