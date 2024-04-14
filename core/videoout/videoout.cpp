@@ -7,6 +7,7 @@
 #include "config_emu.h"
 #include "core/imports/exports/graphics.h"
 #include "core/imports/imports_func.h"
+#include "core/imports/imports_ver.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
@@ -744,6 +745,7 @@ std::thread VideoOut::createSDLThread() {
                   .title    = title ? title.value().data() : "Your PS4 Game Name",
                   .title_id = title_id ? title_id.value().data() : "CUSA00000",
                   .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+                  .emu_ver  = getEmulatorVersion().data(),
                   .wnd      = window,
 
                   .type = IGameReport::Type::USER,
