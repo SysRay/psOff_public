@@ -6,10 +6,6 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-target_include_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/libpng/
-)
-
 add_dependencies(${libName} third_party)
 target_link_libraries(${libName} libpng16)
 

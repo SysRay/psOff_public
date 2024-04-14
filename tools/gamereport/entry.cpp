@@ -6,7 +6,7 @@
 #include "git_ver.h"
 #include "logging.h"
 #include "modules_include/system_param.h"
-#include "third_party/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
