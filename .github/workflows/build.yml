@@ -32,6 +32,8 @@ on:
 
 jobs:
   formatting-check:
+    permissions:
+      contents: write
     name: Formatting check
     runs-on: ubuntu-latest
     steps:
