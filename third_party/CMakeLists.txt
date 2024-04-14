@@ -55,6 +55,7 @@ set(ENABLE_BZIP2 OFF CACHE INTERNAL "" FORCE)
 set(ENABLE_ZSTD OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(libzip)
 
+add_dependencies(zip third_party)
 set_target_properties(zip
   PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/install/lib"
