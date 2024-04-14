@@ -697,6 +697,7 @@ void cbWindow_moveresize(SDL_Window* window) {
   SDL_GetWindowSize(window, &w, &h);
   SDL_GetWindowPosition(window, &x, &y);
 
+  (*jData)["display"] = SDL_GetWindowDisplayIndex(window);
   (*jData)["width"] = w, (*jData)["height"] = h;
   (*jData)["xpos"] = x, (*jData)["ypos"] = y;
 }
@@ -784,7 +785,9 @@ std::thread VideoOut::createSDLThread() {
         case MessageType::open: {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
-          int        win_x = SDL_WINDOWPOS_CENTERED, win_y = SDL_WINDOWPOS_CENTERED;
+          int        win_x = -1, win_y = -1;
+          bool       alter = false;
+          int        displ = 0;
 
           Uint32 addFlags = 0;
           { // Handle graphic config
@@ -806,13 +809,25 @@ std::thread VideoOut::createSDLThread() {
             if (!useFullscreen) {
               readCfgIntParam("xpos", win_x);
               readCfgIntParam("ypos", win_y);
+              readCfgIntParam("display", displ);
               readCfgIntParam("width", m_widthTotal);
               readCfgIntParam("height", m_heightTotal);
 
-              if (win_x == -1) win_x = SDL_WINDOWPOS_CENTERED;
-              if (win_y == -1) win_y = SDL_WINDOWPOS_CENTERED;
               if (m_widthTotal <= 0) m_widthTotal = 1920;
               if (m_heightTotal <= 0) m_heightTotal = 1080;
+              if (displ >= SDL_GetNumVideoDisplays()) displ = 0; // User disconnected some displays since the last run?
+
+              if (win_x < 0 || win_y < 0) { // Negative window coords? => Center the window on selected display
+                win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
+                alter         = true;
+              } else { // Check the saved window position to be valid according with the current displays configuration
+                SDL_Rect db;
+                SDL_GetDisplayBounds(displ, &db);
+                if ((win_x < db.x) || (win_y < db.y) || (win_x + m_widthTotal > db.x + db.w) || (win_y + m_heightTotal > db.y + db.h)) {
+                  win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
+                  alter         = true;
+                }
+              }
             }
 
             if (useFullscreen)
@@ -835,6 +850,7 @@ std::thread VideoOut::createSDLThread() {
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
           window.config.resolution.fullWidth  = window.config.resolution.paneWidth;
           window.config.resolution.fullHeight = window.config.resolution.paneHeight;
+          if (alter) cbWindow_moveresize(window.window); // Trigger config resave if the emulator window is out of user space
 
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
