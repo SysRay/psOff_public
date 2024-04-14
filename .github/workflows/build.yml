@@ -36,9 +36,13 @@ jobs:
       contents: write
     name: Formatting check
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Test formatting
         uses: DoozyX/clang-format-lint-action@v0.17
