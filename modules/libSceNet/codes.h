@@ -124,6 +124,15 @@ constexpr int32_t ERROR_RESOLVER_ENOTFOUND       = -2143223317;
 constexpr int32_t ERROR_RESOLVER_ENOTINIT        = -2143223316;
 } // namespace Err
 
+namespace NetErrNo {
+constexpr int32_t SCE_NET_EINTR              = 4;
+constexpr int32_t SCE_NET_EBADF              = 9;
+constexpr int32_t SCE_NET_EINVAL             = 22;
+constexpr int32_t SCE_NET_EPROTONOSUPPORT    = 43;
+constexpr int32_t SCE_NET_ENAMETOOLONG       = 63;
+constexpr int32_t SCE_NET_RESOLVER_ETIMEDOUT = 226;
+}; // namespace NetErrNo
+
 constexpr size_t SCE_NET_ETHER_ADDR_LEN   = 6;
 constexpr size_t SCE_NET_ETHER_ADDRSTRLEN = 18;
 

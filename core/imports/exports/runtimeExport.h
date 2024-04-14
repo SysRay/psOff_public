@@ -12,7 +12,7 @@ struct CxaDestructor {
   void*                 destructor_object;
 };
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 struct alignas(32) EntryParams {
   int         argc    = 0;
@@ -65,7 +65,7 @@ struct SceKernelModuleInfoEx {
   uint32_t                   ref_count;
 };
 
-#pragma pack()
+#pragma pack(pop)
 
 class IRuntimeExport {
   CLASS_NO_COPY(IRuntimeExport);
@@ -122,4 +122,25 @@ class IRuntimeExport {
   virtual void     deleteTLSKey(uint32_t key)                  = 0;
   virtual void     destroyTLSKeys(uint8_t* obj)                = 0;
   // - ### TLS
+
+  // ### Interception
+
+  /**
+   * @brief function (addr) is called instead of the library symbol
+   *
+   * @param addr function address
+   * @param name symbol name (nid)
+   * @param libraryName
+   * @param modulName
+   */
+  virtual void interceptAdd(uintptr_t addr, std::string_view name, std::string_view libraryName, std::string_view modulName) = 0;
+
+  /**
+   * @brief Gets the original addr
+   *
+   * @param addr
+   * @return uintptr_t
+   */
+  virtual uintptr_t interceptGetAddr(uintptr_t addr) const = 0;
+  // -
 };

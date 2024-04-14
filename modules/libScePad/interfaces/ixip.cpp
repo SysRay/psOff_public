@@ -89,8 +89,10 @@ bool XIPController::reconnect() {
     ::strcpy_s(m_guid, "1337deadbeef00000000000000000000");
     m_xRumblePossible = caps.Vibration.wLeftMotorSpeed > 0 || caps.Vibration.wRightMotorSpeed > 0;
     if (caps.Flags & XINPUT_CAPS_NO_NAVIGATION) {
-      LOG_WARN(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
+      LOG_ERR(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
     }
+    ++m_connectCount;
+    m_state   = ControllerState::Connected;
     m_xUserId = n;
     return true;
   }
@@ -131,8 +133,10 @@ bool XIPController::readPadData(ScePadData& data) {
   XINPUT_STATE xstate;
   if (xip_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
     m_state = ControllerState::Disconnected;
-    data    = ScePadData {};
-    return false;
+    if (!reconnect()) {
+      data = ScePadData {};
+      return false;
+    }
   }
 
   auto xGamepad = &xstate.Gamepad;
@@ -189,7 +193,7 @@ bool XIPController::readPadData(ScePadData& data) {
 
           },
 
-      .connected           = true,
+      .connected           = m_state == ControllerState::Connected,
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,

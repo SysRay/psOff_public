@@ -4,12 +4,14 @@
 #include "intern.h"
 #undef __APICALL_EXTERN
 
+#include "config_emu.h"
 #include "core/imports/exports/graphics.h"
 #include "core/imports/imports_func.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
+#include "gamereport.h"
 #include "imageHandler.h"
 #include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
@@ -20,6 +22,7 @@
 #include <queue>
 
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <algorithm>
 #include <array>
 #include <assert.h>
@@ -108,7 +111,7 @@ enum class FlipRate {
   _20Hz,
 };
 
-struct Context {
+struct Context: public ImageHandlerCB {
   int      userId   = -1;
   FlipRate fliprate = FlipRate::_60Hz;
 
@@ -118,6 +121,12 @@ struct Context {
 
   std::list<EventQueue::IKernelEqueue_t> eventFlip;
   std::list<EventQueue::IKernelEqueue_t> eventVblank;
+
+  // ## interface
+  VkExtent2D getWindowSize() final {
+    SDL_GetWindowSize(window, (int*)(&config.resolution.paneWidth), (int*)(&config.resolution.paneHeight));
+    return VkExtent2D {config.resolution.paneWidth, config.resolution.paneHeight};
+  }
 };
 
 enum class MessageType { open, close, flip };
@@ -148,7 +157,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
 class VideoOut: public IVideoOut, private IEventsGraphics {
   std::array<Context, WindowsMAX> m_windows;
 
-  uint32_t const m_widthTotal = 1920, m_heightTotal = 1080; // todo: make config
+  uint32_t m_widthTotal = 1920, m_heightTotal = 1080;
 
   mutable std::mutex m_mutexInt;
   vulkan::VulkanObj* m_vulkanObj = nullptr;
@@ -159,8 +168,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   std::thread             m_threadSDL2;
   std::condition_variable m_condSDL2;
   std::condition_variable m_condDone;
-  bool                    m_stop = false;
-  std::queue<Message>     m_messages;
+
+  bool m_stop     = false;
+  bool m_useVsync = true;
+
+  std::queue<Message> m_messages;
 
   uint64_t m_vblankTime = (uint64_t)(1e6 / 59.0); // in us
 
@@ -205,10 +217,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
     m_messages.push({MessageType::flip, handle - 1, nullptr, index, setIndex, *imageData});
-    lock.unlock();
-    m_condSDL2.notify_one();
 
     LOG_DEBUG(L"<- eventDoFlip(%d):%u %d", handle, setIndex, index);
+
+    lock.unlock();
+    if (!m_useVsync) m_condSDL2.notify_one();
   }
 
   vulkan::QueueInfo* getQueue(vulkan::QueueType type) final;
@@ -244,6 +257,11 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
       case FlipRate::_30Hz: m_vblankTime = (uint64_t)(1e6 / 29.0); break;
       case FlipRate::_20Hz: m_vblankTime = (uint64_t)(1e6 / 19.0); break;
     }
+  }
+
+  void getSafeAreaRatio(float* area) final {
+    auto ext = m_imageHandler.get()->getExtent();
+    if (area != nullptr) *area = ext.width / (float)ext.height;
   }
 
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
@@ -290,6 +308,9 @@ IVideoOut& accessVideoOut() {
 }
 
 VideoOut::~VideoOut() {
+  printf("saving config files\n");
+  accessConfig()->save((uint32_t)ConfigModFlag::LOGGING | (uint32_t)ConfigModFlag::GRAPHICS | (uint32_t)ConfigModFlag::AUDIO |
+                       (uint32_t)ConfigModFlag::CONTROLS | (uint32_t)ConfigModFlag::GENERAL);
   // Logging doesn't work here, even with flush
   printf("shutting down VideoOut\n");
   m_stop = true;
@@ -484,10 +505,11 @@ void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
   // window.config.flipStatus.currentBuffer = index; // set after flip, before vblank
 
   m_messages.push({MessageType::flip, handle - 1, nullptr, index, setIndex, *imageData});
-  lock.unlock();
-  m_condSDL2.notify_one();
 
   LOG_DEBUG(L"<- submitFlip(%d):%u %d", handle, setIndex, index);
+
+  lock.unlock();
+  if (!m_useVsync) m_condSDL2.notify_one();
 }
 
 void VideoOut::doFlip(Context& ctx, int handle) {
@@ -542,7 +564,7 @@ void VideoOut::vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime) {
   vblank.processTime = curTime;
   ++vblank.count;
 
-  for (auto& item: window.eventFlip) {
+  for (auto& item: window.eventVblank) {
     (void)item->triggerEvent(VIDEO_OUT_EVENT_VBLANK, EventQueue::KERNEL_EVFILT_VIDEO_OUT, reinterpret_cast<void*>(window.config.vblankStatus.count));
   }
 }
@@ -562,6 +584,17 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
 
   auto [displayFormat, _] = vulkan::getDisplayFormat(m_vulkanObj);
 
+  // todo: needs gpu memory display image recreate
+  // if (m_widthTotal >= 1920 && m_heightTotal >= 1080) {
+  //   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
+  //       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
+  //       .tilingMode   = tiling_mode,
+  //       .aspectRatio  = aspect_ratio,
+  //       .width        = m_widthTotal,
+  //       .height       = m_heightTotal,
+  //       .pitchInPixel = m_widthTotal,
+  //   };
+  // } else {
   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
       .tilingMode   = tiling_mode,
@@ -570,6 +603,7 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
       .height       = height,
       .pitchInPixel = pitchInPixel,
   };
+  //}
 }
 
 int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses, int numBuffer, const void* attribute) {
@@ -631,6 +665,8 @@ vulkan::QueueInfo* VideoOut::getQueue(vulkan::QueueType type) {
 }
 
 void cbWindow_close(SDL_Window* window) {
+  LOG_USE_MODULE(VideoOut);
+
   const SDL_MessageBoxButtonData mbbd[2] {
       {.flags = SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, .buttonid = 0, .text = "Cancel"},
       {.flags = 0, .buttonid = 1, .text = "Quit"},
@@ -646,10 +682,24 @@ void cbWindow_close(SDL_Window* window) {
       .colorScheme = nullptr,
   };
 
-  int buttonId = 0;
-  if (SDL_ShowMessageBox(&mbd, &buttonId) == 0 && buttonId != 1) return;
+  int buttonId = -1;
+  if (SDL_ShowMessageBox(&mbd, &buttonId) != 0) {
+    LOG_ERR(L"Failed to generate SDL MessageBox: %S", SDL_GetError());
+    return;
+  }
 
-  exit(0); // destructor cleans up.
+  if (buttonId == 1) exit(0); // destructor cleans up.
+}
+
+void cbWindow_moveresize(SDL_Window* window) {
+  int w, h, x, y;
+  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GRAPHICS);
+  SDL_GetWindowSize(window, &w, &h);
+  SDL_GetWindowPosition(window, &x, &y);
+
+  (*jData)["display"] = SDL_GetWindowDisplayIndex(window);
+  (*jData)["width"] = w, (*jData)["height"] = h;
+  (*jData)["xpos"] = x, (*jData)["ypos"] = y;
 }
 
 std::thread VideoOut::createSDLThread() {
@@ -671,12 +721,32 @@ std::thread VideoOut::createSDLThread() {
             switch (event.window.event) {
               case SDL_WINDOWEVENT_CLOSE: cbWindow_close(window); break;
 
+              case SDL_WINDOWEVENT_RESIZED:
+              case SDL_WINDOWEVENT_MOVED: cbWindow_moveresize(window); break;
+
               default: break;
             }
 
           case SDL_KEYUP:
             if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
               cbWindow_close(window);
+            } else if (event.key.keysym.scancode == GAMEREPORT_USER_SEND_SCANCODE) {
+              auto title    = accessSystemContent().getString("TITLE");
+              auto title_id = accessSystemContent().getString("TITLE_ID");
+              auto app_ver  = accessSystemContent().getString("APP_VER");
+
+              accessGameReport().ShowReportWindow({
+                  .title    = title ? title.value().data() : "Your PS4 Game Name",
+                  .title_id = title_id ? title_id.value().data() : "CUSA00000",
+                  .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+                  .wnd      = window,
+
+                  .type = IGameReport::Type::USER,
+                  .add =
+                      {
+                          .ex = nullptr,
+                      },
+              });
             }
 
           default: break;
@@ -715,11 +785,72 @@ std::thread VideoOut::createSDLThread() {
         case MessageType::open: {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
+          int        win_x = -1, win_y = -1;
+          bool       alter = false;
+          int        displ = 0;
 
-          window.window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_widthTotal, m_heightTotal,
-                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN);
+          Uint32 addFlags = 0;
+          { // Handle graphic config
+            auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GRAPHICS);
+
+            bool useFullscreen = false;
+            if (!getJsonParam(jData, "fullscreen", useFullscreen)) {
+              LOG_ERR(L"Config| Couldn't load param:fullscreen from graphics");
+            }
+
+            auto readCfgIntParam = [jData](const char* param, auto& value) {
+              LOG_USE_MODULE(VideoOut);
+
+              if (!getJsonParam(jData, param, value)) {
+                LOG_ERR(L"Config| Couldn't load param:%S from graphics", param);
+              }
+            };
+
+            if (!useFullscreen) {
+              readCfgIntParam("xpos", win_x);
+              readCfgIntParam("ypos", win_y);
+              readCfgIntParam("display", displ);
+              readCfgIntParam("width", m_widthTotal);
+              readCfgIntParam("height", m_heightTotal);
+
+              if (m_widthTotal <= 0) m_widthTotal = 1920;
+              if (m_heightTotal <= 0) m_heightTotal = 1080;
+              if (displ >= SDL_GetNumVideoDisplays()) displ = 0; // User disconnected some displays since the last run?
+
+              if (win_x < 0 || win_y < 0) { // Negative window coords? => Center the window on selected display
+                win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
+                alter         = true;
+              } else { // Check the saved window position to be valid according with the current displays configuration
+                SDL_Rect db;
+                SDL_GetDisplayBounds(displ, &db);
+                if ((win_x < db.x) || (win_y < db.y) || (win_x + m_widthTotal > db.x + db.w) || (win_y + m_heightTotal > db.y + db.h)) {
+                  win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
+                  alter         = true;
+                }
+              }
+            }
+
+            if (useFullscreen)
+              addFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+            else
+              addFlags |= SDL_WINDOW_RESIZABLE;
+          }
+
+          window.window = SDL_CreateWindow(title.c_str(), win_x, win_y, m_widthTotal, m_heightTotal,
+                                           SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS | addFlags);
+
+          { // todo: Fix minimize button, now it crashes the emulator.
+            SDL_SysWMinfo wmInfo;
+            SDL_VERSION(&wmInfo.version);
+            SDL_GetWindowWMInfo(window.window, &wmInfo);
+            HWND hwnd = wmInfo.info.win.window;
+            SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
+          }
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
+          window.config.resolution.fullWidth  = window.config.resolution.paneWidth;
+          window.config.resolution.fullHeight = window.config.resolution.paneHeight;
+          if (alter) cbWindow_moveresize(window.window); // Trigger config resave if the emulator window is out of user space
 
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
@@ -728,8 +859,12 @@ std::thread VideoOut::createSDLThread() {
 
             m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
 
-            auto queue     = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
-            m_imageHandler = createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue);
+            auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
+
+            m_useVsync = accessInitParams()->useVSYNC();
+
+            m_imageHandler =
+                createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
 
             *item.done = true;

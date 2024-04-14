@@ -4,8 +4,6 @@
 #include "logging.h"
 #include "types.h"
 
-#include <stdarg.h>
-
 LOG_DEFINE_MODULE(fs);
 
 extern "C" {
@@ -54,16 +52,8 @@ EXPORT SYSV_ABI int sceKernelFdatasync(int fd) {
   return filesystem::fdatasync(fd);
 }
 
-EXPORT SYSV_ABI int sceKernelFcntl(int fd, int cmd, ...) {
-  LOG_USE_MODULE(fs);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  // todo own va_start etc.. for sysv_abi
-  // va_list args;
-  // va_start(args, cmd);
-
-  // return filesystem::fcntl(fd, cmd, args);
-  // va_end(args);
-  return Ok;
+EXPORT SYSV_ABI int sceKernelFcntl(int handle, int cmd, SceVariadicList argp) {
+  return POSIX_CALL(filesystem::fcntl(handle, cmd, argp));
 }
 
 EXPORT SYSV_ABI size_t sceKernelReadv(int handle, const filesystem::SceKernelIovec* iov, int iovcnt) {
@@ -144,6 +134,10 @@ EXPORT SYSV_ABI size_t sceKernelPwrite(int handle, const void* buf, size_t nbyte
 
 EXPORT SYSV_ABI int __NID(_write)(int handle, const void* buf, size_t nbytes) {
   return POSIX_CALL(filesystem::write(handle, buf, nbytes));
+}
+
+EXPORT SYSV_ABI int __NID(_ioctl)(int handle, int request, SceVariadicList argp) {
+  return POSIX_CALL(filesystem::ioctl(handle, request, argp));
 }
 
 EXPORT SYSV_ABI int sceKernelMmap(void* addr, size_t len, int prot, filesystem::SceMap flags, int fd, int64_t offset, void** res) {

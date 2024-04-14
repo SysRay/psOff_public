@@ -99,9 +99,9 @@ struct SceVideoOutResolutionStatus {
   uint32_t fullHeight;
   uint32_t paneWidth;
   uint32_t paneHeight;
-  uint64_t refreshRate;
+  uint64_t refreshRate = 0;
   float    screenSizeInInch;
-  uint16_t flags;
+  uint16_t flags = 0;
   uint16_t _reserved0;
 };
 
@@ -127,11 +127,11 @@ struct SceVideoOutMode {
   uint32_t _reserved[1];
 };
 
-typedef struct SceVideoOutVrViewCropAdjustment {
+struct SceVideoOutVrViewCropAdjustment {
   int16_t verticalOffset;
   int16_t reserved0;
   int32_t reserved1[3];
-} SceVideoOutVrViewCropAdjustment;
+};
 
 struct SceVideoOutConfigureOptions {
   SceVideoOutVrViewCropAdjustment vrViewCropAdjustment;

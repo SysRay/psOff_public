@@ -20,6 +20,8 @@ class ImageHandler: public IImageHandler {
   VkSwapchainKHR m_swapchain   = nullptr;
   VkCommandPool  m_commandPool = nullptr;
 
+  VkSwapchainCreateInfoKHR m_swapchainCreateInfo;
+
   std::vector<VkSemaphore>     m_semsImageReady;
   std::vector<VkSemaphore>     m_semsImageCopied;
   std::vector<VkCommandBuffer> m_commandBuffer;
@@ -43,9 +45,12 @@ class ImageHandler: public IImageHandler {
   bool m_stop = false;
 
   public:
-  ImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue): IImageHandler(extentWindow, queue), m_device(vkDevice) {};
+  ImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback)
+      : IImageHandler(extentWindow, queue, callback), m_device(vkDevice) {};
 
   virtual ~ImageHandler() = default;
+
+  void recreate();
 
   // ### Interace
   void init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) final;
@@ -63,8 +68,37 @@ class ImageHandler: public IImageHandler {
   VkSwapchainKHR getSwapchain() const final { return m_swapchain; }
 };
 
-std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue) {
-  return std::make_unique<ImageHandler>(vkDevice, extentWindow, queue);
+std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback) {
+  return std::make_unique<ImageHandler>(vkDevice, extentWindow, queue, callback);
+}
+
+void ImageHandler::recreate() {
+  LOG_USE_MODULE(ImageHandler);
+
+  vkDeviceWaitIdle(m_device);
+
+  auto const newExtent = m_callback->getWindowSize();
+  if (newExtent.width != m_extentWindow.width || newExtent.height != m_extentWindow.height) {
+    m_extentWindow = newExtent;
+
+    m_swapchainCreateInfo.imageExtent  = m_extentWindow;
+    m_swapchainCreateInfo.oldSwapchain = m_swapchain;
+
+    VkSwapchainKHR newSwapchain;
+    if (auto result = vkCreateSwapchainKHR(m_device, &m_swapchainCreateInfo, nullptr, &newSwapchain); result != VK_SUCCESS) {
+      LOG_CRIT(L"Couldn't recreate swapchain: %d", result);
+    }
+
+    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr); // Destroys images as well
+
+    m_swapchain = newSwapchain;
+
+    uint32_t numImages = 0;
+    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, nullptr);
+    m_scImages.resize(numImages);
+
+    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, m_scImages.data());
+  }
 }
 
 std::optional<ImageData> ImageHandler::getImage_blocking() {
@@ -95,6 +129,9 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
       if (result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index); result != VK_SUCCESS) {
         if (result == VK_NOT_READY) {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        } else if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
+          recreate();
+          ++numTries;
         }
       } else
         break;
@@ -191,7 +228,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
 
     bool const useVsync = accessInitParams()->useVSYNC();
 
-    VkSwapchainCreateInfoKHR const createInfo {
+    m_swapchainCreateInfo = VkSwapchainCreateInfoKHR {
         .sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext                 = nullptr,
         .flags                 = 0,
@@ -207,12 +244,12 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .pQueueFamilyIndices   = nullptr,
         .preTransform          = obj->surfaceCapabilities.capabilities.currentTransform,
         .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
+        .presentMode           = useVsync ? VK_PRESENT_MODE_FIFO_RELAXED_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR,
         .clipped               = VK_TRUE,
         .oldSwapchain          = nullptr,
     };
 
-    vkCreateSwapchainKHR(obj->deviceInfo.device, &createInfo, nullptr, &m_swapchain);
+    vkCreateSwapchainKHR(obj->deviceInfo.device, &m_swapchainCreateInfo, nullptr, &m_swapchain);
   }
 
   { // swapchain images

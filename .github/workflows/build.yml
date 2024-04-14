@@ -79,7 +79,7 @@ jobs:
       - name: Configure
         run: |
           echo "::add-matcher::tools/matchers/cmake.json"
-          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
+          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DTEST_BENCH=ON
 
       - name: Build
         run: |
@@ -91,6 +91,10 @@ jobs:
         run: |
           echo "::add-matcher::tools/matchers/cmake.json"
           cmake.exe --install _build/_Release
+
+      - name: Run some tests
+        shell: bash
+        run: echo "`node testRunner`" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

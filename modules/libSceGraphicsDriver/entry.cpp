@@ -152,6 +152,16 @@ int SYSV_ABI sceGnmSetCsShaderWithModifier(uint32_t* cmdOut, uint64_t size, cons
   return Ok;
 }
 
+int SYSV_ABI sceGnmSetEmbeddedPsShader(uint32_t* cmdOut, uint64_t size, uint32_t id, uint32_t shader_modifier) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+
+  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
+  cmdOut[1] = shader_modifier;
+  cmdOut[2] = id;
+  return Ok;
+}
+
 int SYSV_ABI sceGnmSetEmbeddedVsShader(uint32_t* cmdOut, uint64_t size, uint32_t id, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
@@ -237,6 +247,7 @@ int SYSV_ABI sceGnmSubmitAndFlipCommandBuffersForWorkload(uint64_t workload, uin
 int SYSV_ABI sceGnmSubmitDone() {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
+
   accessVideoOut().getGraphics()->waitSubmitDone();
   return Ok;
 }
@@ -412,11 +423,19 @@ bool SYSV_ABI sceGnmIsUserPaEnabled() {
   return false;
 }
 
+bool SYSV_ABI sceRazorIsLoaded() {
+  return false;
+}
+
 void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
 
-  return 0; // Maps/allocates it afterwards anyway
+  return (void*)0xff0000000; // Maps/allocates it afterwards anyway
+}
+
+int SYSV_ABI sceGnmValidateCommandBuffers() {
+  return Err::VALIDATION_NOT_ENABLED;
 }
 
 // ####   Only used for tracing ########

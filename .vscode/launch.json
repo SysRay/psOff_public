@@ -6,7 +6,7 @@
 			"type": "cppvsdbg",
 			"request": "launch",
 			"program": "${config:psoff.root-path}/emulator.exe",
-			"args": ["--file", "${config:psoff.game-path}/eboot.bin", "--d"],
+			"args": ["--file", "${config:psoff.game-path}/eboot.bin", "--d", "${config:psoff.add-arg}"],
 			"stopAtEntry": false,
 			"cwd": "${config:psoff.root-path}",
 			"environment": [],

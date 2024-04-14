@@ -1,6 +1,7 @@
 #include "codes.h"
 #include "common.h"
 #include "core/fileManager/fileManager.h"
+#include "core/kernel/filesystem.h"
 #include "logging.h"
 #include "types.h"
 
@@ -144,7 +145,8 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmount(const SceSaveDataMountPoint* mountPoin
 EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceSaveData);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  // todo: backup
+  return sceSaveDataUmount(mountPoint);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataGetMountInfo(const SceSaveDataMountPoint* mountPoint, SceSaveDataMountInfo* info) {
@@ -207,25 +209,207 @@ EXPORT SYSV_ABI int32_t sceSaveDataSyncSaveDataMemory(const SceSaveDataMemorySyn
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory2(const SceSaveDataMemorySetup2* setupParam, SceSaveDataMemorySetupResult* result) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  if (setupParam == nullptr || setupParam->memorySize == 0 || setupParam->option.bits.SET_PARAM == 0) return getErr(ErrCode::_EINVAL);
+  auto filename = std::format("SLOT{}_UID{}.dat", setupParam->slotId, setupParam->userId);
+
+  filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::WRONLY, .create = 1, .excl = 1};
+
+  auto file_handle = filesystem::open(filename.c_str(), oflags, 0);
+
+  if (file_handle > 0) {
+    if (filesystem::pwrite(file_handle, "\0", 1, setupParam->memorySize - 1) != 1) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EIO);
+    }
+
+    filesystem::close(file_handle);
+  }
+
+  if (result != nullptr) result->existedMemorySize = setupParam->memorySize;
+
+  auto paramname    = filename.substr(0, filename.size() - 3) + "prm";
+  auto param_handle = filesystem::open(paramname.c_str(), oflags, 0);
+
+  if (param_handle > 0) {
+    if (auto param = setupParam->initParam) {
+      if (filesystem::write(param_handle, param, sizeof(*param)) != sizeof(*param)) {
+        filesystem::close(param_handle);
+        return getErr(ErrCode::_EIO);
+      }
+    }
+
+    filesystem::close(param_handle);
+  }
+
+  auto iconname    = filename.substr(0, filename.size() - 3) + "pic";
+  auto icon_handle = filesystem::open(iconname.c_str(), oflags, 0);
+
+  if (icon_handle > 0) {
+    if (setupParam->iconMemorySize > 0) {
+      if (filesystem::pwrite(icon_handle, "\0", 1, setupParam->iconMemorySize - 1) != 1) {
+        filesystem::close(icon_handle);
+        return getErr(ErrCode::_EIO);
+      }
+
+      if (auto icon = setupParam->initIcon) {
+        if (filesystem::pwrite(icon_handle, icon->buf, icon->bufSize, 0) != icon->bufSize) {
+          filesystem::close(icon_handle);
+          return getErr(ErrCode::_EIO);
+        }
+      }
+    }
+
+    filesystem::close(icon_handle);
+  }
+
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(SceSaveDataMemoryGet2* getParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+EXPORT SYSV_ABI int32_t sceSaveDataSetupSaveDataMemory(const SceUserServiceUserId userId, size_t memorySize, const SceSaveDataParam* param) {
+  const SceSaveDataMemorySetup2 ssdms2 {
+      .option         = SceSaveDataMemoryOption {.bits = {.SET_PARAM = 1}},
+      .userId         = userId,
+      .memorySize     = memorySize,
+      .iconMemorySize = 0,
+      .initParam      = param,
+      .initIcon       = nullptr,
+      .slotId         = 0,
+  };
 
-  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf) return getErr(ErrCode::_EINVAL);
+  return sceSaveDataSetupSaveDataMemory2(&ssdms2, nullptr);
+}
 
-  memset(getParam->data->buf, 0, getParam->data->bufSize);
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory2(const SceSaveDataMemoryGet2* getParam) {
+  if (getParam == nullptr || getParam->data == nullptr || getParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto filename = std::format("SLOT{}_UID{}.dat", getParam->slotId, getParam->userId);
+
+  filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::RDONLY};
+
+  auto file_handle = filesystem::open(filename.c_str(), oflags, 0);
+  if (file_handle < 0) return file_handle; // return the error code returned by filesystem::open
+
+  if (auto data = getParam->data) {
+    if (filesystem::pread(file_handle, data->buf, data->bufSize, data->offset) != data->bufSize) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EIO);
+    }
+    filesystem::close(file_handle);
+  }
+
+  if (auto param = getParam->param) {
+    auto paramname    = filename.substr(0, filename.size() - 3) + "prm";
+    auto param_handle = filesystem::open(paramname.c_str(), oflags, 0);
+    if (param_handle < 0) return param_handle; // return the error code returned by filesystem::open
+
+    if (filesystem::read(param_handle, param, sizeof(*param)) != sizeof(*param)) {
+      filesystem::close(param_handle);
+      return getErr(ErrCode::_EIO);
+    }
+
+    filesystem::close(param_handle);
+  }
+
+  if (auto icon = getParam->icon) {
+    auto iconname    = filename.substr(0, filename.size() - 3) + "pic";
+    auto icon_handle = filesystem::open(iconname.c_str(), oflags, 0);
+    if (icon_handle < 0) return icon_handle; // return the error code returned by filesystem::open
+
+    if (filesystem::read(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) {
+      filesystem::close(icon_handle);
+      return getErr(ErrCode::_EIO);
+    }
+    filesystem::close(icon_handle);
+  }
+
   return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceSaveDataGetSaveDataMemory(const SceUserServiceUserId userId, void* buf, const size_t bufSize, const int64_t offset) {
+  if (buf == nullptr || bufSize == 0) return getErr(ErrCode::_EINVAL);
+  SceSaveDataMemoryData ssdmd {
+      .buf     = buf,
+      .bufSize = bufSize,
+      .offset  = offset,
+  };
+  const SceSaveDataMemoryGet2 ssdmg2 {
+      .userId = userId,
+      .data   = &ssdmd,
+      .param  = nullptr,
+      .icon   = nullptr,
+      .slotId = 0,
+  };
+  return sceSaveDataGetSaveDataMemory2(&ssdmg2);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory2(const SceSaveDataMemorySet2* setParam) {
-  LOG_USE_MODULE(libSceSaveData);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  if (setParam == nullptr || setParam->data == nullptr || setParam->data->buf == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto filename = std::format("SLOT{}_UID{}.dat", setParam->slotId, setParam->userId);
+
+  filesystem::SceOpen oflags {.mode = filesystem::SceOpenMode::WRONLY};
+
+  auto file_handle = filesystem::open(filename.c_str(), oflags, 0);
+  if (file_handle < 0) return file_handle; // return the error code returned by filesystem::open
+
+  for (uint32_t i = 0; i < setParam->dataNum; ++i) {
+    auto& data = setParam->data[i];
+    if (data.buf == nullptr) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EINVAL);
+    }
+    if (filesystem::pwrite(file_handle, data.buf, data.bufSize, data.offset) != data.bufSize) {
+      filesystem::close(file_handle);
+      return getErr(ErrCode::_EIO);
+    }
+  }
+
+  filesystem::close(file_handle);
+
+  if (auto param = setParam->param) {
+    auto paramname    = filename.substr(0, filename.size() - 3) + "prm";
+    auto param_handle = filesystem::open(paramname.c_str(), oflags, 0);
+    if (param_handle < 0) return param_handle; // return the error code returned by filesystem::open
+
+    if (filesystem::write(param_handle, param, sizeof(*param)) != sizeof(*param)) {
+      filesystem::close(param_handle);
+      return getErr(ErrCode::_EIO);
+    }
+
+    filesystem::close(param_handle);
+  }
+
+  if (auto icon = setParam->icon) {
+    auto iconname    = filename.substr(0, filename.size() - 3) + "pic";
+    auto icon_handle = filesystem::open(iconname.c_str(), oflags, 0);
+    if (icon_handle < 0) return icon_handle; // return the error code returned by filesystem::open
+
+    if (filesystem::write(icon_handle, icon->buf, icon->bufSize) != icon->bufSize) {
+      filesystem::close(icon_handle);
+      return getErr(ErrCode::_EIO);
+    }
+
+    filesystem::close(icon_handle);
+  }
+
   return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceSaveDataSetSaveDataMemory(const SceUserServiceUserId userId, const void* buf, const size_t bufSize, const int64_t offset) {
+  SceSaveDataMemoryData ssdmd {
+      .buf     = (void*)buf,
+      .bufSize = bufSize,
+      .offset  = offset,
+  };
+  const SceSaveDataMemorySet2 ssdms2 {
+      .userId  = userId,
+      .data    = &ssdmd,
+      .param   = nullptr,
+      .icon    = nullptr,
+      .dataNum = 1,
+      .slotId  = 0,
+  };
+  return sceSaveDataSetSaveDataMemory2(&ssdms2);
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataRestoreBackupData(const SceSaveDataRestoreBackupData* restore) {

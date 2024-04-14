@@ -21,15 +21,15 @@ std::pair<Handle_t, int32_t> open(std::filesystem::path path, filesystem::SceOpe
   switch (mode.mode) {
     case filesystem::SceOpenMode::RDONLY: {
       access = GENERIC_READ;
-      if (mode.shlock) shareMode = FILE_SHARE_READ;
+      if (!mode.exlock) shareMode = FILE_SHARE_READ;
     } break;
     case filesystem::SceOpenMode::WRONLY: {
       access = GENERIC_WRITE;
-      if (mode.shlock) shareMode = FILE_SHARE_WRITE;
+      if (!mode.exlock) shareMode = FILE_SHARE_WRITE;
     } break;
     case filesystem::SceOpenMode::RDWR: {
       access = GENERIC_READ | GENERIC_WRITE;
-      if (mode.shlock) shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+      if (!mode.exlock) shareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
     } break;
   }
   // -
@@ -87,6 +87,8 @@ class TypeFile: public IFile {
   size_t  read(void* buf, size_t nbytes) final;
   size_t  write(void* buf, size_t nbytes) final;
   void    sync() final;
+  int     ioctl(int request, SceVariadicList argp) final;
+  int     fcntl(int cmd, SceVariadicList argp) final;
   int64_t lseek(int64_t offset, SceWhence whence) final;
 
   virtual void* getNative() final { return m_file; }
@@ -131,6 +133,14 @@ size_t TypeFile::write(void* buf, size_t nbytes) {
 
 void TypeFile::sync() {
   FlushFileBuffers(m_file);
+}
+
+int TypeFile::ioctl(int request, SceVariadicList argp) {
+  return 0;
+}
+
+int TypeFile::fcntl(int cmd, SceVariadicList argp) {
+  return 0;
 }
 
 int64_t TypeFile::lseek(int64_t offset, SceWhence whence) {

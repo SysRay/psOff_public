@@ -83,8 +83,9 @@ struct PthreadMutexPrivate {
 
 struct PthreadMutexattrPrivate {
   uint64_t initialized = 1;
-  uint8_t  reserved[64]; // type is bigger on ps than here
+  uint8_t  reserved[60]; // type is bigger on ps than here
 
+  SceMutexShared   pshared   = SceMutexShared::PRIVATE;
   SceMutexType     type      = SceMutexType::DEFAULT;
   SceMutexProtocol pprotocol = SceMutexProtocol::PRIO_NONE;
   int              prioCeiling;

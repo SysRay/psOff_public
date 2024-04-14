@@ -4,7 +4,7 @@ add_library(kernel OBJECT
   errors.cpp
   filesystem.cpp
   pthread.cpp
-  semaphore.cpp
+  semaphore_fifo.cpp
 )
 
 add_dependencies(kernel third_party boost)

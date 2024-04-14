@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "system_param.h"
 #include "tools/config_emu/config_emu.h"
@@ -86,6 +87,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceParamGetInt(SceSystemServiceParamId para
     case SceSystemServiceParamId::SystemName: *value = 0; break;
     case SceSystemServiceParamId::GameParentalLevel: *value = (int)SystemParamGameParental::OFF; break;
     case SceSystemServiceParamId::ENTER_BUTTON_ASSIGN: *value = (int)SystemParamEnterButtonAssign::CROSS; break;
+    default: return Err::SERVICE_ERROR_PARAMETER;
   }
 
   LOG_INFO(L" %d = %d", paramId, *value);
@@ -93,8 +95,10 @@ EXPORT SYSV_ABI int32_t sceSystemServiceParamGetInt(SceSystemServiceParamId para
 }
 
 EXPORT SYSV_ABI int32_t sceSystemServiceParamGetString(SceSystemServiceParamId paramId, char* buf, size_t bufSize) {
-  LOG_USE_MODULE(libSceSystemService);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  static const char sysname[] = "CUH-0000";
+  if (paramId != SceSystemServiceParamId::SystemName) return Err::SERVICE_ERROR_PARAMETER;
+  if (buf == nullptr || bufSize < sizeof(sysname)) return Err::SERVICE_ERROR_PARAMETER;
+  ::strcpy_s(buf, bufSize, sysname);
   return Ok;
 }
 
@@ -153,10 +157,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetDisplaySafeAreaInfo(SceSystemServiceD
     return Err::SERVICE_ERROR_PARAMETER;
   }
 
-  info->ratio = 16.0f / 9.0f;
-
-  LOG_USE_MODULE(libSceSystemService);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  accessVideoOut().getSafeAreaRatio(&info->ratio);
   return Ok;
 }
 
@@ -202,7 +203,7 @@ EXPORT SYSV_ABI int32_t sceSystemServiceDisableSuspendConfirmationDialog() {
   return Ok;
 }
 
-typedef struct SceSystemServiceAbnormalTerminationInfo SceSystemServiceAbnormalTerminationInfo;
+struct SceSystemServiceAbnormalTerminationInfo;
 
 EXPORT SYSV_ABI int32_t sceSystemServiceReportAbnormalTermination(const SceSystemServiceAbnormalTerminationInfo* info) {
   LOG_USE_MODULE(libSceSystemService);

@@ -3,6 +3,7 @@
 
 constexpr int        Ok = 0;
 typedef unsigned int SceKernelUseconds;
+typedef void*        SceVariadicList;
 
 struct timeval64 {
   uint64_t tv_sec;
@@ -16,6 +17,11 @@ struct timespec64 {
 
 typedef struct timeval64  SceKernelTimeval;
 typedef struct timespec64 SceKernelTimespec;
+
+struct SceKernelTimezone {
+  int tz_minuteswest;
+  int tz_dsttime;
+};
 
 struct SceRtcTick {
   uint64_t tick;
@@ -154,6 +160,7 @@ constexpr int getErr(ErrCode err) {
 #define __NID_HEX_(hexId, funcName) __hex_##hexId
 #define __NID_HEX(hexId)            __hex_##hexId
 #define __NID(func)                 __sce_##func
+#define __DUMMY(func)               __sce_##func
 
 static void ns2timespec(SceKernelTimespec* ts, uint64_t const ns) {
   ts->tv_sec  = (decltype(ts->tv_sec))(ns / 1000000000l);

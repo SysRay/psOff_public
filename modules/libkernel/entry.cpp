@@ -123,7 +123,13 @@ EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_ti
     *dstsec = sys_inf.save.count() * 60;
   }
 
-  return 0;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelConvertLocaltimeToUtc() {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
 }
 
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {
@@ -159,6 +165,10 @@ EXPORT SYSV_ABI int sceKernelClockGettime(SceKernelClockid clockId, SceKernelTim
 
 EXPORT SYSV_ABI int sceKernelGettimeofday(SceKernelTimeval* tp) {
   return accessTimer().getTimeofDay(tp);
+}
+
+EXPORT SYSV_ABI int sceKernelGettimezone(SceKernelTimezone* tz) {
+  return accessTimer().getTimeZone(tz);
 }
 
 EXPORT SYSV_ABI int __NID(clock_getres)(SceKernelClockid clockId, SceKernelTimespec* tp) {
@@ -227,6 +237,12 @@ EXPORT SYSV_ABI uint64_t sceKernelGetGPI() {
 }
 
 EXPORT SYSV_ABI int sceKernelSetFsstParam(int prio, SceKernelCpumask mask) {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelSetProcessProperty() {
   LOG_USE_MODULE(libkernel);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -382,6 +398,11 @@ EXPORT SYSV_ABI int sceKernelGetModuleList(int* modules, size_t size, size_t* si
   *sizeOut = modules_.size();
   if (modules_.size() > size) return getErr(ErrCode::_ENOMEM);
 
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelGetCompiledSdkVersion(int* ver) {
+  *ver = 0x7FFFF;
   return Ok;
 }
 

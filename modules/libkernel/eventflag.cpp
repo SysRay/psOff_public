@@ -16,26 +16,8 @@ EXPORT SYSV_ABI int sceKernelCreateEventFlag(IKernelEventFlag_t* ef, const char*
     return getErr(ErrCode::_EINVAL);
   }
 
-  bool single = true;
-  bool fifo   = true;
-
-  switch (attr) {
-    case 0x10:
-    case 0x11:
-      single = true;
-      fifo   = true;
-      break;
-    case 0x20:
-    case 0x21:
-      single = false;
-      fifo   = true;
-      break;
-    case 0x22:
-      single = false;
-      fifo   = false;
-      break;
-    default: LOG_CRIT(L"unknown attr: %u", attr);
-  }
+  bool const single = (attr & 0x30) == 0x10;
+  bool       fifo   = (attr & 0x03) == 0x1;
 
   std::string _name;
   if (name != nullptr) _name = std::string(name);

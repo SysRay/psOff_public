@@ -75,6 +75,7 @@ class Timer: public ITimer {
   int getTime(SceKernelClockid id, SceKernelTimespec* tp) final;
   int getTimeRes(SceKernelClockid id, SceKernelTimespec* tp) final;
   int getTimeofDay(SceKernelTimeval* tp) final;
+  int getTimeZone(SceKernelTimezone* tz) final;
 };
 
 ITimer& accessTimer() {
@@ -159,5 +160,22 @@ int Timer::getTimeofDay(SceKernelTimeval* tp) {
   using namespace boost::chrono;
   uint64_t const t = time_point_cast<microseconds>(system_clock::now()).time_since_epoch().count();
   micro2timeval(tp, t);
+  return Ok;
+}
+
+int Timer::getTimeZone(SceKernelTimezone* tz) {
+  if (tz == nullptr) return getErr(ErrCode::_EINVAL);
+  static bool isTZSet = false;
+
+  if (!isTZSet) {
+    _tzset();
+    isTZSet = true;
+  }
+
+  long tz_secswest;
+  if (auto err = _get_timezone(&tz_secswest)) return getErr((ErrCode)err);
+  if (auto err = _get_daylight(&tz->tz_dsttime)) return getErr((ErrCode)err);
+  tz->tz_minuteswest = int(tz_secswest / 60);
+
   return Ok;
 }

@@ -9,6 +9,12 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceNpScore";
 
+EXPORT SYSV_ABI int sceNpScoreCreateNpTitleCtx(SceNpServiceLabel serviceLabel, SceUserServiceUserId selfId) {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return 1;
+}
+
 EXPORT SYSV_ABI int sceNpScoreCreateNpTitleCtxA(SceNpServiceLabel serviceLabel, SceUserServiceUserId selfId) {
   LOG_USE_MODULE(libSceNpScore);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -87,6 +93,18 @@ EXPORT SYSV_ABI int sceNpScoreGetGameDataByAccountId(int32_t reqId, SceNpScoreBo
 
 EXPORT SYSV_ABI int sceNpScoreGetGameDataByAccountIdAsync(int32_t reqId, SceNpScoreBoardId boardId, SceNpAccountId accountId, size_t* totalSize,
                                                           size_t recvSize, void* data, void* option) {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpScoreGetRankingByNpId() {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpScoreGetRankingByNpIdAsync() {
   LOG_USE_MODULE(libSceNpScore);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -251,6 +269,21 @@ EXPORT SYSV_ABI int sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync(int32_t
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceNpScoreGetFriendsRanking(/*int32_t reqId, SceNpScoreBoardId boardId, int32_t includeSelf, SceNpScoreRankDataA* rankArray,
+                                                 size_t rankArraySize, SceNpScoreComment* commentArray, size_t commentArraySize, SceNpScoreGameInfo* infoArray,
+                                                 size_t infoArraySize, size_t arrayNum, SceRtcTick* lastSortDate, SceNpScoreRankNumber* totalRecord,
+                                                 SceNpScoreGetFriendRankingOptParam* option*/) {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpScoreGetFriendsRankingAsync() {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceNpScoreGetFriendsRankingA(int32_t reqId, SceNpScoreBoardId boardId, int32_t includeSelf, SceNpScoreRankDataA* rankArray,
                                                  size_t rankArraySize, SceNpScoreComment* commentArray, size_t commentArraySize, SceNpScoreGameInfo* infoArray,
                                                  size_t infoArraySize, size_t arrayNum, SceRtcTick* lastSortDate, SceNpScoreRankNumber* totalRecord,
@@ -296,6 +329,18 @@ EXPORT SYSV_ABI int sceNpScoreCensorCommentAsync(int32_t reqId, const char* comm
 }
 
 EXPORT SYSV_ABI int sceNpScoreSanitizeCommentAsync(int32_t reqId, const char* comment, char* sanitizedComment, void* option) {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpScoreGetRankingByRange() {
+  LOG_USE_MODULE(libSceNpScore);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpScoreGetRankingByRangeAsync() {
   LOG_USE_MODULE(libSceNpScore);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

@@ -73,7 +73,7 @@ enum class SceAudioOutSystemDebugStateElement { NULL_ = 0, LOUDNESS, MAX };
 
 enum SceAudioOutSystemDebugStateLoudness { LOUDNESS_STOP = 0, LOUDNESS_START, LOUDNESS_START_QUIET, LOUDNESS_MAX };
 
-typedef struct SceAudioOutSystemDebugStateParam {
+struct SceAudioOutSystemDebugStateParam {
   uint32_t value;
   uint32_t reserved[3]; // reserved
-} SceAudioOutSystemDebugStateParam;
+};

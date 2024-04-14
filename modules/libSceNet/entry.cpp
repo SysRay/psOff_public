@@ -2,9 +2,18 @@
 #include "logging.h"
 #include "types.h"
 
+#include <WS2tcpip.h>
+#include <WinSock2.h>
+
 LOG_DEFINE_MODULE(libSceNet);
 
 namespace {
+static inline int32_t sce_WSAGetLastError() {
+  auto win_err = (uint32_t)WSAGetLastError();
+  if (win_err == WSANOTINITIALISED) return Err::ERROR_ENOTINIT;
+  return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
+}
+
 static thread_local int g_net_errno = 0;
 
 } // namespace
@@ -18,17 +27,19 @@ EXPORT SYSV_ABI int* sceNetErrnoLoc() {
 }
 
 EXPORT SYSV_ABI int sceNetInit(void) {
+  WSADATA data = {};
+  if (WSAStartup(MAKEWORD(2, 2), &data) == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetTerm(void) {
+  if (WSACleanup() == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetPoolCreate(const char* name, int size, int flags) {
   static int id = 0;
   return ++id;
-  return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetPoolDestroy(int memid) {
@@ -71,35 +82,36 @@ EXPORT SYSV_ABI int sceNetShowPolicyWithMemory(int memid) {
   return Ok;
 }
 
-const char* sceNetInetNtop(int af, const void* src, char* dst, size_t size);
+EXPORT SYSV_ABI const char* sceNetInetNtop(int af, const void* src, char* dst, size_t size) {
+  return InetNtopA(af, src, dst, size);
+}
 
 EXPORT SYSV_ABI int sceNetInetPton(int af, const char* src, void* dst) {
-  *static_cast<uint32_t*>(dst) = 0x7f000001;
-  return Ok;
+  return InetPtonA(af, src, dst);
 }
 
 EXPORT SYSV_ABI uint64_t sceNetHtonll(uint64_t host64) {
-  return Ok;
+  return htonll(host64);
 }
 
 EXPORT SYSV_ABI uint32_t sceNetHtonl(uint32_t host32) {
-  return Ok;
+  return htonl(host32);
 }
 
 EXPORT SYSV_ABI uint16_t sceNetHtons(uint16_t host16) {
-  return Ok;
+  return htons(host16);
 }
 
 EXPORT SYSV_ABI uint64_t sceNetNtohll(uint64_t net64) {
-  return Ok;
+  return ntohll(net64);
 }
 
 EXPORT SYSV_ABI uint32_t sceNetNtohl(uint32_t net32) {
-  return Ok;
+  return ntohl(net32);
 }
 
 EXPORT SYSV_ABI uint16_t sceNetNtohs(uint16_t net16) {
-  return Ok;
+  return ntohs(net16);
 }
 
 EXPORT SYSV_ABI int sceNetEtherStrton(const char* str, SceNetEtherAddr* n) {

@@ -24,9 +24,9 @@ constexpr uint32_t SCE_NP_TROPHY_FLAG_BITS_SHIFT = (5);
 constexpr uint32_t SCE_NP_TROPHY_FLAG_BITS_MASK  = (SCE_NP_TROPHY_FLAG_BITS - 1);
 constexpr uint32_t SCE_NP_TROPHY_FLAG_BITS_MAX   = (SCE_NP_TROPHY_FLAG_SETSIZE - 1);
 
-typedef struct SceNpTrophyFlagArray {
+struct SceNpTrophyFlagArray {
   SceNpTrophyFlagMask flagBits[SCE_NP_TROPHY_FLAG_SETSIZE >> SCE_NP_TROPHY_FLAG_BITS_SHIFT];
-} SceNpTrophyFlagArray;
+};
 
 #define SCE_NP_TROPHY_FLAG_SET(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] |= (1 << ((n) & SCE_NP_TROPHY_FLAG_BITS_MASK)))
 #define SCE_NP_TROPHY_FLAG_CLR(n, p)   ((p)->flagBits[(n) >> SCE_NP_TROPHY_FLAG_BITS_SHIFT] &= ~(1 << ((n) & SCE_NP_TROPHY_FLAG_BITS_MASK)))
@@ -46,7 +46,7 @@ typedef struct SceNpTrophyFlagArray {
       __fa->flagBits[__i] = SCE_NP_TROPHY_FLAG_BITS_ALL;                                                                                                       \
   } while (0)
 
-typedef struct SceNpTrophyGameDetails {
+struct SceNpTrophyGameDetails {
   size_t   size;
   uint32_t numGroups;
   uint32_t numTrophies;
@@ -56,9 +56,9 @@ typedef struct SceNpTrophyGameDetails {
   uint32_t numBronze;
   char     title[SCE_NP_TROPHY_GAME_TITLE_MAX_SIZE];
   char     description[SCE_NP_TROPHY_GAME_DESCR_MAX_SIZE];
-} SceNpTrophyGameDetails;
+};
 
-typedef struct SceNpTrophyGameData {
+struct SceNpTrophyGameData {
   size_t   size;
   uint32_t unlockedTrophies;
   uint32_t unlockedPlatinum;
@@ -66,9 +66,9 @@ typedef struct SceNpTrophyGameData {
   uint32_t unlockedSilver;
   uint32_t unlockedBronze;
   uint32_t progressPercentage;
-} SceNpTrophyGameData;
+};
 
-typedef struct SceNpTrophyGroupDetails {
+struct SceNpTrophyGroupDetails {
   size_t             size;
   SceNpTrophyGroupId groupId;
   uint32_t           numTrophies;
@@ -78,9 +78,9 @@ typedef struct SceNpTrophyGroupDetails {
   uint32_t           numBronze;
   char               title[SCE_NP_TROPHY_GROUP_TITLE_MAX_SIZE];
   char               description[SCE_NP_TROPHY_GROUP_DESCR_MAX_SIZE];
-} SceNpTrophyGroupDetails;
+};
 
-typedef struct SceNpTrophyGroupData {
+struct SceNpTrophyGroupData {
   size_t             size;
   SceNpTrophyGroupId groupId;
   uint32_t           unlockedTrophies;
@@ -90,9 +90,9 @@ typedef struct SceNpTrophyGroupData {
   uint32_t           unlockedBronze;
   uint32_t           progressPercentage;
   uint8_t            reserved[4];
-} SceNpTrophyGroupData;
+};
 
-typedef struct SceNpTrophyDetails {
+struct SceNpTrophyDetails {
   size_t             size;
   SceNpTrophyId      trophyId;
   SceNpTrophyGrade   trophyGrade;
@@ -101,17 +101,17 @@ typedef struct SceNpTrophyDetails {
   uint8_t            reserved[3];
   char               name[SCE_NP_TROPHY_NAME_MAX_SIZE];
   char               description[SCE_NP_TROPHY_DESCR_MAX_SIZE];
-} SceNpTrophyDetails;
+};
 
-typedef struct SceNpTrophyData {
+struct SceNpTrophyData {
   size_t        size;
   SceNpTrophyId trophyId;
   bool          unlocked;
   uint8_t       reserved[3];
   uint64_t      timestamp;
-} SceNpTrophyData;
+};
 
-typedef struct SceNpTrophyScreenshotTarget {
+struct SceNpTrophyScreenshotTarget {
   SceNpTrophyContext context;
   SceNpTrophyId      trophyId;
-} SceNpTrophyScreenshotTarget;
+};

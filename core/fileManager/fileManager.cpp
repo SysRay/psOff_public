@@ -5,9 +5,7 @@
 #include "logging.h"
 #include "magic_enum/magic_enum.hpp"
 #include "types/type_in.h"
-#include "types/type_null.h"
 #include "types/type_out.h"
-#include "types/type_zero.h"
 #include "utility/utility.h"
 
 #include <algorithm>
@@ -90,8 +88,6 @@ class FileManager: public IFileManager {
     assert(addFile(createType_in(), "/dev/stdin") == 0);
     assert(addFile(createType_out(SCE_TYPEOUT_ERROR), "/dev/stdout") == 1);
     assert(addFile(createType_out(SCE_TYPEOUT_DEBUG), "/dev/stderr") == 2);
-    addFile(createType_zero(), "/dev/zero");
-    addFile(createType_null(), "/dev/null");
   }
 
   void addMountPoint(std::string_view mountPoint, std::filesystem::path const& root, MountType type) final {

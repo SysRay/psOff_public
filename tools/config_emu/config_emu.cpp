@@ -10,11 +10,12 @@ class Item {
   public:
   std::string_view const _name;
 
+  bool              _dontfix; // If this flag is set then load function won't try fix the file according to default object
   json              _json;
   boost::mutex      _mutex;
   std::future<void> _future;
 
-  Item(std::string_view name): _name(name) {}
+  Item(std::string_view name, bool df = false): _name(name), _dontfix(df) {}
 
   std::pair<boost::unique_lock<boost::mutex>, json*> access() {
     _future.wait();
@@ -42,6 +43,7 @@ class Config: public IConfig {
   Item m_audio    = {"audio.json"};
   Item m_controls = {"controls.json"};
   Item m_general  = {"general.json"};
+  Item m_resolve  = {"resolve.json", true /*dontfix flag*/};
 
   public:
   Config();
@@ -49,7 +51,7 @@ class Config: public IConfig {
 
   std::pair<boost::unique_lock<boost::mutex>, json*> accessModule(ConfigModFlag flag);
 
-  virtual bool save(uint32_t flags);
+  virtual bool save(uint32_t flags) final;
 };
 
 IConfig* accessConfig() {
@@ -64,6 +66,7 @@ std::pair<boost::unique_lock<boost::mutex>, json*> Config::accessModule(ConfigMo
     case ConfigModFlag::AUDIO: return m_audio.access();
     case ConfigModFlag::CONTROLS: return m_controls.access();
     case ConfigModFlag::GENERAL: return m_general.access();
+    case ConfigModFlag::RESOLVE: return m_resolve.access();
 
     default: printf("Invalid bit flag!\n"); exit(1);
   }
@@ -79,6 +82,7 @@ bool Config::save(uint32_t flags) {
   if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= m_audio.save();
   if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= m_controls.save();
   if (flags & (uint32_t)ConfigModFlag::GENERAL) result &= m_general.save();
+  if (flags & (uint32_t)ConfigModFlag::RESOLVE) result &= m_resolve.save();
 
   return true;
 }
@@ -106,21 +110,81 @@ Config::Config() {
       should_backup = true;
     }
 
-    for (auto& [dkey, dval]: defaults.items()) {
-      if ((item->_json)[dkey].is_null() && !dval.is_null()) {
-        (item->_json)[dkey] = dval;
-        should_resave       = true;
-        printf("%s: missing parameter \"%s\" has been added!\n", item->_name.data(), dkey.c_str());
+    std::function<bool(json&, json&)> fixMissing;
+    std::function<bool(json&, json&)> removeUnused;
+
+    /**
+     * @brief This function is necessary since json.items()
+     * translates every key to string. Even the array indexes,
+     * so we have to translate it back to number for arrays.
+     *
+     */
+    auto getVal = [](json& _o, std::string_view key) -> json& {
+      if (_o.is_array()) {
+        int  _tempi;
+        auto res = std::from_chars(key.data(), key.data() + key.size(), _tempi);
+        if (res.ec == std::errc::invalid_argument) {
+          printf("Unreachable scenario!\n"); // At least it should be
+          exit(1);
+        }
+        return _o[_tempi];
       }
+
+      return _o[key];
+    };
+
+    fixMissing = [&should_backup, &getVal, &fixMissing](json& obj, json& def) -> bool {
+      bool missing = false;
+
+      for (auto& [dkey, dval]: def.items()) {
+        json& cval = getVal(obj, dkey);
+
+        if (cval.is_null() && !dval.is_null()) {
+          cval    = dval;
+          missing = true;
+        } else if (dval.is_structured()) {
+          if (cval.is_structured()) { // Function calls itself if json element is array or object
+            missing |= fixMissing(cval, dval);
+            continue;
+          }
+
+          should_backup = true;
+          cval          = dval;
+          missing       = true;
+        }
+      }
+
+      return missing;
+    };
+
+    if (!item->_dontfix && fixMissing(item->_json, defaults)) {
+      should_resave = true;
+      printf("%s: some missing parameters has been added!\n", item->_name.data());
     }
 
-    for (auto& [ckey, cval]: item->_json.items()) {
-      if (defaults[ckey].is_null()) {
-        item->_json.erase(ckey);
-        should_backup = true;
-        should_resave = true;
-        printf("%s: unused parameter \"%s\" has been removed!\n", item->_name.data(), ckey.c_str());
+    // Just the same thing as above, but for removing unused keys this time
+    removeUnused = [&getVal, &removeUnused](json& obj, json& def) -> bool {
+      bool unused = false;
+
+      for (auto& [ckey, cval]: obj.items()) {
+        json& dval = getVal(def, ckey);
+
+        if (dval.is_null()) {
+          obj.erase(ckey);
+          unused = true;
+        } else if (dval.is_structured()) {
+          unused |= removeUnused(cval, dval);
+          continue;
+        }
       }
+
+      return unused;
+    };
+
+    if (!item->_dontfix && removeUnused(item->_json, defaults)) {
+      should_backup = true;
+      should_resave = true;
+      printf("%s: some unused parameters has been removed!\n", item->_name.data());
     }
 
     if (should_backup == true && std::filesystem::exists(path)) {
@@ -136,15 +200,20 @@ Config::Config() {
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  const json defaultpad = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
+  const json defaultpad  = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
+  const json defaultprof = {{"name", "Anon"}, {"color", "blue"}};
 
-  m_logging._future = std::async(std::launch::async, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+  m_logging._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
 
-  m_graphics._future = std::async(std::launch::async, load, &m_graphics, json::object({}), ConfigModFlag::GRAPHICS);
+  m_graphics._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
+                 json({{"fullscreen", false}, {"xpos", -1}, {"ypos", -1}, {"width", 1920}, {"height", 1080}, {"display", 0}}), ConfigModFlag::GRAPHICS);
 
-  m_audio._future = std::async(std::launch::async, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
+  m_audio._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
 
-  m_controls._future = std::async(std::launch::async, load, &m_controls,
+  m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
                                   json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
                                         {"keybinds",
                                          {
@@ -157,5 +226,9 @@ Config::Config() {
                                          }}}),
                                   ConfigModFlag::CONTROLS);
 
-  m_general._future = std::async(std::launch::async, load, &m_general, json({{"systemlang", 1}}), ConfigModFlag::GENERAL);
+  m_general._future = std::async(std::launch::async, load, &m_general,
+                                 json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
+                                 ConfigModFlag::GENERAL);
+
+  m_resolve._future = std::async(std::launch::async | std::launch::deferred, load, &m_resolve, json({{"localhost", "127.0.0.1"}}), ConfigModFlag::RESOLVE);
 }

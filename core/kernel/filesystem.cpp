@@ -3,7 +3,10 @@
 #include "core/dmem/dmem.h"
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
+#include "core/fileManager/types/type_null.h"
 #include "core/fileManager/types/type_random.h"
+#include "core/fileManager/types/type_rng.h"
+#include "core/fileManager/types/type_zero.h"
 #include "core/memory/memory.h"
 #include "logging.h"
 
@@ -32,9 +35,14 @@ std::pair<uint32_t, uint32_t> convProtection(int prot) {
 std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base::openmode mode) {
   LOG_USE_MODULE(filesystem);
 
-  // todo: /dev/rng? No ioctl for now
-  if (path == "/dev/urandom" || path == "/dev/urandom") {
+  if (path == "/dev/random" || path == "/dev/urandom") {
     return createType_random();
+  } else if (path == "/dev/rng") {
+    return createType_rng();
+  } else if (path == "/dev/zero") {
+    return createType_zero();
+  } else if (path == "/dev/null") {
+    return createType_null();
   } else { // todo: other devices
     LOG_CRIT(L"%S: unknown device!", path.c_str());
   }
@@ -196,6 +204,26 @@ int64_t write(int handle, const void* buf, size_t nbytes) {
   return count;
 }
 
+int ioctl(int handle, int request, SceVariadicList argp) {
+  LOG_USE_MODULE(filesystem);
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"KernelIoctl[%d] file==nullptr: request:0x%08llx argp:0x%08llx", handle, request, (uint64_t)argp);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  int const ret = file->ioctl(request, argp);
+
+  LOG_TRACE(L"KernelIoctl[%d] request:0x%08llx argp:0x%08llx, ret:%d", handle, request, (uint64_t)argp, ret);
+
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
+
+  return ret;
+}
+
 int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   LOG_USE_MODULE(filesystem);
 
@@ -207,8 +235,6 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     return open_dev(path, flags, kernelMode);
   }
 
-  assert(!flags.fsync && !flags.excl && !flags.dsync && !flags.direct);
-
   auto mapped = accessFileManager().getMappedPath(path);
   if (!mapped) {
     return getErr(ErrCode::_EACCES);
@@ -216,7 +242,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   auto const mappedPath = mapped.value();
 
   // handle excl (file already exists)
-  if (flags.excl && flags.create && std::filesystem::exists(path)) {
+  if (flags.excl && flags.create && std::filesystem::exists(mappedPath)) {
     return getErr(ErrCode::_EEXIST);
   }
   // -
@@ -331,10 +357,24 @@ int fdatasync(int fd) {
   return Ok;
 }
 
-int fcntl(int fd, int cmd, va_list args) {
+int fcntl(int handle, int cmd, SceVariadicList argp) {
   LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S %d", __FUNCTION__, fd);
-  return Ok;
+
+  auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) {
+    LOG_ERR(L"KernelFcntl[%d] file==nullptr: cmd:0x%08lx argp:0x%08llx", handle, cmd, (uint64_t)argp);
+    return getErr(ErrCode::_EBADF);
+  }
+
+  int const ret = file->fcntl(cmd, argp);
+
+  LOG_TRACE(L"KernelFcntl[%d] request:0x%08llx argp:0x%08lx, ret:%d", handle, cmd, (uint64_t)argp, ret);
+
+  if (auto err = file->getErr(); err != Ok) {
+    return getErr((ErrCode)err);
+  }
+
+  return ret;
 }
 
 size_t readv(int handle, const SceKernelIovec* iov, int iovcnt) {
@@ -413,8 +453,11 @@ int rename(const char* from, const char* to) {
   if (!mapped2) {
     return getErr(ErrCode::_EACCES);
   }
-
-  std::filesystem::rename(*mapped1, *mapped2);
+  try {
+    std::filesystem::rename(*mapped1, *mapped2);
+  } catch (...) {
+    return getErr(ErrCode::_ENFILE);
+  }
   return Ok;
 }
 
