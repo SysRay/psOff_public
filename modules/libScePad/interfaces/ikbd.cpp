@@ -4,7 +4,7 @@
 #include "core/videoout/videoout.h"
 // #include "logging.h"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <bitset>
 #include <math.h>
 

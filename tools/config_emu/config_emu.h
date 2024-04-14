@@ -1,5 +1,5 @@
 #pragma once
-#include "third_party/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 #include "utility/utility.h"
 
 #include <boost/thread/mutex.hpp>

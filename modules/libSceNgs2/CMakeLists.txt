@@ -6,14 +6,6 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-target_include_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
-)
-
-target_link_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
-)
-
 set(FFMPEG_LIBS
   avformat
   avcodec
