@@ -15,18 +15,18 @@ EXPORT SYSV_ABI int sceUsbdInit() {
   return Ok;
 }
 
-EXPORT SYSV_ABI ssize_t sceUsbdGetDeviceList(SceUsbdDevice ***list) {
+EXPORT SYSV_ABI ssize_t sceUsbdGetDeviceList(SceUsbdDevice*** list) {
   LOG_USE_MODULE(libSceUsbd);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI void sceUsbdFreeDeviceList(SceUsbdDevice **list, int unrefDevices) {
+EXPORT SYSV_ABI void sceUsbdFreeDeviceList(SceUsbdDevice** list, int unrefDevices) {
   LOG_USE_MODULE(libSceUsbd);
   LOG_ERR(L"todo %S", __FUNCTION__);
 }
 
-EXPORT SYSV_ABI int32_t sceUsbdHandleEventsTimeout(struct timeval *tv) {
+EXPORT SYSV_ABI int32_t sceUsbdHandleEventsTimeout(struct timeval* tv) {
   LOG_USE_MODULE(libSceUsbd);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
