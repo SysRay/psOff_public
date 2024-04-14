@@ -193,7 +193,9 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     auto& swapchain         = window.config.bufferSets[setIndex];
     auto& displayBufferMeta = swapchain.buffers[index];
 
+    lock.unlock();
     auto imageData = m_imageHandler->getImage_blocking();
+    lock.lock();
 
     auto& flipStatus = window.config.flipStatus;
     ++flipStatus.gcQueueNum;
@@ -483,7 +485,9 @@ void VideoOut::submitFlip(int handle, int index, int64_t flipArg) {
 
   LOG_DEBUG(L"-> submitFlip(%d):%u %d", handle, setIndex, index);
 
+  lock.unlock();
   auto imageData = m_imageHandler->getImage_blocking();
+  lock.lock();
 
   auto& flipStatus = window.config.flipStatus;
   ++flipStatus.gcQueueNum;
@@ -885,9 +889,11 @@ std::thread VideoOut::createSDLThread() {
           auto& flipStatus = window.config.flipStatus;
 
           {
+            lock.unlock();
             OPTICK_EVENT("Present");
             presentImage(item.imageData, m_imageHandler->getSwapchain(), m_imageHandler->getQueue());
             m_imageHandler->notify_done(item.imageData);
+            lock.lock();
           }
           m_graphics->submitDone();
 
