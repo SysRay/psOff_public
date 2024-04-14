@@ -59,39 +59,6 @@ int insertItem(std::vector<std::unique_ptr<UniData>>& container, UniData* item) 
     }
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                                                                                          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   if (index < 0) {
     index = container.size();
     container.push_back(std::unique_ptr<UniData>(item));
