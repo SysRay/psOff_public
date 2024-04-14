@@ -35,12 +35,25 @@ jobs:
     name: Formatting check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DoozyX/clang-format-lint-action@v0.17
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test formatting
+        uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: ./
           extensions: h,hpp,cpp,c,cc
           clangFormatVersion: 17
+          inplace: true
+
+      - name: Add & Commit
+        uses: EndBug/add-and-commit@v9.1.4
+        with:
+          message: Fix formatting
+          committer_name: GitHub Actions
+          committer_email: 41898282+github-actions[bot]@users.noreply.github.com
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     needs: formatting-check
