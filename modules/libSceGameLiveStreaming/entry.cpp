@@ -42,4 +42,10 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingGetCurrentStatus2(SceGameLiveStreami
   glss2->userId  = 1;
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetMaxBitrate(const unsigned int maxBitrate) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }
