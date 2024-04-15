@@ -61,7 +61,6 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   }
   // - already open
 
-
   for (int n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     auto& pController = pData->controller[n].padPtr;
