@@ -311,17 +311,6 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V28Matching17AttributeMetadataD
 }
 
 /**
- * @brief ???
- *
- */
-
-EXPORT SYSV_ABI int32_t __NID_HEX(F53AE1B86CDB7AB4)() {
-  LOG_USE_MODULE(libSceNpToolkit2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-/**
  * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Session::SessionId>::Response()
  *
  */
