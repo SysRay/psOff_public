@@ -8,7 +8,7 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceNpGameIntent";
 
-EXPORT SYSV_ABI int __NID_HEX(9BCEC11F1B7F1FAD)() {
+EXPORT SYSV_ABI int sceNpGameIntentInitialize() {
   LOG_USE_MODULE(libSceNpGameIntent);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

@@ -3,7 +3,91 @@
 #include "logging.h"
 #include "types.h"
 
+#include <new>
+
 LOG_DEFINE_MODULE(libSceJson2);
+
+namespace sce {
+namespace Json {
+
+/* Memory allocator things*/
+MemAllocator::MemAllocator() {}
+
+MemAllocator::~MemAllocator() {}
+
+void MemAllocator::notifyError(int32_t error, size_t size, void* userData) {}
+
+/* Initializer parameter things */
+InitParameter2::InitParameter2() {}
+
+void InitParameter2::setAllocator(MemAllocator* alloc, void* userData) {}
+
+void InitParameter2::setFileBufferSize(size_t size) {}
+
+void InitParameter2::setSpecialFloatFormatType(SpecialFloatFormat fmt) {}
+
+MemAllocator* InitParameter2::getAllocator() const {
+  return nullptr;
+}
+
+void* InitParameter2::getUserData() const {
+  return nullptr;
+}
+
+size_t InitParameter2::getFileBufferSize() const {
+  return 0;
+}
+
+SpecialFloatFormat InitParameter2::getSpecialFloatFormatType() const {
+  return SpecialFloatFormat::FloatNull;
+}
+
+/* Initializer things */
+Initializer::Initializer() {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+}
+
+Initializer::~Initializer() {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+}
+
+int32_t Initializer::initialize(const InitParameter*) {
+  return 0;
+}
+
+int32_t Initializer::initialize(const InitParameter2* param) {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return 0;
+}
+
+int32_t Initializer::terminate() {
+  return 0;
+}
+
+int32_t Initializer::setGlobalTypeMismatchHandler(void* /* todo func typedef */ func, void* context) {
+  return 0;
+}
+
+int32_t Initializer::setGlobalNullAccessCallback(void* /* todo func typedef */ func, void* context) {
+  return 0;
+}
+
+int32_t Initializer::setGlobalSpecialFloatHandler(void* /* todo func typedef */ func, void* context) {
+  return 0;
+}
+
+int32_t Initializer::setGlobalElementAccessFailureHandler(void* /* todo func typedef */ func, void* context) {
+  return 0;
+}
+
+int32_t Initializer::setAllocatorInfoCallback(AllocInfoCallback func, void* context) {
+  return 0;
+}
+} // namespace Json
+} // namespace sce
 
 extern "C" {
 
@@ -13,20 +97,17 @@ EXPORT const char* MODULE_NAME = "libSceJson";
  * @brief sce::Json::MemAllocator::MemAllocator()
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json12MemAllocatorC2Ev)() {
-  LOG_USE_MODULE(libSceJson2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json12MemAllocatorC2Ev)(sce::Json::MemAllocator* _this) {
+  ::memset((void*)_this, 0, sizeof(sce::Json::MemAllocator));
 }
 
 /**
  * @brief sce::Json::Value::Value()
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5ValueC1Ev)() {
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueC1Ev)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
 }
 
 /**
@@ -70,10 +151,10 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5Value3setEd)() {
 }
 
 /**
- * @brief sce::Json::String::String(char const*)
+ * @brief sce::Json::Value::~Value()
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json6StringC1EPKc)() {
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5ValueD1Ev)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -90,13 +171,12 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5Value3setERKNS0_6StringE)() {
 }
 
 /**
- * @brief sce::Json::String::~String()
+ * @brief sce::Json::String::String(char const*)
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json6StringD1Ev)() {
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json6StringC1EPKc)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
 }
 
 /**
@@ -110,26 +190,39 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5Value3setENS0_9ValueTypeE)() {
 }
 
 /**
- * @brief
+ * @brief sce::Json::String::~String()
  *
  */
-EXPORT SYSV_ABI int32_t __NID_HEX(5923AE81EE48B028)() {
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json6StringD1Ev)() {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+}
+
+/**
+ * @brief sce::Json::InitParameter2::InitParameter2()
+ *
+ */
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json14InitParameter2C1Ev)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 /**
- * @brief
+ * @brief sce::Json::InitParameter2::setFileBufferSize(unsigned long)
  *
  */
-EXPORT SYSV_ABI int32_t __NID_HEX(12EF798E6AA7E51C)() {
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json14InitParameter217setFileBufferSizeEm)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t __NID_HEX(236402F0F6212566)() {
+/**
+ * @brief sce::Json::InitParameter2::setAllocator(sce::Json::MemAllocator*, void*)
+ *
+ */
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json14InitParameter212setAllocatorEPNS0_12MemAllocatorEPv)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
@@ -139,37 +232,33 @@ EXPORT SYSV_ABI int32_t __NID_HEX(236402F0F6212566)() {
  * @brief sce::Json::Initializer::Initializer()
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11InitializerC1Ev)() {
-  LOG_USE_MODULE(libSceJson2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerC1Ev)(sce::Json::Initializer* _this) {
+  ::memset((void*)_this, 0, sizeof(sce::Json::Initializer));
+  new (_this) sce::Json::Initializer();
+}
+
+/**
+ * @brief sce::Json::Initializer::~Initializer()
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerD1Ev)(sce::Json::Initializer* _this) {
+  _this->~Initializer();
 }
 
 /**
  * @brief sce::Json::Initializer::initialize(sce::Json::InitParameter2 const*)
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11Initializer10initializeEPKNS0_14InitParameter2E)() {
-  LOG_USE_MODULE(libSceJson2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11Initializer10initializeEPKNS0_14InitParameter2E)(sce::Json::Initializer*          _this,
+                                                                                             sce::Json::InitParameter2 const* param) {
+  return _this->initialize(param);
 }
 
 /**
- * @brief
+ * @brief sce::Json::Initializer::setGlobalNullAccessCallback(sce::Json::Value const& (*)(sce::Json::ValueType, sce::Json::Value const*, void*), void*)
  *
  */
-EXPORT SYSV_ABI int32_t __NID_HEX(F9DAC3172012EAEE)() {
-  LOG_USE_MODULE(libSceJson2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-/**
- * @brief
- *
- */
-EXPORT SYSV_ABI int32_t __NID_HEX(593B587FE70D9D72)() {
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11Initializer27setGlobalNullAccessCallbackEPFRKNS0_5ValueENS0_9ValueTypeEPS3_PvES7_)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
