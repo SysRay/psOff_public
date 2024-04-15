@@ -150,7 +150,19 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
     return "psOFF";
   }();
 
-  return std::format("{}({}): frame={} fps={}(locked:{}) version:{}", title, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
+  static auto id = [] {
+    auto tid = accessSystemContent().getString("TITLE_ID");
+    if (tid) return tid.value().data();
+    return "CUSA00000";
+  }();
+
+  static auto ver = [] {
+    auto aver = accessSystemContent().getString("APP_VER");
+    if (aver) return aver.value().data();
+    return "0.0";
+  }();
+
+  return std::format("{} | {}(v{}): wnd={} frame={} fps={}(locked:{}) version:{}", title, id, ver, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
                      getEmulatorVersion().data());
 }
 
