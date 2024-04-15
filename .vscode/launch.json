@@ -5,10 +5,10 @@
 			"name": "(Windows) Launch",
 			"type": "cppvsdbg",
 			"request": "launch",
-			"program": "${config:psoff.root-path}/emulator.exe",
+			"program": "${workspaceRoot}/_build/_Install/emulator.exe",
 			"args": ["--file", "${config:psoff.game-path}/eboot.bin", "--d", "${config:psoff.add-arg}"],
 			"stopAtEntry": false,
-			"cwd": "${config:psoff.root-path}",
+			"cwd": "${workspaceRoot}/_build/_Install",
 			"environment": [],
 			"console": "integratedTerminal"
 		}
