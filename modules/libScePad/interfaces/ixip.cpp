@@ -126,7 +126,6 @@ uint32_t XIPController::getButtons(XINPUT_GAMEPAD* xgp) {
 }
 
 bool XIPController::readPadData(ScePadData& data) {
-  auto lockSDL2 = accessVideoOut().getSDLLock();
 
   if (m_state == ControllerState::Closed) return false;
 

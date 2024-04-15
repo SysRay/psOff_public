@@ -129,12 +129,12 @@ struct Context: public ImageHandlerCB {
   }
 };
 
-enum class MessageType { open, close, flip };
+enum class MessageType { open, close, flip, subsystem };
 
 struct Message {
   MessageType type;
   int         handle = -1;
-  bool*       done   = nullptr;
+  int*        result = nullptr;
 
   int      index    = 0;
   uint32_t setIndex = 0;
@@ -161,6 +161,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   uint32_t m_widthTotal = 1920, m_heightTotal = 1080;
 
   mutable std::mutex m_mutexInt;
+
   vulkan::VulkanObj* m_vulkanObj = nullptr;
 
   std::unique_ptr<IGraphics>     m_graphics;
@@ -295,7 +296,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
     return m_graphics.get();
   };
 
-  std::unique_lock<std::mutex> getSDLLock() const final { return std::unique_lock(m_mutexInt); }
+  int SDLInit(uint32_t flags) final;
 
   // ### Gpu memory forwards
   bool isGPULocal(uint64_t vaddr) final { return m_graphics->isGPULocal(vaddr); }
@@ -350,13 +351,14 @@ void VideoOut::init() {
   m_threadSDL2 = createSDLThread();
 
   std::unique_lock lock(m_mutexInt);
-  static bool      done = false;
-  m_messages.push(Message {MessageType::open, 0, &done});
+
+  static int result = -1;
+  m_messages.push(Message {MessageType::open, 0, &result});
   lock.unlock();
   m_condSDL2.notify_one();
 
   lock.lock();
-  m_condDone.wait(lock, [=] { return done; });
+  m_condDone.wait(lock, [=] { return result >= 0; });
 }
 
 int VideoOut::open(int userId) {
@@ -383,13 +385,13 @@ int VideoOut::open(int userId) {
   if (windowIndex == 0) return 1; // Special case windows[0] is mainWindow
 
   // Create new window
-  static bool done = false;
-  m_messages.push(Message {MessageType::open, windowIndex, &done});
+  static int result = -1;
+  m_messages.push(Message {MessageType::open, windowIndex, &result});
   lock.unlock();
   m_condSDL2.notify_one();
 
   lock.lock();
-  m_condDone.wait(lock, [=] { return done; });
+  m_condDone.wait(lock, [=] { return result >= 0; });
   return 1 + windowIndex; // handle starts with 1
 }
 
@@ -415,13 +417,13 @@ void VideoOut::close(int handle) {
   window.eventFlip.clear();
   window.eventVblank.clear();
 
-  static bool done = false;
-  m_messages.push(Message {MessageType::close, handle, &done});
+  static int result = -1;
+  m_messages.push(Message {MessageType::close, handle, &result});
   lock.unlock();
   m_condSDL2.notify_one();
 
   lock.lock();
-  m_condDone.wait(lock, [=] { return done; });
+  m_condDone.wait(lock, [=] { return result >= 0; });
 }
 
 int VideoOut::addEvent(int handle, EventQueue::KernelEqueueEvent const& event, EventQueue::IKernelEqueue_t eq) {
@@ -462,6 +464,20 @@ void VideoOut::removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, i
     } break;
     default: LOG_CRIT(L"undefinded:%d", ident);
   }
+}
+
+int VideoOut::SDLInit(uint32_t flags) {
+  std::unique_lock lock(m_mutexInt);
+
+  // Create new window
+  static int result = -1;
+  m_messages.push(Message {MessageType::subsystem, (int)flags, &result});
+  lock.unlock();
+  m_condSDL2.notify_one();
+
+  lock.lock();
+  m_condDone.wait(lock, [=] { return result; });
+  return result;
 }
 
 void VideoOut::transferDisplay(ImageData const& imageData, vulkan::SwapchainData::DisplayBuffers& displayBufferMeta, VkSemaphore waitSema, size_t waitValue) {
@@ -787,6 +803,15 @@ std::thread VideoOut::createSDLThread() {
       auto&      window      = m_windows[handleIndex];
 
       switch (item.type) {
+        case MessageType::subsystem: {
+          if (SDL_InitSubSystem(handleIndex) != 0) {
+            LOG_ERR(L"Failed to initialize SDL subsystem: %S", SDL_GetError());
+            *item.result = 1;
+          } else
+            *item.result = 0;
+
+          m_condDone.notify_one();
+        } break;
         case MessageType::open: {
 
           auto const title = getTitle(handleIndex, 0, 0, window.fliprate);
@@ -872,7 +897,7 @@ std::thread VideoOut::createSDLThread() {
                 createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
 
-            *item.done = true;
+            *item.result = 0;
           } else {
             vulkan::createSurface(m_vulkanObj, window.window, window.surface);
           }
@@ -881,7 +906,7 @@ std::thread VideoOut::createSDLThread() {
         } break;
         case MessageType::close: {
           SDL_DestroyWindow(window.window);
-          *item.done = true;
+          *item.result = 0;
           m_condDone.notify_one();
         } break;
         case MessageType::flip: {
