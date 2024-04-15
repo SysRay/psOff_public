@@ -19,3 +19,5 @@ include_directories(
 )
 
 add_subdirectory(core)
+
+install(TARGETS semaphore_test RUNTIME DESTINATION .)
