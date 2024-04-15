@@ -15,7 +15,7 @@ EXPORT SYSV_ABI int sceUsbdInit() {
   return Ok;
 }
 
-EXPORT SYSV_ABI ssize_t sceUsbdGetDeviceList(SceUsbdDevice ***list) {
+EXPORT SYSV_ABI uint64_t sceUsbdGetDeviceList(SceUsbdDevice ***list) {
   LOG_USE_MODULE(libSceUsbd);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
