@@ -3,8 +3,6 @@ name: Discord release notify
 on:
   release:
     types: [published]
-  push:
-    branches: [ release-notifier ]
 
 jobs:
   notifier:
