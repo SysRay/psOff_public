@@ -153,11 +153,12 @@ class IVideoOut {
   virtual IGraphics* getGraphics() = 0;
 
   /**
-   * @brief locks the sdlpoll
+   * @brief calls SDL_InitSubSystem() on correct thread context
    *
-   * @return std::unique_lock<std::mutex>
+   * @param flags
+   * @return 0: success
    */
-  virtual std::unique_lock<std::mutex> getSDLLock() const = 0;
+  virtual int SDLInit(uint32_t flags) = 0;
 
   /**
    * @brief Notify a gpu visible memory range

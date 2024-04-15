@@ -50,8 +50,7 @@ void SDLController::init() {
   std::call_once(init, [] {
     LOG_USE_MODULE(libScePad_sdl);
 
-    if (SDL_InitSubSystem(m_initflags) != 0) {
-      LOG_ERR(L"Failed to initialize SDL subsystem: %S", SDL_GetError());
+    if (accessVideoOut().SDLInit(m_initflags) != 0) {
       return;
     }
 
@@ -117,7 +116,6 @@ uint32_t SDLController::getButtons() {
 }
 
 bool SDLController::readPadData(ScePadData& data) {
-  auto lockSDL2 = accessVideoOut().getSDLLock();
 
   if (m_state == ControllerState::Closed) return false;
 

@@ -61,7 +61,6 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   }
   // - already open
 
-  auto lockSDL2 = accessVideoOut().getSDLLock();
   for (int n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
     if (pData->controller[n].userId >= 0) continue;
     auto& pController = pData->controller[n].padPtr;
@@ -238,7 +237,6 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   pInfo->stickInfo.deadZoneLeft  = 2; // todo make config
   pInfo->stickInfo.deadZoneRight = 2; // todo make config
 
-  auto lockSDL2         = accessVideoOut().getSDLLock();
   pInfo->connectionType = pad.padPtr->getPortType();
   pInfo->connectedCount = pad.padPtr->getConnectionsCount();
   pInfo->connected      = pad.padPtr->isConnected();
