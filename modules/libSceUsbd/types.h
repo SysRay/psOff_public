@@ -1,5 +1,4 @@
 #pragma once
 #include "codes.h"
 
-struct SceUsbdDevice{
-};
+struct SceUsbdDevice {};
