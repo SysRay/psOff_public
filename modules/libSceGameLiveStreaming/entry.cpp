@@ -55,6 +55,12 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetGuardAreas(size_t areaCount, cons
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetMaxBitrate(const unsigned int maxBitrate) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceGameLiveStreamingTerminate() {
   LOG_USE_MODULE(libSceGameLiveStreaming);
   LOG_ERR(L"todo %S", __FUNCTION__);
