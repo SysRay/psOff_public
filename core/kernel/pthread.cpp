@@ -1265,13 +1265,6 @@ ScePthread setup_thread(void* arg) {
   return thread;
 }
 
-__declspec(noinline) SYSV_ABI void* callEntry(ScePthread thread) {
-  if (unwinding_setjmp(&thread->_unwinding)) {
-    return thread->entry(thread->arg);
-  }
-  return thread->arg;
-}
-
 void* threadWrapper(void* arg) {
   void* ret    = 0;
   auto  thread = setup_thread(arg);
@@ -1280,7 +1273,10 @@ void* threadWrapper(void* arg) {
   int oldType = 0;
   LOG_USE_MODULE(pthread);
 
-  ret = callEntry(thread);
+  if (unwinding_setjmp(&thread->_unwinding)) {
+    ret = thread->entry(thread->arg);
+  } else
+    ret = thread->arg;
 
   LOG_DEBUG(L"thread done:%d", thread->unique_id);
   return ret;
