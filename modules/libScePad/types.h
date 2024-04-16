@@ -336,3 +336,12 @@ struct ScePadDeviceClassExtendedInformation {
     uint8_t data[12];
   } classData;
 };
+
+struct p_pad_ext_param param {
+  uint16_t param_0;
+  uint16_t param_1;
+  uint16_t param_2;
+  uint8_t param_3;
+};
+
+struct ScePadExtControllerInformation {};

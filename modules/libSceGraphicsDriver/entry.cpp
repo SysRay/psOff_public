@@ -334,6 +334,14 @@ uint32_t SYSV_ABI sceGnmDispatchInitDefaultHardwareState(uint32_t* cmdOut, uint6
   return 2;
 }
 
+uint32_t SYSV_ABI sceGnmDrawInitToDefaultContextState(uint32_t* cmdOut, uint64_t size) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_DEBUG(L"%S", __FUNCTION__);
+
+  cmdOut[0] = Pm4::create(2, Pm4::Custom::R_DRAW_RESET);
+  return 2;
+}
+
 int SYSV_ABI sceGnmInsertWaitFlipDone(uint32_t* cmdOut, uint64_t size, uint32_t video_out_handle, uint32_t display_buffer_index) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);

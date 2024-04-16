@@ -116,4 +116,54 @@ EXPORT SYSV_ABI int __NID(sched_yield)(void) {
   boost::this_thread::yield();
   return Ok;
 }
+
+EXPORT SYSV_ABI int __NID(socket)(const char* name, int family, int type, int protocol) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(bind)(SceNetId s, const SceNetSockaddr* addr, SceNetSocklen_t addrlen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(setsockopt)(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(select)(SceNetId s, void* readfds, void* writefds, void* exceptfds, void* timeout) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(recvfrom)(SceNetId s, void* buf, size_t len, int flags, SceNetSockaddr* from, SceNetSocklen_t* fromlen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(listen)(SceNetId s, int backlog) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(accept)(SceNetId s, SceNetSockaddr* addr, SceNetSocklen_t* addrlen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(sendto)(SceNetId s, const void* msg, size_t len, int flags, const SceNetSockaddr* to, SceNetSocklen_t tolen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(getsockname)(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(connect)(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
 }
