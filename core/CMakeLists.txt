@@ -39,6 +39,8 @@ target_link_libraries(core PRIVATE
   OptickCore
   psOff_utility
   config_emu.lib
+  onecore.lib
+  VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}
 )
 

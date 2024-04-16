@@ -18,7 +18,7 @@ extern "C" {
 EXPORT SYSV_ABI size_t sceKernelGetDirectMemorySize() {
   LOG_USE_MODULE(dmem);
 
-  auto size = accessPysicalMemory().size();
+  auto size = accessDirectMemory().size();
   LOG_DEBUG(L"%S size:0x%08llx", __FUNCTION__, size);
   return size;
 }
@@ -56,56 +56,41 @@ EXPORT SYSV_ABI int32_t sceKernelGetPrtAperture(int index, void** addr, size_t* 
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelAllocateDirectMemory(off_t searchStart, off_t searchEnd, size_t len, size_t alignment, int memoryType, off_t* physAddrOut) {
+EXPORT SYSV_ABI int32_t sceKernelAllocateDirectMemory(uint64_t searchStart, uint64_t searchEnd, size_t len, size_t alignment, int memoryType,
+                                                      uint64_t* physAddrOut) {
   if (len == 0 || physAddrOut == nullptr) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  accessPysicalMemory().alloc(0, len, memoryType);
-  *physAddrOut = 1; // done with map
-  return Ok;
+  return accessDirectMemory().alloc(len, alignment, memoryType, physAddrOut);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelAllocateMainDirectMemory(size_t len, size_t alignment, int memoryType, off_t* physAddrOut) {
+EXPORT SYSV_ABI int32_t sceKernelAllocateMainDirectMemory(size_t len, size_t alignment, int memoryType, uint64_t* physAddrOut) {
   if (len == 0 || physAddrOut == nullptr) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  *physAddrOut = 1; // done with map
-  return Ok;
+  return accessDirectMemory().alloc(len, alignment, memoryType, physAddrOut);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelReleaseDirectMemory(off_t start, size_t len) {
-  uint64_t vaddr = 0;
-  uint64_t size  = 0;
-
-  bool result = accessPysicalMemory().Release(start, len, &vaddr, &size);
-  return Ok;
+  return accessDirectMemory().free(start, len);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelCheckedReleaseDirectMemory(off_t start, size_t len) {
-  uint64_t vaddr = 0;
-  uint64_t size  = 0;
-
-  bool result = accessPysicalMemory().Release(start, len, &vaddr, &size);
-  return Ok;
+  return accessDirectMemory().free(start, len);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapNamedDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t directMemoryStart, size_t alignment,
-                                                      const char* name) {
-  if (!accessPysicalMemory().Map(*addr, directMemoryStart, len, prot, flags == 0x10, alignment, addr)) {
-    return getErr(ErrCode::_EINVAL);
-  }
-
-  return Ok;
+EXPORT SYSV_ABI int32_t sceKernelMapNamedDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t offset, size_t alignment, const char* name) {
+  return accessDirectMemory().map(*addr, offset, len, prot, flags, alignment, addr);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t directMemoryStart, size_t maxPageSize) {
-  return sceKernelMapNamedDirectMemory(addr, len, prot, flags, directMemoryStart, maxPageSize, nullptr);
+EXPORT SYSV_ABI int32_t sceKernelMapDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t offset, size_t maxPageSize) {
+  return sceKernelMapNamedDirectMemory(addr, len, prot, flags, offset, maxPageSize, nullptr);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapDirectMemory2(uint64_t* addr, size_t len, int type, int prot, int flags, off_t directMemoryStart, size_t maxPageSize) {
-  return sceKernelMapNamedDirectMemory(addr, len, prot, flags, directMemoryStart, maxPageSize, nullptr);
+EXPORT SYSV_ABI int32_t sceKernelMapDirectMemory2(uint64_t* addr, size_t len, int type, int prot, int flags, off_t offset, size_t maxPageSize) {
+  return sceKernelMapNamedDirectMemory(addr, len, prot, flags, offset, maxPageSize, nullptr);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelGetDirectMemoryType(off_t start, int* memoryType, off_t* regionStartOut, off_t* regionEndOut) {
@@ -115,24 +100,17 @@ EXPORT SYSV_ABI int32_t sceKernelGetDirectMemoryType(off_t start, int* memoryTyp
 }
 
 EXPORT SYSV_ABI int32_t sceKernelBatchMap(SceKernelBatchMapEntry* items, int size, int* count) {
-  struct BatchMapEntry {
-    uint64_t start;
-    uint32_t physAddr;
-    size_t   length;
-    uint8_t  prot;
-    uint8_t  type;
-    short    pad1;
-    int      operation;
-  };
+  LOG_USE_MODULE(dmem);
+  LOG_CRIT(L"todo");
 
-  for (*count = 0; *count < size; ++*count) {
-    auto& batchEntry = ((BatchMapEntry*)items)[*count];
+  // for (*count = 0; *count < size; ++*count) {
+  //   auto& batchEntry = ((BatchMapEntry*)items)[*count];
 
-    uint64_t addr = accessPysicalMemory().commit(batchEntry.start, batchEntry.physAddr, batchEntry.length, 0, batchEntry.prot);
-    if (addr == 0) {
-      return getErr(ErrCode::_ENOMEM);
-    }
-  }
+  //   //uint64_t addr = accessPysicalMemory().commit(batchEntry.start, batchEntry.physAddr, batchEntry.length, 0, batchEntry.prot);
+  //   if (addr == 0) {
+  //     return getErr(ErrCode::_ENOMEM);
+  //   }
+  // }
   return Ok;
 }
 
@@ -226,15 +204,18 @@ EXPORT SYSV_ABI int32_t sceKernelSetVirtualRangeName(void* start, size_t len, co
 }
 
 EXPORT SYSV_ABI int sceKernelReserveVirtualRange(uintptr_t* addr, size_t len, int flags, size_t alignment) {
+  LOG_USE_MODULE(dmem);
+  LOG_CRIT(L"todo");
+
   auto const inAddr = *addr;
 
   if (len == 0) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  if (!accessPysicalMemory().reserve(inAddr, len, alignment, addr, 1)) {
-    return getErr(ErrCode::_EAGAIN);
-  }
+  // if (!accessPysicalMemory().reserve(inAddr, len, alignment, addr, 1)) {
+  //   return getErr(ErrCode::_EAGAIN);
+  // }
 
   return Ok;
 }
@@ -278,7 +259,7 @@ EXPORT SYSV_ABI int32_t sceKernelMtypeprotect(const void* addr, size_t size, int
 }
 
 EXPORT SYSV_ABI int32_t sceKernelAvailableDirectMemorySize(off_t start, off_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
-  accessPysicalMemory().getAvailableSize(start, end, alignment, startOut, sizeOut);
+  accessDirectMemory().getAvailableSize(start, end, alignment, startOut, sizeOut);
   return Ok;
 }
 

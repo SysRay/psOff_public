@@ -94,10 +94,10 @@ struct SceLibcParam5: SceLibcParam4 {
 
 struct ProcParam {
   struct {
-    uint64_t size;       /// 0x50
-    uint32_t magic;      /// "orbi" (0x4942524F)
-    uint32_t entryCount; /// >=1
-    uint64_t sdkVersion; /// 0x4508101
+    uint64_t size;
+    uint32_t magic;
+    uint32_t entryCount;
+    uint64_t sdkVersion;
   } header;
 
   char const*        sceProcessName;
