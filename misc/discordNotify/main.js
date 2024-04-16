@@ -29,17 +29,20 @@ const r_name = 'psOff_public';
 const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs'];
 
 const guessCategory = (labels) => {
+  const cats = [];
+
   for (const label of labels) {
     switch (label.name) {
-      case 'bugfix': return 'bugfixes';
-      case 'stub': return 'stubs';
-      case 'implementation': return 'impls';
-      case 'enhancement': return 'ench';
+      case 'bugfix': cats.push('bugfixes');
+      case 'stub': cats.push('stubs');
+      case 'implementation': cats.push('impls');
+      case 'enhancement': cats.push('ench');
       default: break;
     }
   }
 
-  return 'general';
+  if (cats.length === 0) cats.push('general');
+  return cats;
 };
 
 const getCategoryName = (cat) => {
@@ -68,7 +71,8 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
       return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
         data.items.forEach((pr) => {
-          out[guessCategory(pr.labels)].push(`* PR #${pr.number}: ${pr.title}`);
+          const msg = `* PR #${pr.number}: ${pr.title}`;
+          guessCategory(pr.labels).forEach((cat) => out[cat].push(msg));
         });
 
         if (data.total_count > (out.length - 1)) {
