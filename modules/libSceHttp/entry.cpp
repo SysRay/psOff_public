@@ -18,138 +18,133 @@ namespace {
 using SceHttpsCallback = SYSV_ABI int (*)(int libsslCtxId, unsigned int verifyErr, SceSslCert* const sslCert[], int certNum, void* userArg);
 
 #define ARRAY_LENGTH 128
-#define TEST_ID(ARRAY, ID) \
+#define TEST_ID(ARRAY, ID)                                                                                                                                     \
   if (ID < 1 || ID >= ARRAY_LENGTH || ARRAY[ID] == nullptr) return Err::HTTP_NOT_INITIALIZED;
 
-#define TEST_HTTP_CTX_ID \
-  TEST_ID(g_clients, libhttpCtxId)
+#define TEST_HTTP_CTX_ID TEST_ID(g_clients, libhttpCtxId)
 
-#define TEST_TMPL_ID \
-  TEST_ID(g_templates, tmplId)
+#define TEST_TMPL_ID TEST_ID(g_templates, tmplId)
 
-#define TEST_CONN_ID \
-  TEST_ID(g_connections, connId)
+#define TEST_CONN_ID TEST_ID(g_connections, connId)
 
-#define TEST_REQ_ID \
-  TEST_ID(g_requests, reqId)
+#define TEST_REQ_ID TEST_ID(g_requests, reqId)
 
-#define LOOKUP_AVAILABLE_IDX(ARRAY, ACTION) \
-  int i; \
-  bool found = false; \
-  for (i = 1; i < ARRAY_LENGTH; i++) { \
-    if (ARRAY[i] == nullptr) { \
-      ARRAY[i] = ACTION; \
-      \
-      break; \
-    } \
-  } \
+#define LOOKUP_AVAILABLE_IDX(ARRAY, ACTION)                                                                                                                    \
+  int  i;                                                                                                                                                      \
+  bool found = false;                                                                                                                                          \
+  for (i = 1; i < ARRAY_LENGTH; i++) {                                                                                                                         \
+    if (ARRAY[i] == nullptr) {                                                                                                                                 \
+      ARRAY[i] = ACTION;                                                                                                                                       \
+                                                                                                                                                               \
+      break;                                                                                                                                                   \
+    }                                                                                                                                                          \
+  }                                                                                                                                                            \
   if (!found) return Err::HTTP_OUT_OF_MEMORY;
 
-#define GET_LAST_RESPONSE \
-  HttpRequest* request = g_requests[reqId]; \
-  HttpResponse* response = request->lastResponse; \
-  if (response == nullptr) return Err::HTTP_SEND_REQUIRED; \
+#define GET_LAST_RESPONSE                                                                                                                                      \
+  HttpRequest*  request  = g_requests[reqId];                                                                                                                  \
+  HttpResponse* response = request->lastResponse;                                                                                                              \
+  if (response == nullptr) return Err::HTTP_SEND_REQUIRED;
 
-static io_service svc;
+static io_service        svc;
 static ip::tcp::resolver resolver(svc);
 
 struct HttpClient {
-  int libnetMemId;
-  int libsslCtxId;
-  size_t poolSize;
+  int      libnetMemId;
+  int      libsslCtxId;
+  size_t   poolSize;
   uint32_t connectTimeout;
 
-  HttpClient(int libnetMemId, int libsslCtxId, size_t poolSize):
-    libnetMemId(libnetMemId), libsslCtxId(libsslCtxId), poolSize(poolSize) {}
+  HttpClient(int libnetMemId, int libsslCtxId, size_t poolSize): libnetMemId(libnetMemId), libsslCtxId(libsslCtxId), poolSize(poolSize) {}
 };
 
 struct HttpTemplate {
   HttpClient* parentClient;
   const char* userAgent;
-  int httpVer;
-  int isAutoProxyConf;
+  int         httpVer;
+  int         isAutoProxyConf;
 
-  HttpTemplate(HttpClient* parentClient, const char* userAgent, int httpVer, int isAutoProxyConf):
-    parentClient(parentClient), userAgent(userAgent), httpVer(httpVer), isAutoProxyConf(isAutoProxyConf) {}
+  HttpTemplate(HttpClient* parentClient, const char* userAgent, int httpVer, int isAutoProxyConf)
+      : parentClient(parentClient), userAgent(userAgent), httpVer(httpVer), isAutoProxyConf(isAutoProxyConf) {}
 };
 
 struct HttpConnection {
   HttpTemplate* parentTemplate;
-  const char* serverName;
-  const char* scheme;
-  uint16_t port;
-  int isEnableKeepalive;
+  const char*   serverName;
+  const char*   scheme;
+  uint16_t      port;
+  int           isEnableKeepalive;
 
   bool connected = false;
   // bool shouldFreeStrings = false;
 
-  ip::tcp::resolver::query* query = nullptr;
+  ip::tcp::resolver::query*   query = nullptr;
   ip::tcp::resolver::iterator endpoint_iterator;
-  ip::tcp::socket* socket = nullptr;
+  ip::tcp::socket*            socket = nullptr;
 
-  HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive):
-    parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive) {}
+  HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive)
+      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive) {}
 };
 
 struct HttpRequest {
   HttpConnection* parentConnection;
-  int method;
-  const char* path;
-  uint64_t contentLength;
-  const void* postData = nullptr;
-  size_t size;
-  HttpResponse* lastResponse = nullptr;
+  int             method;
+  const char*     path;
+  uint64_t        contentLength;
+  const void*     postData = nullptr;
+  size_t          size;
+  HttpResponse*   lastResponse = nullptr;
 
-  HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength):
-    parentConnection(parentConnection), method(method), path(path), contentLength(contentLength) {}
+  HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength)
+      : parentConnection(parentConnection), method(method), path(path), contentLength(contentLength) {}
 };
 
 struct HttpRequestParams {
   HttpConnection* connection;
-  HttpRequest* request;
-  uint32_t connectTimeout;
-  const char* userAgent;
-  int httpVer;
-  int isAutoProxyConf;
-  const char* serverName;
-  const char* scheme;
-  uint16_t port;
-  int isEnableKeepalive;
-  int method;
-  const char* path;
-  uint64_t contentLength;
-  const void* postData; // will be assigned to nullptr
-  size_t size;
+  HttpRequest*    request;
+  uint32_t        connectTimeout;
+  const char*     userAgent;
+  int             httpVer;
+  int             isAutoProxyConf;
+  const char*     serverName;
+  const char*     scheme;
+  uint16_t        port;
+  int             isEnableKeepalive;
+  int             method;
+  const char*     path;
+  uint64_t        contentLength;
+  const void*     postData; // will be assigned to nullptr
+  size_t          size;
 };
 
 struct HttpResponse {
-  int statusCode;
-  uint32_t contentLength;
+  int         statusCode;
+  uint32_t    contentLength;
   const char* body = nullptr;
 };
 
-static HttpClient* g_clients[ARRAY_LENGTH] = {nullptr};
-static HttpTemplate* g_templates[ARRAY_LENGTH] = {nullptr};
+static HttpClient*     g_clients[ARRAY_LENGTH]     = {nullptr};
+static HttpTemplate*   g_templates[ARRAY_LENGTH]   = {nullptr};
 static HttpConnection* g_connections[ARRAY_LENGTH] = {nullptr};
-static HttpRequest* g_requests[ARRAY_LENGTH] = {nullptr};
+static HttpRequest*    g_requests[ARRAY_LENGTH]    = {nullptr};
 
 static HttpRequestParams* constructHttpParams(HttpRequest* from) {
   HttpRequestParams* request = new HttpRequestParams();
-  request->connection = from->parentConnection;
-  request->request = from;
-  request->connectTimeout = from->parentConnection->parentTemplate->parentClient->connectTimeout;
-  request->userAgent = from->parentConnection->parentTemplate->userAgent;
-  request->httpVer = from->parentConnection->parentTemplate->httpVer;
-  request->isAutoProxyConf = from->parentConnection->parentTemplate->isAutoProxyConf;
-  request->serverName = from->parentConnection->serverName;
-  request->scheme = from->parentConnection->scheme;
-  request->port = from->parentConnection->port;
+  request->connection        = from->parentConnection;
+  request->request           = from;
+  request->connectTimeout    = from->parentConnection->parentTemplate->parentClient->connectTimeout;
+  request->userAgent         = from->parentConnection->parentTemplate->userAgent;
+  request->httpVer           = from->parentConnection->parentTemplate->httpVer;
+  request->isAutoProxyConf   = from->parentConnection->parentTemplate->isAutoProxyConf;
+  request->serverName        = from->parentConnection->serverName;
+  request->scheme            = from->parentConnection->scheme;
+  request->port              = from->parentConnection->port;
   request->isEnableKeepalive = from->parentConnection->isEnableKeepalive;
-  request->method = from->method;
-  request->path = from->path;
-  request->contentLength = from->contentLength;
-  request->postData = from->postData;
-  request->size = from->size;
+  request->method            = from->method;
+  request->path              = from->path;
+  request->contentLength     = from->contentLength;
+  request->postData          = from->postData;
+  request->size              = from->size;
 
   return request;
 }
@@ -179,17 +174,17 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
   HttpConnection* connection = request->connection;
   try {
     if (!connection->connected) {
-      connection->query = new ip::tcp::resolver::query(request->serverName, std::to_string(request->port));
+      connection->query             = new ip::tcp::resolver::query(request->serverName, std::to_string(request->port));
       connection->endpoint_iterator = resolver.resolve(*connection->query);
-      connection->socket = new ip::tcp::socket(svc);
+      connection->socket            = new ip::tcp::socket(svc);
       boost::asio::connect(*connection->socket, connection->endpoint_iterator);
       connection->connected = true;
 
       if (std::strcmp(connection->scheme, "https") == 0) {
-       LOG_TRACE(L"detected an attempt to connect via https, it's not supported yet");
+        LOG_TRACE(L"detected an attempt to connect via https, it's not supported yet");
 
-      return Err::HTTP_SSL_ERROR;
-      } 
+        return Err::HTTP_SSL_ERROR;
+      }
       if (std::strcmp(connection->scheme, "http") != 0) {
         LOG_TRACE(L"unknown scheme: %s://", connection->scheme);
 
@@ -200,7 +195,7 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
       deleteResponse(request->request->lastResponse);
     }
     boost::asio::streambuf buffer;
-    std::ostream bufferStream(&buffer);
+    std::ostream           bufferStream(&buffer);
 
     if (request->method == SCE_HTTP_GET) {
       bufferStream << "GET ";
@@ -212,8 +207,10 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
       return Err::HTTP_FAILURE;
     }
     bufferStream << request->path;
-    if (request->httpVer == 1) bufferStream << "HTTP/1.0";
-    else                       bufferStream << "HTTP/1.1";
+    if (request->httpVer == 1)
+      bufferStream << "HTTP/1.0";
+    else
+      bufferStream << "HTTP/1.1";
     bufferStream << "\r\n";
     if (request->httpVer != 1 /* means HTTP 1.1 */) {
       bufferStream << "Host: " << request->serverName << "\r\n";
@@ -234,7 +231,7 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
     std::istream responseBufferStream(&responseBuffer);
 
     std::string httpVersion;
-    int statusCode;
+    int         statusCode;
     std::string statusDescription;
     responseBufferStream >> httpVersion;
     responseBufferStream >> statusCode;
@@ -242,14 +239,14 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
 
     boost::asio::read_until(*connection->socket, responseBuffer, "\r\n\r\n");
 
-    bool foundContentLengthHeader = false;
-    uint32_t contentLength;
+    bool        foundContentLengthHeader = false;
+    uint32_t    contentLength;
     std::string header;
     while (std::getline(responseBufferStream, header) && header != "\r") {
       if (header.rfind("Content-Length: ", 0) == 0) { // todo: remove case-sensitive check
         std::string contentLengthUnparsed = header.substr(16);
-        contentLength = std::stoi(contentLengthUnparsed);
-        foundContentLengthHeader = true;
+        contentLength                     = std::stoi(contentLengthUnparsed);
+        foundContentLengthHeader          = true;
 
         break;
       }
@@ -266,22 +263,22 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
       return Err::HTTP_FAILURE;
     }
     size_t currentIdx = 0;
-    char* body;
+    char*  body;
     try {
       body = new char[contentLength];
-    } catch(std::bad_alloc&) {
+    } catch (std::bad_alloc&) {
       LOG_TRACE(L"failed to allocate %d bytes", contentLength);
 
       return Err::HTTP_FAILURE;
     }
-    response->statusCode = statusCode;
+    response->statusCode    = statusCode;
     response->contentLength = contentLength;
-    response->body = body;
+    response->body          = body;
 
     boost::system::error_code error;
     while (boost::asio::read(*connection->socket, responseBuffer, boost::asio::transfer_at_least(1), error)) {
       std::streamsize available = responseBuffer.in_avail();
-      char c;
+      char            c;
       for (std::streamsize i = 0; i < available; i++) {
         responseBufferStream >> c;
         body[currentIdx++] = c;
@@ -329,8 +326,8 @@ EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
 EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat) {
   TEST_HTTP_CTX_ID;
   currentStat->currentInuseSize = 16384; // todo (?)
-  currentStat->maxInuseSize = 131072;
-  currentStat->poolSize = g_clients[libhttpCtxId]->poolSize;
+  currentStat->maxInuseSize     = 131072;
+  currentStat->poolSize         = g_clients[libhttpCtxId]->poolSize;
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"memory pool stats were requested (client id: %d)", libhttpCtxId);
@@ -372,8 +369,8 @@ EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, 
 }
 
 EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
-  //using namespace boost::network;
-  //uri::uri instance(url);
+  // using namespace boost::network;
+  // uri::uri instance(url);
 
   return Err::CONNECT_TIMEOUT;
 }
@@ -454,12 +451,12 @@ EXPORT SYSV_ABI int sceHttpSetInflateGZIPEnabled(int id, int isEnable) {
 
 EXPORT SYSV_ABI int sceHttpSendRequest(int reqId, const void* postData, size_t size) {
   TEST_REQ_ID;
-  HttpRequest* request = g_requests[reqId];
-  request->postData = postData;
-  request->size = size;
+  HttpRequest* request          = g_requests[reqId];
+  request->postData             = postData;
+  request->size                 = size;
   HttpRequestParams* fullParams = constructHttpParams(request);
-  HttpResponse* response = new HttpResponse();
-  int32_t result = performHttpRequest(fullParams, response);
+  HttpResponse*      response   = new HttpResponse();
+  int32_t            result     = performHttpRequest(fullParams, response);
   delete fullParams;
   if (result == Ok) {
     request->lastResponse = response;
@@ -477,7 +474,7 @@ EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
 EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
   TEST_REQ_ID;
   GET_LAST_RESPONSE;
-  *result = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
+  *result        = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
   *contentLength = response->contentLength;
 
   return Ok;
