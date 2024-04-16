@@ -670,7 +670,7 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
     bufferSet.buffers[n].bufferAlign = displaySizeAlign;
     LOG_INFO(L"+bufferset[%d] buffer:%d vaddr:0x%08llx-0x%08llx", setIndex, n, (uint64_t)addresses[n], (uint64_t)addresses[n] + displaySizeAlign);
 
-    auto [format, colorSpace] = vulkan::getDisplayFormat(m_vulkanObj);
+    auto [format, _] = vulkan::getDisplayFormat(m_vulkanObj);
     if (!m_graphics->registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height}, _att->pitchInPixel,
                                            format))
       return -1;
