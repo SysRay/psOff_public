@@ -135,8 +135,8 @@ static HttpTemplate*   g_templates[ARRAY_LENGTH]   = {nullptr};
 static HttpConnection* g_connections[ARRAY_LENGTH] = {nullptr};
 static HttpRequest*    g_requests[ARRAY_LENGTH]    = {nullptr};
 
-template<typename T, size_t size>
-static int testId(T(&array)[size], int id) {
+template <typename T, size_t size>
+static int testId(T (&array)[size], int id) {
   if (id < 1 || id >= size || array[id] == nullptr) return Err::HTTP_BAD_ID;
 
   return Ok;
