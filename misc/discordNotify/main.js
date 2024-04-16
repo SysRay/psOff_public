@@ -26,7 +26,7 @@ const sendDiscordMessage = (msg = null) => {
 const r_owner = 'SysRay';
 const r_name = 'psOff_public';
 
-const categoryOrder = ['general', 'impls', 'bugfixes', 'stubs'];
+const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs'];
 
 const guessCategory = (labels) => {
   labels.forEach((label) => {
@@ -34,6 +34,7 @@ const guessCategory = (labels) => {
       case 'bugfix': return 'bugfixes';
       case 'stub': return 'stubs';
       case 'impl': return 'impls';
+      case 'enhancement':  return 'ench';
       default: break;
     }
   });
@@ -47,6 +48,7 @@ const getCategoryName = (cat) => {
     case 'stubs': return 'Stubbed functions 🆒';
     case 'impls': return 'Implementations 🥳';
     case 'general': return 'General ✅';
+    case 'ench': return 'Enhancements 🧙';
   }
 
   throw new Error('Unknown category name: ' + String.toString(cat));
@@ -57,7 +59,7 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
   return new Promise((resolve, reject) => {
     const readPRs = async (pagenum, list = null, retries = 0) => {
-      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: []};
+      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: []};
 
       const query = [];
       query.push(`repo:${r_owner}/${r_name}`);
