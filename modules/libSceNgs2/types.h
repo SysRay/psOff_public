@@ -127,6 +127,7 @@ struct SceNgs2GeomListenerWork;
 struct SceNgs2GeomListenerParam;
 
 typedef int (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
+typedef void (*SceNgs2ReportHandler)(const void *data, uintptr_t userData);
 
 struct SceNgs2GeomVector {
   float x, y, z;
@@ -232,4 +233,80 @@ struct SceNgs2RackOption {
   uint32_t maxMatrices;
   uint32_t maxPorts;
   uint32_t aReserved[20];
+};
+
+struct SceNgs2CustomModuleInfo {
+  uint32_t moduleId;
+  uint32_t sourceBufferId;
+  uint32_t extraBufferId;
+  uint32_t destBufferId;
+  uint32_t stateOffset;
+  uint32_t stateSize;
+  uint32_t reserved;
+  uint32_t reserved2;
+};
+
+struct SceNgs2RackInfo {
+  char name[SCE_NGS2_RACK_NAME_LENGTH];
+  SceNgs2Handle rackHandle;
+  SceNgs2ContextBufferInfo bufferInfo;
+  SceNgs2Handle ownerSystemHandle;
+  uint32_t type;
+  uint32_t rackId;
+  uint32_t uid;
+  uint32_t minGrainSamples;
+  uint32_t maxGrainSamples;
+  uint32_t maxVoices;
+  uint32_t maxChannelWorks;
+  uint32_t maxInputs;
+  uint32_t maxPorts;
+  uint32_t maxMatrices;
+  uint32_t stateFlags;
+  float lastProcessRatio;
+  uint64_t lastProcessTick;
+  uint64_t renderCount;
+  uint32_t activeVoiceCount;
+  uint32_t activeChannelWorkCount;
+};
+
+struct SceNgs2SystemInfo {
+  char name[SCE_NGS2_SYSTEM_NAME_LENGTH];
+  SceNgs2Handle systemHandle;
+  SceNgs2ContextBufferInfo bufferInfo;
+  uint32_t uid;
+  uint32_t minGrainSamples;
+  uint32_t maxGrainSamples;
+  uint32_t stateFlags;
+  uint32_t rackCount;
+  float lastRenderRatio;
+  uint64_t lastRenderTick;
+  uint64_t renderCount;
+  uint32_t sampleRate;
+  uint32_t numGrainSamples;
+};
+
+struct SceNgs2VoiceMatrixInfo {
+  uint32_t numLevels;
+  float aLevel[SCE_NGS2_MAX_MATRIX_LEVELS];
+};
+
+struct SceNgs2VoicePortInfo {
+  int32_t matrixId;
+  float volume;
+  uint32_t numDelaySamples;
+  uint32_t destInputId;
+  SceNgs2Handle destHandle;
+};
+
+struct SceNgs2PanWork {
+	float aSpeakerAngle[SCE_NGS2_MAX_VOICE_CHANNELS];
+	float unitAngle;
+	uint32_t numSpeakers;
+};
+
+struct SceNgs2PanParam {
+	float angle;
+	float distance;
+	float fbwLevel;
+	float lfeLevel;
 };
