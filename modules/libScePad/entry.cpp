@@ -260,7 +260,7 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
   return Ok;
 }
 
-EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, p_pad_ext_param param) {
+EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
   return Ok;
