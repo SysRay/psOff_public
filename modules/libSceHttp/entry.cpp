@@ -18,16 +18,6 @@ namespace {
 using SceHttpsCallback = SYSV_ABI int (*)(int libsslCtxId, unsigned int verifyErr, SceSslCert* const sslCert[], int certNum, void* userArg);
 
 #define ARRAY_LENGTH 128
-#define TEST_ID(ARRAY, ID)                                                                                                                                     \
-  if (ID < 1 || ID >= ARRAY_LENGTH || ARRAY[ID] == nullptr) return Err::HTTP_NOT_INITIALIZED;
-
-#define TEST_HTTP_CTX_ID TEST_ID(g_clients, libhttpCtxId)
-
-#define TEST_TMPL_ID TEST_ID(g_templates, tmplId)
-
-#define TEST_CONN_ID TEST_ID(g_connections, connId)
-
-#define TEST_REQ_ID TEST_ID(g_requests, reqId)
 
 #define LOOKUP_AVAILABLE_IDX(ARRAY, ACTION)                                                                                                                    \
   int  i;                                                                                                                                                      \
@@ -76,7 +66,6 @@ struct HttpConnection {
   int           isEnableKeepalive;
 
   bool connected = false;
-  // bool shouldFreeStrings = false;
 
   ip::tcp::resolver::query*   query = nullptr;
   ip::tcp::resolver::iterator endpoint_iterator;
@@ -121,6 +110,24 @@ struct HttpRequestParams {
   uint64_t        contentLength;
   const void*     postData; // will be assigned to nullptr
   size_t          size;
+
+  HttpRequestParams(HttpRequest* from) {
+    connection        = from->parentConnection;
+    request           = from;
+    connectTimeout    = from->parentConnection->parentTemplate->parentClient->connectTimeout;
+    userAgent         = from->parentConnection->parentTemplate->userAgent;
+    httpVer           = from->parentConnection->parentTemplate->httpVer;
+    isAutoProxyConf   = from->parentConnection->parentTemplate->isAutoProxyConf;
+    serverName        = from->parentConnection->serverName;
+    scheme            = from->parentConnection->scheme;
+    port              = from->parentConnection->port;
+    isEnableKeepalive = from->parentConnection->isEnableKeepalive;
+    method            = from->method;
+    path              = from->path;
+    contentLength     = from->contentLength;
+    postData          = from->postData;
+    size              = from->size;
+  }
 };
 
 static HttpClient*     g_clients[ARRAY_LENGTH]     = {nullptr};
@@ -128,25 +135,11 @@ static HttpTemplate*   g_templates[ARRAY_LENGTH]   = {nullptr};
 static HttpConnection* g_connections[ARRAY_LENGTH] = {nullptr};
 static HttpRequest*    g_requests[ARRAY_LENGTH]    = {nullptr};
 
-static HttpRequestParams* constructHttpParams(HttpRequest* from) {
-  HttpRequestParams* request = new HttpRequestParams();
-  request->connection        = from->parentConnection;
-  request->request           = from;
-  request->connectTimeout    = from->parentConnection->parentTemplate->parentClient->connectTimeout;
-  request->userAgent         = from->parentConnection->parentTemplate->userAgent;
-  request->httpVer           = from->parentConnection->parentTemplate->httpVer;
-  request->isAutoProxyConf   = from->parentConnection->parentTemplate->isAutoProxyConf;
-  request->serverName        = from->parentConnection->serverName;
-  request->scheme            = from->parentConnection->scheme;
-  request->port              = from->parentConnection->port;
-  request->isEnableKeepalive = from->parentConnection->isEnableKeepalive;
-  request->method            = from->method;
-  request->path              = from->path;
-  request->contentLength     = from->contentLength;
-  request->postData          = from->postData;
-  request->size              = from->size;
+template<typename T, size_t size>
+static int testId(T(&array)[size], int id) {
+  if (id < 1 || id >= size || array[id] == nullptr) return Err::HTTP_BAD_ID;
 
-  return request;
+  return Ok;
 }
 
 static void deleteResponse(HttpResponse* response) {
@@ -313,7 +306,7 @@ EXPORT SYSV_ABI int sceHttpInit(int libnetMemId, int libsslCtxId, size_t poolSiz
 }
 
 EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
-  TEST_HTTP_CTX_ID;
+  testId(g_clients, libhttpCtxId);
   delete g_clients[libhttpCtxId];
   g_clients[libhttpCtxId] = nullptr;
 
@@ -324,7 +317,7 @@ EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat) {
-  TEST_HTTP_CTX_ID;
+  testId(g_clients, libhttpCtxId);
   currentStat->currentInuseSize = 16384; // todo (?)
   currentStat->maxInuseSize     = 131072;
   currentStat->poolSize         = g_clients[libhttpCtxId]->poolSize;
@@ -336,7 +329,7 @@ EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoo
 }
 
 EXPORT SYSV_ABI int sceHttpCreateTemplate(int libhttpCtxId, const char* userAgent, int httpVer, int isAutoProxyConf) {
-  TEST_HTTP_CTX_ID;
+  testId(g_clients, libhttpCtxId);
   HttpClient* client = g_clients[libhttpCtxId];
   LOOKUP_AVAILABLE_IDX(g_templates, new HttpTemplate(client, userAgent, httpVer, isAutoProxyConf));
 
@@ -347,7 +340,7 @@ EXPORT SYSV_ABI int sceHttpCreateTemplate(int libhttpCtxId, const char* userAgen
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
-  TEST_TMPL_ID;
+  testId(g_templates, tmplId);
   delete g_templates[tmplId];
   g_templates[tmplId] = nullptr;
 
@@ -358,7 +351,7 @@ EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
 }
 
 EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
-  TEST_TMPL_ID;
+  testId(g_templates, tmplId);
   HttpTemplate* httpTemplate = g_templates[tmplId];
   LOOKUP_AVAILABLE_IDX(g_connections, new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive));
 
@@ -376,7 +369,7 @@ EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, 
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
-  TEST_CONN_ID;
+  testId(g_connections, connId);
   HttpConnection* connection = g_connections[connId];
   if (connection->query != nullptr) {
     delete connection->query;
@@ -396,7 +389,7 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength) {
-  TEST_CONN_ID;
+  testId(g_connections, connId);
   HttpConnection* httpConnection = g_connections[connId];
   LOOKUP_AVAILABLE_IDX(g_requests, new HttpRequest(httpConnection, method, path, contentLength));
 
@@ -419,7 +412,7 @@ EXPORT SYSV_ABI int sceHttpCreateRequestWithURL2(int connId, const char* method,
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   HttpRequest* request = g_requests[reqId];
   if (request->lastResponse != nullptr) {
     deleteResponse(request->lastResponse);
@@ -435,7 +428,7 @@ EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
 
 EXPORT SYSV_ABI int sceHttpSetRequestContentLength(int id, uint64_t contentLength) {
   int reqId = id; // (?)
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   g_requests[reqId]->contentLength = contentLength;
 
   return Ok;
@@ -450,11 +443,11 @@ EXPORT SYSV_ABI int sceHttpSetInflateGZIPEnabled(int id, int isEnable) {
 }
 
 EXPORT SYSV_ABI int sceHttpSendRequest(int reqId, const void* postData, size_t size) {
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   HttpRequest* request          = g_requests[reqId];
   request->postData             = postData;
   request->size                 = size;
-  HttpRequestParams* fullParams = constructHttpParams(request);
+  HttpRequestParams* fullParams = new HttpRequestParams(request);
   HttpResponse*      response   = new HttpResponse();
   int32_t            result     = performHttpRequest(fullParams, response);
   delete fullParams;
@@ -472,7 +465,7 @@ EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   GET_LAST_RESPONSE;
   *result        = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
   *contentLength = response->contentLength;
@@ -481,7 +474,7 @@ EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint
 }
 
 EXPORT SYSV_ABI int sceHttpGetStatusCode(int reqId, int* statusCode) {
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   GET_LAST_RESPONSE;
   *statusCode = response->statusCode;
 
@@ -495,7 +488,7 @@ EXPORT SYSV_ABI int sceHttpGetAllResponseHeaders(int reqId, char** header, size_
 }
 
 EXPORT SYSV_ABI int sceHttpReadData(int reqId, void* data, size_t size) {
-  TEST_REQ_ID;
+  testId(g_requests, reqId);
   GET_LAST_RESPONSE;
   size_t finalSize = min(size, response->contentLength);
   memcpy(data, response->body, finalSize);

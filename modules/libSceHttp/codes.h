@@ -11,6 +11,7 @@ constexpr int32_t RECV_BLOCK_SIZE      = (1500U);
 constexpr int32_t RESPONSE_HEADER_MAX  = (5000U);
 constexpr int32_t REDIRECT_MAX         = (6U);
 constexpr int32_t TRY_AUTH_MAX         = (6U);
+constexpr int32_t HTTP_BAD_ID          = (2151878912U);
 constexpr int32_t HTTP_OUT_OF_MEMORY   = (2151878690U);
 constexpr int32_t HTTP_NOT_INITIALIZED = (2151878657U);
 constexpr int32_t HTTP_SSL_ERROR       = (2151878773U);
