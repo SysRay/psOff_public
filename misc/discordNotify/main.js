@@ -29,15 +29,15 @@ const r_name = 'psOff_public';
 const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs'];
 
 const guessCategory = (labels) => {
-  labels.forEach((label) => {
+  for (const label of labels) {
     switch (label.name) {
       case 'bugfix': return 'bugfixes';
       case 'stub': return 'stubs';
-      case 'impl': return 'impls';
-      case 'enhancement':  return 'ench';
+      case 'implementation': return 'impls';
+      case 'enhancement': return 'ench';
       default: break;
     }
-  });
+  }
 
   return 'general';
 };
@@ -64,7 +64,7 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
       const query = [];
       query.push(`repo:${r_owner}/${r_name}`);
       query.push('is:pr is:closed base:features sort:author-date-asc');
-      query.push(`merged:${prevRelease.created_at}..${lastRelease.created_at}`);
+      query.push(`merged:>=${lastRelease.created_at}`);
 
       return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
         data.items.forEach((pr) => {
