@@ -306,7 +306,7 @@ EXPORT SYSV_ABI int sceHttpInit(int libnetMemId, int libsslCtxId, size_t poolSiz
 }
 
 EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
-  testId(g_clients, libhttpCtxId);
+  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
   delete g_clients[libhttpCtxId];
   g_clients[libhttpCtxId] = nullptr;
 
@@ -317,7 +317,7 @@ EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat) {
-  testId(g_clients, libhttpCtxId);
+  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
   currentStat->currentInuseSize = 16384; // todo (?)
   currentStat->maxInuseSize     = 131072;
   currentStat->poolSize         = g_clients[libhttpCtxId]->poolSize;
@@ -329,7 +329,7 @@ EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoo
 }
 
 EXPORT SYSV_ABI int sceHttpCreateTemplate(int libhttpCtxId, const char* userAgent, int httpVer, int isAutoProxyConf) {
-  testId(g_clients, libhttpCtxId);
+  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
   HttpClient* client = g_clients[libhttpCtxId];
   LOOKUP_AVAILABLE_IDX(g_templates, new HttpTemplate(client, userAgent, httpVer, isAutoProxyConf));
 
@@ -340,7 +340,7 @@ EXPORT SYSV_ABI int sceHttpCreateTemplate(int libhttpCtxId, const char* userAgen
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
-  testId(g_templates, tmplId);
+  if (auto ret = testId(g_templates, tmplId)) return ret;
   delete g_templates[tmplId];
   g_templates[tmplId] = nullptr;
 
@@ -351,7 +351,7 @@ EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
 }
 
 EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
-  testId(g_templates, tmplId);
+  if (auto ret = testId(g_templates, tmplId)) return ret;
   HttpTemplate* httpTemplate = g_templates[tmplId];
   LOOKUP_AVAILABLE_IDX(g_connections, new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive));
 
@@ -369,7 +369,7 @@ EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, 
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
-  testId(g_connections, connId);
+  if (auto ret = testId(g_connections, connId)) return ret;
   HttpConnection* connection = g_connections[connId];
   if (connection->query != nullptr) {
     delete connection->query;
@@ -389,7 +389,7 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength) {
-  testId(g_connections, connId);
+  if (auto ret = testId(g_connections, connId)) return ret;
   HttpConnection* httpConnection = g_connections[connId];
   LOOKUP_AVAILABLE_IDX(g_requests, new HttpRequest(httpConnection, method, path, contentLength));
 
@@ -412,7 +412,7 @@ EXPORT SYSV_ABI int sceHttpCreateRequestWithURL2(int connId, const char* method,
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   HttpRequest* request = g_requests[reqId];
   if (request->lastResponse != nullptr) {
     deleteResponse(request->lastResponse);
@@ -428,7 +428,7 @@ EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
 
 EXPORT SYSV_ABI int sceHttpSetRequestContentLength(int id, uint64_t contentLength) {
   int reqId = id; // (?)
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   g_requests[reqId]->contentLength = contentLength;
 
   return Ok;
@@ -443,7 +443,7 @@ EXPORT SYSV_ABI int sceHttpSetInflateGZIPEnabled(int id, int isEnable) {
 }
 
 EXPORT SYSV_ABI int sceHttpSendRequest(int reqId, const void* postData, size_t size) {
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   HttpRequest* request          = g_requests[reqId];
   request->postData             = postData;
   request->size                 = size;
@@ -465,7 +465,7 @@ EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   GET_LAST_RESPONSE;
   *result        = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
   *contentLength = response->contentLength;
@@ -474,7 +474,7 @@ EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint
 }
 
 EXPORT SYSV_ABI int sceHttpGetStatusCode(int reqId, int* statusCode) {
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   GET_LAST_RESPONSE;
   *statusCode = response->statusCode;
 
@@ -488,7 +488,7 @@ EXPORT SYSV_ABI int sceHttpGetAllResponseHeaders(int reqId, char** header, size_
 }
 
 EXPORT SYSV_ABI int sceHttpReadData(int reqId, void* data, size_t size) {
-  testId(g_requests, reqId);
+  if (auto ret = testId(g_requests, reqId)) return ret;
   GET_LAST_RESPONSE;
   size_t finalSize = min(size, response->contentLength);
   memcpy(data, response->body, finalSize);
