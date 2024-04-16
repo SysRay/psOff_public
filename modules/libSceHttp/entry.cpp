@@ -86,6 +86,12 @@ struct HttpConnection {
       : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive) {}
 };
 
+struct HttpResponse {
+  int         statusCode;
+  uint32_t    contentLength;
+  const char* body = nullptr;
+};
+
 struct HttpRequest {
   HttpConnection* parentConnection;
   int             method;
@@ -115,12 +121,6 @@ struct HttpRequestParams {
   uint64_t        contentLength;
   const void*     postData; // will be assigned to nullptr
   size_t          size;
-};
-
-struct HttpResponse {
-  int         statusCode;
-  uint32_t    contentLength;
-  const char* body = nullptr;
 };
 
 static HttpClient*     g_clients[ARRAY_LENGTH]     = {nullptr};
