@@ -172,7 +172,25 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceNgs2";
 
+EXPORT SYSV_ABI int32_t sceNgs2ReportRegisterHandler(uint32_t type, SceNgs2ReportHandler func, uintptr_t userData, SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2ReportUnregisterHandler(SceNgs2Handle* repHan) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2CalcWaveformBlock(SceNgs2WaveformFormat* wf, uint32_t samPos, uint32_t samCount, void* out) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2CustomRackGetModuleInfo(SceNgs2Handle* rh, uint32_t modIdx, SceNgs2CustomModuleInfo* outi, size_t infosz) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
@@ -193,6 +211,30 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   };
 
   return ProcessWaveData(&wi, wf);
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2GetWaveformFrameInfo(const SceNgs2WaveformInfo* fmt, uint32_t* outFrameSize, uint32_t* outNumFrameSamples,
+                                                    uint32_t* outUnitsPerFrame, uint32_t* outNumDelaySamples) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  if (outFrameSize) *outFrameSize = 1; // Some games crashes with divide by zero exception if we set 0 here
+  if (outNumFrameSamples) *outNumFrameSamples = 0;
+  if (outUnitsPerFrame) *outUnitsPerFrame = 0;
+  if (outNumDelaySamples) *outNumDelaySamples = 0;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2PanGetVolumeMatrix(SceNgs2PanWork* pw, const SceNgs2PanParam* aParam, uint32_t numParams, uint32_t matrixFormat,
+                                                  float* outVolumeMatrix) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2PanInit() {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceNgs2WaveformFormat* wf) {
@@ -252,6 +294,25 @@ EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNgs2RackGetInfo(SceNgs2Handle* rh, SceNgs2RackInfo* outi, size_t infosz) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackSetUserData(SceNgs2Handle* rh, uintptr_t userData) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackGetUserData(SceNgs2Handle* rh, uintptr_t* userData) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  *userData = 0;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
@@ -290,6 +351,51 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2Context
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNgs2SystemEnumHandles(SceNgs2Handle** outh, uint32_t maxnum) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  *outh = nullptr;
+  return 0;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemEnumRackHandles(SceNgs2Handle* sysh, SceNgs2Handle** outh, uint32_t maxnum) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  *outh = nullptr;
+  return 0;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemGetInfo(SceNgs2Handle* sysh, SceNgs2SystemInfo* outi, size_t infosz) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemSetUserData(SceNgs2Handle* sysh, uintptr_t userData) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemGetUserData(SceNgs2Handle* sysh, uintptr_t* userData) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  *userData = 0;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemLock(SceNgs2Handle* sysh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemUnlock(SceNgs2Handle* sysh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
@@ -313,6 +419,30 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
 EXPORT SYSV_ABI int32_t sceNgs2SystemSetGrainSamples(SceNgs2Handle* sysh, uint32_t samplesCount) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemSetSampleRate(SceNgs2Handle* sysh, uint32_t rate) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2VoiceGetMatrixInfo(SceNgs2Handle* vh, uint32_t matrixId, SceNgs2VoiceMatrixInfo* outi, size_t infosz) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2VoiceGetOwner(SceNgs2Handle* vh, SceNgs2Handle** outh, uint32_t* outvid) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2VoiceGetPortInfo(SceNgs2Handle** vh, uint32_t port, SceNgs2VoicePortInfo* outi, size_t infosz) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 

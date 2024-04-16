@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config_emu.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
 
@@ -11,6 +12,8 @@
 LOG_DEFINE_MODULE(libSceAudioOut);
 
 namespace {
+static bool audioInited = false;
+
 struct PortOut {
   bool                   open           = false;
   int                    userId         = 0;
@@ -70,8 +73,15 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceAudioOut";
 
 EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
-  (void)getData();
-  return SDL_InitSubSystem(SDL_INIT_AUDIO) == 0 ? Ok : Err::NOT_INIT;
+  if (audioInited) return Err::ALREADY_INIT;
+
+  if (accessVideoOut().SDLInit(SDL_INIT_AUDIO) == 0) {
+    audioInited = true;
+    (void)getData();
+    return Ok;
+  }
+
+  return Err::OUT_OF_MEMORY;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, SceAudioOutParamFormat format) {
@@ -179,6 +189,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
     return id + 1;
   }
+
   return Err::PORT_FULL;
 }
 
@@ -198,6 +209,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
       SDL_CloseAudioDevice(port.device);
     }
   }
+
   return Ok;
 }
 
@@ -272,11 +284,13 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortS
   state->channel = port.channelsNum;
   state->volume  = 127;
   state->output  = (uint16_t)SceAudioOutStateOutput::CONNECTED_PRIMARY;
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state) {
   state->loudness = -70.0f;
+
   return Ok;
 }
 

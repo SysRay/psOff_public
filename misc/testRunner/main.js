@@ -9,7 +9,7 @@ const runTest = (binary) => {
   return new Promise((resolve) => {
     const noExt = path.parse(binary).name;
     const binPath = path.join(testsDir, binary);
-    const testPath = `testRunner\\summary\\${noExt}.json`;
+    const testPath = `misc\\testRunner\\summary\\${noExt}.json`;
     let testTimer = null;
 
     const proc = spawn(binPath, [`--gtest_output=json:${testPath}`]).on('exit', (code) => {

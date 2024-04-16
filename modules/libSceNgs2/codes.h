@@ -16,6 +16,9 @@ constexpr int32_t INVALID_MAX_GRAIN_SAMPLES = -2142633904;
 constexpr int32_t FAIL                      = -2142633983;
 } // namespace Err
 
-constexpr int32_t SCE_NGS2_RACK_NAME_LENGTH = 16;
+constexpr int32_t SCE_NGS2_MAX_VOICE_CHANNELS = 8;
+constexpr int32_t SCE_NGS2_MAX_MATRIX_LEVELS  = 64;
+constexpr int32_t SCE_NGS2_RACK_NAME_LENGTH   = 16;
+constexpr int32_t SCE_NGS2_SYSTEM_NAME_LENGTH = 16;
 
 constexpr int32_t SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS = 0x10000001;
