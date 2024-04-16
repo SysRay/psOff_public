@@ -3,8 +3,39 @@ import fetch from 'node-fetch';
 
 const octokit = new Octokit();
 const hookURL = process.env.DISCORD_WEBHOOK;
+const maxMessageSize = 1800;
 
-const sendDiscordMessage = (msg = null) => {
+const sendDiscordMessage = async (msg = null) => {
+  if (msg !== null && msg.length > maxMessageSize) {
+    let cpos = 0;
+    let strlen = 0;
+    let lastNL = 0;
+
+    while (true) {
+      strlen = 0;
+      lastNL = -1;
+
+      while ((cpos + strlen) < maxMessageSize) {
+        if (msg.charAt(cpos + strlen) === '\n')
+          lastNL = strlen;
+        if (++strlen === maxMessageSize) {
+          strlen = lastNL;
+          break;
+        }
+      }
+
+      if (lastNL !== -1) {
+        await sendDiscordMessage(msg.substr(cpos, strlen));
+        cpos += strlen + 1;
+      }
+
+      if (lastNL === -1 && strlen > 0)
+        return sendDiscordMessage(msg.substr(cpos, strlen));
+      else if (strlen == 0)
+        return null;
+    }
+  }
+
   if (hookURL === undefined) {
     console.error('No Discord WebHook URL found!');
     console.log(msg);
@@ -33,10 +64,11 @@ const guessCategory = (labels) => {
 
   for (const label of labels) {
     switch (label.name) {
-      case 'bugfix': cats.push('bugfixes');
-      case 'stub': cats.push('stubs');
-      case 'implementation': cats.push('impls');
-      case 'enhancement': cats.push('ench');
+      case 'bugfix': cats.push('bugfixes'); break;
+      case 'stub': cats.push('stubs'); break;
+      case 'implementation': cats.push('impls'); break;
+      case 'enhancement': cats.push('ench'); break;
+      case 'general': cats.push('general'); break;
       default: break;
     }
   }
@@ -100,5 +132,5 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
     return readPRs(1);
   });
 }).then((markdown) => sendDiscordMessage(markdown)).catch((err) => {
-  console.err(err);
+  console.error(err);
 });
