@@ -15,11 +15,3 @@ target_link_libraries(semaphore_test PRIVATE
   libboost_thread
   libboost_chrono
 )
-
-set_target_properties(semaphore_test
-  PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-  PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/."
-)

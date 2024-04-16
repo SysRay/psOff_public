@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
 set(PSOFF_LIB_VERSION v.0.0)
+set(PSOFF_RENDER_VERSION v.0.5-nightly_17.04.24)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -65,6 +66,19 @@ ExternalProject_Add(third_party
   BUILD_IN_SOURCE 1
   URL https://github.com/SysRay/psOff_thirdParty/releases/download/${PSOFF_LIB_VERSION}/psOff-3rd.zip
 )
+
+if(${CMAKE_CURRENT_SOURCE_DIR} == ${CMAKE_SOURCE_DIR})
+  ExternalProject_Add(renderer
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    PREFIX ${CMAKE_BINARY_DIR}/renderer
+    BUILD_IN_SOURCE 1
+    URL https://github.com/SysRay/psOff_Renderer/releases/download/${PSOFF_RENDER_VERSION}/psOff-renderer.zip
+  )
+
+  install(FILES ${CMAKE_BINARY_DIR}/renderer/src/renderer/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
 
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
 
