@@ -213,9 +213,14 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2GetWaveformFrameInfo() {
+EXPORT SYSV_ABI int32_t sceNgs2GetWaveformFrameInfo(const SceNgs2WaveformInfo* fmt, uint32_t* outFrameSize, uint32_t* outNumFrameSamples,
+                                                    uint32_t* outUnitsPerFrame, uint32_t* outNumDelaySamples) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+  if (outFrameSize) *outFrameSize = 1; // Some games crashes with divide by zero exception if we set 0 here
+  if (outNumFrameSamples) *outNumFrameSamples = 0;
+  if (outUnitsPerFrame) *outUnitsPerFrame = 0;
+  if (outNumDelaySamples) *outNumDelaySamples = 0;
   return Ok;
 }
 
