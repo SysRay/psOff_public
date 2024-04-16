@@ -1,8 +1,8 @@
 #include "common.h"
 #include "config_emu.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
-#include "core/videoout/videoout.h"
 
 #include <SDL2/SDL.h>
 #include <array>
