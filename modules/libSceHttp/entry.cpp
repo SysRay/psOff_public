@@ -45,15 +45,10 @@ using SceHttpsCallback = SYSV_ABI int (*)(int libsslCtxId, unsigned int verifyEr
   } \
   if (!found) return Err::HTTP_OUT_OF_MEMORY;
 
-#define CONVERT_REQUEST_METHOD(RETURN_VALUE_IF_GET, RETURN_VALUE_IF_POST, RETURN_VALUE_IF_UNKNOWN) \
-  if (std::strcmp(method, "get") == 0 || std::strcmp(method, "GET") == 0) { \
-    return RETURN_VALUE_IF_GET; \
-  } else if (std::strcmp(method, "post") == 0 || std::strcmp(method, "POST") == 0) { \
-    return RETURN_VALUE_IF_POST; \
-  } \
-  LOG_USE_MODULE(libSceHttp); \
-  LOG_TRACE(L"unsupported http method: %s", method); \
-  return RETURN_VALUE_IF_UNKNOWN;
+#define GET_LAST_RESPONSE \
+  HttpRequest* request = g_requests[reqId]; \
+  HttpResponse* response = request->lastResponse; \
+  if (response == nullptr) return Err::HTTP_SEND_REQUIRED; \
 
 static io_service svc;
 static ip::tcp::resolver resolver(svc);
@@ -101,6 +96,9 @@ struct HttpRequest {
   int method;
   const char* path;
   uint64_t contentLength;
+  const void* postData = nullptr;
+  size_t size;
+  HttpResponse* lastResponse = nullptr;
 
   HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength):
     parentConnection(parentConnection), method(method), path(path), contentLength(contentLength) {}
@@ -108,6 +106,7 @@ struct HttpRequest {
 
 struct HttpRequestParams {
   HttpConnection* connection;
+  HttpRequest* request;
   uint32_t connectTimeout;
   const char* userAgent;
   int httpVer;
@@ -119,19 +118,14 @@ struct HttpRequestParams {
   int method;
   const char* path;
   uint64_t contentLength;
-};
-
-struct UrlParts {
-  const char* scheme;
-  const char* hostname;
-  uint16_t port;
-  const char* path;
+  const void* postData; // will be assigned to nullptr
+  size_t size;
 };
 
 struct HttpResponse {
   int statusCode;
   uint32_t contentLength;
-  std::string body;
+  const char* body = nullptr;
 };
 
 static HttpClient* g_clients[ARRAY_LENGTH] = {nullptr};
@@ -139,32 +133,10 @@ static HttpTemplate* g_templates[ARRAY_LENGTH] = {nullptr};
 static HttpConnection* g_connections[ARRAY_LENGTH] = {nullptr};
 static HttpRequest* g_requests[ARRAY_LENGTH] = {nullptr};
 
-/*
-static UrlParts* parseUrl(const char* url) { // use boost instead
-  if (strstr(url, "@")) return nullptr; // support of http auth is not implemented
-
-  const char* colonSlashSlash = strstr(url, "://");
-  if (colonSlashSlash == nullptr || colonSlashSlash == url) return nullptr;
-
-  size_t size = colonSlashSlash - url;
-  char* scheme = (char*)malloc(size + 1);
-  memcpy(scheme, url, size);
-  scheme[size] = '\0';
-
-  uint16_t port = (strcmp(scheme, "http") == 0 ? 80 : (strcmp(scheme, "https") == 0 ? 443 : 0));
-
-  url = colonSlashSlash + 3; // length of "://"
-  const char* colon = strstr(url, ":");
-  if (colon == url) return nullptr;
-
-  return nullptr;
-  //if (firstSplash == nullptr || firstSplash == url) return nullptr;
-}
-*/
-
 static HttpRequestParams* constructHttpParams(HttpRequest* from) {
   HttpRequestParams* request = new HttpRequestParams();
   request->connection = from->parentConnection;
+  request->request = from;
   request->connectTimeout = from->parentConnection->parentTemplate->parentClient->connectTimeout;
   request->userAgent = from->parentConnection->parentTemplate->userAgent;
   request->httpVer = from->parentConnection->parentTemplate->httpVer;
@@ -176,8 +148,29 @@ static HttpRequestParams* constructHttpParams(HttpRequest* from) {
   request->method = from->method;
   request->path = from->path;
   request->contentLength = from->contentLength;
+  request->postData = from->postData;
+  request->size = from->size;
 
   return request;
+}
+
+static void deleteResponse(HttpResponse* response) {
+  if (response->body != nullptr) {
+    delete response->body;
+  }
+  delete response;
+}
+
+static int httpMethodStringToInt(const char* method) {
+  if (std::strcmp(method, "get") == 0 || std::strcmp(method, "GET") == 0) {
+    return SCE_HTTP_GET;
+  } else if (std::strcmp(method, "post") == 0 || std::strcmp(method, "POST") == 0) {
+    return SCE_HTTP_POST;
+  }
+  LOG_USE_MODULE(libSceHttp);
+  LOG_TRACE(L"unsupported http method: %s", method);
+
+  return -1;
 }
 
 static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* response) {
@@ -203,6 +196,9 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
         return Err::HTTP_BAD_SCHEME;
       }
     }
+    if (request->request->lastResponse != nullptr) {
+      deleteResponse(request->request->lastResponse);
+    }
     boost::asio::streambuf buffer;
     std::ostream bufferStream(&buffer);
 
@@ -224,6 +220,12 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
       bufferStream << "User-Agent: " << request->userAgent << "\r\n";
       bufferStream << "Accept: */*\r\n";
       bufferStream << "Connection: " << (request->isEnableKeepalive ? "keep-alive" : "close") << "\r\n";
+    }
+    if (request->postData != nullptr) {
+      bufferStream << "Content-Length: " << request->contentLength << "\r\n\r\n";
+      for (size_t i = 0; i < request->size; i++) {
+        bufferStream << ((char*)request->postData)[i];
+      }
     }
     boost::asio::write(*connection->socket, buffer);
 
@@ -252,9 +254,14 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
         break;
       }
     }
+    if (!foundContentLengthHeader) {
+      LOG_TRACE(L"failed to find \"Content-Length\" header in the response");
+
+      return Err::HTTP_FAILURE;
+    }
     bool tooLow;
     if ((tooLow = contentLength < 1) || contentLength > 1610612736) {
-      LOG_TRACE(L"Bad content length: %s", (tooLow ? "less than 1 byte" : "more than 1.5 GiB"));
+      LOG_TRACE(L"bad content length: %s", (tooLow ? "less than 1 byte" : "more than 1.5 GiB"));
 
       return Err::HTTP_FAILURE;
     }
@@ -267,6 +274,9 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
 
       return Err::HTTP_FAILURE;
     }
+    response->statusCode = statusCode;
+    response->contentLength = contentLength;
+    response->body = body;
 
     boost::system::error_code error;
     while (boost::asio::read(*connection->socket, responseBuffer, boost::asio::transfer_at_least(1), error)) {
@@ -278,10 +288,6 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
       }
     }
     if (error != boost::asio::error::eof) throw boost::system::system_error(error);
-
-    response->statusCode = statusCode;
-    response->contentLength = contentLength;
-    response->body = body;
 
     return Ok;
   } catch (const boost::exception& e) {
@@ -404,11 +410,7 @@ EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* pat
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequest2(int connId, const char* method, const char* path, uint64_t contentLength) {
-  CONVERT_REQUEST_METHOD(
-    sceHttpCreateRequest(connId, SCE_HTTP_GET, path, contentLength),
-    sceHttpCreateRequest(connId, SCE_HTTP_POST, path, contentLength),
-    sceHttpCreateRequest(connId, -1, path, contentLength);
-  );
+  return sceHttpCreateRequest(connId, httpMethodStringToInt(method), path, contentLength);
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequestWithURL(int connId, int method, const char* url, uint64_t contentLength) {
@@ -416,16 +418,16 @@ EXPORT SYSV_ABI int sceHttpCreateRequestWithURL(int connId, int method, const ch
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequestWithURL2(int connId, const char* method, const char* url, uint64_t contentLength) {
-  CONVERT_REQUEST_METHOD(
-    sceHttpCreateRequestWithURL(connId, SCE_HTTP_GET, url, contentLength),
-    sceHttpCreateRequestWithURL(connId, SCE_HTTP_POST, url, contentLength),
-    sceHttpCreateRequestWithURL(connId, -1, url, contentLength);
-  );
+  return sceHttpCreateRequestWithURL(connId, httpMethodStringToInt(method), url, contentLength);
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
   TEST_REQ_ID;
-  delete g_requests[reqId];
+  HttpRequest* request = g_requests[reqId];
+  if (request->lastResponse != nullptr) {
+    deleteResponse(request->lastResponse);
+  }
+  delete request;
   g_requests[reqId] = nullptr;
 
   LOG_USE_MODULE(libSceHttp);
@@ -435,6 +437,10 @@ EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
 }
 
 EXPORT SYSV_ABI int sceHttpSetRequestContentLength(int id, uint64_t contentLength) {
+  int reqId = id; // (?)
+  TEST_REQ_ID;
+  g_requests[reqId]->contentLength = contentLength;
+
   return Ok;
 }
 
@@ -447,7 +453,21 @@ EXPORT SYSV_ABI int sceHttpSetInflateGZIPEnabled(int id, int isEnable) {
 }
 
 EXPORT SYSV_ABI int sceHttpSendRequest(int reqId, const void* postData, size_t size) {
-  return Err::SEND_TIMEOUT;
+  TEST_REQ_ID;
+  HttpRequest* request = g_requests[reqId];
+  request->postData = postData;
+  request->size = size;
+  HttpRequestParams* fullParams = constructHttpParams(request);
+  HttpResponse* response = new HttpResponse();
+  int32_t result = performHttpRequest(fullParams, response);
+  delete fullParams;
+  if (result == Ok) {
+    request->lastResponse = response;
+  } else {
+    deleteResponse(response);
+  }
+
+  return result;
 }
 
 EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
@@ -455,18 +475,34 @@ EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
+  TEST_REQ_ID;
+  GET_LAST_RESPONSE;
+  *result = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
+  *contentLength = response->contentLength;
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceHttpGetStatusCode(int reqId, int* statusCode) {
+  TEST_REQ_ID;
+  GET_LAST_RESPONSE;
+  *statusCode = response->statusCode;
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceHttpGetAllResponseHeaders(int reqId, char** header, size_t* headerSize) {
+  *headerSize = 0;
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceHttpReadData(int reqId, void* data, size_t size) {
+  TEST_REQ_ID;
+  GET_LAST_RESPONSE;
+  size_t finalSize = min(size, response->contentLength);
+  memcpy(data, response->body, finalSize);
+
   return Ok;
 }
 
@@ -532,8 +568,6 @@ EXPORT SYSV_ABI int sceHttpSetResolveRetry(int id, int retry) {
 }
 
 EXPORT SYSV_ABI int sceHttpSetConnectTimeOut(int id, uint32_t usec) {
-
-
   return Ok;
 }
 
