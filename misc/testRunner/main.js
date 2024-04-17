@@ -3,7 +3,7 @@ import path from 'path';
 import process, { argv } from 'process';
 import { spawn } from 'child_process';
 
-const testsDir = '_build/_Release/';
+const testsDir = '_build/_Release/_Install';
 
 const runTest = (binary) => {
   return new Promise((resolve) => {
