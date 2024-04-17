@@ -111,6 +111,11 @@ struct SceNgs2SystemHandle {
 
 struct SceNgs2RackHandle {
   SceNgs2RackInfo info;
+  SceNgs2Handle* voices;
+};
+
+struct SceNgs2VoiceHandle {
+  std::vector<AVPacket>* data;
 };
 
 struct SceNgs2Handle {
@@ -122,6 +127,7 @@ struct SceNgs2Handle {
   union _ngsTypes {
     SceNgs2SystemHandle sys;
     SceNgs2RackHandle   rack;
+    SceNgs2VoiceHandle  voice;
   } un;
 };
 

@@ -145,7 +145,8 @@ static int32_t ParseData(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   //   // av_packet_unref(&packet);
   // }
 
-  // wf->numBlocks         = 1;
+  wf->numBlocks         = 0;
+  wf->block[0].userData = 0;
   // wf->block[0].userData = (uintptr_t)frames;
 
   av_free(avioctx);
@@ -295,10 +296,12 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetUserData(SceNgs2Handle* rh, uintptr_t* use
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
+  if (rh == nullptr) return Err::INVALID_RACK_HANDLE;
+  if (voiceId > 0) return Err::INVALID_VOICE_INDEX; // todo: how much indexes??
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   // todo: write to outh voice handle from rack
-  *outh = nullptr;
+  *outh = &rh->un.rack.voices[voiceId];
   return Ok;
 }
 
@@ -405,14 +408,19 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetPortInfo(SceNgs2Handle** vh, uint32_t por
   return Ok;
 }
 
+static int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoiceWaveformBlocksParam* svwfbp) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
+  LOG_TRACE(L"waveptr: %llx\n", svwfbp->aBlock[0].userData);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   switch (phead->id) {
-    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: {
-      auto param = (SceNgs2SamplerVoiceWaveformBlocksParam*)phead;
-      // todo: save wavedata somewhere in voice handle
-    } break;
+    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS:
+      return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
 
     case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
 
@@ -487,6 +495,17 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
   (*outh)->allocSet = true;
   (*outh)->alloc    = *alloc;
   (*outh)->cbi      = cbi;
+
+  cbi.hostBufferSize = sizeof(SceNgs2Handle) * ((ro != nullptr) ? ro->maxVoices : 1);
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2Rack: Voice allocation failed");
+    return ret;
+  }
+
+  auto vo = (*outh)->un.rack.voices = (SceNgs2Handle*)cbi.hostBuffer;
+  vo->allocSet = true;
+  vo->alloc = *alloc;
 
   return Ok;
 }
