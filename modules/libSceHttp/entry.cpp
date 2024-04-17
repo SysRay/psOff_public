@@ -74,7 +74,8 @@ struct HttpConnection {
   ip::tcp::socket*            socket = nullptr;
 
   HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive, bool shouldFreeStrings)
-      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive), shouldFreeStrings(shouldFreeStrings) {}
+      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive),
+        shouldFreeStrings(shouldFreeStrings) {}
 };
 
 struct HttpResponse {
@@ -92,7 +93,7 @@ struct HttpRequest {
   size_t          size;
   HttpResponse*   lastResponse = nullptr;
 
-  bool            shouldFreePath;
+  bool shouldFreePath;
 
   HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength, bool shouldFreePath)
       : parentConnection(parentConnection), method(method), path(path), contentLength(contentLength), shouldFreePath(shouldFreePath) {}
@@ -147,10 +148,10 @@ static int testId(T (&array)[size], int id) {
 }
 
 static char* convertString(const boost::core::string_view& str) {
-  std::string stdstr = std::string(str);
+  std::string stdstr    = std::string(str);
   const char* converted = stdstr.c_str();
-  size_t length = std::strlen(converted);
-  char* copy = new char[length];
+  size_t      length    = std::strlen(converted);
+  char*       copy      = new char[length];
   memcpy(copy, converted, length);
 
   return copy;
@@ -381,9 +382,9 @@ EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, 
 
 EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
   boost::urls::url link(url);
-  uint16_t port;
-  char* scheme = convertString(link.scheme());
-  bool isNotHttp;
+  uint16_t         port;
+  char*            scheme = convertString(link.scheme());
+  bool             isNotHttp;
   if ((isNotHttp = std::strcmp(scheme, "http") != 0) && std::strcmp(scheme, "https") != 0) {
     delete scheme;
 
@@ -392,8 +393,10 @@ EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, 
   if (link.has_port()) {
     port = link.port_number();
   } else {
-    if (isNotHttp) port = 443;
-    else           port = 80;
+    if (isNotHttp)
+      port = 443;
+    else
+      port = 80;
   }
   char* serverName = convertString(link.host());
 
