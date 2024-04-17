@@ -419,8 +419,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2Voi
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   switch (phead->id) {
-    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS:
-      return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
+    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
 
     case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
 
@@ -504,8 +503,8 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
   }
 
   auto vo = (*outh)->un.rack.voices = (SceNgs2Handle*)cbi.hostBuffer;
-  vo->allocSet = true;
-  vo->alloc = *alloc;
+  vo->allocSet                      = true;
+  vo->alloc                         = *alloc;
 
   return Ok;
 }

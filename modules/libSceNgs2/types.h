@@ -61,7 +61,7 @@ struct SceNgs2ContextBufferInfo {
 struct SceNgs2BufferAllocator {
   int32_t SYSV_ABI (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t SYSV_ABI (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void*   userData;
+  void*            userData;
 };
 
 struct SceNgs2Handle;
@@ -111,7 +111,7 @@ struct SceNgs2SystemHandle {
 
 struct SceNgs2RackHandle {
   SceNgs2RackInfo info;
-  SceNgs2Handle* voices;
+  SceNgs2Handle*  voices;
 };
 
 struct SceNgs2VoiceHandle {
@@ -187,7 +187,7 @@ struct SceNgs2SystemOption {
 struct SceNgs2GeomListenerWork;
 struct SceNgs2GeomListenerParam;
 
-typedef int  SYSV_ABI (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
+typedef int SYSV_ABI (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
 typedef void SYSV_ABI (*SceNgs2ReportHandler)(const void* data, uintptr_t userData);
 
 struct SceNgs2GeomVector {
