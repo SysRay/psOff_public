@@ -3,6 +3,7 @@
 #include "assert.h"
 #include "common.h"
 #include "core/dmem/dmem.h"
+#include "core/kernel/filesystem.h"
 #include "core/memory/memory.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
@@ -99,23 +100,39 @@ EXPORT SYSV_ABI int32_t sceKernelGetDirectMemoryType(off_t start, int* memoryTyp
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelBatchMap(SceKernelBatchMapEntry* items, int size, int* count) {
+EXPORT SYSV_ABI int32_t sceKernelBatchMap2(SceKernelBatchMapEntry* entries, int numberOfEntries, int* numberOfEntriesOut, int flags) {
   LOG_USE_MODULE(dmem);
-  LOG_CRIT(L"todo");
+  for (*numberOfEntriesOut = 0; *numberOfEntriesOut < numberOfEntries; ++*numberOfEntriesOut) {
+    auto& batchEntry = (entries)[*numberOfEntriesOut];
 
-  // for (*count = 0; *count < size; ++*count) {
-  //   auto& batchEntry = ((BatchMapEntry*)items)[*count];
+    switch (batchEntry.operation) {
+      case SceKernelMapOp::MAP_DIRECT: {
+        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
+        auto res = accessDirectMemory().map(batchEntry.start, batchEntry.physAddr, batchEntry.length, batchEntry.prot, flags, 0, &batchEntry.start);
+        if (res != Ok) {
+          return res;
+        }
+      } break;
+      case SceKernelMapOp::UNMAP: {
+        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
+      } break;
+      case SceKernelMapOp::PROTECT: {
+        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
+      } break;
+      case SceKernelMapOp::MAP_FLEXIBLE: {
+        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
+      } break;
+      case SceKernelMapOp::TYPE_PROTECT: {
+        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
+      } break;
+    }
+  }
 
-  //   //uint64_t addr = accessPysicalMemory().commit(batchEntry.start, batchEntry.physAddr, batchEntry.length, 0, batchEntry.prot);
-  //   if (addr == 0) {
-  //     return getErr(ErrCode::_ENOMEM);
-  //   }
-  // }
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelBatchMap2(SceKernelBatchMapEntry* entries, int numberOfEntries, int* numberOfEntriesOut, int flags) {
-  return sceKernelBatchMap(entries, numberOfEntries, numberOfEntriesOut);
+EXPORT SYSV_ABI int32_t sceKernelBatchMap(SceKernelBatchMapEntry* items, int size, int* count) {
+  return sceKernelBatchMap2(items, size, count, (int)filesystem::SceMapMode::NO_OVERWRITE);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelJitCreateSharedMemory(const char* name, size_t len, int maxProt, int* fdOut) {
@@ -207,17 +224,11 @@ EXPORT SYSV_ABI int sceKernelReserveVirtualRange(uintptr_t* addr, size_t len, in
   LOG_USE_MODULE(dmem);
   LOG_CRIT(L"todo");
 
-  auto const inAddr = *addr;
-
-  if (len == 0) {
+  if (addr == nullptr || len == 0) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  // if (!accessPysicalMemory().reserve(inAddr, len, alignment, addr, 1)) {
-  //   return getErr(ErrCode::_EAGAIN);
-  // }
-
-  return Ok;
+  return accessDirectMemory().reserve(*addr, len, alignment, flags, addr);
 }
 
 struct QueryInfo {
@@ -299,7 +310,8 @@ EXPORT SYSV_ABI int32_t sceKernelMemoryPoolDecommit(void* addr, size_t len, int 
 
 EXPORT SYSV_ABI int32_t sceKernelMemoryPoolExpand(off_t searchStart, off_t searchEnd, size_t len, size_t alignment, off_t* physAddrOut) {
   LOG_USE_MODULE(dmem);
-  LOG_ERR(L"todo %S| start:0x%08llx end:0x%08llx, len:0x%08llx  align:0x%08llx", __FUNCTION__, searchStart, searchEnd, len, alignment);
+  *physAddrOut = memory::reserve(0, len, alignment, false);
+  LOG_DEBUG(L"PoolReserve| start:0x%08llx, len:0x%08llx  align:0x%08llx-> out:0x%08llx", searchStart, len, alignment, *physAddrOut);
   return Ok;
 }
 

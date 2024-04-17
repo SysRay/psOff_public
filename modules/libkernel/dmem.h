@@ -2,15 +2,22 @@
 #include <modules_include/common.h>
 
 enum class SceKernelMemoryType { WB_ONION = 0, WC_GARLIC = 3, WB_GARLIC, MEMORY_TYPE_END };
+enum class SceKernelMapOp : int {
+  MAP_DIRECT,
+  UNMAP,
+  PROTECT,
+  MAP_FLEXIBLE,
+  TYPE_PROTECT,
+};
 
 struct SceKernelBatchMapEntry {
-  uint64_t start;
-  uint32_t physAddr;
-  size_t   length;
-  uint8_t  prot;
-  uint8_t  type;
-  short    pad1;
-  int      operation;
+  uint64_t       start;
+  uint32_t       physAddr;
+  size_t         length;
+  uint8_t        prot;
+  uint8_t        type;
+  short          pad1;
+  SceKernelMapOp operation;
 };
 
 struct SceKernelVirtualQueryInfo {

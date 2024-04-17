@@ -25,6 +25,7 @@ constexpr uint64_t DIRECTMEM_START = 0x100000000u;
 
 enum class MemoryState {
   Free,
+  Reserved,
   Commited,
 };
 
@@ -126,6 +127,8 @@ class DirectMemory: public IDirectMemory {
   int  map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) final;
   bool unmap(uint64_t vaddr, uint64_t size) final;
 
+  virtual int reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) final;
+
   uint64_t size() const final;
 
   int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) final;
@@ -147,7 +150,9 @@ MemoryInfo* DirectMemory::getMemoryInfo(uint64_t len, uint64_t alignment, int pr
   };
 
   for (auto& item: m_objects) {
-    if (item.second.state != MemoryState::Free && prot != item.second.prot) continue;
+    if (item.second.state == MemoryState::Reserved) continue;
+
+    if (item.second.state == MemoryState::Commited && prot != item.second.prot) continue;
 
     if (auto result = vmaVirtualAllocate(item.second.vmaBlock, &allocCreateInfo, &outAlloc, &outAddr); result == VK_SUCCESS) {
       return &item.second;
@@ -204,6 +209,8 @@ int DirectMemory::alloc(size_t len, size_t alignment, int memoryType, uint64_t* 
 int DirectMemory::free(off_t start, size_t len) {
   LOG_USE_MODULE(DirectMemory);
 
+  boost::unique_lock lock(m_mutexInt);
+
   uint64_t addr = DIRECTMEM_START + start;
   LOG_ERR(L"free| addr:0x%08llx len:0x%08llx", addr, len);
 
@@ -216,12 +223,26 @@ int DirectMemory::free(off_t start, size_t len) {
   //-
   if (!(itHeap->first <= addr && (itHeap->first + itHeap->second.size >= addr))) return Ok; // Can't be found
 
+  // special: Check reserve if full reservation or commits
+  if (itHeap->second.state == MemoryState::Reserved) {
+    VirtualFree((void*)itHeap->second.addr, itHeap->second.size, 0);
+    return Ok;
+  }
+
   if (itHeap->first != addr || itHeap->second.size != len) {
     LOG_ERR(L"free Error| start:0x%08llx len:0x%08llx != start:0x%08llx len:0x%08llx", addr, len, itHeap->first, itHeap->second.size);
   }
 
-  // todo free
-  printf("found\n");
+  if (checkIsGPU(itHeap->second.prot)) {
+    // todo
+
+  } else {
+    if (itHeap->second.allocAddr != 0) VirtualFree(itHeap->second.allocAddr, itHeap->second.size, 0);
+  }
+
+  vmaVirtualFree(itHeap->second.vmaBlock, itHeap->second.vmaAlloc);
+  m_objects.erase(itHeap);
+
   return Ok;
 }
 
@@ -231,6 +252,9 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   boost::unique_lock lock(m_mutexInt);
   if (flags & (int)filesystem::SceMapMode::VOID_) {
     LOG_CRIT(L"todo void map");
+  }
+  if (flags & (int)filesystem::SceMapMode::FIXED) {
+    LOG_CRIT(L"todo fixed map");
   }
 
   VmaVirtualAllocation alloc = nullptr;
@@ -277,6 +301,35 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
     }
   }
 
+  return Ok;
+}
+
+int DirectMemory::reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+
+  MEM_ADDRESS_REQUIREMENTS addressReqs    = {0};
+  MEM_EXTENDED_PARAMETER   extendedParams = {0};
+
+  addressReqs.Alignment             = alignment;
+  addressReqs.LowestStartingAddress = (PVOID)0x100000000;
+  addressReqs.HighestEndingAddress  = (PVOID)0;
+
+  extendedParams.Type    = MemExtendedParameterAddressRequirements;
+  extendedParams.Pointer = &addressReqs;
+
+  *outAddr = (uint64_t)VirtualAlloc2(NULL, 0, len, MEM_RESERVE | MEM_WRITE_WATCH, PAGE_NOACCESS, &extendedParams, 1);
+  if (*outAddr == 0) {
+    auto const err = GetLastError();
+    LOG_ERR(L"Reserve Error| addr:0x%08llx len:0x%08llx align:0x%08llx flags:0x%x err:%d", start, len, alignment, flags, GetLastError());
+    return getErr(ErrCode::_EINVAL);
+  }
+
+  LOG_DEBUG(L"-> Reserve: start:0x%08llx len:0x%08llx alignment:0x%08llx flags:0x%x -> 0x%08llx", start, len, alignment, flags, *outAddr);
+
+  m_objects.emplace(
+      std::make_pair(*outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = 0, .state = MemoryState::Reserved}));
   return Ok;
 }
 
