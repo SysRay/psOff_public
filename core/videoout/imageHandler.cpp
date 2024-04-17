@@ -126,11 +126,16 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
 
     VkResult result = VK_SUCCESS;
     for (; numTries >= 0; --numTries) {
-      if (result = vkAcquireNextImageKHR(m_device, m_swapchain, UINT64_MAX, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index); result != VK_SUCCESS) {
+      // toggle every 1ms
+      if (result = vkAcquireNextImageKHR(m_device, m_swapchain, (uint64_t)1e6, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index);
+          result != VK_SUCCESS) {
         if (result == VK_NOT_READY) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
         } else if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
           recreate();
+          ++numTries;
+        } else if (result == VK_TIMEOUT) {
+          if (m_stop) return {};
           ++numTries;
         }
       } else

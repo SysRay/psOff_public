@@ -4,35 +4,30 @@
 
 enum class GpuMemoryMode { NoAccess, Read, Write, ReadWrite };
 
-enum class MappingType { None, File, Flexible, Fixed };
+enum class MappingType { None, File, Flexible, Fixed, Direct };
 
-class IPhysicalMemory {
-  CLASS_NO_COPY(IPhysicalMemory);
+class IDirectMemory {
+  CLASS_NO_COPY(IDirectMemory);
+  CLASS_NO_MOVE(IDirectMemory);
 
   protected:
-  IPhysicalMemory()        = default;
-  uint64_t m_availableSize = 5000000000llu; // todo get from system memory
-  size_t   m_allocSize     = 0;
+  IDirectMemory() = default;
 
   public:
-  virtual ~IPhysicalMemory() = default;
+  virtual ~IDirectMemory() = default;
 
-  void getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
-    *startOut = size() - m_availableSize;
-    *sizeOut  = m_availableSize;
-  }
+  virtual int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) = 0;
+  virtual int free(off_t start, size_t len)                                          = 0;
 
-  virtual uint64_t alloc(uint64_t vaddr, size_t len, int memoryType) = 0;
+  virtual int map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) = 0;
+  virtual int unmap(uint64_t vaddr, uint64_t size)                                                                                = 0;
 
-  virtual bool      reserve(uint64_t start, size_t len, size_t alignment, uint64_t* outAddr, int memoryType) = 0;
-  virtual uintptr_t commit(uint64_t base, uint64_t offset, size_t len, size_t alignment, int prot)           = 0;
+  virtual int reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) = 0;
 
-  virtual bool Map(uint64_t vaddr, uint64_t physAddr, size_t len, int prot, bool allocFixed, size_t alignment, uint64_t* outAddr) = 0;
-  virtual bool Release(uint64_t start, size_t len, uint64_t* vaddr, uint64_t* size)                                               = 0;
-  virtual bool Unmap(uint64_t vaddr, uint64_t size)                                                                               = 0;
-  virtual void deinit()                                                                                                           = 0;
+  virtual uint64_t size() const                                                                                          = 0;
+  virtual int      getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) = 0;
 
-  uint64_t const size() const { return m_allocSize; } // use system ram
+  virtual void deinit() = 0;
 };
 
 class IFlexibleMemory {
@@ -82,6 +77,7 @@ __APICALL void registerMapping(uint64_t vaddr, MappingType type);
  */
 __APICALL MappingType unregisterMapping(uint64_t vaddr);
 
-__APICALL IPhysicalMemory& accessPysicalMemory();
+__APICALL IDirectMemory& accessDirectMemory();
+
 __APICALL IFlexibleMemory& accessFlexibleMemory();
 #undef __APICALL

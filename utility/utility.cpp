@@ -52,8 +52,11 @@ void setThreadName(std::string_view name, void* nativeHandle) {
 }
 
 int getPageSize(void) {
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
-  return si.dwPageSize;
+  static int pageSize = [] {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwPageSize;
+  }();
+  return pageSize;
 }
 } // namespace util
