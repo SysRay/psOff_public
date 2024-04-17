@@ -59,15 +59,28 @@ struct SceNgs2ContextBufferInfo {
 };
 
 struct SceNgs2BufferAllocator {
-  int32_t (*allocHandler)(SceNgs2ContextBufferInfo*);
-  int32_t (*freeHandler)(SceNgs2ContextBufferInfo*);
+  int32_t SYSV_ABI (*allocHandler)(SceNgs2ContextBufferInfo*);
+  int32_t SYSV_ABI (*freeHandler)(SceNgs2ContextBufferInfo*);
   void* userData;
 };
 
-struct SceNgs2Handle { // todo: split this type? Or use union inside it.
-  SceNgs2Handle*           owner;
-  SceNgs2BufferAllocator   alloc;
+struct SceNgs2SystemHandle {
+  int padding;
+};
+
+struct SceNgs2RackHandle {
+  int padding;
+};
+
+struct SceNgs2Handle {
+  SceNgs2Handle* owner;
+  bool allocSet;
+  SceNgs2BufferAllocator alloc;
   SceNgs2ContextBufferInfo cbi;
+  union _ngsTypes {
+    SceNgs2SystemHandle sys;
+    SceNgs2RackHandle rack;
+  } un;
 };
 
 struct SceNgs2RenderBufferInfo {
@@ -126,8 +139,8 @@ struct SceNgs2SystemOption {
 struct SceNgs2GeomListenerWork;
 struct SceNgs2GeomListenerParam;
 
-typedef int (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
-typedef void (*SceNgs2ReportHandler)(const void* data, uintptr_t userData);
+typedef int SYSV_ABI (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
+typedef void SYSV_ABI (*SceNgs2ReportHandler)(const void* data, uintptr_t userData);
 
 struct SceNgs2GeomVector {
   float x, y, z;
@@ -209,7 +222,7 @@ struct SceNgs2VoiceCallbackInfo {
   } param;
 };
 
-typedef void (*SceNgs2VoiceCallbackHandler)(const SceNgs2VoiceCallbackInfo* info);
+typedef void SYSV_ABI (*SceNgs2VoiceCallbackHandler)(const SceNgs2VoiceCallbackInfo* info);
 
 struct SceNgs2VoiceCallbackParam {
   SceNgs2VoiceParamHead       header;

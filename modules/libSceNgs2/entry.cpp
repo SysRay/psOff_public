@@ -329,28 +329,6 @@ EXPORT SYSV_ABI int32_t sceNgs2RackUnlock(SceNgs2Handle* rh) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
-  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::INVALID_BUFFER_ALLOCATOR;
-  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
-  // todo: dealloc if (*outh) != nullptr
-
-  if ((*outh = new SceNgs2Handle /*todo: use passed allocator?*/) != nullptr) {
-    (*outh)->alloc = *alloc;
-    (*outh)->owner = nullptr;
-  }
-
-  return (*outh) != nullptr ? Ok : Err::FAIL;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceNgs2SystemEnumHandles(SceNgs2Handle** outh, uint32_t maxnum) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -507,26 +485,65 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  cbi->hostBufferSize = 100;
+  cbi->hostBufferSize = sizeof(SceNgs2Handle);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
+  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::INVALID_BUFFER_ALLOCATOR;
+  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr || sysopt->size < sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+
+  SceNgs2ContextBufferInfo cbi = {
+    .hostBuffer = nullptr,
+    .hostBufferSize = sizeof(SceNgs2Handle),
+    .userData = alloc->userData
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2System: Allocation failed!");
+    return ret;
+  }
+
+  *outh = (SceNgs2Handle*)cbi.hostBuffer;
+  (*outh)->owner = nullptr;
+  (*outh)->allocSet = true;
+  (*outh)->alloc = *alloc;
+  (*outh)->cbi = cbi;
+
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, const SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, cbi, outh);
   if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::INVALID_BUFFER_ADDRESS;
 
-  *outh = new SceNgs2Handle;
+  *outh = (SceNgs2Handle*)cbi->hostBuffer;
+  (*outh)->allocSet = false;
+  (*outh)->owner = nullptr;
+
+  return (*outh) != nullptr ? Ok : Err::FAIL;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
+  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
+  if (sysh->allocSet) {
+    cbi->hostBuffer = sysh;
+    cbi->hostBufferSize = sizeof(SceNgs2Handle);
+    if (auto ret = sysh->alloc.freeHandler(cbi))
+      return ret;
+  }
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize(const SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  cbi->hostBufferSize = 100;
+  if (cbi == nullptr) return Err::INVALID_BUFFER_ADDRESS;
+  cbi->hostBufferSize = sizeof(SceNgs2Handle);
   return Ok;
 }
 }
