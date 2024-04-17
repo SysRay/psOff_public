@@ -145,7 +145,8 @@ static int32_t ParseData(const uint8_t* data, size_t size, SceNgs2WaveformFormat
   //   // av_packet_unref(&packet);
   // }
 
-  // wf->numBlocks         = 1;
+  wf->numBlocks         = 0;
+  wf->block[0].userData = 0;
   // wf->block[0].userData = (uintptr_t)frames;
 
   av_free(avioctx);
@@ -275,25 +276,6 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
-                                                       SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-
-  if ((*outh = new SceNgs2Handle() /*todo: use passed allocator?*/) != nullptr) {
-    (*outh)->alloc = *alloc;
-    (*outh)->owner = sysh;
-  }
-
-  return (*outh) != nullptr ? Ok : Err::FAIL;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceNgs2RackGetInfo(SceNgs2Handle* rh, SceNgs2RackInfo* outi, size_t infosz) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -314,10 +296,12 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetUserData(SceNgs2Handle* rh, uintptr_t* use
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
+  if (rh == nullptr) return Err::INVALID_RACK_HANDLE;
+  if (voiceId > 0) return Err::INVALID_VOICE_INDEX; // todo: how much indexes??
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   // todo: write to outh voice handle from rack
-  *outh = nullptr;
+  *outh = &rh->un.rack.voices[voiceId];
   return Ok;
 }
 
@@ -326,28 +310,6 @@ EXPORT SYSV_ABI int32_t sceNgs2RackLock(SceNgs2Handle* rh) {
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackUnlock(SceNgs2Handle* rh) {
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
-  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::INVALID_BUFFER_ALLOCATOR;
-  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
-  // todo: dealloc if (*outh) != nullptr
-
-  if ((*outh = new SceNgs2Handle /*todo: use passed allocator?*/) != nullptr) {
-    (*outh)->alloc = *alloc;
-    (*outh)->owner = nullptr;
-  }
-
-  return (*outh) != nullptr ? Ok : Err::FAIL;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
@@ -446,14 +408,18 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetPortInfo(SceNgs2Handle** vh, uint32_t por
   return Ok;
 }
 
+static int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoiceWaveformBlocksParam* svwfbp) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
+  LOG_TRACE(L"waveptr: %llx\n", svwfbp->aBlock[0].userData);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   switch (phead->id) {
-    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: {
-      auto param = (SceNgs2SamplerVoiceWaveformBlocksParam*)phead;
-      // todo: save wavedata somewhere in voice handle
-    } break;
+    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
 
     case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
 
@@ -506,27 +472,112 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
+                                                       SceNgs2Handle** outh) {
+  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  cbi->hostBufferSize = 100;
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  SceNgs2ContextBufferInfo cbi = {
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle),
+      .userData       = alloc->userData,
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2Rack: Allocation failed!");
+    return ret;
+  }
+
+  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
+  (*outh)->owner    = sysh;
+  (*outh)->allocSet = true;
+  (*outh)->alloc    = *alloc;
+  (*outh)->cbi      = cbi;
+
+  cbi.hostBufferSize = sizeof(SceNgs2Handle) * ((ro != nullptr) ? ro->maxVoices : 1);
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2Rack: Voice allocation failed");
+    return ret;
+  }
+
+  auto vo = (*outh)->un.rack.voices = (SceNgs2Handle*)cbi.hostBuffer;
+  vo->allocSet                      = true;
+  vo->alloc                         = *alloc;
+
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
+EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBufferInfo* cbi) {
+  if (rh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
+  if (rh->allocSet) {
+    cbi->hostBuffer     = rh;
+    cbi->hostBufferSize = sizeof(SceNgs2Handle);
+    if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
+  }
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
+  cbi->hostBufferSize = sizeof(SceNgs2Handle);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
+  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::INVALID_BUFFER_ALLOCATOR;
+  if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr || sysopt->size < sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+
+  SceNgs2ContextBufferInfo cbi = {
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle),
+      .userData       = alloc->userData,
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2System: Allocation failed!");
+    return ret;
+  }
+
+  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
+  (*outh)->owner    = nullptr;
+  (*outh)->allocSet = true;
+  (*outh)->alloc    = *alloc;
+  (*outh)->cbi      = cbi;
+
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, const SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, cbi, outh);
   if (outh == nullptr) return Err::INVALID_OUT_ADDRESS;
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
+  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::INVALID_BUFFER_ADDRESS;
 
-  *outh = new SceNgs2Handle;
+  *outh             = (SceNgs2Handle*)cbi->hostBuffer;
+  (*outh)->allocSet = false;
+  (*outh)->owner    = nullptr;
+
+  return (*outh) != nullptr ? Ok : Err::FAIL;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
+  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
+  if (sysh->allocSet) {
+    cbi->hostBuffer     = sysh;
+    cbi->hostBufferSize = sizeof(SceNgs2Handle);
+    if (auto ret = sysh->alloc.freeHandler(cbi)) return ret;
+  }
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize(const SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  cbi->hostBufferSize = 100;
+  if (cbi == nullptr) return Err::INVALID_BUFFER_ADDRESS;
+  cbi->hostBufferSize = sizeof(SceNgs2Handle);
   return Ok;
 }
 }
