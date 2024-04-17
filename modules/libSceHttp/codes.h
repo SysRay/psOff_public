@@ -18,6 +18,7 @@ constexpr int32_t HTTP_SSL_ERROR       = (2151878773U);
 constexpr int32_t HTTP_BAD_SCHEME      = (2151878753U);
 constexpr int32_t HTTP_FAILURE         = (2151878755U);
 constexpr int32_t HTTP_SEND_REQUIRED   = (2151878757U);
+constexpr int32_t HTTP_BAD_PARAM       = (2151879166U);
 } // namespace Err
 
 constexpr uint32_t SCE_HTTP_GET               = (int)(0);

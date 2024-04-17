@@ -9,6 +9,7 @@
 
 #include <Windows.h>
 #include <boost/asio.hpp>
+#include <boost/url.hpp>
 
 using namespace boost::asio;
 
@@ -66,13 +67,14 @@ struct HttpConnection {
   int           isEnableKeepalive;
 
   bool connected = false;
+  bool shouldFreeStrings;
 
   ip::tcp::resolver::query*   query = nullptr;
   ip::tcp::resolver::iterator endpoint_iterator;
   ip::tcp::socket*            socket = nullptr;
 
-  HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive)
-      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive) {}
+  HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive, bool shouldFreeStrings)
+      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive), shouldFreeStrings(shouldFreeStrings) {}
 };
 
 struct HttpResponse {
@@ -90,8 +92,10 @@ struct HttpRequest {
   size_t          size;
   HttpResponse*   lastResponse = nullptr;
 
-  HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength)
-      : parentConnection(parentConnection), method(method), path(path), contentLength(contentLength) {}
+  bool            shouldFreePath;
+
+  HttpRequest(HttpConnection* parentConnection, int method, const char* path, uint64_t contentLength, bool shouldFreePath)
+      : parentConnection(parentConnection), method(method), path(path), contentLength(contentLength), shouldFreePath(shouldFreePath) {}
 };
 
 struct HttpRequestParams {
@@ -140,6 +144,16 @@ static int testId(T (&array)[size], int id) {
   if (id < 1 || id >= size || array[id] == nullptr) return Err::HTTP_BAD_ID;
 
   return Ok;
+}
+
+static char* convertString(const boost::core::string_view& str) {
+  std::string stdstr = std::string(str);
+  const char* converted = stdstr.c_str();
+  size_t length = std::strlen(converted);
+  char* copy = new char[length];
+  memcpy(copy, converted, length);
+
+  return copy;
 }
 
 static void deleteResponse(HttpResponse* response) {
@@ -350,10 +364,10 @@ EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
+static int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive, bool shouldFreeStrings) {
   if (auto ret = testId(g_templates, tmplId)) return ret;
   HttpTemplate* httpTemplate = g_templates[tmplId];
-  LOOKUP_AVAILABLE_IDX(g_connections, new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive));
+  LOOKUP_AVAILABLE_IDX(g_connections, new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive, shouldFreeStrings));
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"new http connection (id: %d, template id: %d)", i, tmplId);
@@ -361,11 +375,35 @@ EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, 
   return i;
 }
 
-EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
-  // using namespace boost::network;
-  // uri::uri instance(url);
+EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
+  return sceHttpCreateConnection(tmplId, serverName, scheme, port, isEnableKeepalive, false);
+}
 
-  return Err::CONNECT_TIMEOUT;
+EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
+  boost::urls::url link(url);
+  uint16_t port;
+  char* scheme = convertString(link.scheme());
+  bool isNotHttp;
+  if ((isNotHttp = std::strcmp(scheme, "http") != 0) && std::strcmp(scheme, "https") != 0) {
+    delete scheme;
+
+    return Err::HTTP_BAD_SCHEME;
+  }
+  if (link.has_port()) {
+    port = link.port_number();
+  } else {
+    if (isNotHttp) port = 443;
+    else           port = 80;
+  }
+  char* serverName = convertString(link.host());
+
+  int result = sceHttpCreateConnection(tmplId, serverName, scheme, port, isEnableKeepalive, true);
+  if (result <= 0) {
+    delete scheme;
+    delete serverName;
+  }
+
+  return result;
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
@@ -379,6 +417,10 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
 
     delete connection->socket;
   }
+  if (connection->shouldFreeStrings) {
+    delete connection->scheme;
+    delete connection->serverName;
+  }
   delete connection;
   g_connections[connId] = nullptr;
 
@@ -388,10 +430,10 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength) {
+static int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength, bool shouldFreePath) {
   if (auto ret = testId(g_connections, connId)) return ret;
   HttpConnection* httpConnection = g_connections[connId];
-  LOOKUP_AVAILABLE_IDX(g_requests, new HttpRequest(httpConnection, method, path, contentLength));
+  LOOKUP_AVAILABLE_IDX(g_requests, new HttpRequest(httpConnection, method, path, contentLength, shouldFreePath));
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"new http request (id: %d, connection id: %d)", i, connId);
@@ -399,12 +441,30 @@ EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* pat
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength) {
+  return sceHttpCreateRequest(connId, method, path, contentLength, false);
+}
+
 EXPORT SYSV_ABI int sceHttpCreateRequest2(int connId, const char* method, const char* path, uint64_t contentLength) {
   return sceHttpCreateRequest(connId, httpMethodStringToInt(method), path, contentLength);
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequestWithURL(int connId, int method, const char* url, uint64_t contentLength) {
-  return Ok;
+  boost::urls::url link(url);
+  if (link.has_password()) {
+    LOG_USE_MODULE(libSceHttp);
+    LOG_TRACE(L"urls containing credentials are not supported");
+
+    return Err::HTTP_BAD_PARAM;
+  }
+  char* path = convertString(link.path());
+
+  int result = sceHttpCreateRequest(connId, method, path, contentLength, true);
+  if (result <= 0) {
+    delete path;
+  }
+
+  return result;
 }
 
 EXPORT SYSV_ABI int sceHttpCreateRequestWithURL2(int connId, const char* method, const char* url, uint64_t contentLength) {
@@ -416,6 +476,9 @@ EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
   HttpRequest* request = g_requests[reqId];
   if (request->lastResponse != nullptr) {
     deleteResponse(request->lastResponse);
+  }
+  if (request->shouldFreePath) {
+    delete request->path;
   }
   delete request;
   g_requests[reqId] = nullptr;
