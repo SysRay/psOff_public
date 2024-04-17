@@ -38,6 +38,8 @@ size_t TypeOut::write(void* buf, size_t nbytes) {
   while (str.back() == '\n')
     str.pop_back();
 
+  if (str.length() == 0) return nbytes;
+
   switch (m_channel) {
     case SCE_TYPEOUT_ERROR: {
       printf("Console:%s\n", str.c_str());
