@@ -35,14 +35,18 @@ bool InitParams::init(int argc, char** argv) {
       ;
 
   auto& vm = _pImpl->m_vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
+  try {
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+  } catch (...) {
+    return false;
+  }
 
   if (vm.count("help")) {
     std::cout << desc << '\n';
     return false;
   }
-  if (!vm.count("file")) {
+  if (vm.count("file") == 0) {
     std::cout << "--file missing\n";
     return false;
   }
