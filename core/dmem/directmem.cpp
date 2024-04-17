@@ -48,7 +48,7 @@ struct MemoryInfo {
   int prot       = 0;
 
   VmaVirtualAllocation vmaAlloc;
-  VmaVirtualBlock      vmaBlock;
+  VmaVirtualBlock      vmaBlock = nullptr;
 
   MemoryState state = MemoryState::Free;
 
@@ -212,7 +212,6 @@ int DirectMemory::free(off_t start, size_t len) {
   boost::unique_lock lock(m_mutexInt);
 
   uint64_t addr = DIRECTMEM_START + start;
-  LOG_ERR(L"free| addr:0x%08llx len:0x%08llx", addr, len);
 
   // Find the object
   if (m_objects.empty()) return Ok;
@@ -220,11 +219,14 @@ int DirectMemory::free(off_t start, size_t len) {
   auto itHeap = m_objects.lower_bound(addr);
   if (itHeap == m_objects.end() || (itHeap != m_objects.begin() && itHeap->first != addr)) --itHeap; // Get the correct item
 
-  //-
   if (!(itHeap->first <= addr && (itHeap->first + itHeap->second.size >= addr))) return Ok; // Can't be found
+  //-
+
+  LOG_DEBUG(L"free| addr:0x%08llx len:0x%08llx heap -> addr:0x%08llx len:0x%08llx", addr, len, itHeap->first, itHeap->second.size);
 
   // special: Check reserve if full reservation or commits
   if (itHeap->second.state == MemoryState::Reserved) {
+    // todo
     VirtualFree((void*)itHeap->second.addr, itHeap->second.size, 0);
     return Ok;
   }
@@ -240,7 +242,13 @@ int DirectMemory::free(off_t start, size_t len) {
     if (itHeap->second.allocAddr != 0) VirtualFree(itHeap->second.allocAddr, itHeap->second.size, 0);
   }
 
-  vmaVirtualFree(itHeap->second.vmaBlock, itHeap->second.vmaAlloc);
+  for (auto& item: itHeap->second.mappings) {
+    vmaVirtualFree(itHeap->second.vmaBlock, item.second.vmaAlloc);
+  }
+
+  vmaDestroyVirtualBlock(itHeap->second.vmaBlock);
+  vmaVirtualFree(m_virtualDeviceMemory, itHeap->second.vmaAlloc);
+
   m_objects.erase(itHeap);
 
   return Ok;
@@ -260,8 +268,8 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   VmaVirtualAllocation alloc = nullptr;
 
   // search for free space
-  uint64_t    fakeAddr = 0;
-  MemoryInfo* info     = getMemoryInfo(len, alignment, prot, alloc, fakeAddr);
+  uint64_t    fakeAddrOffset = 0;
+  MemoryInfo* info           = getMemoryInfo(len, alignment, prot, alloc, fakeAddrOffset);
   if (info == nullptr) return retNoMem();
   // -
 
@@ -290,7 +298,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   }
   // - commit
 
-  *outAddr = (uint64_t)info->allocAddr + fakeAddr;
+  *outAddr = (uint64_t)info->allocAddr + fakeAddrOffset;
   info->mappings.emplace(std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%lx) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
