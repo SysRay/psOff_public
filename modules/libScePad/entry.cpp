@@ -260,6 +260,19 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
   return Ok;
 }
 
+EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
+  LOG_USE_MODULE(libScePad);
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtControllerInformation* pInfo) {
+  LOG_USE_MODULE(libScePad);
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
+  if (handle < 0) return Err::INVALID_HANDLE;
+  return Ok;
+}
+
 EXPORT SYSV_ABI void scePadTerminate() {
   auto pData = getData();
 

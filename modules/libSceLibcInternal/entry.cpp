@@ -92,6 +92,14 @@ EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t si
   return std::strncmp(str1, str2, size);
 }
 
+EXPORT SYSV_ABI char* __NID(strncpy)(char* dst, char* src, size_t len) {
+  return std::strncpy(dst, src, len);
+}
+
+EXPORT SYSV_ABI int __NID(strcmp)(const char* str1, const char* str2) {
+  return std::strcmp(str1, str2);
+}
+
 EXPORT SYSV_ABI errno_t __NID(strcpy_s)(char* dst, size_t size, const char* src) {
   return ::strcpy_s(dst, size, src);
 }

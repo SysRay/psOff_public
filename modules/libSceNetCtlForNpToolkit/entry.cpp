@@ -13,4 +13,8 @@ EXPORT const char* MODULE_NAME = "libSceNetCtl";
 EXPORT SYSV_ABI int sceNetCtlRegisterCallbackForNpToolkit() {
   return Ok;
 }
+
+EXPORT SYSV_ABI int sceNetCtlCheckCallbackForNpToolkit() {
+  return Ok;
+}
 }
