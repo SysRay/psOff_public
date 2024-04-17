@@ -275,25 +275,6 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size
   return ProcessWaveData(&wi, wf);
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
-                                                       SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-
-  if ((*outh = new SceNgs2Handle() /*todo: use passed allocator?*/) != nullptr) {
-    (*outh)->alloc = *alloc;
-    (*outh)->owner = sysh;
-  }
-
-  return (*outh) != nullptr ? Ok : Err::FAIL;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, void*) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceNgs2RackGetInfo(SceNgs2Handle* rh, SceNgs2RackInfo* outi, size_t infosz) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
@@ -481,6 +462,42 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
                                           SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
+                                                       SceNgs2Handle** outh) {
+  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE; 
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  SceNgs2ContextBufferInfo cbi = {
+    .hostBuffer = nullptr,
+    .hostBufferSize = sizeof(SceNgs2Handle),
+    .userData = alloc->userData,
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2Rack: Allocation failed!");
+    return ret;
+  }
+
+  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
+  (*outh)->owner    = sysh;
+  (*outh)->allocSet = true;
+  (*outh)->alloc    = *alloc;
+  (*outh)->cbi      = cbi;
+
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBufferInfo* cbi) {
+  if (rh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
+  if (rh->allocSet) {
+    cbi->hostBuffer     = rh;
+    cbi->hostBufferSize = sizeof(SceNgs2Handle);
+    if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
+  }
   return Ok;
 }
 
