@@ -61,25 +61,67 @@ struct SceNgs2ContextBufferInfo {
 struct SceNgs2BufferAllocator {
   int32_t SYSV_ABI (*allocHandler)(SceNgs2ContextBufferInfo*);
   int32_t SYSV_ABI (*freeHandler)(SceNgs2ContextBufferInfo*);
-  void* userData;
+  void*   userData;
+};
+
+struct SceNgs2Handle;
+
+struct SceNgs2RackInfo {
+  char                     name[SCE_NGS2_RACK_NAME_LENGTH];
+  SceNgs2Handle*           rackHandle;
+  SceNgs2ContextBufferInfo bufferInfo;
+  SceNgs2Handle*           ownerSystemHandle;
+  uint32_t                 type;
+  uint32_t                 rackId;
+  uint32_t                 uid;
+  uint32_t                 minGrainSamples;
+  uint32_t                 maxGrainSamples;
+  uint32_t                 maxVoices;
+  uint32_t                 maxChannelWorks;
+  uint32_t                 maxInputs;
+  uint32_t                 maxPorts;
+  uint32_t                 maxMatrices;
+  uint32_t                 stateFlags;
+  float                    lastProcessRatio;
+  uint64_t                 lastProcessTick;
+  uint64_t                 renderCount;
+  uint32_t                 activeVoiceCount;
+  uint32_t                 activeChannelWorkCount;
+};
+
+struct SceNgs2SystemInfo {
+  char                     name[SCE_NGS2_SYSTEM_NAME_LENGTH];
+  SceNgs2Handle*           systemHandle;
+  SceNgs2ContextBufferInfo bufferInfo;
+  uint32_t                 uid;
+  uint32_t                 minGrainSamples;
+  uint32_t                 maxGrainSamples;
+  uint32_t                 stateFlags;
+  uint32_t                 rackCount;
+  float                    lastRenderRatio;
+  uint64_t                 lastRenderTick;
+  uint64_t                 renderCount;
+  uint32_t                 sampleRate;
+  uint32_t                 numGrainSamples;
 };
 
 struct SceNgs2SystemHandle {
-  int padding;
+  SceNgs2SystemInfo info;
 };
 
 struct SceNgs2RackHandle {
-  int padding;
+  SceNgs2RackInfo info;
 };
 
 struct SceNgs2Handle {
-  SceNgs2Handle* owner;
-  bool allocSet;
-  SceNgs2BufferAllocator alloc;
+  SceNgs2Handle*           owner;
+  bool                     allocSet;
+  SceNgs2BufferAllocator   alloc;
   SceNgs2ContextBufferInfo cbi;
+
   union _ngsTypes {
     SceNgs2SystemHandle sys;
-    SceNgs2RackHandle rack;
+    SceNgs2RackHandle   rack;
   } un;
 };
 
@@ -139,7 +181,7 @@ struct SceNgs2SystemOption {
 struct SceNgs2GeomListenerWork;
 struct SceNgs2GeomListenerParam;
 
-typedef int SYSV_ABI (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
+typedef int  SYSV_ABI (*SceWaveformUserFunc)(uintptr_t ud, uint32_t off, void* data, size_t size);
 typedef void SYSV_ABI (*SceNgs2ReportHandler)(const void* data, uintptr_t userData);
 
 struct SceNgs2GeomVector {
@@ -188,7 +230,7 @@ struct SceNgs2VoicePatchParam {
   SceNgs2VoiceParamHead header;
   uint32_t              port;
   uint32_t              destInputId;
-  SceNgs2Handle         destHandle;
+  SceNgs2Handle*        destHandle;
 };
 
 struct SceNgs2VoiceEventParam {
@@ -205,10 +247,10 @@ struct SceNgs2SamplerVoiceWaveformBlocksParam {
 };
 
 struct SceNgs2VoiceCallbackInfo {
-  uintptr_t     callbackData;
-  SceNgs2Handle voiceHandle;
-  uint32_t      flag;
-  uint32_t      reserved;
+  uintptr_t      callbackData;
+  SceNgs2Handle* voiceHandle;
+  uint32_t       flag;
+  uint32_t       reserved;
 
   union {
     struct {
@@ -259,56 +301,17 @@ struct SceNgs2CustomModuleInfo {
   uint32_t reserved2;
 };
 
-struct SceNgs2RackInfo {
-  char                     name[SCE_NGS2_RACK_NAME_LENGTH];
-  SceNgs2Handle            rackHandle;
-  SceNgs2ContextBufferInfo bufferInfo;
-  SceNgs2Handle            ownerSystemHandle;
-  uint32_t                 type;
-  uint32_t                 rackId;
-  uint32_t                 uid;
-  uint32_t                 minGrainSamples;
-  uint32_t                 maxGrainSamples;
-  uint32_t                 maxVoices;
-  uint32_t                 maxChannelWorks;
-  uint32_t                 maxInputs;
-  uint32_t                 maxPorts;
-  uint32_t                 maxMatrices;
-  uint32_t                 stateFlags;
-  float                    lastProcessRatio;
-  uint64_t                 lastProcessTick;
-  uint64_t                 renderCount;
-  uint32_t                 activeVoiceCount;
-  uint32_t                 activeChannelWorkCount;
-};
-
-struct SceNgs2SystemInfo {
-  char                     name[SCE_NGS2_SYSTEM_NAME_LENGTH];
-  SceNgs2Handle            systemHandle;
-  SceNgs2ContextBufferInfo bufferInfo;
-  uint32_t                 uid;
-  uint32_t                 minGrainSamples;
-  uint32_t                 maxGrainSamples;
-  uint32_t                 stateFlags;
-  uint32_t                 rackCount;
-  float                    lastRenderRatio;
-  uint64_t                 lastRenderTick;
-  uint64_t                 renderCount;
-  uint32_t                 sampleRate;
-  uint32_t                 numGrainSamples;
-};
-
 struct SceNgs2VoiceMatrixInfo {
   uint32_t numLevels;
   float    aLevel[SCE_NGS2_MAX_MATRIX_LEVELS];
 };
 
 struct SceNgs2VoicePortInfo {
-  int32_t       matrixId;
-  float         volume;
-  uint32_t      numDelaySamples;
-  uint32_t      destInputId;
-  SceNgs2Handle destHandle;
+  int32_t        matrixId;
+  float          volume;
+  uint32_t       numDelaySamples;
+  uint32_t       destInputId;
+  SceNgs2Handle* destHandle;
 };
 
 struct SceNgs2PanWork {

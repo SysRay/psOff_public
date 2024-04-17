@@ -499,7 +499,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOpti
   SceNgs2ContextBufferInfo cbi = {
     .hostBuffer = nullptr,
     .hostBufferSize = sizeof(SceNgs2Handle),
-    .userData = alloc->userData
+    .userData = alloc->userData,
   };
 
   if (auto ret = alloc->allocHandler(&cbi)) {
@@ -507,11 +507,11 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOpti
     return ret;
   }
 
-  *outh = (SceNgs2Handle*)cbi.hostBuffer;
-  (*outh)->owner = nullptr;
+  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
+  (*outh)->owner    = nullptr;
   (*outh)->allocSet = true;
-  (*outh)->alloc = *alloc;
-  (*outh)->cbi = cbi;
+  (*outh)->alloc    = *alloc;
+  (*outh)->cbi      = cbi;
 
   return Ok;
 }
@@ -523,9 +523,9 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, c
   if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
   if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::INVALID_BUFFER_ADDRESS;
 
-  *outh = (SceNgs2Handle*)cbi->hostBuffer;
+  *outh             = (SceNgs2Handle*)cbi->hostBuffer;
   (*outh)->allocSet = false;
-  (*outh)->owner = nullptr;
+  (*outh)->owner    = nullptr;
 
   return (*outh) != nullptr ? Ok : Err::FAIL;
 }
@@ -533,10 +533,9 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, c
 EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
   if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
   if (sysh->allocSet) {
-    cbi->hostBuffer = sysh;
+    cbi->hostBuffer     = sysh;
     cbi->hostBufferSize = sizeof(SceNgs2Handle);
-    if (auto ret = sysh->alloc.freeHandler(cbi))
-      return ret;
+    if (auto ret = sysh->alloc.freeHandler(cbi)) return ret;
   }
   return Ok;
 }

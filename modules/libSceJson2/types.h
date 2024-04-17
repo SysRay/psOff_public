@@ -62,7 +62,7 @@ class Initializer {
   int32_t setGlobalSpecialFloatHandler(void* /* todo func typedef */ func, void* context);
   int32_t setGlobalElementAccessFailureHandler(void* /* todo func typedef */ func, void* context);
 
-  typedef void SYSV_ABI  (*AllocInfoCallback)(int32_t info, int32_t accesstype, void* context);
+  typedef void   SYSV_ABI (*AllocInfoCallback)(int32_t info, int32_t accesstype, void* context);
   static int32_t setAllocatorInfoCallback(AllocInfoCallback func, void* context);
 
   private:
