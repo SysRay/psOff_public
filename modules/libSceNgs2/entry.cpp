@@ -467,14 +467,14 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
 
 EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
                                                        SceNgs2Handle** outh) {
-  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE; 
+  if (sysh == nullptr) return Err::INVALID_SYSTEM_HANDLE;
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
   SceNgs2ContextBufferInfo cbi = {
-    .hostBuffer = nullptr,
-    .hostBufferSize = sizeof(SceNgs2Handle),
-    .userData = alloc->userData,
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle),
+      .userData       = alloc->userData,
   };
 
   if (auto ret = alloc->allocHandler(&cbi)) {
@@ -514,9 +514,9 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOpti
   if (sysopt != nullptr || sysopt->size < sizeof(SceNgs2SystemOption)) return Err::INVALID_OPTION_SIZE;
 
   SceNgs2ContextBufferInfo cbi = {
-    .hostBuffer = nullptr,
-    .hostBufferSize = sizeof(SceNgs2Handle),
-    .userData = alloc->userData,
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle),
+      .userData       = alloc->userData,
   };
 
   if (auto ret = alloc->allocHandler(&cbi)) {
