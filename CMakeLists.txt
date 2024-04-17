@@ -67,7 +67,7 @@ ExternalProject_Add(third_party
   URL https://github.com/SysRay/psOff_thirdParty/releases/download/${PSOFF_LIB_VERSION}/psOff-3rd.zip
 )
 
-if(${CMAKE_CURRENT_SOURCE_DIR} == ${CMAKE_SOURCE_DIR})
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   ExternalProject_Add(renderer
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
