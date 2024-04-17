@@ -151,8 +151,9 @@ static char* convertString(const boost::core::string_view& str) {
   std::string stdstr    = std::string(str);
   const char* converted = stdstr.c_str();
   size_t      length    = std::strlen(converted);
-  char*       copy      = new char[length];
+  char*       copy      = new char[length + 1];
   memcpy(copy, converted, length);
+  copy[length] = '\0';
 
   return copy;
 }
