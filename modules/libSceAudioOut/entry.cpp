@@ -1,6 +1,5 @@
 #include "common.h"
 #include "config_emu.h"
-#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
 
@@ -75,7 +74,7 @@ EXPORT const char* MODULE_NAME = "libSceAudioOut";
 EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   if (audioInited) return Err::ALREADY_INIT;
 
-  if (accessVideoOut().SDLInit(SDL_INIT_AUDIO) == 0) {
+  if (SDL_InitSubSystem(SDL_INIT_AUDIO) == 0) {
     audioInited = true;
     (void)getData();
     return Ok;
