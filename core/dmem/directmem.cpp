@@ -280,8 +280,10 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   if (flags & (int)filesystem::SceMapMode::VOID_) {
     LOG_CRIT(L"todo void map");
   }
+
+  uint64_t desVaddr = 0;
   if (flags & (int)filesystem::SceMapMode::FIXED) {
-    LOG_CRIT(L"todo fixed map");
+    desVaddr = vaddr;
   }
 
   VmaVirtualAllocation alloc = nullptr;
@@ -304,7 +306,8 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
     extendedParams.Type    = MemExtendedParameterAddressRequirements;
     extendedParams.Pointer = &addressReqs;
 
-    void* ptr = VirtualAlloc2(NULL, 0, info->size, MEM_RESERVE | MEM_COMMIT | MEM_WRITE_WATCH, convProtection(prot), &extendedParams, 1);
+    void* ptr = VirtualAlloc2(NULL, (void*)desVaddr, info->size, MEM_RESERVE | MEM_COMMIT | MEM_WRITE_WATCH, convProtection(prot),
+                              desVaddr != 0 ? 0 : &extendedParams, desVaddr != 0 ? 0 : 1);
     if (ptr == 0) {
       auto const err = GetLastError();
       LOG_ERR(L"Commit Error| addr:0x%08llx len:0x%08llx err:%d", info->addr, info->size, GetLastError());
@@ -399,7 +402,7 @@ uint64_t DirectMemory::size() const {
 
 int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
   LOG_USE_MODULE(DirectMemory);
-  LOG_ERR(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
+  LOG_DEBUG(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
 
   *startOut = m_usedSize;
   *sizeOut  = m_allocSize - m_usedSize;

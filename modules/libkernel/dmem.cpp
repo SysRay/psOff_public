@@ -304,8 +304,11 @@ EXPORT SYSV_ABI int32_t sceKernelMemoryPoolDecommit(void* addr, size_t len, int 
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMemoryPoolExpand(off_t searchStart, off_t searchEnd, size_t len, size_t alignment, off_t* physAddrOut) {
+EXPORT SYSV_ABI int32_t sceKernelMemoryPoolExpand(off_t searchStart, off_t searchEnd, int64_t len, size_t alignment, off_t* physAddrOut) {
   LOG_USE_MODULE(dmem);
+
+  if (len < 0) return Ok;
+
   *physAddrOut = memory::reserve(0, len, alignment, false);
   LOG_DEBUG(L"PoolReserve| start:0x%08llx, len:0x%08llx  align:0x%08llx-> out:0x%08llx", searchStart, len, alignment, *physAddrOut);
   return Ok;

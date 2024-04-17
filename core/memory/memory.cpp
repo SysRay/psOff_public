@@ -99,9 +99,8 @@ uintptr_t reserve(uint64_t start, uint64_t size, uint64_t alignment, bool isGpu)
     auto err = static_cast<uint32_t>(GetLastError());
     if (err != ERROR_INVALID_PARAMETER) {
       LOG_ERR(L"reserve failed err:0x%08x| start:0x%08llx size:%llu alignment:%llu isGpu:%d", err, start, size, alignment, isGpu);
-    } else {
-      return reserve(start, size, alignment << 1, isGpu);
     }
+    return 0;
   }
 
   return ptr;
