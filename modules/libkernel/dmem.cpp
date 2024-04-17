@@ -107,7 +107,6 @@ EXPORT SYSV_ABI int32_t sceKernelBatchMap2(SceKernelBatchMapEntry* entries, int 
 
     switch (batchEntry.operation) {
       case SceKernelMapOp::MAP_DIRECT: {
-        LOG_ERR(L"todo %S op:%d", __FUNCTION__, batchEntry.operation);
         auto res = accessDirectMemory().map(batchEntry.start, batchEntry.physAddr, batchEntry.length, batchEntry.prot, flags, 0, &batchEntry.start);
         if (res != Ok) {
           return res;
@@ -221,9 +220,6 @@ EXPORT SYSV_ABI int32_t sceKernelSetVirtualRangeName(void* start, size_t len, co
 }
 
 EXPORT SYSV_ABI int sceKernelReserveVirtualRange(uintptr_t* addr, size_t len, int flags, size_t alignment) {
-  LOG_USE_MODULE(dmem);
-  LOG_CRIT(L"todo");
-
   if (addr == nullptr || len == 0) {
     return getErr(ErrCode::_EINVAL);
   }

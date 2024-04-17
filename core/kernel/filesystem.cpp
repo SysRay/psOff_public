@@ -157,6 +157,10 @@ int munmap(void* addr, size_t len) {
       return UnmapViewOfFile(addr) != 0 ? Ok : -1;
     } break;
 
+    case MappingType::Direct: {
+      return accessDirectMemory().unmap((uint64_t)addr, len);
+    } break;
+
     case MappingType::Flexible: {
       return accessFlexibleMemory().destroy((uint64_t)addr, len) != 0 ? Ok : -1;
     } break;
@@ -166,7 +170,7 @@ int munmap(void* addr, size_t len) {
     } break;
 
     case MappingType::None: {
-      LOG_ERR(L"munmap unkown 0x%08llx 0x%08llx", addr, len);
+      LOG_ERR(L"munmap unkown 0x%08llx 0x%08llx type:%d", addr, len, type);
     } break;
   }
   return -1;

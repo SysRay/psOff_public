@@ -4,7 +4,7 @@
 
 enum class GpuMemoryMode { NoAccess, Read, Write, ReadWrite };
 
-enum class MappingType { None, File, Flexible, Fixed };
+enum class MappingType { None, File, Flexible, Fixed, Direct };
 
 class IDirectMemory {
   CLASS_NO_COPY(IDirectMemory);
@@ -19,8 +19,8 @@ class IDirectMemory {
   virtual int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) = 0;
   virtual int free(off_t start, size_t len)                                          = 0;
 
-  virtual int  map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) = 0;
-  virtual bool unmap(uint64_t vaddr, uint64_t size)                                                                                = 0;
+  virtual int map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) = 0;
+  virtual int unmap(uint64_t vaddr, uint64_t size)                                                                                = 0;
 
   virtual int reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) = 0;
 

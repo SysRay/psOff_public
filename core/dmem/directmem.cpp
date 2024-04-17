@@ -30,7 +30,10 @@ enum class MemoryState {
 };
 
 struct MemoryMapping {
-  uint64_t addr      = 0;
+  uint64_t addr = 0;
+
+  uint64_t heapAddr = 0; // addr for MemoryInfo
+
   uint64_t size      = 0;
   uint64_t alignment = 0;
 
@@ -51,8 +54,6 @@ struct MemoryInfo {
   VmaVirtualBlock      vmaBlock = nullptr;
 
   MemoryState state = MemoryState::Free;
-
-  std::map<uint64_t, MemoryMapping> mappings;
 };
 
 bool checkIsGPU(int protection) {
@@ -82,9 +83,11 @@ DWORD convProtection(int prot) {
 class DirectMemory: public IDirectMemory {
   boost::mutex m_mutexInt;
 
-  std::map<uint64_t, MemoryInfo> m_objects;
+  std::map<uint64_t, MemoryInfo>    m_objects;
+  std::map<uint64_t, MemoryMapping> m_mappings;
 
-  uint64_t m_curSize = 0;
+  uint64_t m_allocSize = 0;
+  uint64_t m_usedSize  = 0;
 
   uint64_t m_sdkVersion = 0;
 
@@ -124,8 +127,8 @@ class DirectMemory: public IDirectMemory {
   int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) final;
   int free(off_t start, size_t len) final;
 
-  int  map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) final;
-  bool unmap(uint64_t vaddr, uint64_t size) final;
+  int map(uint64_t vaddr, off_t directMemoryOffset, size_t len, int prot, int flags, size_t alignment, uint64_t* outAddr) final;
+  int unmap(uint64_t vaddr, uint64_t size) final;
 
   virtual int reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) final;
 
@@ -197,7 +200,7 @@ int DirectMemory::alloc(size_t len, size_t alignment, int memoryType, uint64_t* 
   }
   // -
 
-  m_curSize += len;
+  m_allocSize += len;
   m_objects.emplace(std::make_pair(
       *outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = memoryType, .vmaAlloc = alloc, .vmaBlock = block}));
 
@@ -212,6 +215,8 @@ int DirectMemory::free(off_t start, size_t len) {
   boost::unique_lock lock(m_mutexInt);
 
   uint64_t addr = DIRECTMEM_START + start;
+
+  m_allocSize -= len;
 
   // Find the object
   if (m_objects.empty()) return Ok;
@@ -242,8 +247,22 @@ int DirectMemory::free(off_t start, size_t len) {
     if (itHeap->second.allocAddr != 0) VirtualFree(itHeap->second.allocAddr, itHeap->second.size, 0);
   }
 
-  for (auto& item: itHeap->second.mappings) {
-    vmaVirtualFree(itHeap->second.vmaBlock, item.second.vmaAlloc);
+  {
+    std::list<uint64_t> dump;
+    for (auto& item: m_mappings) {
+      if (item.second.heapAddr == itHeap->first) {
+        m_usedSize -= item.second.size;
+        LOG_TRACE(L"Missing unmap for addr:0x%08llx len:0x%08llx, force unmap", item.second.addr, item.second.size);
+
+        vmaVirtualFree(itHeap->second.vmaBlock, item.second.vmaAlloc);
+        unregisterMapping(item.first);
+        dump.push_back(item.first);
+      }
+
+      for (auto item: dump) {
+        m_mappings.erase(item);
+      }
+    }
   }
 
   vmaDestroyVirtualBlock(itHeap->second.vmaBlock);
@@ -279,7 +298,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
     MEM_EXTENDED_PARAMETER   extendedParams = {0};
 
     addressReqs.Alignment             = 0; // 64 KB alignment
-    addressReqs.LowestStartingAddress = (PVOID)0x100000000;
+    addressReqs.LowestStartingAddress = (PVOID)DIRECTMEM_START;
     addressReqs.HighestEndingAddress  = (PVOID)0;
 
     extendedParams.Type    = MemExtendedParameterAddressRequirements;
@@ -299,7 +318,10 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   // - commit
 
   *outAddr = (uint64_t)info->allocAddr + fakeAddrOffset;
-  info->mappings.emplace(std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
+  m_mappings.emplace(
+      std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
+  registerMapping(*outAddr, MappingType::Direct);
+  m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%lx) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
 
@@ -341,18 +363,46 @@ int DirectMemory::reserve(uint64_t start, size_t len, size_t alignment, int flag
   return Ok;
 }
 
-bool DirectMemory::unmap(uint64_t vaddr, uint64_t size) {}
+int DirectMemory::unmap(uint64_t vaddr, uint64_t size) {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+
+  // Find the object
+  if (m_mappings.empty()) return Ok;
+
+  auto itItem = m_mappings.lower_bound(vaddr);
+  if (itItem == m_mappings.end() || (itItem != m_mappings.begin() && itItem->first != vaddr)) --itItem; // Get the correct item
+
+  if (!(itItem->first <= vaddr && (itItem->first + itItem->second.size >= vaddr))) {
+    LOG_ERR(L"Couldn't find mapping for 0x%08llx 0x%08llx", vaddr, size);
+    return -1;
+  }
+  //-
+
+  if (auto it = m_objects.find(itItem->second.heapAddr); it != m_objects.end()) {
+    vmaVirtualFree(it->second.vmaBlock, itItem->second.vmaAlloc);
+  } else {
+    LOG_ERR(L"Couldn't find Heap for 0x%08llx", itItem->second.heapAddr);
+  }
+
+  LOG_DEBUG(L"unmap| 0x%08llx 0x%08llx", vaddr, size);
+  m_usedSize -= itItem->second.size;
+
+  m_mappings.erase(itItem);
+  return Ok;
+}
 
 uint64_t DirectMemory::size() const {
-  return m_curSize;
+  return m_allocSize;
 }
 
 int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
   LOG_USE_MODULE(DirectMemory);
   LOG_ERR(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
 
-  *startOut = size();
-  *sizeOut  = SCE_KERNEL_MAIN_DMEM_SIZE - size();
+  *startOut = m_usedSize;
+  *sizeOut  = m_allocSize - m_usedSize;
 
   return Ok;
 }
