@@ -278,7 +278,10 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
   void getSafeAreaRatio(float* area) final {
     auto ext = m_imageHandler.get()->getExtent();
-    if (area != nullptr) *area = ext.width / (float)ext.height;
+    if (area != nullptr) {
+      *area = 0.781298f; // todo check what's up here
+      //*area = (float)ext.height / (float)ext.width;
+    }
   }
 
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
@@ -489,8 +492,8 @@ int VideoOut::SDLInit(uint32_t flags) {
   m_condSDL2.notify_one();
 
   lock.lock();
-  m_condDone.wait(lock, [=] { return result; });
-  return result;
+  m_condDone.wait(lock, [=] { return result >= 0; });
+  return result == 0 ? Ok : -1;
 }
 
 void VideoOut::transferDisplay(ImageData const& imageData, vulkan::SwapchainData::DisplayBuffers& displayBufferMeta, VkSemaphore waitSema, size_t waitValue) {
@@ -670,7 +673,7 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
     bufferSet.buffers[n].bufferAlign = displaySizeAlign;
     LOG_INFO(L"+bufferset[%d] buffer:%d vaddr:0x%08llx-0x%08llx", setIndex, n, (uint64_t)addresses[n], (uint64_t)addresses[n] + displaySizeAlign);
 
-    auto [format, colorSpace] = vulkan::getDisplayFormat(m_vulkanObj);
+    auto [format, _] = vulkan::getDisplayFormat(m_vulkanObj);
     if (!m_graphics->registerDisplayBuffer(bufferSet.buffers[n].bufferVaddr, VkExtent2D {.width = _att->width, .height = _att->height}, _att->pitchInPixel,
                                            format))
       return -1;

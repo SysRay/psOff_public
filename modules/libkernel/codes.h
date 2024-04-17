@@ -14,7 +14,8 @@ constexpr uint8_t SCE_KERNEL_PROT_GPU_WRITE = 0x20;
 constexpr uint8_t SCE_KERNEL_PROT_GPU_RW    = 0x30;
 constexpr uint8_t SCE_KERNEL_PROT_GPU_ALL   = 0x30;
 
-constexpr uint32_t SCE_KERNEL_PAGE_SIZE = 16384;
+constexpr uint32_t SCE_KERNEL_PAGE_SIZE      = 16384;
+constexpr uint64_t SCE_KERNEL_MAIN_DMEM_SIZE = 0x180000000;
 
 constexpr uint32_t SCE_KERNEL_AIO_SCHED_WINDOW_MAX      = 128;
 constexpr uint32_t SCE_KERNEL_AIO_DELAYED_COUNT_MAX     = 128;

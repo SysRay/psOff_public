@@ -88,6 +88,11 @@ constexpr std::uint64_t alignDown(uint64_t value, uint64_t alignment) {
   return value & ~(alignment - 1);
 }
 
+constexpr bool isPowerOfTwo(int n) {
+  if (n == 0) return false;
+  return (n & (n - 1)) == 0;
+}
+
 void setThreadName(std::string_view name);
 void setThreadName(std::string_view name, void* nativeHandle);
 
