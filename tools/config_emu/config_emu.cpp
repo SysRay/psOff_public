@@ -227,7 +227,10 @@ Config::Config() {
                                   ConfigModFlag::CONTROLS);
 
   m_general._future = std::async(std::launch::async, load, &m_general,
-                                 json({{"systemlang", 1}, {"userIndex", 1}, {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
+                                 json({{"systemlang", 1},
+                                       {"netMAC", "00:00:00:00:00:00"},
+                                       {"userIndex", 1},
+                                       {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
                                  ConfigModFlag::GENERAL);
 
   m_resolve._future = std::async(std::launch::async | std::launch::deferred, load, &m_resolve, json({{"localhost", "127.0.0.1"}}), ConfigModFlag::RESOLVE);
