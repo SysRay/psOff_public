@@ -4,11 +4,9 @@
 #include "types.h"
 
 // Sigh, Microsoft
-// clang-format on
+// clang-format off
 #include <Windows.h>
 #include <WinSock2.h>
-#include <Mstcpip.h>
-#include <ip2string.h>
 #include <iphlpapi.h>
 // clang-format on
 
