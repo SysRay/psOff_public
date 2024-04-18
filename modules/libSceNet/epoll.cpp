@@ -39,6 +39,8 @@ static inline int32_t sce_GetLastError() {
   return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
 }
 
+#define EPOLLDESCID (1u << 14)
+
 static inline uint32_t sce_map_epoll_events(uint32_t events) {
   LOG_USE_MODULE(libSceNet);
   uint32_t _events = 0;
@@ -46,7 +48,7 @@ static inline uint32_t sce_map_epoll_events(uint32_t events) {
   if (events & SCE_NET_EPOLLOUT) _events |= EPOLLOUT;
   if (events & SCE_NET_EPOLLERR) _events |= EPOLLERR;
   if (events & SCE_NET_EPOLLHUP) _events |= EPOLLHUP;
-  if (events & SCE_NET_EPOLLDESCID) LOG_CRIT(L"Unhandled epoll event SCE_NET_EPOLLDESCID");
+  if (events & SCE_NET_EPOLLDESCID) _events |= EPOLLDESCID; // Not an actual event, todo
   return _events;
 }
 
@@ -89,6 +91,7 @@ EXPORT SYSV_ABI int sceNetEpollControl(SceNetId eid, int op, SceNetId id, SceNet
       .data   = {.ptr = event->data.ptr},
   };
 
+  if (ev.events & EPOLLDESCID) return Ok; // todo handle all events
   if (epoll_ctl(sce_map_id_get(eid), op, id, &ev) == SOCKET_ERROR) return sce_GetLastError();
   return Ok;
 }
@@ -98,6 +101,8 @@ EXPORT SYSV_ABI int sceNetEpollWait(SceNetId eid, SceNetEpollEvent* events, int 
       .events = sce_map_epoll_events(events->events),
       .data   = {.ptr = events->data.ptr},
   };
+
+  if (ev.events & EPOLLDESCID) return Ok; // todo handle all events
   if (epoll_wait(sce_map_id_get(eid), &ev, maxevents, timeout) == SOCKET_ERROR) return sce_GetLastError();
   return Ok;
 }
