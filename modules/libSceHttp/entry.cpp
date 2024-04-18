@@ -18,24 +18,43 @@ LOG_DEFINE_MODULE(libSceHttp);
 namespace {
 using SceHttpsCallback = SYSV_ABI int (*)(int libsslCtxId, unsigned int verifyErr, SceSslCert* const sslCert[], int certNum, void* userArg);
 
-#define ARRAY_LENGTH 128
+constexpr size_t ARRAY_LENGTH = 128;
 
-#define LOOKUP_AVAILABLE_IDX(ARRAY, ACTION)                                                                                                                    \
-  int  i;                                                                                                                                                      \
-  bool found = false;                                                                                                                                          \
-  for (i = 1; i < ARRAY_LENGTH; i++) {                                                                                                                         \
-    if (ARRAY[i] == nullptr) {                                                                                                                                 \
-      ARRAY[i] = ACTION;                                                                                                                                       \
-                                                                                                                                                               \
-      break;                                                                                                                                                   \
-    }                                                                                                                                                          \
-  }                                                                                                                                                            \
-  if (!found) return Err::HTTP_OUT_OF_MEMORY;
+template <typename T, size_t size>
+class HttpContainer {
+  T* m_data[size] = {nullptr};
 
-#define GET_LAST_RESPONSE                                                                                                                                      \
-  HttpRequest*  request  = g_requests[reqId];                                                                                                                  \
-  HttpResponse* response = request->lastResponse;                                                                                                              \
-  if (response == nullptr) return Err::HTTP_SEND_REQUIRED;
+  public:
+  int lookupAvailableIdx(T* action) {
+    int  i;
+    bool found = false;
+    for (i = 1; i < size; i++) {
+      if (!m_data[i]) {
+        m_data[i] = action;
+
+        break;
+      }
+    }
+    if (found == false) {
+      delete action;
+      return 0;
+    }
+    return i;
+  }
+
+  int testId(int id) {
+    if (id < 1 || id >= size || m_data[id] == nullptr) return Err::HTTP_BAD_ID;
+
+    return Ok;
+  }
+
+  void remove(int id) {
+    delete m_data[id];
+    m_data[id] = nullptr;
+  }
+
+  T* getId(int id) { return m_data[id]; }
+};
 
 static io_service        svc;
 static ip::tcp::resolver resolver(svc);
@@ -135,28 +154,15 @@ struct HttpRequestParams {
   }
 };
 
-static HttpClient*     g_clients[ARRAY_LENGTH]     = {nullptr};
-static HttpTemplate*   g_templates[ARRAY_LENGTH]   = {nullptr};
-static HttpConnection* g_connections[ARRAY_LENGTH] = {nullptr};
-static HttpRequest*    g_requests[ARRAY_LENGTH]    = {nullptr};
+static HttpContainer<HttpClient, ARRAY_LENGTH>     g_client;
+static HttpContainer<HttpTemplate, ARRAY_LENGTH>   g_template;
+static HttpContainer<HttpConnection, ARRAY_LENGTH> g_connection;
+static HttpContainer<HttpRequest, ARRAY_LENGTH>    g_request;
 
-template <typename T, size_t size>
-static int testId(T (&array)[size], int id) {
-  if (id < 1 || id >= size || array[id] == nullptr) return Err::HTTP_BAD_ID;
-
-  return Ok;
-}
-
-static char* convertString(const boost::core::string_view& str) {
-  std::string stdstr    = std::string(str);
-  const char* converted = stdstr.c_str();
-  size_t      length    = std::strlen(converted);
-  char*       copy      = new char[length + 1];
-  memcpy(copy, converted, length);
-  copy[length] = '\0';
-
-  return copy;
-}
+#define GET_LAST_RESPONSE                                                                                                                                      \
+  HttpRequest*  request  = g_request.getId(reqId);                                                                                                             \
+  HttpResponse* response = request->lastResponse;                                                                                                              \
+  if (response == nullptr) return Err::HTTP_SEND_REQUIRED;
 
 static void deleteResponse(HttpResponse* response) {
   if (response->body != nullptr) {
@@ -313,18 +319,19 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceHttp";
 
 EXPORT SYSV_ABI int sceHttpInit(int libnetMemId, int libsslCtxId, size_t poolSize) {
-  LOOKUP_AVAILABLE_IDX(g_clients, new HttpClient(libnetMemId, libsslCtxId, poolSize));
+  auto const handle = g_client.lookupAvailableIdx(new HttpClient(libnetMemId, libsslCtxId, poolSize));
+  if (handle == 0) return Err::HTTP_OUT_OF_MEMORY;
 
   LOG_USE_MODULE(libSceHttp);
-  LOG_TRACE(L"new http client (id: %d, memId: %d, sslCtxId: %d, poolSize: %d)", i, libnetMemId, libsslCtxId, poolSize);
+  LOG_TRACE(L"new http client (id: %d, memId: %d, sslCtxId: %d, poolSize: %d)", handle, libnetMemId, libsslCtxId, poolSize);
 
-  return i;
+  return handle;
 }
 
 EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
-  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
-  delete g_clients[libhttpCtxId];
-  g_clients[libhttpCtxId] = nullptr;
+  if (auto ret = g_client.testId(libhttpCtxId)) return ret;
+
+  g_client.remove(libhttpCtxId);
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"http client removed (id: %d)", libhttpCtxId);
@@ -333,10 +340,11 @@ EXPORT SYSV_ABI int sceHttpTerm(int libhttpCtxId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat) {
-  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
+  if (auto ret = g_client.testId(libhttpCtxId)) return ret;
+
   currentStat->currentInuseSize = 16384; // todo (?)
   currentStat->maxInuseSize     = 131072;
-  currentStat->poolSize         = g_clients[libhttpCtxId]->poolSize;
+  currentStat->poolSize         = g_client.getId(libhttpCtxId)->poolSize;
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"memory pool stats were requested (client id: %d)", libhttpCtxId);
@@ -345,20 +353,23 @@ EXPORT SYSV_ABI int sceHttpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoo
 }
 
 EXPORT SYSV_ABI int sceHttpCreateTemplate(int libhttpCtxId, const char* userAgent, int httpVer, int isAutoProxyConf) {
-  if (auto ret = testId(g_clients, libhttpCtxId)) return ret;
-  HttpClient* client = g_clients[libhttpCtxId];
-  LOOKUP_AVAILABLE_IDX(g_templates, new HttpTemplate(client, userAgent, httpVer, isAutoProxyConf));
+  if (auto ret = g_client.testId(libhttpCtxId)) return ret;
+
+  HttpClient* client = g_client.getId(libhttpCtxId);
+
+  auto const handle = g_template.lookupAvailableIdx(new HttpTemplate(client, userAgent, httpVer, isAutoProxyConf));
+  if (handle == 0) return Err::HTTP_OUT_OF_MEMORY;
 
   LOG_USE_MODULE(libSceHttp);
-  LOG_TRACE(L"new http template (id: %d, client id: %d)", i, libhttpCtxId);
+  LOG_TRACE(L"new http template (id: %d, client id: %d)", handle, libhttpCtxId);
 
-  return i;
+  return handle;
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
-  if (auto ret = testId(g_templates, tmplId)) return ret;
-  delete g_templates[tmplId];
-  g_templates[tmplId] = nullptr;
+  if (auto ret = g_template.testId(tmplId)) return ret;
+
+  g_template.remove(tmplId);
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"http template removed (id: %d)", tmplId);
@@ -367,14 +378,15 @@ EXPORT SYSV_ABI int sceHttpDeleteTemplate(int tmplId) {
 }
 
 static int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive, bool shouldFreeStrings) {
-  if (auto ret = testId(g_templates, tmplId)) return ret;
-  HttpTemplate* httpTemplate = g_templates[tmplId];
-  LOOKUP_AVAILABLE_IDX(g_connections, new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive, shouldFreeStrings));
+  if (auto ret = g_template.testId(tmplId)) return ret;
+
+  HttpTemplate* httpTemplate = g_template.getId(tmplId);
+  auto const    handle = g_connection.lookupAvailableIdx(new HttpConnection(httpTemplate, serverName, scheme, port, isEnableKeepalive, shouldFreeStrings));
 
   LOG_USE_MODULE(libSceHttp);
-  LOG_TRACE(L"new http connection (id: %d, template id: %d)", i, tmplId);
+  LOG_TRACE(L"new http connection (id: %d, template id: %d)", handle, tmplId);
 
-  return i;
+  return handle;
 }
 
 EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
@@ -384,10 +396,9 @@ EXPORT SYSV_ABI int sceHttpCreateConnection(int tmplId, const char* serverName, 
 EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
   boost::urls::url link(url);
   uint16_t         port;
-  char*            scheme = convertString(link.scheme());
-  bool             isNotHttp;
-  if ((isNotHttp = std::strcmp(scheme, "http") != 0) && std::strcmp(scheme, "https") != 0) {
-    delete scheme;
+
+  bool isNotHttp;
+  if ((isNotHttp = std::strcmp(link.scheme().data(), "http") != 0) && std::strcmp(link.scheme().data(), "https") != 0) {
 
     return Err::HTTP_BAD_SCHEME;
   }
@@ -399,20 +410,16 @@ EXPORT SYSV_ABI int sceHttpCreateConnectionWithURL(int tmplId, const char* url, 
     else
       port = 80;
   }
-  char* serverName = convertString(link.host());
 
-  int result = sceHttpCreateConnection(tmplId, serverName, scheme, port, isEnableKeepalive, true);
-  if (result <= 0) {
-    delete scheme;
-    delete serverName;
-  }
+  int result = sceHttpCreateConnection(tmplId, link.host().data(), link.scheme().data(), port, isEnableKeepalive, true);
 
   return result;
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
-  if (auto ret = testId(g_connections, connId)) return ret;
-  HttpConnection* connection = g_connections[connId];
+  if (auto ret = g_connection.testId(connId)) return ret;
+
+  HttpConnection* connection = g_connection.getId(connId);
   if (connection->query != nullptr) {
     delete connection->query;
   }
@@ -425,8 +432,7 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
     delete connection->scheme;
     delete connection->serverName;
   }
-  delete connection;
-  g_connections[connId] = nullptr;
+  g_connection.remove(connId);
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"http connection removed (id: %d)", connId);
@@ -435,12 +441,14 @@ EXPORT SYSV_ABI int sceHttpDeleteConnection(int connId) {
 }
 
 static int sceHttpCreateRequest(int connId, int method, const char* path, uint64_t contentLength, bool shouldFreePath) {
-  if (auto ret = testId(g_connections, connId)) return ret;
-  HttpConnection* httpConnection = g_connections[connId];
-  LOOKUP_AVAILABLE_IDX(g_requests, new HttpRequest(httpConnection, method, path, contentLength, shouldFreePath));
+  if (auto ret = g_connection.testId(connId)) return ret;
+
+  HttpConnection* httpConnection = g_connection.getId(connId);
+
+  auto handle = g_request.lookupAvailableIdx(new HttpRequest(httpConnection, method, path, contentLength, shouldFreePath));
 
   LOG_USE_MODULE(libSceHttp);
-  LOG_TRACE(L"new http request (id: %d, connection id: %d)", i, connId);
+  LOG_TRACE(L"new http request (id: %d, connection id: %d)", handle, connId);
 
   return Ok;
 }
@@ -461,12 +469,8 @@ EXPORT SYSV_ABI int sceHttpCreateRequestWithURL(int connId, int method, const ch
 
     return Err::HTTP_BAD_PARAM;
   }
-  char* path = convertString(link.path());
 
-  int result = sceHttpCreateRequest(connId, method, path, contentLength, true);
-  if (result <= 0) {
-    delete path;
-  }
+  int result = sceHttpCreateRequest(connId, method, link.path().data(), contentLength, true);
 
   return result;
 }
@@ -476,16 +480,16 @@ EXPORT SYSV_ABI int sceHttpCreateRequestWithURL2(int connId, const char* method,
 }
 
 EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
-  if (auto ret = testId(g_requests, reqId)) return ret;
-  HttpRequest* request = g_requests[reqId];
+  if (auto ret = g_request.testId(reqId)) return ret;
+
+  HttpRequest* request = g_request.getId(reqId);
   if (request->lastResponse != nullptr) {
     deleteResponse(request->lastResponse);
   }
   if (request->shouldFreePath) {
     delete request->path;
   }
-  delete request;
-  g_requests[reqId] = nullptr;
+  g_request.remove(reqId);
 
   LOG_USE_MODULE(libSceHttp);
   LOG_TRACE(L"http request removed (id: %d)", reqId);
@@ -495,8 +499,9 @@ EXPORT SYSV_ABI int sceHttpDeleteRequest(int reqId) {
 
 EXPORT SYSV_ABI int sceHttpSetRequestContentLength(int id, uint64_t contentLength) {
   int reqId = id; // (?)
-  if (auto ret = testId(g_requests, reqId)) return ret;
-  g_requests[reqId]->contentLength = contentLength;
+  if (auto ret = g_request.testId(reqId)) return ret;
+
+  g_request.getId(reqId)->contentLength = contentLength;
 
   return Ok;
 }
@@ -510,8 +515,9 @@ EXPORT SYSV_ABI int sceHttpSetInflateGZIPEnabled(int id, int isEnable) {
 }
 
 EXPORT SYSV_ABI int sceHttpSendRequest(int reqId, const void* postData, size_t size) {
-  if (auto ret = testId(g_requests, reqId)) return ret;
-  HttpRequest* request          = g_requests[reqId];
+  if (auto ret = g_request.testId(reqId)) return ret;
+
+  HttpRequest* request          = g_request.getId(reqId);
   request->postData             = postData;
   request->size                 = size;
   HttpRequestParams* fullParams = new HttpRequestParams(request);
@@ -532,7 +538,8 @@ EXPORT SYSV_ABI int sceHttpAbortRequest(int reqId) {
 }
 
 EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
-  if (auto ret = testId(g_requests, reqId)) return ret;
+  if (auto ret = g_request.testId(reqId)) return ret;
+
   GET_LAST_RESPONSE;
   *result        = 0; // Content-Length is guaranteed to exist, otherwise performHttpRequest would have failed
   *contentLength = response->contentLength;
@@ -541,7 +548,8 @@ EXPORT SYSV_ABI int sceHttpGetResponseContentLength(int reqId, int* result, uint
 }
 
 EXPORT SYSV_ABI int sceHttpGetStatusCode(int reqId, int* statusCode) {
-  if (auto ret = testId(g_requests, reqId)) return ret;
+  if (auto ret = g_request.testId(reqId)) return ret;
+
   GET_LAST_RESPONSE;
   *statusCode = response->statusCode;
 
@@ -555,7 +563,8 @@ EXPORT SYSV_ABI int sceHttpGetAllResponseHeaders(int reqId, char** header, size_
 }
 
 EXPORT SYSV_ABI int sceHttpReadData(int reqId, void* data, size_t size) {
-  if (auto ret = testId(g_requests, reqId)) return ret;
+  if (auto ret = g_request.testId(reqId)) return ret;
+
   GET_LAST_RESPONSE;
   size_t finalSize = min(size, response->contentLength);
   memcpy(data, response->body, finalSize);
