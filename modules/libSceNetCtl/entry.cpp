@@ -88,7 +88,7 @@ EXPORT SYSV_ABI int sceNetCtlGetInfo(int code, SceNetCtlInfo* info) {
         pCurrAda = pCurrAda->Next;
       }
     } else {
-      uint8_t exMAC[8] = {0}; // Expected MAC address
+      uint8_t exMAC[6] = {0}; // Expected MAC address
       if (sscanf_s(macAddr.c_str(), "%02x:%02x:%02x:%02x:%02x:%02x", &exMAC[0], &exMAC[1], &exMAC[2], &exMAC[3], &exMAC[4], &exMAC[5]) == 6) {
         while (pCurrAda != nullptr) { // Find the adapter with specified MAC address
           if (pCurrAda->AddressLength == sizeof(exMAC) && memcmp(pCurrAda->Address, exMAC, sizeof(exMAC)) == 0) break;
