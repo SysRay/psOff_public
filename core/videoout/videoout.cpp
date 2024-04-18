@@ -279,8 +279,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   void getSafeAreaRatio(float* area) final {
     auto ext = m_imageHandler.get()->getExtent();
     if (area != nullptr) {
-      *area = 0.781298f; // todo check what's up here
-      //*area = (float)ext.height / (float)ext.width;
+      *area = 1.f; // todo check what's up here
     }
   }
 
