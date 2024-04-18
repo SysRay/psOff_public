@@ -391,7 +391,7 @@ static int find_issue(SystemParamLang lang_id, const char* title_id, GitHubIssue
   boost::urls::url link("https://api.github.com/search/issues");
 
   auto params = link.params();
-  params.append({"q", std::format("repo:{} is:issue {} in:title", GAMEREPORT_REPO_NAME, title_id)});
+  params.append({"q", std::format("repo:{} is:open is:issue {} in:title", GAMEREPORT_REPO_NAME, title_id)});
   link.normalize();
 
   io_service svc;
