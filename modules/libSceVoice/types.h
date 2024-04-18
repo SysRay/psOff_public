@@ -41,38 +41,41 @@ enum class SceVoicePortState {
 };
 
 struct SceVoicePCMFormat {
-  SceVoicePcmDataType dataType;
+  SceVoicePcmDataType  dataType;
   SceVoiceSamplingRate sampleRate;
 };
 
 struct SceVoicePortParam {
   SceVoicePortType portType;
-  uint16_t threshold;
-  uint16_t bMute;
-  float volume;
+  uint16_t         threshold;
+  uint16_t         bMute;
+  float            volume;
+
   union {
-      struct {
-          SceVoiceBitRate bitrate;
-      } voice;
-      struct {
-          uint32_t bufSize;
-          SceVoicePCMFormat format;
-      } pcmaudio;
-      struct {
-          int32_t type, userId;
-          int32_t index;
-      } device;
-   };
+    struct {
+      SceVoiceBitRate bitrate;
+    } voice;
+
+    struct {
+      uint32_t          bufSize;
+      SceVoicePCMFormat format;
+    } pcmaudio;
+
+    struct {
+      int32_t type, userId;
+      int32_t index;
+    } device;
+  };
 };
 
 struct SceVoiceBasePortInfo {
-  SceVoicePortType portType;
+  SceVoicePortType  portType;
   SceVoicePortState state;
-  uint32_t *pEdge;
-  uint32_t numByte;
-  uint32_t frameSize;
-  uint16_t numEdge;
-  uint16_t reserved;
+  uint32_t*         pEdge;
+  uint32_t          numByte;
+  uint32_t          frameSize;
+  uint16_t          numEdge;
+  uint16_t          reserved;
 };
 
 struct SceVoiceResourceInfo {

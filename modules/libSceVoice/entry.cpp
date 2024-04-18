@@ -110,5 +110,4 @@ EXPORT SYSV_ABI int32_t sceVoiceEnd() {
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
-
 }
