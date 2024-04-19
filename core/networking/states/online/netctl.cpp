@@ -2,6 +2,8 @@
 #include "config_emu.h"
 #include "logging.h"
 
+#include <iphlpapi.h>
+
 LOG_DEFINE_MODULE(OnlineNetCore);
 
 int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {

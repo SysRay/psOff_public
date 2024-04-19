@@ -10,13 +10,12 @@
 class INetworking {
   CLASS_NO_COPY(INetworking);
   CLASS_NO_MOVE(INetworking);
-  static thread_local int g_net_errno;
 
   protected:
-  INetworking() {}
+  INetworking();
 
   public:
-  virtual ~INetworking() = default;
+  ~INetworking();
 
   /**
    * @brief returns current network error code
@@ -28,9 +27,9 @@ class INetworking {
   /**
    * @brief returns errno ptr
    *
-   * @return int*
+   * @return int32_t*
    */
-  static int* getErrnoPtr() { return &g_net_errno; };
+  static int32_t* getErrnoPtr();
 
   /* SceNetCtl facility*/
 
@@ -62,7 +61,24 @@ class INetworking {
   virtual int epollAbort(SceNetId eid, int flags) = 0;
 
   /* Socket sub-facility */
-  // guess what? todo.
+  virtual SceNetId socketCreate(const char* name, int family, int type, int protocol) = 0;
+  virtual SceNetId socketAccept(SceNetId s, SceNetSockaddr* addr, SceNetSocklen_t* addrlen) = 0;
+  virtual int socketBind(SceNetId s, const SceNetSockaddr* addr, SceNetSocklen_t addrlen) = 0;
+  virtual int socketConnect(SceNetId s, const SceNetSockaddr* name, SceNetSocklen_t namelen) = 0;
+  virtual int socketGetpeername(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) = 0;
+  virtual int socketGetsockname(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) = 0;
+  virtual int socketGetsockopt(SceNetId s, int level, int optname, void* optval, SceNetSocklen_t* optlen) = 0;
+  virtual int socketListen(SceNetId s, int backlog) = 0;
+  virtual int socketRecv(SceNetId s, void* buf, size_t len, int flags) = 0;
+  virtual int socketRecvfrom(SceNetId s, void* buf, size_t len, int flags, SceNetSockaddr* from, SceNetSocklen_t* fromlen) = 0;
+  virtual int socketRecvmsg(SceNetId s, SceNetMsghdr* msg, int flags) = 0;
+  virtual int socketSend(SceNetId s, const void* msg, size_t len, int flags) = 0;
+  virtual int socketSendto(SceNetId s, const void* msg, size_t len, int flags, const SceNetSockaddr* to, SceNetSocklen_t tolen) = 0;
+  virtual int socketSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags) = 0;
+  virtual int socketSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) = 0;
+  virtual int socketShutdown(SceNetId s, int how) = 0;
+  virtual int socketSocketClose(SceNetId s) = 0;
+  virtual int socketSocketAbort(SceNetId s, int flags) = 0;
 };
 
 #if defined(__APICALL_EXTERN)

@@ -33,5 +33,22 @@ class OfflineNet: public INetworking {
   int32_t epollAbort(SceNetId eid, int flags) final;
 
   /* Socket sub-facility */
-  // guess what? todo.
+  SceNetId socketCreate(const char* name, int family, int type, int protocol) final;
+  SceNetId socketAccept(SceNetId s, SceNetSockaddr* addr, SceNetSocklen_t* addrlen) final;
+  int socketBind(SceNetId s, const SceNetSockaddr* addr, SceNetSocklen_t addrlen) final;
+  int socketConnect(SceNetId s, const SceNetSockaddr* name, SceNetSocklen_t namelen) final;
+  int socketGetpeername(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) final;
+  int socketGetsockname(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) final;
+  int socketGetsockopt(SceNetId s, int level, int optname, void* optval, SceNetSocklen_t* optlen) final;
+  int socketListen(SceNetId s, int backlog) final;
+  int socketRecv(SceNetId s, void* buf, size_t len, int flags) final;
+  int socketRecvfrom(SceNetId s, void* buf, size_t len, int flags, SceNetSockaddr* from, SceNetSocklen_t* fromlen) final;
+  int socketRecvmsg(SceNetId s, SceNetMsghdr* msg, int flags) final;
+  int socketSend(SceNetId s, const void* msg, size_t len, int flags) final;
+  int socketSendto(SceNetId s, const void* msg, size_t len, int flags, const SceNetSockaddr* to, SceNetSocklen_t tolen) final;
+  int socketSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags) final;
+  int socketSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) final;
+  int socketShutdown(SceNetId s, int how) final;
+  int socketSocketClose(SceNetId s) final;
+  int socketSocketAbort(SceNetId s, int flags) final;
 };

@@ -62,3 +62,76 @@ int32_t OfflineNet::epollDestroy(SceNetId eid) {
 int32_t OfflineNet::epollAbort(SceNetId eid, int flags) {
   return Ok;
 }
+
+SceNetId OfflineNet::socketCreate(const char* name, int family, int type, int protocol) {
+  *INetworking::getErrnoPtr() = NetErrNo::SCE_NET_EPROTONOSUPPORT;
+  return Err::Net::ERROR_EINVAL;
+}
+
+SceNetId OfflineNet::socketAccept(SceNetId s, SceNetSockaddr* addr, SceNetSocklen_t* addrlen) {
+  return 0;
+}
+
+int OfflineNet::socketBind(SceNetId s, const SceNetSockaddr* addr, SceNetSocklen_t addrlen) {
+  return Ok;
+}
+
+int OfflineNet::socketConnect(SceNetId s, const SceNetSockaddr* name, SceNetSocklen_t namelen) {
+  return Ok;
+}
+
+int OfflineNet::socketGetpeername(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+  return Ok;
+}
+
+int OfflineNet::socketGetsockname(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+  return Ok;
+}
+
+int OfflineNet::socketGetsockopt(SceNetId s, int level, int optname, void* optval, SceNetSocklen_t* optlen) {
+  return 0;
+}
+
+int OfflineNet::socketListen(SceNetId s, int backlog) {
+  return Ok;
+}
+
+int OfflineNet::socketRecv(SceNetId s, void* buf, size_t len, int flags) {
+  return 0;
+}
+
+int OfflineNet::socketRecvfrom(SceNetId s, void* buf, size_t len, int flags, SceNetSockaddr* from, SceNetSocklen_t* fromlen) {
+  return 0;
+}
+
+int OfflineNet::socketRecvmsg(SceNetId s, SceNetMsghdr* msg, int flags) {
+  return Ok;
+}
+
+int OfflineNet::socketSend(SceNetId s, const void* msg, size_t len, int flags) {
+  return 0;
+}
+
+int OfflineNet::socketSendto(SceNetId s, const void* msg, size_t len, int flags, const SceNetSockaddr* to, SceNetSocklen_t tolen) {
+  return 0;
+}
+
+int OfflineNet::socketSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags) {
+  return Ok;
+}
+
+int OfflineNet::socketSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) {
+  return Ok;
+}
+
+int OfflineNet::socketShutdown(SceNetId s, int how) {
+  return Ok;
+}
+
+int OfflineNet::socketSocketClose(SceNetId s) {
+  return Ok;
+}
+
+int OfflineNet::socketSocketAbort(SceNetId s, int flags) {
+  return Ok;
+}
