@@ -12,19 +12,19 @@ EXPORT const char* MODULE_NAME = "libSceSysmodule";
 
 EXPORT SYSV_ABI int sceSysmoduleLoadModule(uint16_t id) {
   LOG_USE_MODULE(libSceSysmodule);
-  LOG_DEBUG(L"id = 0x%lx", id);
+  LOG_DEBUG(L"id = 0x%x", id);
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceSysmoduleUnloadModule(uint16_t id) {
   LOG_USE_MODULE(libSceSysmodule);
-  LOG_DEBUG(L"id = 0x%lx", id);
+  LOG_DEBUG(L"id = 0x%x", id);
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceSysmoduleIsLoaded(uint16_t id) {
   LOG_USE_MODULE(libSceSysmodule);
-  LOG_DEBUG(L"id = 0x%lx", id);
+  LOG_DEBUG(L"id = 0x%x", id);
   return Ok;
 }
 

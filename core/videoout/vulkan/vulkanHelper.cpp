@@ -32,7 +32,7 @@ void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut)
 
 std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj) {
   if (obj->surfaceCapabilities.formats.empty()) {
-    return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    return {VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
   }
   bool found = false;
   for (auto const& format: obj->surfaceCapabilities.formats) {
