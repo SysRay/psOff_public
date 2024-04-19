@@ -19,7 +19,7 @@ EXPORT SYSV_ABI int32_t sceCameraOpen(SceUserServiceUserId userId, int32_t type,
 EXPORT SYSV_ABI int32_t sceCameraIsAttached(int32_t index) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  return 0;
 }
 
 EXPORT SYSV_ABI int32_t sceCameraGetConfig(int32_t handle, SceCameraConfig* pConfig) {
