@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
-namespace Ctl {
+namespace NetCtl {
 constexpr int32_t NOT_INITIALIZED  = -2143215359;
 constexpr int32_t CALLBACK_MAX     = -2143215357;
 constexpr int32_t ID_NOT_FOUND     = -2143215356;

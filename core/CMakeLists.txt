@@ -9,6 +9,7 @@ add_subdirectory(videoout)
 add_subdirectory(initParams)
 add_subdirectory(timer)
 add_subdirectory(systemContent)
+add_subdirectory(networking)
 add_subdirectory(fileManager)
 add_subdirectory(imports)
 add_subdirectory(memory)
@@ -21,6 +22,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:initParams>
   $<TARGET_OBJECTS:timer>
   $<TARGET_OBJECTS:systemContent>
+  $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:imports>
@@ -40,6 +42,9 @@ target_link_libraries(core PRIVATE
   psOff_utility
   config_emu.lib
   onecore.lib
+  IPHLPAPI.lib
+  Ws2_32.lib
+  ntdll.dll
   VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}
 )

@@ -228,6 +228,7 @@ Config::Config() {
 
   m_general._future = std::async(std::launch::async, load, &m_general,
                                  json({{"systemlang", 1},
+                                       {"netEnabled", false},
                                        {"netMAC", "00:00:00:00:00:00"},
                                        {"userIndex", 1},
                                        {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
