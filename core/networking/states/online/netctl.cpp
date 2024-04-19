@@ -2,10 +2,10 @@
 #include "config_emu.h"
 #include "logging.h"
 
-LOG_DEFINE_MODULE(OnlineNetworkingCore)
+LOG_DEFINE_MODULE(OnlineNetCore)
 
 int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
-  LOG_USE_MODULE(OnlineNetworkingCore);
+  LOG_USE_MODULE(OnlineNetCore);
   PIP_ADAPTER_INFO      pAda     = nullptr; // Adapters head
   PIP_ADAPTER_INFO      pCurrAda = nullptr; // Used adapter
   ULONG                 uAdaBufLen;
@@ -14,7 +14,7 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
   ULONG                 uAddrBufLen;
 
   auto initAdapterInfo = [&pAda, &pCurrAda, &uAdaBufLen]() {
-    LOG_USE_MODULE(OnlineNetworkingCore);
+    LOG_USE_MODULE(OnlineNetCore);
     pAda       = nullptr;
     uAdaBufLen = 0;
 
@@ -65,7 +65,7 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
   };
 
   auto initAdapterAddr = [&pAddr, &pCurrAddr, &uAddrBufLen, &pAda, &pCurrAda, initAdapterInfo]() {
-    LOG_USE_MODULE(OnlineNetworkingCore);
+    LOG_USE_MODULE(OnlineNetCore);
     pAddr       = nullptr;
     uAddrBufLen = 0;
 

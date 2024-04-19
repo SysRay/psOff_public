@@ -1,5 +1,7 @@
 #pragma once
 
+#include "modules/libSceNet/resolverTypes.h"
+#include "modules/libSceNet/socketTypes.h"
 #include "modules/libSceNetCtl/types.h"
 #include "modules_include/common.h"
 #include "utility/utility.h"
@@ -28,7 +30,13 @@ class INetworking {
   /* SceNet facility */
 
   /* Resolver sub-facility */
-  virtual int32_t resolverCreate() = 0;
+  virtual int32_t resolverCreate(const char* name, int memid, int flags) = 0;
+  virtual int32_t resolverStartNtoa(SceNetId rid, const char* hostname, SceNetInAddr_t* addr, int timeout, int retries, int flags) = 0;
+  virtual int32_t resolverStartAton(SceNetId rid, const SceNetInAddr_t* addr, char* hostname, int len, int timeout, int retry, int flags) = 0;
+  virtual int32_t resolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retries, int flags) = 0;
+  virtual int32_t resolverGetError(SceNetId rid, int* result) = 0;
+  virtual int32_t resolverDestroy(SceNetId rid) = 0;
+  virtual int32_t resolverAbort(SceNetId rid, int flags) = 0;
 
   /* Epoll sub-facility */
   // todo
