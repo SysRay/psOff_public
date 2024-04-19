@@ -1,8 +1,8 @@
 #pragma once
 #include "../networking.h"
 
-class OfflineNet : public INetworking {
-public:
+class OfflineNet: public INetworking {
+  public:
   /* SceNetCtl facility*/
 
   /**

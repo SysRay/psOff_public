@@ -1,4 +1,5 @@
 #include "offline.h"
+
 #include "logging.h"
 #include "modules/libSceNetCtl/codes.h"
 

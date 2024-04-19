@@ -7,11 +7,11 @@
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <iphlpapi.h>
+
 // clang-format on
 
-class OnlineNet : public INetworking {
-public:
-
+class OnlineNet: public INetworking {
+  public:
   /* SceNetCtl facility*/
 
   /**

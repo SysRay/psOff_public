@@ -1,7 +1,7 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "types.h"
-#include "core/networking/networking.h"
 
 LOG_DEFINE_MODULE(libSceNetCtl);
 

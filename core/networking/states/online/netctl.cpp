@@ -1,6 +1,6 @@
 #include "../online.h"
-#include "logging.h"
 #include "config_emu.h"
+#include "logging.h"
 
 LOG_DEFINE_MODULE(OnlineNetworkingCore)
 

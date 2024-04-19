@@ -1,15 +1,14 @@
 #pragma once
 
+#include "modules/libSceNetCtl/types.h"
 #include "modules_include/common.h"
 #include "utility/utility.h"
-#include "modules/libSceNetCtl/types.h"
 
 class INetworking {
   CLASS_NO_COPY(INetworking);
   CLASS_NO_MOVE(INetworking);
 
   protected:
-
   INetworking() {}
 
   public:

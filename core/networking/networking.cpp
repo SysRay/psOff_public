@@ -2,16 +2,16 @@
 #include "networking.h"
 #undef __APICALL_EXTERN
 #include "config_emu.h"
-#include "states/online.h"
 #include "states/offline.h"
+#include "states/online.h"
 
 class NetInitializer {
   INetworking* m_itf;
 
-public:
+  public:
   NetInitializer() {
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
-    bool state = false;
+    bool state         = false;
 
     if (getJsonParam(jData, "netEnabled", state) && state == true) {
       static OnlineNet ion;
@@ -22,9 +22,7 @@ public:
     }
   }
 
-  INetworking& getClass() {
-    return (*m_itf);
-  }
+  INetworking& getClass() { return (*m_itf); }
 };
 
 INetworking& accessNetworking() {
