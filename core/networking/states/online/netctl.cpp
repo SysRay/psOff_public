@@ -2,7 +2,7 @@
 #include "config_emu.h"
 #include "logging.h"
 
-LOG_DEFINE_MODULE(OnlineNetCore)
+LOG_DEFINE_MODULE(OnlineNetCore);
 
 int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
   LOG_USE_MODULE(OnlineNetCore);
@@ -22,14 +22,14 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
       pAda = (PIP_ADAPTER_INFO)malloc(uAdaBufLen);
     } else {
       LOG_ERR(L"Failed to obtain size needed for GetAdaptersInfo buffer!");
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
 
     if (auto ret = GetAdaptersInfo(pAda, &uAdaBufLen)) {
       free(pAda);
       pAda = nullptr;
       LOG_ERR(L"GetAdaptersInfo failed: %x", ret);
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
 
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
@@ -61,7 +61,7 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
     LOG_ERR(L"initAdapterInfo: failed to find suitable network adapter!");
     free(pAda);
     pAda = pCurrAda = nullptr;
-    return Err::ERROR_EFAULT;
+    return Err::Net::ERROR_EFAULT;
   };
 
   auto initAdapterAddr = [&pAddr, &pCurrAddr, &uAddrBufLen, &pAda, &pCurrAda, initAdapterInfo]() {
@@ -73,14 +73,14 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
       pAddr = (PIP_ADAPTER_ADDRESSES)malloc(uAddrBufLen);
     } else {
       LOG_ERR(L"Failed to obtain size needed for GetAdaptersAddresses buffer!");
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
 
     if (auto ret = GetAdaptersAddresses(AF_INET, 0, nullptr, pAddr, &uAddrBufLen)) {
       free(pAddr);
       pAddr = nullptr;
       LOG_ERR(L"GetAdaptersAddresses failed: %d (%d)", ret, uAddrBufLen);
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
 
     if (auto ret = initAdapterInfo()) { // Trying to find suitable adapter first
@@ -121,7 +121,7 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
     case 7: // Big and scary fallthrough
     case 8:
     case 9:
-    case 10: return Err::ERROR_NOT_AVAIL; // All these above for WiFi
+    case 10: return Err::Net::ERROR_NOT_AVAIL; // All these above for WiFi
     case 11: info->ip_config = 0; break;
     case 12: {
       DWORD size = sizeof(info->dhcp_hostname);

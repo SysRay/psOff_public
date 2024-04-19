@@ -6,7 +6,7 @@
 #include <boost/asio.hpp>
 #include <unordered_map>
 
-LOG_DEFINE_MODULE(OnlineNetCore_resolv)
+LOG_DEFINE_MODULE(OnlineNetCore_resolv);
 
 using namespace boost::asio;
 
@@ -77,7 +77,7 @@ PreMap& getPreMap() {
 }
 
 static inline int32_t testResolver(SceNetId rid) {
-  if (rid < 0 || rid > 127 || g_resolvers[rid] == nullptr) return Err::ERROR_EINVAL;
+  if (rid < 0 || rid > 127 || g_resolvers[rid] == nullptr) return Err::Net::ERROR_EINVAL;
   return Ok;
 }
 } // namespace
@@ -129,7 +129,7 @@ int32_t OnlineNet::resolverStartNtoa(SceNetId rid, const char* hostname, SceNetI
   for (int cretr = 0; cretr < retries; ++cretr) {
     if (resolver->interrupted) {
       // *sceNetErrnoLoc() = NetErrNo::SCE_NET_EINTR;
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
     try {
       auto it = resolver->res.resolve(query);
@@ -155,7 +155,7 @@ int32_t OnlineNet::resolverStartAton(SceNetId rid, const SceNetInAddr_t* addr, c
   {
     auto _hn = getPreMap().reverse_search(*addr);
     if (auto _hnlen = _hn.length()) {
-      if (len <= _hnlen) return Err::ERROR_EINVAL;
+      if (len <= _hnlen) return Err::Net::ERROR_EINVAL;
       _hn.copy(hostname, _hnlen + 1);
       return Ok;
     }
@@ -188,7 +188,7 @@ int32_t OnlineNet::resolverStartNtoaMultipleRecords(SceNetId rid, const char* ho
     // todo: should set sce_net_errno
     if (resolver->interrupted) {
       resolver->internError = NetErrNo::SCE_NET_EINTR;
-      return Err::ERROR_EFAULT;
+      return Err::Net::ERROR_EFAULT;
     }
     try {
       for (auto addr: resolver->res.resolve(query)) {

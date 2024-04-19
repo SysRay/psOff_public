@@ -12,7 +12,7 @@ extern "C" int* sceNetErrnoLoc();
 
 static inline int32_t sce_WSAGetLastError() {
   auto win_err = (uint32_t)WSAGetLastError();
-  if (win_err == WSANOTINITIALISED) return Err::ERROR_ENOTINIT;
+  if (win_err == WSANOTINITIALISED) return Err::Net::ERROR_ENOTINIT;
   return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
 }
 } // namespace
@@ -22,7 +22,7 @@ extern "C" {
 EXPORT SYSV_ABI SceNetId sceNetSocket(const char* name, int family, int type, int protocol) {
   if (family != SCE_NET_AF_INET) {
     *sceNetErrnoLoc() = NetErrNo::SCE_NET_EPROTONOSUPPORT;
-    return Err::ERROR_EINVAL;
+    return Err::Net::ERROR_EINVAL;
   }
 
   switch (type) {
@@ -32,7 +32,7 @@ EXPORT SYSV_ABI SceNetId sceNetSocket(const char* name, int family, int type, in
 
     default: {
       *sceNetErrnoLoc() = NetErrNo::SCE_NET_EPROTONOSUPPORT;
-      return Err::ERROR_EPROTOTYPE;
+      return Err::Net::ERROR_EPROTOTYPE;
     }
   }
 

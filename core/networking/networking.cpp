@@ -5,6 +5,12 @@
 #include "states/offline.h"
 #include "states/online.h"
 
+int32_t INetworking::getLastError() {
+  auto win_err = (uint32_t)GetLastError();
+  if (win_err == WSANOTINITIALISED) return Err::Net::ERROR_ENOTINIT;
+  return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
+}
+
 class NetInitializer {
   INetworking* m_itf;
 

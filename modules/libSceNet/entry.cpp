@@ -10,7 +10,7 @@ LOG_DEFINE_MODULE(libSceNet);
 namespace {
 static inline int32_t sce_WSAGetLastError() {
   auto win_err = (uint32_t)WSAGetLastError();
-  if (win_err == WSANOTINITIALISED) return Err::ERROR_ENOTINIT;
+  if (win_err == WSANOTINITIALISED) return Err::Net::ERROR_ENOTINIT;
   return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
 }
 

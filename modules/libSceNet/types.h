@@ -110,3 +110,15 @@ struct SceNetMemoryPoolStats {
 struct SceNetEtherAddr {
   uint8_t data[SCE_NET_ETHER_ADDR_LEN];
 };
+
+union SceNetEpollData {
+  void*    ptr;
+  uint32_t u32;
+};
+
+struct SceNetEpollEvent {
+  uint32_t        events;
+  uint32_t        reserved;
+  uint64_t        ident; /* OUT */
+  SceNetEpollData data;
+};

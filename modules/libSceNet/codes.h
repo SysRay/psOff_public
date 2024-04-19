@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
+namespace Net {
 constexpr int32_t ERROR_EPERM                    = -2143223551;
 constexpr int32_t ERROR_ENOENT                   = -2143223550;
 constexpr int32_t ERROR_ESRCH                    = -2143223549;
@@ -124,6 +125,7 @@ constexpr int32_t ERROR_RESOLVER_ENOTFOUND       = -2143223317;
 constexpr int32_t ERROR_RESOLVER_ENOTINIT        = -2143223316;
 constexpr int32_t ERROR_NOT_CONNECTED            = -2143215352;
 constexpr int32_t ERROR_NOT_AVAIL                = -2143215351;
+} // namespace Net
 } // namespace Err
 
 namespace NetErrNo {

@@ -18,7 +18,7 @@
 #include <shellapi.h>
 #include <unordered_map>
 
-LOG_DEFINE_MODULE(GameReport)
+LOG_DEFINE_MODULE(GameReport);
 
 namespace {
 struct GitHubIssue {

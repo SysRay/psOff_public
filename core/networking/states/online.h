@@ -21,12 +21,12 @@ class OnlineNet: public INetworking {
    * @param info
    * @return int32_t
    */
-  int32_t netCtlGetInfo(int code, SceNetCtlInfo* info) final;
+  int32_t netCtlGetInfo(int32_t code, SceNetCtlInfo* info) final;
 
   /* SceNet facility */
 
   /* Resolver sub-facility */
-  int32_t resolverCreate(const char* name, int memid, int flags) final;
+  SceNetId resolverCreate(const char* name, int memid, int flags) final;
   int32_t resolverStartNtoa(SceNetId rid, const char* hostname, SceNetInAddr_t* addr, int timeout, int retries, int flags) final;
   int32_t resolverStartAton(SceNetId rid, const SceNetInAddr_t* addr, char* hostname, int len, int timeout, int retry, int flags) final;
   int32_t resolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retries, int flags) final;
@@ -35,7 +35,11 @@ class OnlineNet: public INetworking {
   int32_t resolverAbort(SceNetId rid, int flags) final;
 
   /* Epoll sub-facility */
-  // todo
+  SceNetId epollCreate(const char* name, int flags) final;
+  int32_t epollControl(SceNetId eid, int op, SceNetId id, SceNetEpollEvent* event) final;
+  int32_t epollWait(SceNetId eid, SceNetEpollEvent* events, int maxevents, int timeout) final;
+  int32_t epollDestroy(SceNetId eid) final;
+  int32_t epollAbort(SceNetId eid, int flags) final;
 
   /* Socket sub-facility */
   // guess what? todo.

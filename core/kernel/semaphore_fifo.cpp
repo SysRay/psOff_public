@@ -10,7 +10,7 @@
 #include <boost/thread/mutex.hpp>
 #include <map>
 
-LOG_DEFINE_MODULE(Semaphore)
+LOG_DEFINE_MODULE(Semaphore);
 
 namespace {
 enum class SemState { idle, signaled, waiting, canceled };
