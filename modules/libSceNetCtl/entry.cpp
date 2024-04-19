@@ -149,7 +149,10 @@ EXPORT SYSV_ABI int sceNetCtlGetInfo(int code, SceNetCtlInfo* info) {
 
   switch (code) {
     case 1: info->device = 0; break;
-    case 2: memset(info->ether_addr.data, 0, sizeof(info->ether_addr.data)); break;
+    case 2: {
+      if (auto ret = initAdapterInfo()) return ret;
+      memcpy(info->ether_addr.data, pCurrAda->Address, 6);
+    } break;
     case 3: {
       if (auto ret = initAdapterAddr()) return ret;
       info->mtu = (uint32_t)pCurrAddr->Mtu;
