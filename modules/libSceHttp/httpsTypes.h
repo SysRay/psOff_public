@@ -1,5 +1,6 @@
 #pragma once
 
+#include "modules_include/common.h"
 #include "../libSceSsl/types.h"
 
 enum class SceHttpsFlags : unsigned int {
