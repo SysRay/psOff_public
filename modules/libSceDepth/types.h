@@ -23,49 +23,49 @@ enum class SceDepthContextType {
 
 struct SceDepthInputImageInformation {
   int                 width;
-	int                 height;
-	SceDepthPixelFormat pixelFormat;
+  int                 height;
+  SceDepthPixelFormat pixelFormat;
 };
 
 struct SceDepthProcessingInformation {
   int                      width;
-	int                      height;
-	int                      executionMode;
-	int                      updateMode;
-	SceDepthProfile          depthProfile;
-	int                      depthMapSizeType;
-	SceDepthStereoCameraType cameraType;
+  int                      height;
+  int                      executionMode;
+  int                      updateMode;
+  SceDepthProfile          depthProfile;
+  int                      depthMapSizeType;
+  SceDepthStereoCameraType cameraType;
 };
 
 struct SceDepthPlatformInformation {
   SceDepthContextType contextType;
-	int                 pipe;
-	int                 queue;
-	void*               device;
-	void*               context;
+  int                 pipe;
+  int                 queue;
+  void*               device;
+  void*               context;
 };
 
 struct SceDepthInitializeParameter {
   int                           sizeofInitializeParameter;
-	SceDepthInputImageInformation inputImageInformation;
-	SceDepthProcessingInformation processingInformation;
-	SceDepthPlatformInformation   platformInformation;
+  SceDepthInputImageInformation inputImageInformation;
+  SceDepthProcessingInformation processingInformation;
+  SceDepthPlatformInformation   platformInformation;
 };
 
 struct SceDepthMemoryInformation {
   void*    systemMemory;
-	uint32_t systemMemorySize;
-	uint32_t reserved0;
-	void*    systemSharedMemory;
-	uint32_t systemSharedMemorySize;
-	uint32_t reserved1;
-	void*    videoSharedMemory;
-	uint32_t videoSharedMemorySize;
-	uint32_t reserved2;
+  uint32_t systemMemorySize;
+  uint32_t reserved0;
+  void*    systemSharedMemory;
+  uint32_t systemSharedMemorySize;
+  uint32_t reserved1;
+  void*    videoSharedMemory;
+  uint32_t videoSharedMemorySize;
+  uint32_t reserved2;
 };
 
 struct SceDepthQueryMemoryResult {
   uint32_t systemMemorySize;
-	uint32_t systemSharedMemorySize;
-	uint32_t videoSharedMemorySize;
+  uint32_t systemSharedMemorySize;
+  uint32_t videoSharedMemorySize;
 };

@@ -22,43 +22,37 @@ EXPORT SYSV_ABI int32_t sceCameraIsAttached(int32_t index) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraGetConfig(int32_t handle,
-                                           SceCameraConfig* pConfig) {
+EXPORT SYSV_ABI int32_t sceCameraGetConfig(int32_t handle, SceCameraConfig* pConfig) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraSetConfig(int32_t handle,
-                                           SceCameraConfig* pConfig) {
+EXPORT SYSV_ABI int32_t sceCameraSetConfig(int32_t handle, SceCameraConfig* pConfig) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraSetVideoSync(int32_t handle,
-                                              SceCameraVideoSyncParameter* pVideoSync) {
+EXPORT SYSV_ABI int32_t sceCameraSetVideoSync(int32_t handle, SceCameraVideoSyncParameter* pVideoSync) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraStart(int32_t handle,
-                                       SceCameraStartParameter* pParam) {
+EXPORT SYSV_ABI int32_t sceCameraStart(int32_t handle, SceCameraStartParameter* pParam) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraGetFrameData(int32_t handle,
-                                              SceCameraFrameData* pFrameData) {
+EXPORT SYSV_ABI int32_t sceCameraGetFrameData(int32_t handle, SceCameraFrameData* pFrameData) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceCameraSetAttribute(int32_t handle,
-	                                            SceCameraAttribute* pAttribute) {
+EXPORT SYSV_ABI int32_t sceCameraSetAttribute(int32_t handle, SceCameraAttribute* pAttribute) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
