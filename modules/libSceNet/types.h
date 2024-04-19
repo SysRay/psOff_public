@@ -9,9 +9,9 @@ typedef uint32_t SceNetSocklen_t;
 typedef int SceNetId;
 
 enum class SceStunCheckResult {
-  Unchecked = 0,
-  Failed    = 1,
-  Ok        = 2
+  RUnchecked = 0,
+  RFailed    = 1,
+  ROk        = 2
 
 };
 

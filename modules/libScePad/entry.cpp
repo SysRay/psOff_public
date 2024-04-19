@@ -85,6 +85,12 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
   return Err::NO_HANDLE;
 }
 
+EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
+  LOG_USE_MODULE(libScePad);
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   if (handle < 0) return Ok;
 
@@ -246,6 +252,13 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   return Ok;
 }
 
+EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtControllerInformation* pInfo) {
+  LOG_USE_MODULE(libScePad);
+  LOG_DEBUG(L"todo %S", __FUNCTION__);
+  if (handle < 0) return Err::INVALID_HANDLE;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData* pData, ScePadDeviceClassData* pDeviceClassData) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
@@ -254,19 +267,6 @@ EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData*
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, ScePadDeviceClassExtendedInformation* pExtInfo) {
-  LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"todo %S", __FUNCTION__);
-  if (handle < 0) return Err::INVALID_HANDLE;
-  return Ok;
-}
-
-EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
-  LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
   if (handle < 0) return Err::INVALID_HANDLE;
