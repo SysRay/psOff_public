@@ -49,6 +49,6 @@ class OfflineNet: public INetworking {
   int      socketSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags) final;
   int      socketSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) final;
   int      socketShutdown(SceNetId s, int how) final;
-  int      socketSocketClose(SceNetId s) final;
-  int      socketSocketAbort(SceNetId s, int flags) final;
+  int      socketClose(SceNetId s) final;
+  int      socketAbort(SceNetId s, int flags) final;
 };

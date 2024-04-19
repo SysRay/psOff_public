@@ -128,10 +128,10 @@ int OfflineNet::socketShutdown(SceNetId s, int how) {
   return Ok;
 }
 
-int OfflineNet::socketSocketClose(SceNetId s) {
+int OfflineNet::socketClose(SceNetId s) {
   return Ok;
 }
 
-int OfflineNet::socketSocketAbort(SceNetId s, int flags) {
+int OfflineNet::socketAbort(SceNetId s, int flags) {
   return Ok;
 }

@@ -77,8 +77,8 @@ class INetworking {
   virtual int      socketSendmsg(SceNetId s, const SceNetMsghdr* msg, int flags)                                                     = 0;
   virtual int      socketSetsockopt(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen)                  = 0;
   virtual int      socketShutdown(SceNetId s, int how)                                                                               = 0;
-  virtual int      socketSocketClose(SceNetId s)                                                                                     = 0;
-  virtual int      socketSocketAbort(SceNetId s, int flags)                                                                          = 0;
+  virtual int      socketClose(SceNetId s)                                                                                           = 0;
+  virtual int      socketAbort(SceNetId s, int flags)                                                                                = 0;
 };
 
 #if defined(__APICALL_EXTERN)

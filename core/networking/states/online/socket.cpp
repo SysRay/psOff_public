@@ -103,11 +103,11 @@ int OnlineNet::socketShutdown(SceNetId s, int how) {
   return Ok;
 }
 
-int OnlineNet::socketSocketClose(SceNetId s) {
+int OnlineNet::socketClose(SceNetId s) {
   if (closesocket(s) == SOCKET_ERROR) return INetworking::getLastError();
   return Ok;
 }
 
-int OnlineNet::socketSocketAbort(SceNetId s, int flags) {
+int OnlineNet::socketAbort(SceNetId s, int flags) {
   return Ok;
 }

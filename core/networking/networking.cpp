@@ -24,7 +24,7 @@ INetworking::~INetworking() {
 int32_t INetworking::getLastError() {
   auto win_err = (uint32_t)GetLastError();
   if (win_err == WSANOTINITIALISED) return Err::Net::ERROR_ENOTINIT;
-  return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
+  return (0x80000000 | (0x041 << 16) | (0x0100 | (win_err - 10000)));
 }
 
 int32_t* INetworking::getErrnoPtr() {

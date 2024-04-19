@@ -72,10 +72,10 @@ EXPORT SYSV_ABI int sceNetShutdown(SceNetId s, int how) {
 }
 
 EXPORT SYSV_ABI int sceNetSocketClose(SceNetId s) {
-  return accessNetworking().socketSocketClose(s);
+  return accessNetworking().socketClose(s);
 }
 
 EXPORT SYSV_ABI int sceNetSocketAbort(SceNetId s, int flags) {
-  return accessNetworking().socketSocketAbort(s, flags);
+  return accessNetworking().socketAbort(s, flags);
 }
 }
