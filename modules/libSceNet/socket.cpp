@@ -1,7 +1,7 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "socketTypes.h"
-#include "core/networking/networking.h"
 
 LOG_DEFINE_MODULE(libSceNet);
 
@@ -78,5 +78,4 @@ EXPORT SYSV_ABI int sceNetSocketClose(SceNetId s) {
 EXPORT SYSV_ABI int sceNetSocketAbort(SceNetId s, int flags) {
   return accessNetworking().socketSocketAbort(s, flags);
 }
-
 }

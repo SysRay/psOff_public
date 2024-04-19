@@ -1,6 +1,6 @@
 #include "../online.h"
-#include "logging.h"
 #include "config_emu.h"
+#include "logging.h"
 
 #include <Windows.h>
 #include <boost/asio.hpp>

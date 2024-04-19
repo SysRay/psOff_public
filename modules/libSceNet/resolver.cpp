@@ -1,9 +1,8 @@
 #include "common.h"
-
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "resolverTypes.h"
 #include "socketTypes.h"
-#include "core/networking/networking.h"
 
 LOG_DEFINE_MODULE(libSceNet);
 

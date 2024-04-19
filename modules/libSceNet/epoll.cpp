@@ -1,7 +1,7 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "types.h"
-#include "core/networking/networking.h"
 
 extern "C" {
 EXPORT SYSV_ABI SceNetId sceNetEpollCreate(const char* name, int flags) {

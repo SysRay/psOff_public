@@ -2,9 +2,9 @@
 #include "networking.h"
 #undef __APICALL_EXTERN
 #include "config_emu.h"
+#include "logging.h"
 #include "states/offline.h"
 #include "states/online.h"
-#include "logging.h"
 
 LOG_DEFINE_MODULE(NetworkingCore);
 
