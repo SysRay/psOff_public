@@ -151,7 +151,7 @@ EXPORT SYSV_ABI int sceNetCtlGetInfo(int code, SceNetCtlInfo* info) {
     case 1: info->device = 0; break;
     case 2: {
       if (auto ret = initAdapterInfo()) return ret;
-      memcpy(info->ether_addr.data, pCurrAda->Address, 6);
+      memcpy(info->ether_addr.data, pCurrAda->Address, pCurrAda->AddressLength);
     } break;
     case 3: {
       if (auto ret = initAdapterAddr()) return ret;
