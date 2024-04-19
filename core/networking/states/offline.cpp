@@ -135,3 +135,253 @@ int OfflineNet::socketClose(SceNetId s) {
 int OfflineNet::socketAbort(SceNetId s, int flags) {
   return Ok;
 }
+
+int OfflineNet::httpInit(int libnetMemId, int libsslCtxId, size_t poolSize) {
+  return Ok;
+}
+
+int OfflineNet::httpTerm(int libhttpCtxId) {
+  return Ok;
+}
+
+int OfflineNet::httpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat) {
+  return Ok;
+}
+
+int OfflineNet::httpCreateTemplate(int libhttpCtxId, const char* userAgent, int httpVer, int isAutoProxyConf) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpDeleteTemplate(int tmplId) {
+  return Ok;
+}
+
+int OfflineNet::httpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpDeleteConnection(int connId) {
+  return Ok;
+}
+
+int OfflineNet::httpCreateRequest(int connId, int method, const char* path, uint64_t contentLength) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpCreateRequest2(int connId, const char* method, const char* path, uint64_t contentLength) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpCreateRequestWithURL(int connId, int method, const char* url, uint64_t contentLength) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpCreateRequestWithURL2(int connId, const char* method, const char* url, uint64_t contentLength) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpDeleteRequest(int reqId) {
+  return Ok;
+}
+
+int OfflineNet::httpSetRequestContentLength(int id, uint64_t contentLength) {
+  return Ok;
+}
+
+int OfflineNet::httpSetChunkedTransferEnabled(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpSetInflateGZIPEnabled(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpSendRequest(int reqId, const void* postData, size_t size) {
+  return Ok;
+}
+
+int OfflineNet::httpAbortRequest(int reqId) {
+  return Ok;
+}
+
+int OfflineNet::httpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength) {
+  return Ok;
+}
+
+int OfflineNet::httpGetStatusCode(int reqId, int* statusCode) {
+  return Ok;
+}
+
+int OfflineNet::httpGetAllResponseHeaders(int reqId, char** header, size_t* headerSize) {
+  return Ok;
+}
+
+int OfflineNet::httpReadData(int reqId, void* data, size_t size) {
+  return Ok;
+}
+
+int OfflineNet::httpAddRequestHeader(int id, const char* name, const char* value, uint32_t mode) {
+  return Ok;
+}
+
+int OfflineNet::httpRemoveRequestHeader(int id, const char* name) {
+  return Ok;
+}
+
+int OfflineNet::httpParseResponseHeader(const char* header, size_t headerLen, const char* fieldStr, const char** fieldValue, size_t* valueLen) {
+  return Ok;
+}
+
+int OfflineNet::httpParseStatusLine(const char* statusLine, size_t lineLen, int* httpMajorVer, int* httpMinorVer, int* responseCode, const char** reasonPhrase,
+                                    size_t* phraseLen) {
+  return Ok;
+}
+
+int OfflineNet::httpSetResponseHeaderMaxSize(int id, size_t headerSize) {
+  return Ok;
+}
+
+int OfflineNet::httpSetAuthInfoCallback(int id, SceHttpAuthInfoCallback cbfunc, void* userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpSetAuthEnabled(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpGetAuthEnabled(int id, int* isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpAuthCacheFlush(int libhttpCtxId) {
+  return Ok;
+}
+
+int OfflineNet::httpSetRedirectCallback(int id, SceHttpRedirectCallback cbfunc, void* userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpSetAutoRedirect(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpGetAutoRedirect(int id, int* isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpRedirectCacheFlush(int libhttpCtxId) {
+  return Ok;
+}
+
+int OfflineNet::httpSetResolveTimeOut(int id, uint32_t usec) {
+  return Ok;
+}
+
+int OfflineNet::httpSetResolveRetry(int id, int retry) {
+  return Ok;
+}
+
+int OfflineNet::httpSetConnectTimeOut(int id, uint32_t usec) {
+  return Ok;
+}
+
+int OfflineNet::httpSetSendTimeOut(int id, uint32_t usec) {
+  return Ok;
+}
+
+int OfflineNet::httpSetRecvTimeOut(int id, uint32_t usec) {
+  return Ok;
+}
+
+int OfflineNet::httpSetRequestStatusCallback(int id, SceHttpRequestStatusCallback cbfunc, void* userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpGetLastErrno(int reqId, int* errNum) {
+  return Ok;
+}
+
+int OfflineNet::httpSetNonblock(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpGetNonblock(int id, int* isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpTrySetNonblock(int id, int isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpTryGetNonblock(int id, int* isEnable) {
+  return Ok;
+}
+
+int OfflineNet::httpCreateEpoll(int libhttpCtxId, SceHttpEpollHandle* eh) {
+  static int id = 0;
+  return ++id;
+}
+
+int OfflineNet::httpSetEpoll(int id, SceHttpEpollHandle eh, void* userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpUnsetEpoll(int id) {
+  return Ok;
+}
+
+int OfflineNet::httpGetEpoll(int id, SceHttpEpollHandle* eh, void** userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpDestroyEpoll(int libhttpCtxId, SceHttpEpollHandle eh) {
+  return Ok;
+}
+
+int OfflineNet::httpWaitRequest(SceHttpEpollHandle eh, SceHttpNBEvent* nbev, int maxevents, int timeout) {
+  return Ok;
+}
+
+int OfflineNet::httpAbortWaitRequest(SceHttpEpollHandle eh) {
+  return Ok;
+}
+
+// HTTPS
+int OfflineNet::httpsLoadCert(int libhttpCtxId, int caCertNum, const SceSslData** caList, const SceSslData* cert, const SceSslData* privKey) {
+  return Ok;
+}
+
+int OfflineNet::httpsUnloadCert(int libhttpCtxId) {
+  return Ok;
+}
+
+int OfflineNet::httpsEnableOption(int id, uint32_t sslFlags) {
+  return Ok;
+}
+
+int OfflineNet::httpsDisableOption(int id, uint32_t sslFlags) {
+  return Ok;
+}
+
+int OfflineNet::httpsGetSslError(int id, int* errNum, uint32_t* detail) {
+  return Ok;
+}
+
+int OfflineNet::httpsSetSslCallback(int id, SceHttpsCallback cbfunc, void* userArg) {
+  return Ok;
+}
+
+int OfflineNet::httpsSetSslVersion(int id, SceSslVersion version) {
+  return Ok;
+}

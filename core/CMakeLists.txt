@@ -33,6 +33,7 @@ add_library(core SHARED
 
 add_dependencies(core logging third_party config_emu gamereport)
 target_link_libraries(core PRIVATE
+  libboost_url
   libboost_thread
   libboost_chrono
   libboost_program_options

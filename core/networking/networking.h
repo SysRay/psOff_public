@@ -1,9 +1,12 @@
 #pragma once
 
+#include "modules/libSceHttp/httpsTypes.h"
+#include "modules/libSceHttp/types.h"
 #include "modules/libSceNet/resolverTypes.h"
 #include "modules/libSceNet/socketTypes.h"
 #include "modules/libSceNet/types.h"
 #include "modules/libSceNetCtl/types.h"
+#include "modules/libSceSsl/types.h"
 #include "modules_include/common.h"
 #include "utility/utility.h"
 
@@ -79,6 +82,73 @@ class INetworking {
   virtual int      socketShutdown(SceNetId s, int how)                                                                               = 0;
   virtual int      socketClose(SceNetId s)                                                                                           = 0;
   virtual int      socketAbort(SceNetId s, int flags)                                                                                = 0;
+
+  /* HTTP facility */
+
+  /* HTTP1 facility */
+  virtual int httpInit(int libnetMemId, int libsslCtxId, size_t poolSize)                                                                    = 0;
+  virtual int httpTerm(int libhttpCtxId)                                                                                                     = 0;
+  virtual int httpGetMemoryPoolStats(int libhttpCtxId, SceHttpMemoryPoolStats* currentStat)                                                  = 0;
+  virtual int httpCreateTemplate(int libhttpCtxId, const char* userAgent, int httpVer, int isAutoProxyConf)                                  = 0;
+  virtual int httpDeleteTemplate(int tmplId)                                                                                                 = 0;
+  virtual int httpCreateConnection(int tmplId, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive)             = 0;
+  virtual int httpCreateConnectionWithURL(int tmplId, const char* url, int isEnableKeepalive)                                                = 0;
+  virtual int httpDeleteConnection(int connId)                                                                                               = 0;
+  virtual int httpCreateRequest(int connId, int method, const char* path, uint64_t contentLength)                                            = 0;
+  virtual int httpCreateRequest2(int connId, const char* method, const char* path, uint64_t contentLength)                                   = 0;
+  virtual int httpCreateRequestWithURL(int connId, int method, const char* url, uint64_t contentLength)                                      = 0;
+  virtual int httpCreateRequestWithURL2(int connId, const char* method, const char* url, uint64_t contentLength)                             = 0;
+  virtual int httpDeleteRequest(int reqId)                                                                                                   = 0;
+  virtual int httpSetRequestContentLength(int id, uint64_t contentLength)                                                                    = 0;
+  virtual int httpSetChunkedTransferEnabled(int id, int isEnable)                                                                            = 0;
+  virtual int httpSetInflateGZIPEnabled(int id, int isEnable)                                                                                = 0;
+  virtual int httpSendRequest(int reqId, const void* postData, size_t size)                                                                  = 0;
+  virtual int httpAbortRequest(int reqId)                                                                                                    = 0;
+  virtual int httpGetResponseContentLength(int reqId, int* result, uint64_t* contentLength)                                                  = 0;
+  virtual int httpGetStatusCode(int reqId, int* statusCode)                                                                                  = 0;
+  virtual int httpGetAllResponseHeaders(int reqId, char** header, size_t* headerSize)                                                        = 0;
+  virtual int httpReadData(int reqId, void* data, size_t size)                                                                               = 0;
+  virtual int httpAddRequestHeader(int id, const char* name, const char* value, uint32_t mode)                                               = 0;
+  virtual int httpRemoveRequestHeader(int id, const char* name)                                                                              = 0;
+  virtual int httpParseResponseHeader(const char* header, size_t headerLen, const char* fieldStr, const char** fieldValue, size_t* valueLen) = 0;
+  virtual int httpParseStatusLine(const char* statusLine, size_t lineLen, int* httpMajorVer, int* httpMinorVer, int* responseCode, const char** reasonPhrase,
+                                  size_t* phraseLen)                                                                                         = 0;
+  virtual int httpSetResponseHeaderMaxSize(int id, size_t headerSize)                                                                        = 0;
+  virtual int httpSetAuthInfoCallback(int id, SceHttpAuthInfoCallback cbfunc, void* userArg)                                                 = 0;
+  virtual int httpSetAuthEnabled(int id, int isEnable)                                                                                       = 0;
+  virtual int httpGetAuthEnabled(int id, int* isEnable)                                                                                      = 0;
+  virtual int httpAuthCacheFlush(int libhttpCtxId)                                                                                           = 0;
+  virtual int httpSetRedirectCallback(int id, SceHttpRedirectCallback cbfunc, void* userArg)                                                 = 0;
+  virtual int httpSetAutoRedirect(int id, int isEnable)                                                                                      = 0;
+  virtual int httpGetAutoRedirect(int id, int* isEnable)                                                                                     = 0;
+  virtual int httpRedirectCacheFlush(int libhttpCtxId)                                                                                       = 0;
+  virtual int httpSetResolveTimeOut(int id, uint32_t usec)                                                                                   = 0;
+  virtual int httpSetResolveRetry(int id, int retry)                                                                                         = 0;
+  virtual int httpSetConnectTimeOut(int id, uint32_t usec)                                                                                   = 0;
+  virtual int httpSetSendTimeOut(int id, uint32_t usec)                                                                                      = 0;
+  virtual int httpSetRecvTimeOut(int id, uint32_t usec)                                                                                      = 0;
+  virtual int httpSetRequestStatusCallback(int id, SceHttpRequestStatusCallback cbfunc, void* userArg)                                       = 0;
+  virtual int httpGetLastErrno(int reqId, int* errNum)                                                                                       = 0;
+  virtual int httpSetNonblock(int id, int isEnable)                                                                                          = 0;
+  virtual int httpGetNonblock(int id, int* isEnable)                                                                                         = 0;
+  virtual int httpTrySetNonblock(int id, int isEnable)                                                                                       = 0;
+  virtual int httpTryGetNonblock(int id, int* isEnable)                                                                                      = 0;
+  virtual int httpCreateEpoll(int libhttpCtxId, SceHttpEpollHandle* eh)                                                                      = 0;
+  virtual int httpSetEpoll(int id, SceHttpEpollHandle eh, void* userArg)                                                                     = 0;
+  virtual int httpUnsetEpoll(int id)                                                                                                         = 0;
+  virtual int httpGetEpoll(int id, SceHttpEpollHandle* eh, void** userArg)                                                                   = 0;
+  virtual int httpDestroyEpoll(int libhttpCtxId, SceHttpEpollHandle eh)                                                                      = 0;
+  virtual int httpWaitRequest(SceHttpEpollHandle eh, SceHttpNBEvent* nbev, int maxevents, int timeout)                                       = 0;
+  virtual int httpAbortWaitRequest(SceHttpEpollHandle eh)                                                                                    = 0;
+
+  // HTTPS
+  virtual int httpsLoadCert(int libhttpCtxId, int caCertNum, const SceSslData** caList, const SceSslData* cert, const SceSslData* privKey) = 0;
+  virtual int httpsUnloadCert(int libhttpCtxId)                                                                                            = 0;
+  virtual int httpsEnableOption(int id, uint32_t sslFlags)                                                                                 = 0;
+  virtual int httpsDisableOption(int id, uint32_t sslFlags)                                                                                = 0;
+  virtual int httpsGetSslError(int id, int* errNum, uint32_t* detail)                                                                      = 0;
+  virtual int httpsSetSslCallback(int id, SceHttpsCallback cbfunc, void* userArg)                                                          = 0;
+  virtual int httpsSetSslVersion(int id, SceSslVersion version)                                                                            = 0;
 };
 
 #if defined(__APICALL_EXTERN)
