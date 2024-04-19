@@ -34,6 +34,10 @@ EXPORT SYSV_ABI int32_t sceAjmModuleUnregister(const SceAjmContextId uiContext, 
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceAjmInstanceCodecType(SceAjmCodecType uiCodec) {
+  return uiCodec >> 0xE;
+}
+
 EXPORT SYSV_ABI int32_t sceAjmInstanceCreate(const SceAjmContextId uiContext, const SceAjmCodecType uiCodec, const uint64_t uiFlags,
                                              SceAjmInstanceId* const pInstance) {
   return Ok;
