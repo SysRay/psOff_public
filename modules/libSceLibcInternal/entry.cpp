@@ -80,6 +80,14 @@ EXPORT SYSV_ABI size_t __NID(strlen)(const char* str) {
   return ::strlen(str);
 }
 
+EXPORT SYSV_ABI size_t __NID(strnlen)(const char* str, size_t max) {
+  return ::strnlen(str, max);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strnlen_s)(const char* str, size_t max) {
+  return ::strnlen_s(str, max);
+}
+
 EXPORT SYSV_ABI char* __NID(strncat)(char* dst, const char* src, size_t size) {
   return ::strncat(dst, src, size);
 }
@@ -94,6 +102,10 @@ EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t si
 
 EXPORT SYSV_ABI char* __NID(strncpy)(char* dst, char* src, size_t len) {
   return ::strncpy(dst, src, len);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strncpy_s)(char* dst, size_t dstsz, const char* src, size_t count) {
+  return ::strncpy_s(dst, dstsz, src, count);
 }
 
 EXPORT SYSV_ABI int __NID(strcmp)(const char* str1, const char* str2) {
@@ -122,6 +134,10 @@ EXPORT SYSV_ABI const char* __NID(strcat)(char* dst, const char* src) {
 
 EXPORT SYSV_ABI int __NID(strcasecmp)(const char* dst, const char* src) {
   return _stricmp(dst, src);
+}
+
+EXPORT SYSV_ABI char* __NID(strdup)(const char* src) {
+  return _strdup(src);
 }
 
 EXPORT SYSV_ABI int __NID(strncasecmp)(const char* dst, const char* src, size_t num) {
