@@ -93,7 +93,11 @@ struct HttpConnection {
   ip::tcp::socket*            socket = nullptr;
 
   HttpConnection(HttpTemplate* parentTemplate, const char* serverName, const char* scheme, uint16_t port, int isEnableKeepalive, bool shouldFreeStrings)
-      : parentTemplate(parentTemplate), serverName(serverName), scheme(scheme), port(port), isEnableKeepalive(isEnableKeepalive),
+      : parentTemplate(parentTemplate),
+        serverName(serverName),
+        scheme(scheme),
+        port(port),
+        isEnableKeepalive(isEnableKeepalive),
         shouldFreeStrings(shouldFreeStrings) {}
 };
 

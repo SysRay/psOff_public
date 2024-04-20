@@ -17,10 +17,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include <queue>
-
 #include <condition_variable>
 #include <mutex>
+#include <queue>
 
 LOG_DEFINE_MODULE(AvPlayer);
 

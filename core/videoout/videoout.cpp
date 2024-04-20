@@ -20,8 +20,6 @@
 #include "modules_include/common.h"
 #include "vulkan/vulkanHelper.h"
 
-#include <queue>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <algorithm>
@@ -34,6 +32,7 @@
 #include <memory>
 #include <mutex>
 #include <optick.h>
+#include <queue>
 #include <thread>
 
 LOG_DEFINE_MODULE(VideoOut);
