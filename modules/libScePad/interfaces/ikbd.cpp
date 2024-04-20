@@ -41,6 +41,8 @@ void KBDController::close() {
 
 bool KBDController::reconnect() {
   m_state = ControllerState::Connected;
+  ::strcpy_s(m_name, "Emulated gamepad");
+  ::strcpy_s(m_guid, "1337deadbeefb00b1e50101010101010");
   return true;
 }
 
