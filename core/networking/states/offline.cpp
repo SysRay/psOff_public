@@ -8,7 +8,31 @@ LOG_DEFINE_MODULE(OfflineNetworkingCore);
 int32_t OfflineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
   LOG_USE_MODULE(OfflineNetworkingCore);
   LOG_TRACE(L"netCtlGetInfo(%d, %p)", code, info);
-  ::memset(info, 0, sizeof(SceNetCtlInfo));
+
+  switch (code) {
+    case 1: info->device = 0; break;
+    case 2: memset(info->ether_addr.data, 0, SCE_NET_ETHER_ADDR_LEN); break;
+    case 3: info->mtu = 0; break;
+    case 4: info->link = 0; break;
+    case 5: memset(info->bssid.data, 0, SCE_NET_ETHER_ADDR_LEN); break;
+    case 6: *info->ssid = '\0'; break;
+    case 7: info->wifi_security = 0; break;
+    case 8: info->rssi_dbm = 0; break;
+    case 9: info->rssi_percentage = 0; break;
+    case 10: info->channel = 0; break;
+    case 11: info->ip_config = 0; break;
+    case 12: *info->dhcp_hostname = '\0'; break;
+    case 13: *info->pppoe_auth_name = '\0'; break;
+    case 14: *info->ip_address = '\0'; break;
+    case 15: *info->netmask = '\0'; break;
+    case 16: *info->default_route = '\0'; break;
+    case 17: *info->primary_dns = '\0'; break;
+    case 18: *info->secondary_dns = '\0'; break;
+    case 19: info->http_proxy_config = 0; break;
+    case 20: *info->http_proxy_server = '\0'; break;
+    case 21: info->http_proxy_port = 0; break;
+  }
+
   return Err::NetCtl::NOT_CONNECTED;
 }
 
