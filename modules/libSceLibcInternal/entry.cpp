@@ -132,6 +132,10 @@ EXPORT SYSV_ABI const char* __NID(strcat)(char* dst, const char* src) {
   return ::strcat(dst, src);
 }
 
+EXPORT SYSV_ABI const char* __NID(strtok)(char* str, const char* delim) {
+  return ::strtok(str, delim);
+}
+
 EXPORT SYSV_ABI int __NID(strcasecmp)(const char* dst, const char* src) {
   return _stricmp(dst, src);
 }

@@ -8,10 +8,10 @@ AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveBitFields: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 AlignEscapedNewlines: Right
-AlignOperands:   Align
+AlignOperands: Align
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: true
+PackConstructorInitializers: NextLine
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortEnumsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Never
@@ -57,14 +57,12 @@ BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: BeforeColon
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
-ColumnLimit:     160
-CommentPragmas:  '^ IWYU pragma:'
+ColumnLimit: 160
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
-DeriveLineEnding: true
 DerivePointerAlignment: false
 DisableFormat:   false
 SeparateDefinitionBlocks: Always
@@ -73,40 +71,17 @@ ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
 ForEachMacros:
   - foreach
-  - Q_FOREACH
   - BOOST_FOREACH
   - FOR
   - FOR_HASH
-StatementAttributeLikeMacros:
-  - Q_EMIT
 IncludeBlocks:   Regroup
 IncludeCategories:
-  - Regex:           '^"(Kyty)/'
-    Priority:        1
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '^"(Emulator)/'
+  - Regex:           '^<'
     Priority:        2
     SortPriority:    0
     CaseSensitive:   false
-  - Regex:           '^"(gtest)/'
-    Priority:        4
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '^<Q'
-    Priority:        5
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '"ui_'
-    Priority:        6
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '^<'
-    Priority:        7
-    SortPriority:    0
-    CaseSensitive:   false
   - Regex:           '.*'
-    Priority:        3
+    Priority:        1
     SortPriority:    0
     CaseSensitive:   false
 IncludeIsMainRegex: '$'
@@ -117,21 +92,16 @@ IndentGotoLabels: true
 IndentPPDirectives: None
 IndentExternBlock: AfterExternBlock
 IndentRequires:  false
-IndentWidth:     2
+IndentWidth: 2
 IndentWrappedFunctionNames: false
 InsertTrailingCommas: None
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: true
 MacroBlockBegin: ''
-MacroBlockEnd:   ''
+MacroBlockEnd: ''
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
-ObjCBinPackProtocolList: Auto
-ObjCBlockIndentWidth: 2
-ObjCBreakBeforeNestedBlockParam: true
-ObjCSpaceAfterProperty: false
-ObjCSpaceBeforeProtocolList: true
 PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakComment: 300
@@ -142,8 +112,8 @@ PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 60
 PenaltyIndentedWhitespace: 0
 PointerAlignment: Left
-ReflowComments:  true
-SortIncludes:    true
+ReflowComments: true
+SortIncludes: true
 SortJavaStaticImport: Before
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
@@ -158,28 +128,21 @@ SpaceBeforeParens: ControlStatements
 SpaceAroundPointerQualifiers: Default
 SpaceBeforeRangeBasedForLoopColon: false
 SpaceInEmptyBlock: false
-SpaceInEmptyParentheses: false
+SpacesInParensOptions:
+  InEmptyParentheses: false
+  InCStyleCasts: false
 SpacesBeforeTrailingComments: 1
-SpacesInAngles:  false
+SpacesInAngles: false
 SpacesInConditionalStatement: false
 SpacesInContainerLiterals: true
-SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 BitFieldColonSpacing: Both
-Standard:        Latest
-StatementMacros:
-  - Q_UNUSED
-  - QT_REQUIRE_VERSION
-TabWidth:        4
-UseCRLF:         true
-UseTab:          Never
+Standard: Latest
+LineEnding: LF
+UseTab: Never
 WhitespaceSensitiveMacros:
   - STRINGIZE
   - PP_STRINGIZE
   - BOOST_PP_STRINGIZE
-  - NS_SWIFT_NAME
-  - CF_SWIFT_NAME
 ...
-
