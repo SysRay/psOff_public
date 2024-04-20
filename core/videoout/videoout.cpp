@@ -893,6 +893,8 @@ std::thread VideoOut::createSDLThread() {
             SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
           }
 
+          SDL_SetWindowMinimumSize(window.window, 400, 225);
+
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
           window.config.resolution.fullWidth  = window.config.resolution.paneWidth;
           window.config.resolution.fullHeight = window.config.resolution.paneHeight;
