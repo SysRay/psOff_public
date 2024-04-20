@@ -77,31 +77,55 @@ EXPORT SYSV_ABI errno_t __NID(memcmp)(void* mem1, const void* mem2, size_t size)
 }
 
 EXPORT SYSV_ABI size_t __NID(strlen)(const char* str) {
-  return std::strlen(str);
+  return ::strlen(str);
 }
 
 EXPORT SYSV_ABI char* __NID(strncat)(char* dst, const char* src, size_t size) {
-  return std::strncat(dst, src, size);
+  return ::strncat(dst, src, size);
 }
 
 EXPORT SYSV_ABI char* __NID(strstr)(char* haystack, const char* needle) {
-  return std::strstr(haystack, needle);
+  return ::strstr(haystack, needle);
 }
 
 EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t size) {
-  return std::strncmp(str1, str2, size);
+  return ::strncmp(str1, str2, size);
 }
 
 EXPORT SYSV_ABI char* __NID(strncpy)(char* dst, char* src, size_t len) {
-  return std::strncpy(dst, src, len);
+  return ::strncpy(dst, src, len);
 }
 
 EXPORT SYSV_ABI int __NID(strcmp)(const char* str1, const char* str2) {
-  return std::strcmp(str1, str2);
+  return ::strcmp(str1, str2);
+}
+
+EXPORT SYSV_ABI char* __NID(strcpy)(char* dst, const char* src) {
+  return ::strcpy(dst, src);
 }
 
 EXPORT SYSV_ABI errno_t __NID(strcpy_s)(char* dst, size_t size, const char* src) {
   return ::strcpy_s(dst, size, src);
+}
+
+EXPORT SYSV_ABI const char* __NID(strchr)(const char* str, int val) {
+  return ::strchr(str, val);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strcat_s)(char* dst, size_t sz, const char* src) {
+  return ::strcat_s(dst, sz, src);
+}
+
+EXPORT SYSV_ABI const char* __NID(strcat)(char* dst, const char* src) {
+  return ::strcat(dst, src);
+}
+
+EXPORT SYSV_ABI int __NID(strcasecmp)(const char* dst, const char* src) {
+  return _stricmp(dst, src);
+}
+
+EXPORT SYSV_ABI int __NID(strncasecmp)(const char* dst, const char* src, size_t num) {
+  return _strnicmp(dst, src, num);
 }
 
 EXPORT SYSV_ABI float __NID(expf)(float val) {
@@ -114,6 +138,10 @@ EXPORT SYSV_ABI float __NID(sinf)(float val) {
 
 EXPORT SYSV_ABI float __NID(cosf)(float val) {
   return std::cosf(val);
+}
+
+EXPORT SYSV_ABI float __NID(sqrtf)(float val) {
+  return std::sqrtf(val);
 }
 
 EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
