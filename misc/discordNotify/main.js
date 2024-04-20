@@ -6,40 +6,33 @@ const hookURL = process.env.DISCORD_WEBHOOK;
 const maxMessageSize = 1800;
 
 const sendDiscordMessage = async (msg = null) => {
-  if (msg !== null && msg.length > maxMessageSize) {
-    let cpos = 0;
-    let strlen = 0;
-    let lastNL = 0;
-
-    while (true) {
-      strlen = 0;
-      lastNL = -1;
-
-      while ((cpos + strlen) < maxMessageSize) {
-        if (msg.charAt(cpos + strlen) === '\n')
-          lastNL = strlen;
-        if (++strlen === maxMessageSize) {
-          strlen = lastNL;
-          break;
-        }
-      }
-
-      if (lastNL !== -1) {
-        await sendDiscordMessage(msg.substr(cpos, strlen));
-        cpos += strlen + 1;
-      }
-
-      if (lastNL === -1 && strlen > 0)
-        return sendDiscordMessage(msg.substr(cpos, strlen));
-      else if (strlen == 0)
-        return null;
-    }
-  }
-
   if (hookURL === undefined) {
     console.error('No Discord WebHook URL found!');
     console.log(msg);
     return;
+  }
+
+  if (msg !== null && msg.length > maxMessageSize) {
+    let start = 0;
+    let length = 0;
+    let lastNL = -1;
+
+    while ((start + length) < msg.length) {
+      if (length === maxMessageSize) {
+        if (lastNL !== -1) length = lastNL;
+        await sendDiscordMessage(msg.substr(start, length));
+        start += length + 1;
+        length = 0;
+      }
+
+      if (msg.charAt(start + length) === '\n') {
+        lastNL = length;
+      }
+
+      length += 1;
+    }
+
+    return sendDiscordMessage(msg.substr(start, length));
   }
 
   return fetch(hookURL, {
