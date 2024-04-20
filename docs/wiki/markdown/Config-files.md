@@ -68,6 +68,23 @@ You can change the layout now in _controls.json_, if you want to.
 
 ## general.json
 
+```jsonc
+{
+  "netEnabled": false, // Wether enable networking features or not. Better to keep it disabled, not ready for the actual use.
+  "netMAC": "00:00:00:00:00:00", // Your ethernet adapter's MAC address. Zero-MAC means "first usable device".
+  "profiles": [ // User profiles, you can change your name there
+    {
+      "color": "blue",
+      "name": "Anon"
+    },
+    // More users here...
+  ],
+  "systemlang": 0, // System langauge, see the list below to get these indexes
+  "userIndex": 1 // Current user index
+}
+
+```
+
 Game language can be changed with systemlang : *, default is EnglishUS. Game must support it.
 
   Japanese           = 0 \
@@ -103,11 +120,30 @@ Game language can be changed with systemlang : *, default is EnglishUS. Game mus
 
 ## audio.json
 
-You can specify the audio device here and adjust the master volume
+```jsonc
+{
+  "device": "[default]", // Audio device name, [default] means system default output device
+  "volume": 0.05 // Master volume, 0...1
+}
+```
 
 ## graphics.json
 
-Not implemented yet, no parameters there
+> [!WARNING]
+> The emulator updates this file every time you gracefully stop the emulation \(by closing the emulator window\)!
+
+```jsonc
+{
+  "display": 1, // Your display index, starting from 0
+  "fullscreen": false, // Wether emulator will run in fullscreen mode or not
+
+  "height": 1080, // The emulator window dimensions, ignored in fullscreen mode
+  "width": 1920,
+
+  "xpos": -1, // The emulator window position, -1 means center
+  "ypos": -1
+}
+```
 
 ## logging.json
 
@@ -116,7 +152,7 @@ Not implemented yet, no parameters there
   // Log output
   // Possible values:
   // 1) Baical - to Baical server over network
-  // 2) FileBin - to local binary file
+  // 2) FileBin - to local binary file (you should use this format to post compatibility reports)
   // 3) FileTxt - to local text file
   // 4) Syslog - to system log server
   // 5) Console - to console
