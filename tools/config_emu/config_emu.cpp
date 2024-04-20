@@ -34,6 +34,10 @@ class Item {
     }
   };
 };
+
+static inline bool isJsonTypesSimilar(json& a, json& b) {
+  return (a.type() == b.type()) || (a.is_number_integer() == b.is_number_integer());
+}
 } // namespace
 
 class Config: public IConfig {
@@ -139,7 +143,7 @@ Config::Config() {
       for (auto& [dkey, dval]: def.items()) {
         json& cval = getVal(obj, dkey);
 
-        if (cval.is_null() && !dval.is_null()) {
+        if ((cval.is_null() && !dval.is_null()) || !isJsonTypesSimilar(cval, dval)) {
           cval    = dval;
           missing = true;
         } else if (dval.is_structured()) {
@@ -159,7 +163,7 @@ Config::Config() {
 
     if (!item->_dontfix && fixMissing(item->_json, defaults)) {
       should_resave = true;
-      printf("%s: some missing parameters has been added!\n", item->_name.data());
+      printf("%s: some missing or invalid parameters has been fixed!\n", item->_name.data());
     }
 
     // Just the same thing as above, but for removing unused keys this time
@@ -231,6 +235,7 @@ Config::Config() {
                                        {"netEnabled", false},
                                        {"netMAC", "00:00:00:00:00:00"},
                                        {"userIndex", 1},
+                                       {"onlineUsers", 1},
                                        {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
                                  ConfigModFlag::GENERAL);
 
