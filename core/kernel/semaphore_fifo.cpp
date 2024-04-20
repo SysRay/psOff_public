@@ -3,12 +3,11 @@
 #include "pthread.h"
 #include "semaphore.h"
 
-#include <queue>
-
 #include <boost/chrono.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
+#include <queue>
 
 LOG_DEFINE_MODULE(Semaphore);
 

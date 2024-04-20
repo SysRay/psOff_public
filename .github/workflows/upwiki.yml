@@ -2,6 +2,7 @@ name: upload wiki
 
 on:
   push:
+    branches: [main]
     paths:
       - '.github/workflows/upwiki.yml'
       - 'docs/wiki/**'
@@ -30,7 +31,7 @@ jobs:
 
       - name: Push wiki content
         run: |
-          rsync -av --delete main_repo/docs/wiki/ wiki_repo/ --exclude .git;
+          rsync -av --delete main_repo/docs/wiki/markdown/ wiki_repo/ --exclude .git;
           cd wiki_repo;
           git add .;
           if git commit -m "Update wiki content"; then
