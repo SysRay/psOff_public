@@ -76,7 +76,8 @@ void XIPController::init() {
 
 void XIPController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  m_state = ControllerState::Closed;
+  m_state                   = ControllerState::Closed;
+  xip_openedPads[m_xUserId] = true;
 }
 
 bool XIPController::reconnect() {
@@ -94,9 +95,9 @@ bool XIPController::reconnect() {
       LOG_ERR(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
     }
     ++m_connectCount;
-    m_state   = ControllerState::Connected;
+    m_state           = ControllerState::Connected;
     xip_openedPads[n] = true;
-    m_xUserId = n;
+    m_xUserId         = n;
     return true;
   }
 

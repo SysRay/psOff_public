@@ -66,7 +66,7 @@ EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
     static int logins = 0;
     if (logins < std::min(onlineUsers, 4)) {
       event->eventType = UserServiceEventTypeLogin;
-      event->userId = ++logins;
+      event->userId    = ++logins;
       return Ok;
     }
   }
