@@ -285,6 +285,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
 
+  VkPhysicalDeviceLimits const* getVulkanLimits() const final { return vulkan::getPhysicalLimits(); }
+
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
   void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
   void submitFlip(int handle, int index, int64_t flipArg) final; // -> Renderer
@@ -631,7 +633,6 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
   //       .pitchInPixel = m_widthTotal,
   //   };
   // } else {
-  printf("Buffer pixelformat: 0x%x\n", pixel_format);
 
   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?

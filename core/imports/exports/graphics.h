@@ -31,6 +31,8 @@ class IEventsGraphics {
   virtual vulkan::DeviceInfo* getDeviceInfo() = 0;
 
   virtual vulkan::QueueInfo* getQueue(vulkan::QueueType type) = 0;
+
+  virtual VkPhysicalDeviceLimits const* getVulkanLimits() const = 0;
 };
 
 class IGraphics {
