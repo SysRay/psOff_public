@@ -5,8 +5,7 @@ set(libName libSceHttp)
 project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
-add_dependencies(${libName} third_party)
-target_link_libraries(${libName} PUBLIC libboost_url)
-target_compile_definitions(${libName} PRIVATE BOOST_ALL_NO_LIB)
+add_dependencies(${libName} core)
+target_link_libraries(${libName} PUBLIC core.lib)
 
 setupModule(${libName})

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "types.h"
 
@@ -34,24 +35,12 @@ EXPORT SYSV_ABI int sceNetCtlGetResult(int eventType, int* errorCode) {
 }
 
 EXPORT SYSV_ABI int sceNetCtlGetState(int* state) {
-  *state = 0;
+  *state = 3; // IP address obtained
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetCtlGetInfo(int code, SceNetCtlInfo* info) {
-  LOG_USE_MODULE(libSceNetCtl);
-
-  switch (code) {
-    case 2: memset(info->ether_addr.data, 0, sizeof(info->ether_addr.data)); break;
-    case 11: info->ip_config = 0; break;
-    case 14: {
-      auto const count = std::string("127.0.0.1").copy(info->ip_address, 16);
-
-      info->ip_address[count] = '\0';
-    } break;
-    default: LOG_CRIT(L"unknown code: %d", code);
-  }
-  return Ok;
+  return accessNetworking().netCtlGetInfo(code, info);
 }
 
 EXPORT SYSV_ABI int sceNetCtlGetIfStat(SceNetCtlIfStat* ifStat) {

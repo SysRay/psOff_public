@@ -10,7 +10,7 @@
 #include "modules_include/common.h"
 #include "types.h"
 
-LOG_DEFINE_MODULE(dmem)
+LOG_DEFINE_MODULE(dmem);
 
 namespace {} // namespace
 

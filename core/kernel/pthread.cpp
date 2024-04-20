@@ -23,7 +23,7 @@
 #include <unordered_set>
 #include <windows.h>
 
-LOG_DEFINE_MODULE(pthread)
+LOG_DEFINE_MODULE(pthread);
 
 namespace {
 NT_TIB* getTIB() {

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "types.h"
 
@@ -7,33 +8,19 @@
 
 LOG_DEFINE_MODULE(libSceNet);
 
-namespace {
-static inline int32_t sce_WSAGetLastError() {
-  auto win_err = (uint32_t)WSAGetLastError();
-  if (win_err == WSANOTINITIALISED) return Err::ERROR_ENOTINIT;
-  return (0x80000000 | (0x041 << 16) | (0x0100 | win_err));
-}
-
-static thread_local int g_net_errno = 0;
-
-} // namespace
-
 extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceNet";
 
 EXPORT SYSV_ABI int* sceNetErrnoLoc() {
-  return &g_net_errno;
+  return accessNetworking().getErrnoPtr();
 }
 
 EXPORT SYSV_ABI int sceNetInit(void) {
-  WSADATA data = {};
-  if (WSAStartup(MAKEWORD(2, 2), &data) == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNetTerm(void) {
-  if (WSACleanup() == SOCKET_ERROR) return sce_WSAGetLastError();
   return Ok;
 }
 
@@ -126,6 +113,7 @@ EXPORT SYSV_ABI int sceNetEtherNtostr(const SceNetEtherAddr* n, char* str, size_
 
 EXPORT SYSV_ABI int sceNetGetMacAddress(SceNetEtherAddr* addr, int flags) {
   memset(addr->data, 0, sizeof(addr->data));
-  return Ok;
+  // It's safe to cast etheraddr to bigger union since netCtlGetInfo will not write data > sizeof(SceNetEtherAddr)
+  return accessNetworking().netCtlGetInfo(2, (SceNetCtlInfo*)addr);
 }
 }

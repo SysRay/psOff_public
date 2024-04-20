@@ -411,7 +411,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetPortInfo(SceNgs2Handle** vh, uint32_t por
 static int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoiceWaveformBlocksParam* svwfbp) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
-  LOG_TRACE(L"waveptr: %llx\n", svwfbp->aBlock[0].userData);
+  if (svwfbp->aBlock) LOG_TRACE(L"waveptr: %llx\n", svwfbp->aBlock[0].userData);
   return Ok;
 }
 
