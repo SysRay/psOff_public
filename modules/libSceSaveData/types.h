@@ -35,18 +35,6 @@ union SceSaveDataMemoryOption {
  * Structures
  */
 
-struct SceSaveDataEvent {
-  SceSaveDataEventType type;
-  int32_t              errcode;
-  int32_t              userId;
-  int32_t              padding;
-  SceSaveDataTitleId   titleId;
-  SceSaveDataDirName   dirName;
-  char                 reserved[40];
-};
-
-typedef void (*SceSaveDataEventCallbackFunc)(SceSaveDataEvent* event, void* userData);
-
 struct SceSaveDataTitleId {
   char data[SCE_SAVE_DATA_TITLE_ID_DATA_SIZE];
   char padding[6];
@@ -263,3 +251,5 @@ struct SceSaveDataEvent {
   SceSaveDataDirName   dirName;
   uint8_t              reserved[40];
 };
+
+typedef void (*SceSaveDataEventCallbackFunc)(SceSaveDataEvent* event, void* userData);
