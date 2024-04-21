@@ -128,9 +128,11 @@ class Avplayer: public IAvplayer {
     m_video.destroy();
     m_audio.destroy();
 
-    m_isStop = true;
     m_condDecode.notify_one();
     if (m_decodeThread) m_decodeThread->join();
+
+    if (m_videoBuffer != nullptr) m_memAlloc.deallocateTexture(m_memAlloc.objectPointer, m_videoBuffer);
+    m_videoBuffer = nullptr;
   }
 
   std::unique_ptr<std::thread> threadFunc();
@@ -141,6 +143,8 @@ class Avplayer: public IAvplayer {
   virtual ~Avplayer() {
     LOG_USE_MODULE(AvPlayer);
     LOG_DEBUG(L"destruct");
+    m_isStop = true;
+    std::unique_lock lock(m_mutexDecode);
     destroyAVData();
   };
 
@@ -259,11 +263,11 @@ bool Avplayer::setFile(const char* filename) {
 bool Avplayer::getVideoData(void* info, bool isEx) {
   LOG_USE_MODULE(AvPlayer);
 
+  std::unique_lock lock(m_mutexDecode);
   if (m_isVideoActive == false) return false;
 
   // Get Frame from decoder
   while (m_video.getNewFrame) {
-    std::unique_lock lock(m_mutexDecode);
 
     auto const retRecv = avcodec_receive_frame(m_video.codecContext, m_video.frame);
     if (retRecv < 0) {
@@ -316,16 +320,6 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
 
   av_frame_unref(m_video.frame);
 
-  {
-    std::unique_lock lock(m_mutexDecode);
-    if (m_video.pending) {
-      m_video.pending = false;
-      LOG_DEBUG(L"getAudioData: notfiy decoder");
-      lock.unlock();
-      m_condDecode.notify_one();
-    }
-  }
-
   // Set Info
   if (isEx) {
     auto* pInfo      = (SceAvPlayerFrameInfoEx*)info;
@@ -362,18 +356,25 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
     pInfo->details.video.languageCode[2] = 'g';
     pInfo->details.video.languageCode[3] = '\0';
   }
+
+  if (m_video.pending && !m_isStop) {
+    m_video.pending = false;
+    LOG_DEBUG(L"getAudioData: notfiy decoder");
+    lock.unlock();
+    m_condDecode.notify_one();
+  }
   // -info
   return true;
 }
 
 bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   LOG_USE_MODULE(AvPlayer);
+
+  std::unique_lock lock(m_mutexDecode);
   if (m_isAudioActive == false) return false;
 
   // Get Frame from decoder
   while (true) {
-    std::unique_lock lock(m_mutexDecode);
-
     auto const retRecv = avcodec_receive_frame(m_audio.codecContext, m_audio.frame);
     if (retRecv < 0) {
       if (retRecv == AVERROR(EAGAIN)) {
@@ -418,15 +419,6 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   // -
 
   av_frame_unref(m_audio.frame);
-  {
-    std::unique_lock lock(m_mutexDecode);
-    if (m_audio.pending) {
-      m_audio.pending = false;
-      LOG_DEBUG(L"getAudioData: notfiy decoder");
-      lock.unlock();
-      m_condDecode.notify_one();
-    }
-  }
 
   info->timeStamp = timestamp;
   info->pData     = m_audioBuffer.data();
@@ -438,6 +430,13 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   info->details.audio.languageCode[1] = 'n';
   info->details.audio.languageCode[2] = 'g';
   info->details.audio.languageCode[3] = '\0';
+
+  if (m_audio.pending && !m_isStop) {
+    m_audio.pending = false;
+    LOG_DEBUG(L"getAudioData: notfiy decoder");
+    lock.unlock();
+    m_condDecode.notify_one();
+  }
   return true;
 }
 
