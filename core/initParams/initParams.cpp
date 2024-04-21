@@ -79,6 +79,10 @@ bool InitParams::enableValidation() {
   return _pImpl->m_vm.count("vkValidation");
 }
 
+bool InitParams::enableBrightness() {
+  return _pImpl->m_vm.count("bright");
+}
+
 bool InitParams::useVSYNC() {
   return _pImpl->m_vm["vsync"].as<bool>();
 }

@@ -24,6 +24,7 @@ class InitParams {
   std::string getUpdateRoot();
 
   bool enableValidation();
+  bool enableBrightness();
   bool useVSYNC();
   ~InitParams();
 };
