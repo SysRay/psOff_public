@@ -5,16 +5,27 @@ const octokit = new Octokit();
 const hookURL = process.env.DISCORD_WEBHOOK;
 const maxMessageSize = 1800;
 
+const delay = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
+
 const fetchRetry = ({url, fetchOpts = {}, retryDelay = 5000, retries = 5}) => new Promise((resolve, reject) => {
   const wrap = (n) => {
     fetch(url, fetchOpts)
-    .then((res) => resolve(res))
+    .then(async (res) => {
+      if (res.ok) return resolve(res);
+      if (n === 0) return reject(`Failed after ${retries} retries.`);
+      if (res.status !== 429) return reject(res);
+      const jdata = res.json();
+      if (typeof jdata.retry_after === 'number') {
+        await delay(jdata.retry_after * 1000);
+        wrap(--n);
+      }
+    })
     .catch(async (err) => {
       if (n > 0) {
         await delay(retryDelay);
         wrap(--n);
       } else {
-        reject(err);
+        reject(`Failed after ${retries} retries.`);
       }
     });
   };
