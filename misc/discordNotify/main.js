@@ -5,6 +5,23 @@ const octokit = new Octokit();
 const hookURL = process.env.DISCORD_WEBHOOK;
 const maxMessageSize = 1800;
 
+const fetchRetry = ({url, fetchOpts = {}, retryDelay = 5000, retries = 5}) => new Promise((resolve, reject) => {
+  const wrap = (n) => {
+    fetch(url, fetchOpts)
+    .then((res) => resolve(res))
+    .catch(async (err) => {
+      if (n > 0) {
+        await delay(retryDelay);
+        wrap(--n);
+      } else {
+        reject(err);
+      }
+    });
+  };
+
+  wrap(retries);
+});
+
 const sendDiscordMessage = async (msg = null) => {
   if (hookURL === undefined) {
     console.error('No Discord WebHook URL found!');
@@ -35,15 +52,18 @@ const sendDiscordMessage = async (msg = null) => {
     return sendDiscordMessage(msg.substr(start, length));
   }
 
-  return fetch(hookURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      username: 'psOff updates',
-      content: msg ?? 'Oopsie'
-    })
+  return fetchRetry({
+    url: hookURL,
+    fetchOpts: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: 'psOff updates',
+        content: msg ?? 'Oopsie'
+      })
+    }
   });
 };
 
