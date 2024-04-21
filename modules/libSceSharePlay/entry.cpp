@@ -36,6 +36,16 @@ EXPORT SYSV_ABI int32_t sceSharePlaySetProhibition(SceSharePlayProhibitionMode m
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceSharePlayGetCurrentConnectionInfo(SceSharePlayConnectionInfo* pInfo) {
+  LOG_USE_MODULE(libSceSharePlay);
+
+  // *pInfo = {};
+
+  LOG_ERR(L"TODO: %S", __FUNCTION__);
+
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceSharePlayGetCurrentConnectionInfoA(SceSharePlayConnectionInfoA* pInfo) {
   LOG_USE_MODULE(libSceSharePlay);
 

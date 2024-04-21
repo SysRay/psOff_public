@@ -251,3 +251,5 @@ struct SceSaveDataEvent {
   SceSaveDataDirName   dirName;
   uint8_t              reserved[40];
 };
+
+typedef void (*SceSaveDataEventCallbackFunc)(SceSaveDataEvent* event, void* userData);

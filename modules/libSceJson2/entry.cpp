@@ -54,6 +54,8 @@ Initializer::~Initializer() {
 }
 
 int32_t Initializer::initialize(const InitParameter*) {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return 0;
 }
 
@@ -243,6 +245,11 @@ EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerC1Ev)(sce::Json::Initializer
  */
 EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerD1Ev)(sce::Json::Initializer* _this) {
   _this->~Initializer();
+}
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE)(sce::Json::Initializer*         _this,
+                                                                                            sce::Json::InitParameter const* param) {
+  return _this->initialize(param);
 }
 
 /**

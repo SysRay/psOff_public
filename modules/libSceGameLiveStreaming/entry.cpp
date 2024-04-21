@@ -61,6 +61,42 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetMaxBitrate(const unsigned int max
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetCameraFrameSetting(const SceGameLiveStreamingCameraFrameSetting* set) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingGetCurrentBroadcastScreenLayout(SceGameLiveStreamingBroadcastScreenLayout* layout) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingApplySocialFeedbackMessageFilter(const size_t maxCount, SceGameLiveStreamingSocialFeedbackMessageFilter filter) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingClearPresetSocialFeedbackCommands() {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingClearSpoilerTag() {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingClearSocialFeedbackMessages(const SceGameLiveStreamingSocialFeedbackMessageType type) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceGameLiveStreamingTerminate() {
   LOG_USE_MODULE(libSceGameLiveStreaming);
   LOG_ERR(L"todo %S", __FUNCTION__);
