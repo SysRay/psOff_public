@@ -64,7 +64,7 @@ EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
   int onlineUsers;
   if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
     static int logins = 0;
-    if (logins < std::min(onlineUsers, 4)) {
+    if (logins < std::max(1, std::min(onlineUsers, 4))) {
       event->eventType = UserServiceEventTypeLogin;
       event->userId    = ++logins;
       return Ok;
@@ -79,6 +79,7 @@ EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList*
 
   int onlineUsers;
   if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
+    onlineUsers = std::max(1, std::min(onlineUsers, 4));
     for (int i = 0; i < 4; i++) {
       userId_list->userId[i] = onlineUsers >= i ? i : -1;
     }
