@@ -89,7 +89,7 @@ const sendDiscordMessage = async (msg = null) => {
 const r_owner = 'SysRay';
 const r_name = 'psOff_public';
 
-const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs'];
+const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs', 'contrib'];
 
 const guessCategory = (labels) => {
   const cats = [];
@@ -109,16 +109,13 @@ const guessCategory = (labels) => {
   return cats;
 };
 
-const getCategoryName = (cat) => {
-  switch (cat) {
-    case 'bugfixes': return 'Bugfixes 🪳';
-    case 'stubs': return 'Stubbed functions 🆒';
-    case 'impls': return 'Implementations 🥳';
-    case 'general': return 'General ✅';
-    case 'ench': return 'Enhancements 🧙';
-  }
-
-  throw new Error('Unknown category name: ' + String.toString(cat));
+const catOpts = {
+  bugfixes: {display: 'Bugfixes 🪳'},
+  stubs: {display: 'Stubbed functions 🆒'},
+  impls: {display: 'Implementations 🥳'},
+  general: {display: 'General ✅'},
+  ench: {display: 'Enhancements 🧙'},
+  contrib: {display: 'Authors 🧑‍💻️', splitter: ', '},
 };
 
 octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1}).then(({data}) => {
@@ -126,7 +123,8 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
   return new Promise((resolve, reject) => {
     const readPRs = async (pagenum, list = null, retries = 0) => {
-      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: []};
+      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: [], contrib: []};
+      const handled_contribs = {};
 
       const query = [];
       query.push(`repo:${r_owner}/${r_name}`);
@@ -135,7 +133,11 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
       return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
         data.items.forEach((pr) => {
-          const msg = `* PR #${pr.number}: ${pr.title} ([@${pr.user.login}](<https://github.com/${pr.user.login}/>))`;
+          const msg = `* PR #${pr.number}: ${pr.title}`;
+          if (!handled_contribs[pr.user.login]) {
+            out.contrib.push(`[@${pr.user.login}](<https://github.com/${pr.user.login}>)`);
+            handled_contribs[pr.user.login] = true;
+          }
           guessCategory(pr.labels).forEach((cat) => out[cat].push(msg));
         });
 
@@ -144,8 +146,10 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
         } else {
           const final = [`# Changelog ${prevRelease.tag_name} => ${lastRelease.tag_name}`];
           categoryOrder.forEach((cat) => {
-            if (out[cat].length > 0)
-              final.push(`\n## ${getCategoryName(cat)}\n${out[cat].join('\n')}`);
+            if (out[cat].length > 0) {
+              const opts = catOpts[cat];
+              final.push(`\n## ${opts.display}\n${out[cat].join(opts.splitter ?? '\n')}`);
+            }
           });
           resolve(final.join('\n'));
         }
