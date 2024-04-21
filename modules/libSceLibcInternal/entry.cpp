@@ -200,6 +200,14 @@ EXPORT SYSV_ABI float __NID(sinf)(float val) {
   return std::sinf(val);
 }
 
+EXPORT SYSV_ABI float __NID(_FSin)(float val, int p) {
+  return p ? std::cosf(val) : std::sinf(val);
+}
+
+EXPORT SYSV_ABI float __NID(_FSinh)(float a, float b) {
+  return ::sinhf(a) * b;
+}
+
 EXPORT SYSV_ABI float __NID(cosf)(float val) {
   return std::cosf(val);
 }
