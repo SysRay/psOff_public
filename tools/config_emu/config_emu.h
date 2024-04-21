@@ -4,7 +4,7 @@
 
 #include <boost/thread/mutex.hpp>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 enum class ConfigModFlag : uint32_t {
   NONE     = 0,

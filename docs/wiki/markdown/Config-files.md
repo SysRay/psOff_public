@@ -45,6 +45,11 @@ You can change the layout now in _controls.json_, if you want to.
   // These objects describes the parameters for each pad
   "pads": [
     {
+      // Possible values for "type"
+      // 1) XInput: xbox/xinput
+      // 2) SDL2: gamepad/sdl
+      // 3) Keyboard: keyboard/kbd/kb
+      "type": "gamepad",
       "deadzones": { // Ignore it for now, not implemented
         "left_stick": {
           "x": 0.0,
@@ -54,12 +59,7 @@ You can change the layout now in _controls.json_, if you want to.
           "x": 0.0,
           "y": 0.0
         }
-      },
-      // Possible values for
-      // 1) XInput: xbox/xinput
-      // 2) SDL2: gamepad/sdl
-      // 3) Keyboard: keyboard/kbd/kb
-      "type": "gamepad"
+      }
     },
     // More pads here...
   ]
@@ -70,17 +70,18 @@ You can change the layout now in _controls.json_, if you want to.
 
 ```jsonc
 {
+  "systemlang": 0, // System langauge, see the list below to get these indexes
   "netEnabled": false, // Wether enable networking features or not. Better to keep it disabled, not ready for the actual use.
   "netMAC": "00:00:00:00:00:00", // Your ethernet adapter's MAC address. Zero-MAC means "first usable device".
+  "onlineUsers": 1, // Number of authorized users, 1..4
+  "userIndex": 1, // Id of the user that started the game
   "profiles": [ // User profiles, you can change your name there
     {
       "color": "blue",
-      "name": "Anon"
+      "name": "Anon #1"
     },
     // More users here...
   ],
-  "systemlang": 0, // System langauge, see the list below to get these indexes
-  "userIndex": 1 // Current user index
 }
 
 ```
@@ -136,10 +137,8 @@ Game language can be changed with systemlang : *, default is EnglishUS. Game mus
 {
   "display": 1, // Your display index, starting from 0
   "fullscreen": false, // Wether emulator will run in fullscreen mode or not
-
   "height": 1080, // The emulator window dimensions, ignored in fullscreen mode
   "width": 1920,
-
   "xpos": -1, // The emulator window position, -1 means center
   "ypos": -1
 }
