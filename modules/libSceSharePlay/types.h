@@ -16,6 +16,15 @@ enum class SceSharePlayControllerMode : uint32_t {
   PLAYING_GAME_WITH_HOST = 2,
 };
 
+struct SceSharePlayConnectionInfo {
+  SceSharePlayConnectionStatus status;
+  SceSharePlayControllerMode   mode;
+  SceNpOnlineId                hostOnelineId;
+  SceNpOnlineId                visitorOnlineId;
+  SceUserServiceUserId         hostUserId;
+  SceUserServiceUserId         visitorUserId;
+};
+
 struct SceSharePlayConnectionInfoA {
   SceSharePlayConnectionStatus status;
   SceSharePlayControllerMode   mode;
