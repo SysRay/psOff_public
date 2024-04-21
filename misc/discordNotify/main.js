@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 
 const octokit = new Octokit();
 const hookURL = process.env.DISCORD_WEBHOOK;
-const maxMessageSize = 1800;
+const maxMessageSize = 2000;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 
@@ -11,7 +11,15 @@ const fetchRetry = ({url, fetchOpts = {}, retryDelay = 5000, retries = 5}) => ne
   const wrap = (n) => {
     fetch(url, fetchOpts)
     .then(async (res) => {
-      if (res.ok) return resolve(res);
+      if (res.ok) {
+        const rateRemain = res.headers.get('X-RateLimit-Remaining');
+        const rateReset = res.headers.get('X-RateLimit-Reset-After');
+        if (rateRemain !== null) {
+          if (parseInt(rateRemain) === 1)
+            await delay((rateReset ? parseInt(rateReset) : 1) * 1500); // Hold on there, cowboy
+        }
+        return resolve(res);
+      }
       if (n === 0) return reject(`Failed after ${retries} retries.`);
       if (res.status !== 429) return reject(res);
       const jdata = res.json();
@@ -127,7 +135,7 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
       return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
         data.items.forEach((pr) => {
-          const msg = `* PR #${pr.number}: ${pr.title}`;
+          const msg = `* PR #${pr.number}: ${pr.title} ([@${pr.user.login}](<https://github.com/${pr.user.login}/>))`;
           guessCategory(pr.labels).forEach((cat) => out[cat].push(msg));
         });
 
