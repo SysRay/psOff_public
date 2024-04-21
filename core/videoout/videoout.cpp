@@ -734,7 +734,7 @@ void cbWindow_moveresize(SDL_Window* window) {
   SDL_GetWindowPosition(window, &x, &y);
 
   (*jData)["fullscreen"] = bool((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0);
-  (*jData)["display"] = SDL_GetWindowDisplayIndex(window);
+  (*jData)["display"]    = SDL_GetWindowDisplayIndex(window);
   (*jData)["width"] = w, (*jData)["height"] = h;
   (*jData)["xpos"] = x, (*jData)["ypos"] = y;
 }
@@ -802,9 +802,7 @@ std::thread VideoOut::createSDLThread() {
               default: break;
             }
 
-          case SDL_KEYUP:
-            cbWindow_keyhandler(window, &event);
-            break;
+          case SDL_KEYUP: cbWindow_keyhandler(window, &event); break;
 
           default: break;
         }
