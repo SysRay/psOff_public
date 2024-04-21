@@ -3,61 +3,93 @@ import fetch from 'node-fetch';
 
 const octokit = new Octokit();
 const hookURL = process.env.DISCORD_WEBHOOK;
-const maxMessageSize = 1800;
+const maxMessageSize = 2000;
+
+const delay = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
+
+const fetchRetry = ({url, fetchOpts = {}, retryDelay = 5000, retries = 5}) => new Promise((resolve, reject) => {
+  const wrap = (n) => {
+    fetch(url, fetchOpts)
+    .then(async (res) => {
+      if (res.ok) {
+        const rateRemain = res.headers.get('X-RateLimit-Remaining');
+        const rateReset = res.headers.get('X-RateLimit-Reset-After');
+        if (rateRemain !== null) {
+          if (parseInt(rateRemain) === 1)
+            await delay((rateReset ? parseInt(rateReset) : 1) * 1500); // Hold on there, cowboy
+        }
+        return resolve(res);
+      }
+      if (n === 0) return reject(`Failed after ${retries} retries.`);
+      if (res.status !== 429) return reject(res);
+      const jdata = res.json();
+      if (typeof jdata.retry_after === 'number') {
+        await delay(jdata.retry_after * 1000);
+        wrap(--n);
+      }
+    })
+    .catch(async (err) => {
+      if (n > 0) {
+        await delay(retryDelay);
+        wrap(--n);
+      } else {
+        reject(`Failed after ${retries} retries.`);
+      }
+    });
+  };
+
+  wrap(retries);
+});
 
 const sendDiscordMessage = async (msg = null) => {
-  if (msg !== null && msg.length > maxMessageSize) {
-    let cpos = 0;
-    let strlen = 0;
-    let lastNL = 0;
-
-    while (true) {
-      strlen = 0;
-      lastNL = -1;
-
-      while ((cpos + strlen) < maxMessageSize) {
-        if (msg.charAt(cpos + strlen) === '\n')
-          lastNL = strlen;
-        if (++strlen === maxMessageSize) {
-          strlen = lastNL;
-          break;
-        }
-      }
-
-      if (lastNL !== -1) {
-        await sendDiscordMessage(msg.substr(cpos, strlen));
-        cpos += strlen + 1;
-      }
-
-      if (lastNL === -1 && strlen > 0)
-        return sendDiscordMessage(msg.substr(cpos, strlen));
-      else if (strlen == 0)
-        return null;
-    }
-  }
-
   if (hookURL === undefined) {
     console.error('No Discord WebHook URL found!');
     console.log(msg);
     return;
   }
 
-  return fetch(hookURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      username: 'psOff updates',
-      content: msg ?? 'Oopsie'
-    })
+  if (msg !== null && msg.length > maxMessageSize) {
+    let start = 0;
+    let length = 0;
+    let lastNL = -1;
+
+    while ((start + length) < msg.length) {
+      if (length === maxMessageSize) {
+        if (lastNL !== -1) length = lastNL;
+        await sendDiscordMessage(msg.substr(start, length));
+        start += length + 1;
+        length = 0;
+      }
+
+      if (msg.charAt(start + length) === '\n') {
+        lastNL = length;
+      }
+
+      length += 1;
+    }
+
+    return sendDiscordMessage(msg.substr(start, length));
+  }
+
+  return fetchRetry({
+    url: hookURL,
+    fetchOpts: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: 'psOff updates',
+        content: msg ?? 'Oopsie'
+      })
+    }
   });
 };
 
 const r_owner = 'SysRay';
 const r_name = 'psOff_public';
 
-const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs'];
+const categoryOrder = ['general', 'ench', 'impls', 'bugfixes', 'stubs', 'contrib'];
 
 const guessCategory = (labels) => {
   const cats = [];
@@ -77,16 +109,13 @@ const guessCategory = (labels) => {
   return cats;
 };
 
-const getCategoryName = (cat) => {
-  switch (cat) {
-    case 'bugfixes': return 'Bugfixes 🪳';
-    case 'stubs': return 'Stubbed functions 🆒';
-    case 'impls': return 'Implementations 🥳';
-    case 'general': return 'General ✅';
-    case 'ench': return 'Enhancements 🧙';
-  }
-
-  throw new Error('Unknown category name: ' + String.toString(cat));
+const catOpts = {
+  bugfixes: {display: 'Bugfixes 🪳'},
+  stubs: {display: 'Stubbed functions 🆒'},
+  impls: {display: 'Implementations 🥳'},
+  general: {display: 'General ✅'},
+  ench: {display: 'Enhancements 🧙'},
+  contrib: {display: 'Authors 🧑‍💻️', splitter: ', '},
 };
 
 octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1}).then(({data}) => {
@@ -94,7 +123,8 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
 
   return new Promise((resolve, reject) => {
     const readPRs = async (pagenum, list = null, retries = 0) => {
-      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: []};
+      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: [], contrib: []};
+      const handled_contribs = {};
 
       const query = [];
       query.push(`repo:${r_owner}/${r_name}`);
@@ -104,6 +134,10 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
       return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
         data.items.forEach((pr) => {
           const msg = `* PR #${pr.number}: ${pr.title}`;
+          if (!handled_contribs[pr.user.login]) {
+            out.contrib.push(`[@${pr.user.login}](<https://github.com/${pr.user.login}>)`);
+            handled_contribs[pr.user.login] = true;
+          }
           guessCategory(pr.labels).forEach((cat) => out[cat].push(msg));
         });
 
@@ -112,8 +146,10 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
         } else {
           const final = [`# Changelog ${prevRelease.tag_name} => ${lastRelease.tag_name}`];
           categoryOrder.forEach((cat) => {
-            if (out[cat].length > 0)
-              final.push(`\n## ${getCategoryName(cat)}\n${out[cat].join('\n')}`);
+            if (out[cat].length > 0) {
+              const opts = catOpts[cat];
+              final.push(`\n## ${opts.display}\n${out[cat].join(opts.splitter ?? '\n')}`);
+            }
           });
           resolve(final.join('\n'));
         }

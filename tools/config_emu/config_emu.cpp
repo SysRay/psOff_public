@@ -204,39 +204,57 @@ Config::Config() {
     if (should_resave && dflag != ConfigModFlag::NONE) this->save((uint32_t)dflag);
   };
 
-  const json defaultpad  = {{"type", "gamepad"}, {"deadzones", {{"left_stick", {{"x", 0.0f}, {"y", 0.0f}}}, {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}}}}};
-  const json defaultprof = {{"name", "Anon"}, {"color", "blue"}};
+  json defprofiles = json::array();
+  json defpads     = json::array();
+
+  static const char* colors[4] = {"blue", "red", "green", "pink"};
+
+  for (int i = 0; i < 4; i++) {
+    defprofiles[i] = {{"name", std::format("Anon #{}", i + 1)}, {"color", colors[i]}};
+    defpads[i]     = {
+        {"type", "gamepad"},
+        {"deadzones",
+             {
+             {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},
+             {"right_stick", {{"x", 0.0f}, {"y", 0.0f}}},
+         }},
+    };
+  }
 
   m_logging._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
 
   m_graphics._future =
       std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
-                 json({{"fullscreen", false}, {"xpos", -1}, {"ypos", -1}, {"width", 1920}, {"height", 1080}, {"display", 0}}), ConfigModFlag::GRAPHICS);
+                 json({{"display", 0u}, {"fullscreen", false}, {"width", 1920u}, {"height", 1080u}, {"xpos", -1}, {"ypos", -1}}), ConfigModFlag::GRAPHICS);
 
   m_audio._future =
-      std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"volume", 0.5f}, {"device", "[default]"}}), ConfigModFlag::AUDIO);
+      std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"device", "[default]"}, {"volume", 0.5f}}), ConfigModFlag::AUDIO);
 
   m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
-                                  json({{"pads", json::array({defaultpad, defaultpad, defaultpad, defaultpad})},
-                                        {"keybinds",
-                                         {
-                                             {"triangle", "i"}, {"square", "j"},       {"circle", "l"},       {"cross", "k"},
-                                             {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
-                                             {"options", "f1"}, {"touchpad", "f4"},    {"l1", "f3"},          {"l2", "f5"},
-                                             {"l3", "space"},   {"r1", "f2"},          {"r2", "f6"},          {"r3", "home"},
-                                             {"lx-", "a"},      {"lx+", "d"},          {"ly-", "w"},          {"ly+", "s"},
-                                             {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
-                                         }}}),
+                                  json({
+                                      {"pads", defpads},
+                                      {"keybinds",
+                                       {
+                                           {"triangle", "i"}, {"square", "j"},       {"circle", "l"},       {"cross", "k"},
+                                           {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
+                                           {"options", "f1"}, {"touchpad", "f4"},    {"l1", "f3"},          {"l2", "f5"},
+                                           {"l3", "space"},   {"r1", "f2"},          {"r2", "f6"},          {"r3", "home"},
+                                           {"lx-", "a"},      {"lx+", "d"},          {"ly-", "w"},          {"ly+", "s"},
+                                           {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
+                                       }},
+                                  }),
                                   ConfigModFlag::CONTROLS);
 
   m_general._future = std::async(std::launch::async, load, &m_general,
-                                 json({{"systemlang", 1},
-                                       {"netEnabled", false},
-                                       {"netMAC", "00:00:00:00:00:00"},
-                                       {"userIndex", 1},
-                                       {"onlineUsers", 1},
-                                       {"profiles", json::array({defaultprof, defaultprof, defaultprof, defaultprof})}}),
+                                 json({
+                                     {"systemlang", 1u},
+                                     {"netEnabled", false},
+                                     {"netMAC", "00:00:00:00:00:00"},
+                                     {"userIndex", 1u},
+                                     {"onlineUsers", 1u},
+                                     {"profiles", defprofiles},
+                                 }),
                                  ConfigModFlag::GENERAL);
 
   m_resolve._future = std::async(std::launch::async | std::launch::deferred, load, &m_resolve, json({{"localhost", "127.0.0.1"}}), ConfigModFlag::RESOLVE);
