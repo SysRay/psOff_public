@@ -69,6 +69,7 @@ EXPORT SYSV_ABI void __NID(_exit)(int code) {
 }
 
 EXPORT SYSV_ABI uint8_t __NID(_is_signal_return)(int64_t* param) {
+  if ((intptr_t)param < 4 * 1024) return 1;
   uint8_t retVal = 0;
 
   if (((*param != 0x48006a40247c8d48) || (param[1] != 0x50f000001a1c0c7)) || (retVal = 1, (param[2] & 0xffffffU) != 0xfdebf4)) {
