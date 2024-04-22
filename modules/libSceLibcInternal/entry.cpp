@@ -188,6 +188,10 @@ EXPORT SYSV_ABI unsigned long __NID(strtoul)(const char* str, char** end, int ra
   return ::strtoul(str, end, rad);
 }
 
+EXPORT SYSV_ABI int __NID(_Stoul)(const char* str, char** endptr, int base) {
+  return ::_Stoulx(str, endptr, base, nullptr);
+}
+
 EXPORT SYSV_ABI unsigned long __NID(strxfrm)(char* dst, const char* src, size_t max) {
   return ::strxfrm(dst, src, max);
 }
@@ -196,8 +200,16 @@ EXPORT SYSV_ABI float __NID(expf)(float val) {
   return std::expf(val);
 }
 
+EXPORT SYSV_ABI double __NID(exp)(double val) {
+  return std::exp(val);
+}
+
 EXPORT SYSV_ABI float __NID(sinf)(float val) {
   return std::sinf(val);
+}
+
+EXPORT SYSV_ABI double __NID(sin)(double val) {
+  return std::sin(val);
 }
 
 EXPORT SYSV_ABI float __NID(_FSin)(float val, int p) {
@@ -212,32 +224,56 @@ EXPORT SYSV_ABI float __NID(cosf)(float val) {
   return std::cosf(val);
 }
 
+EXPORT SYSV_ABI double __NID(cos)(double val) {
+  return std::cos(val);
+}
+
 EXPORT SYSV_ABI float __NID(sqrtf)(float val) {
   return std::sqrtf(val);
+}
+
+EXPORT SYSV_ABI double __NID(sqrt)(double val) {
+  return std::sqrt(val);
 }
 
 EXPORT SYSV_ABI float __NID(tanf)(float val) {
   return std::tanf(val);
 }
 
+EXPORT SYSV_ABI double __NID(tan)(double val) {
+  return std::tan(val);
+}
+
 EXPORT SYSV_ABI float __NID(atan2f)(float x, float y) {
   return std::atan2f(x, y);
+}
+
+EXPORT SYSV_ABI double __NID(atan2)(double x, double y) {
+  return std::atan2(x, y);
 }
 
 EXPORT SYSV_ABI float __NID(asinf)(float val) {
   return std::asinf(val);
 }
 
+EXPORT SYSV_ABI double __NID(asin)(double val) {
+  return std::asin(val);
+}
+
 EXPORT SYSV_ABI float __NID(powf)(float val, float p) {
   return std::powf(val, p);
 }
 
-EXPORT SYSV_ABI double __NID(exp2)(double val) {
-  return std::exp2(val);
+EXPORT SYSV_ABI double __NID(pow)(double val, double p) {
+  return std::pow(val, p);
 }
 
 EXPORT SYSV_ABI float __NID(exp2f)(float val) {
   return std::exp2f(val);
+}
+
+EXPORT SYSV_ABI double __NID(exp2)(double val) {
+  return std::exp2(val);
 }
 
 EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {

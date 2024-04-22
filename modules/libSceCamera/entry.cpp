@@ -28,6 +28,12 @@ EXPORT SYSV_ABI int32_t sceCameraGetConfig(int32_t handle, SceCameraConfig* pCon
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceCameraGetCalibData() {
+  LOG_USE_MODULE(libSceCamera);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceCameraSetConfig(int32_t handle, SceCameraConfig* pConfig) {
   LOG_USE_MODULE(libSceCamera);
   LOG_ERR(L"todo %S", __FUNCTION__);
