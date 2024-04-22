@@ -27,6 +27,7 @@ bool InitParams::init(int argc, char** argv) {
   ("help,h", "Help")
   ("d", "Wait for debugger")
   ("vkValidation", "Enable vulkan validation layers")
+  ("bright", "use srgb display format (brightness)")
   ("vsync", po::value<bool>()->default_value(true), "Enable vertical synchronization")
   ("file", po::value<std::string>(), "fullpath to applications binary")
   ("root", po::value<std::string>(), "Applications root")
