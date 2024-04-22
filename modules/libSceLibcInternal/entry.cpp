@@ -339,4 +339,106 @@ EXPORT SYSV_ABI void __NID(__cxa_finalize)(int moduleId) {
 
   accessRuntimeExport()->cxa_finalize(moduleId);
 }
+
+typedef void SYSV_ABI (*newhandler_func)(void* mem);
+
+/**
+ * @brief operator.new(sz)
+ *
+ */
+EXPORT SYSV_ABI void* __NID(_Znwm)(size_t sz) {
+  return new char[sz];
+}
+
+/**
+ * @brief operator.new(sz) nothrow
+ *
+ */
+EXPORT SYSV_ABI void* __NID(_ZnwmRKSt9nothrow_t)(size_t sz, void* tag) {
+  return new (std::nothrow) char[sz];
+}
+
+/**
+ * @brief operator.new[](sz)
+ *
+ */
+EXPORT SYSV_ABI void* __NID(_Znam)(size_t sz) {
+  return new char[sz];
+}
+
+/**
+ * @brief operator.new[](sz) nothrow
+ *
+ */
+EXPORT SYSV_ABI void* __NID(_ZnamRKSt9nothrow_t)(size_t sz, void* tag) {
+  return new (std::nothrow) char[sz];
+}
+
+/**
+ * @brief operator.delete[](ptr)
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdaPv)(char* ptr) {
+  delete ptr;
+}
+
+/**
+ * @brief operator.delete[](ptr)
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdaPvm)(char* ptr, size_t sz) {
+  delete ptr;
+}
+
+/**
+ * @brief operator.delete[](ptr, sz) nothrow
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdaPvmRKSt9nothrow_t)(char* ptr, size_t sz, void* tag) {
+  if (ptr != nullptr) delete ptr;
+}
+
+/**
+ * @brief operator.delete[](ptr) nothrow
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdaPvRKSt9nothrow_t)(char* ptr, void* tag) {
+  if (ptr != nullptr) delete ptr;
+}
+
+/**
+ * @brief operator.delete(ptr, sz) nothrow
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdlPvmRKSt9nothrow_t)(char* ptr, size_t sz, void* tag) {
+  if (ptr != nullptr) delete ptr;
+}
+
+/**
+ * @brief operator.delete(ptr) nothrow
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZdlPvRKSt9nothrow_t)(char* ptr, void* tag) {
+  if (ptr != nullptr) delete ptr;
+}
+
+/**
+ * @brief std::set_new_handler
+ *
+ */
+EXPORT SYSV_ABI newhandler_func __NID(_ZSt15set_new_handlerPFvvE)(newhandler_func nh) {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_CRIT(L"Unimplemented std::set_new_handler()");
+  return nullptr;
+}
+
+/**
+ * @brief std::get_new_handler
+ *
+ */
+EXPORT SYSV_ABI newhandler_func __NID(_ZSt15get_new_handlerv)() {
+  LOG_USE_MODULE(libSceLibcInternal);
+  LOG_ERR(L"Unimplemented std::get_new_handler()");
+  return nullptr;
+}
 }
