@@ -20,6 +20,7 @@ static XInputEnableProc          xip_enableFunc   = nullptr;
 static XInputGetStateProc        xip_getStateFunc = nullptr;
 static XInputSetStateProc        xip_setStateFunc = nullptr;
 static XInputGetCapabilitiesProc xip_getCapsFunc  = nullptr;
+static std::vector<bool>         xip_openedPads   = {false, false, false, false};
 
 class XIPController: public IController {
   DWORD m_xUserId         = -1;
@@ -75,7 +76,8 @@ void XIPController::init() {
 
 void XIPController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  m_state = ControllerState::Closed;
+  m_state                   = ControllerState::Closed;
+  xip_openedPads[m_xUserId] = true;
 }
 
 bool XIPController::reconnect() {
@@ -83,6 +85,7 @@ bool XIPController::reconnect() {
 
   XINPUT_CAPABILITIES caps;
   for (DWORD n = 0; n < XUSER_MAX_COUNT; n++) {
+    if (xip_openedPads[n]) continue;
     if (xip_getCapsFunc(n, XINPUT_FLAG_GAMEPAD, &caps) != ERROR_SUCCESS) continue;
     if (caps.Type != XINPUT_DEVTYPE_GAMEPAD || caps.SubType != XINPUT_DEVSUBTYPE_GAMEPAD) continue;
     ::strcpy_s(m_name, "XInput gamepad");
@@ -92,8 +95,9 @@ bool XIPController::reconnect() {
       LOG_ERR(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
     }
     ++m_connectCount;
-    m_state   = ControllerState::Connected;
-    m_xUserId = n;
+    m_state           = ControllerState::Connected;
+    xip_openedPads[n] = true;
+    m_xUserId         = n;
     return true;
   }
 

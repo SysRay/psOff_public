@@ -10,6 +10,34 @@
 
 LOG_DEFINE_MODULE(libScePad_sdl);
 
+class SDLPadManager {
+  std::vector<SDL_GameController*> m_openedPads;
+
+  public:
+  SDL_GameController* openNew() {
+    for (int n = 0; n < SDL_NumJoysticks(); n++) {
+      auto pad = SDL_GameControllerOpen(n);
+      if (std::find(m_openedPads.begin(), m_openedPads.end(), pad) != m_openedPads.end()) continue;
+      m_openedPads.push_back(pad);
+      return pad;
+    }
+
+    return nullptr;
+  }
+
+  void close(SDL_GameController* pad) {
+    auto it = std::find(m_openedPads.begin(), m_openedPads.end(), pad);
+    if (it == m_openedPads.end()) return;
+    SDL_GameControllerClose(pad);
+    m_openedPads.erase(it);
+  }
+};
+
+static SDLPadManager& getPadManager() {
+  static SDLPadManager im;
+  return im;
+}
+
 class SDLController: public IController {
   static constexpr uint32_t m_initflags     = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
   SDL_GameController*       m_padPtr        = nullptr;
@@ -66,7 +94,7 @@ void SDLController::init() {
 
 void SDLController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  if (m_padPtr != nullptr) SDL_GameControllerClose(m_padPtr);
+  if (m_padPtr != nullptr) getPadManager().close(m_padPtr);
   m_state  = ControllerState::Closed;
   m_padPtr = nullptr;
 }
@@ -74,21 +102,18 @@ void SDLController::close() {
 bool SDLController::reconnect() {
   close();
 
-  for (int n = 0; n < SDL_NumJoysticks(); n++) {
-    m_padPtr = SDL_GameControllerOpen(n);
-    if (m_padPtr == nullptr) continue;
+  m_padPtr = getPadManager().openNew();
+  if (m_padPtr == nullptr) return false;
 
-    ++m_connectCount;
-    m_state = ControllerState::Connected;
-    ::strcpy_s(m_name, SDL_GameControllerName(m_padPtr));
-    SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
-    SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
-    setLED(&m_lastColor); // restore last known LED color
-    setMotion(m_motionEnabled);
-    return true;
-  }
+  ++m_connectCount;
+  m_state = ControllerState::Connected;
+  ::strcpy_s(m_name, SDL_GameControllerName(m_padPtr));
+  SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
+  SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
+  setLED(&m_lastColor); // restore last known LED color
+  setMotion(m_motionEnabled);
 
-  return false;
+  return true;
 }
 
 uint32_t SDLController::getButtons() {

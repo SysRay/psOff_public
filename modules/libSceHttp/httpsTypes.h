@@ -1,5 +1,8 @@
 #pragma once
 
+#include "../libSceSsl/types.h"
+#include "modules_include/common.h"
+
 enum class SceHttpsFlags : unsigned int {
   SERVER_VERIFY    = 0x01U, // Server Certificate Verify
   CLIENT_VERIFY    = 0x02U, // Client Certificate Verify
@@ -13,3 +16,5 @@ enum class SceHttpsFlags : unsigned int {
 };
 
 enum class SceHttpSslVersion { SSLV23, SSLV2, SSLV3, TLSV1 };
+
+using SceHttpsCallback = SYSV_ABI int (*)(int libsslCtxId, unsigned int verifyErr, SceSslCert* const sslCert[], int certNum, void* userArg);

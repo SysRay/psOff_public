@@ -59,23 +59,31 @@ EXPORT SYSV_ABI int sceUserServiceGetInitialUser(int* userId) {
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
-  static bool logged_in = false;
+  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
-  if (!logged_in) {
-    logged_in        = true;
-    event->eventType = UserServiceEventTypeLogin;
-    sceUserServiceGetInitialUser(&event->userId);
-    return Ok;
+  int onlineUsers;
+  if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
+    static int logins = 0;
+    if (logins < std::max(1, std::min(onlineUsers, 4))) {
+      event->eventType = UserServiceEventTypeLogin;
+      event->userId    = ++logins;
+      return Ok;
+    }
   }
 
   return Err::USER_SERVICE_ERROR_NO_EVENT;
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList* userId_list) {
-  sceUserServiceGetInitialUser(&userId_list->userId[0]);
-  userId_list->userId[1] = -1;
-  userId_list->userId[2] = -1;
-  userId_list->userId[3] = -1;
+  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
+
+  int onlineUsers;
+  if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
+    onlineUsers = std::max(1, std::min(onlineUsers, 4));
+    for (int i = 0; i < 4; i++) {
+      userId_list->userId[i] = onlineUsers >= i ? i : -1;
+    }
+  }
 
   return 0;
 }

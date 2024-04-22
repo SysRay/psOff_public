@@ -77,31 +77,119 @@ EXPORT SYSV_ABI errno_t __NID(memcmp)(void* mem1, const void* mem2, size_t size)
 }
 
 EXPORT SYSV_ABI size_t __NID(strlen)(const char* str) {
-  return std::strlen(str);
+  return ::strlen(str);
+}
+
+EXPORT SYSV_ABI size_t __NID(strnlen)(const char* str, size_t max) {
+  return ::strnlen(str, max);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strnlen_s)(const char* str, size_t max) {
+  return ::strnlen_s(str, max);
 }
 
 EXPORT SYSV_ABI char* __NID(strncat)(char* dst, const char* src, size_t size) {
-  return std::strncat(dst, src, size);
+  return ::strncat(dst, src, size);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strncat_s)(char* dst, size_t dstsz, const char* src, size_t count) {
+  return ::strncat_s(dst, dstsz, src, count);
 }
 
 EXPORT SYSV_ABI char* __NID(strstr)(char* haystack, const char* needle) {
-  return std::strstr(haystack, needle);
+  return ::strstr(haystack, needle);
 }
 
 EXPORT SYSV_ABI int __NID(strncmp)(const char* str1, const char* str2, size_t size) {
-  return std::strncmp(str1, str2, size);
+  return ::strncmp(str1, str2, size);
 }
 
 EXPORT SYSV_ABI char* __NID(strncpy)(char* dst, char* src, size_t len) {
-  return std::strncpy(dst, src, len);
+  return ::strncpy(dst, src, len);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strncpy_s)(char* dst, size_t dstsz, const char* src, size_t count) {
+  return ::strncpy_s(dst, dstsz, src, count);
 }
 
 EXPORT SYSV_ABI int __NID(strcmp)(const char* str1, const char* str2) {
-  return std::strcmp(str1, str2);
+  return ::strcmp(str1, str2);
+}
+
+EXPORT SYSV_ABI char* __NID(strcpy)(char* dst, const char* src) {
+  return ::strcpy(dst, src);
+}
+
+EXPORT SYSV_ABI int __NID(strcoll)(const char* str1, const char* str2) {
+  return ::strcoll(str1, str2);
+}
+
+EXPORT SYSV_ABI size_t __NID(strcspn)(const char* str, const char* charset) {
+  return ::strcspn(str, charset);
 }
 
 EXPORT SYSV_ABI errno_t __NID(strcpy_s)(char* dst, size_t size, const char* src) {
   return ::strcpy_s(dst, size, src);
+}
+
+EXPORT SYSV_ABI const char* __NID(strchr)(const char* str, int val) {
+  return ::strchr(str, val);
+}
+
+EXPORT SYSV_ABI const char* __NID(strrchr)(const char* str, int val) {
+  return ::strrchr(str, val);
+}
+
+EXPORT SYSV_ABI errno_t __NID(strcat_s)(char* dst, size_t sz, const char* src) {
+  return ::strcat_s(dst, sz, src);
+}
+
+EXPORT SYSV_ABI const char* __NID(strcat)(char* dst, const char* src) {
+  return ::strcat(dst, src);
+}
+
+EXPORT SYSV_ABI const char* __NID(strtok)(char* str, const char* delim) {
+  return ::strtok(str, delim);
+}
+
+EXPORT SYSV_ABI const char* __NID(strtok_r)(char* str, const char* delim, char** ctx) {
+  return ::strtok_s(str, delim, ctx);
+}
+
+EXPORT SYSV_ABI int __NID(strcasecmp)(const char* dst, const char* src) {
+  return ::_stricmp(dst, src);
+}
+
+EXPORT SYSV_ABI char* __NID(strdup)(const char* src) {
+  return ::_strdup(src);
+}
+
+EXPORT SYSV_ABI int __NID(strncasecmp)(const char* dst, const char* src, size_t num) {
+  return ::_strnicmp(dst, src, num);
+}
+
+EXPORT SYSV_ABI long __NID(strtol)(const char* str, char** end, int rad) {
+  return ::strtol(str, end, rad);
+}
+
+EXPORT SYSV_ABI long double __NID(strtold)(const char* str, char** end) {
+  return ::strtold(str, end);
+}
+
+EXPORT SYSV_ABI long long __NID(strtoll)(const char* str, char** end, int rad) {
+  return ::strtoll(str, end, rad);
+}
+
+EXPORT SYSV_ABI unsigned long long __NID(strtoull)(const char* str, char** end, int rad) {
+  return ::strtoull(str, end, rad);
+}
+
+EXPORT SYSV_ABI unsigned long __NID(strtoul)(const char* str, char** end, int rad) {
+  return ::strtoul(str, end, rad);
+}
+
+EXPORT SYSV_ABI unsigned long __NID(strxfrm)(char* dst, const char* src, size_t max) {
+  return ::strxfrm(dst, src, max);
 }
 
 EXPORT SYSV_ABI float __NID(expf)(float val) {
@@ -112,8 +200,44 @@ EXPORT SYSV_ABI float __NID(sinf)(float val) {
   return std::sinf(val);
 }
 
+EXPORT SYSV_ABI float __NID(_FSin)(float val, int p) {
+  return p ? std::cosf(val) : std::sinf(val);
+}
+
+EXPORT SYSV_ABI float __NID(_FSinh)(float a, float b) {
+  return ::sinhf(a) * b;
+}
+
 EXPORT SYSV_ABI float __NID(cosf)(float val) {
   return std::cosf(val);
+}
+
+EXPORT SYSV_ABI float __NID(sqrtf)(float val) {
+  return std::sqrtf(val);
+}
+
+EXPORT SYSV_ABI float __NID(tanf)(float val) {
+  return std::tanf(val);
+}
+
+EXPORT SYSV_ABI float __NID(atan2f)(float x, float y) {
+  return std::atan2f(x, y);
+}
+
+EXPORT SYSV_ABI float __NID(asinf)(float val) {
+  return std::asinf(val);
+}
+
+EXPORT SYSV_ABI float __NID(powf)(float val, float p) {
+  return std::powf(val, p);
+}
+
+EXPORT SYSV_ABI double __NID(exp2)(double val) {
+  return std::exp2(val);
+}
+
+EXPORT SYSV_ABI float __NID(exp2f)(float val) {
+  return std::exp2f(val);
 }
 
 EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {

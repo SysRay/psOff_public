@@ -20,8 +20,6 @@
 #include "modules_include/common.h"
 #include "vulkan/vulkanHelper.h"
 
-#include <queue>
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <algorithm>
@@ -34,6 +32,7 @@
 #include <memory>
 #include <mutex>
 #include <optick.h>
+#include <queue>
 #include <thread>
 
 LOG_DEFINE_MODULE(VideoOut);
@@ -736,9 +735,48 @@ void cbWindow_moveresize(SDL_Window* window) {
   SDL_GetWindowSize(window, &w, &h);
   SDL_GetWindowPosition(window, &x, &y);
 
-  (*jData)["display"] = SDL_GetWindowDisplayIndex(window);
+  (*jData)["fullscreen"] = bool((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0);
+  (*jData)["display"]    = SDL_GetWindowDisplayIndex(window);
   (*jData)["width"] = w, (*jData)["height"] = h;
   (*jData)["xpos"] = x, (*jData)["ypos"] = y;
+}
+
+void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
+  switch (event->key.keysym.scancode) {
+    case SDL_SCANCODE_ESCAPE: return cbWindow_close(window);
+    case SDL_SCANCODE_RETURN: {
+      if (event->key.keysym.mod & KMOD_ALT) {
+        if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) {
+          SDL_SetWindowFullscreen(window, 0);
+          SDL_SetWindowResizable(window, SDL_TRUE);
+        } else {
+          SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+          SDL_SetWindowResizable(window, SDL_FALSE);
+        }
+      }
+    } break;
+    case GAMEREPORT_USER_SEND_SCANCODE: {
+      auto title    = accessSystemContent().getString("TITLE");
+      auto title_id = accessSystemContent().getString("TITLE_ID");
+      auto app_ver  = accessSystemContent().getString("APP_VER");
+
+      accessGameReport().ShowReportWindow({
+          .title    = title ? title.value().data() : "Your PS4 Game Name",
+          .title_id = title_id ? title_id.value().data() : "CUSA00000",
+          .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+          .emu_ver  = getEmulatorVersion().data(),
+          .wnd      = window,
+
+          .type = IGameReport::Type::USER,
+          .add =
+              {
+                  .ex = nullptr,
+              },
+      });
+    } break;
+
+    default: break;
+  }
 }
 
 std::thread VideoOut::createSDLThread() {
@@ -766,28 +804,7 @@ std::thread VideoOut::createSDLThread() {
               default: break;
             }
 
-          case SDL_KEYUP:
-            if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-              cbWindow_close(window);
-            } else if (event.key.keysym.scancode == GAMEREPORT_USER_SEND_SCANCODE) {
-              auto title    = accessSystemContent().getString("TITLE");
-              auto title_id = accessSystemContent().getString("TITLE_ID");
-              auto app_ver  = accessSystemContent().getString("APP_VER");
-
-              accessGameReport().ShowReportWindow({
-                  .title    = title ? title.value().data() : "Your PS4 Game Name",
-                  .title_id = title_id ? title_id.value().data() : "CUSA00000",
-                  .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-                  .emu_ver  = getEmulatorVersion().data(),
-                  .wnd      = window,
-
-                  .type = IGameReport::Type::USER,
-                  .add =
-                      {
-                          .ex = nullptr,
-                      },
-              });
-            }
+          case SDL_KEYUP: cbWindow_keyhandler(window, &event); break;
 
           default: break;
         }
@@ -895,6 +912,8 @@ std::thread VideoOut::createSDLThread() {
             HWND hwnd = wmInfo.info.win.window;
             SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
           }
+
+          SDL_SetWindowMinimumSize(window.window, 400, 225);
 
           SDL_GetWindowSize(window.window, (int*)(&window.config.resolution.paneWidth), (int*)(&window.config.resolution.paneHeight));
           window.config.resolution.fullWidth  = window.config.resolution.paneWidth;
