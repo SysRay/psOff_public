@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "display": {
+      "type": "number"
+    },
+    "fullscreen": {
+      "type": "boolean"
+    },
+    "width": {
+      "type": "number",
+      "minimum": 400
+    },
+    "height": {
+      "type": "number",
+      "minimum": 225
+    },
+    "xpos": {
+      "type": "number"
+    },
+    "ypos": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "display",
+    "fullscreen",
+    "width",
+    "height",
+    "xpos",
+    "ypos"
+  ]
+}
