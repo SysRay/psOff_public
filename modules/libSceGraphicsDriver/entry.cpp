@@ -446,6 +446,38 @@ int SYSV_ABI sceGnmValidateCommandBuffers() {
   return Err::VALIDATION_NOT_ENABLED;
 }
 
+int32_t SYSV_ABI sceGnmValidateDispatchCommandBuffers(uint32_t count, void* dcbGpuAddrs, uint32_t* dcbSizesInBytes) {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateDisableDiagnostics(uint32_t count, void* data) {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateDisableDiagnostics2(uint32_t count, uint32_t* diagList) {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateGetDiagnosticInfo(int32_t query, void* diagnosticOutputs) {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateGetDiagnostics(int32_t query, void* diagnosticOutputs) {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateResetState() {
+  return Err::VALIDATION_NOT_ENABLED;
+}
+
+int32_t SYSV_ABI sceGnmValidateGetVersion() {
+  return 0;
+}
+
+bool SYSV_ABI sceGnmValidateOnSubmitEnabled() {
+  return 0;
+}
+
 // ####   Only used for tracing ########
 // #####################################
 
@@ -480,6 +512,20 @@ int SYSV_ABI sceGnmUnregisterOwnerAndResources(uint32_t owner_handle) {
 
 int SYSV_ABI sceGnmUnregisterResource(uint32_t resource_handle) {
   return Ok;
+}
+
+int SYSV_ABI sceGnmDriverCaptureInProgress() {
+  return Ok;
+}
+
+int SYSV_ABI sceGnmDriverTraceInProgress() {
+  return Ok;
+}
+
+int SYSV_ABI sceGnmDriverTriggerCapture(const char* filename) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_ERR(L"CaptureStatus: Something went wrong");
+  return Err::RAZOR_NOT_LOADED;
 }
 
 void SYSV_ABI sceGnmDebugHardwareStatus(int flag) {
