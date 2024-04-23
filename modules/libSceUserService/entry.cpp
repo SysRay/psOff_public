@@ -81,7 +81,7 @@ EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList*
   if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
     onlineUsers = std::max(1, std::min(onlineUsers, 4));
     for (int i = 0; i < 4; i++) {
-      userId_list->userId[i] = onlineUsers >= i ? i : -1;
+      userId_list->userId[i] = onlineUsers >= i ? (i + 1) : -1;
     }
   }
 
