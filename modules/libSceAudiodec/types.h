@@ -3,25 +3,25 @@
 
 struct SceAudiodecAuInfo {
   uint32_t uiSize;
-	void*    pAuAddr;
-	uint32_t uiAuSize;
+  void*    pAuAddr;
+  uint32_t uiAuSize;
 };
 
 struct SceAudiodecPcmItem {
   uint32_t uiSize;
-	void*    pPcmAddr;
-	uint32_t uiPcmSize;
+  void*    pPcmAddr;
+  uint32_t uiPcmSize;
 };
 
-struct SceAudiodecCtrl {	
-  void*                  pParam;
-	void*                  pBsiInfo;
-	SceAudiodecAuInfo*  pAuInfo;
-	SceAudiodecPcmItem* pPcmItem;
+struct SceAudiodecCtrl {
+  void*               pParam;
+  void*               pBsiInfo;
+  SceAudiodecAuInfo*  pAuInfo;
+  SceAudiodecPcmItem* pPcmItem;
 };
 
 struct SceAudiodecCpuResource {
   uint32_t uiSize;
-	void*    pWorkMemAddr;
-	uint32_t uiWorkMemSize;
+  void*    pWorkMemAddr;
+  uint32_t uiWorkMemSize;
 };
