@@ -19,7 +19,10 @@ class ControllerConfig {
   } m_pads[4];
 
   public:
-  auto GetPadType(int n) const { return m_pads[n].type; }
+  auto GetPadType(int n) const {
+    if (n < 1 || n > 4) return ControllerType::Unknown;
+    return m_pads[n - 1].type;
+  }
 
   auto GetBind(ControllerKey key) const { return m_keymap[(uint32_t)key]; }
 
