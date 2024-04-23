@@ -326,7 +326,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   registerMapping(*outAddr, MappingType::Direct);
   m_usedSize += len;
 
-  LOG_DEBUG(L"-> Map: start:0x%08llx(0x%lx) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
+  LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
 
   if (checkIsGPU(prot)) {
     if (!accessVideoOut().notify_allocHeap(*outAddr, len, prot)) {

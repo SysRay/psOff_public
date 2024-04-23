@@ -63,7 +63,7 @@ int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelM
 
   auto      file   = createType_dev(path, mode);
   int const handle = accessFileManager().addFile(std::move(file), path);
-  LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, path, mode, kernelMode);
+  LOG_INFO(L"OpenFile[%d]: %s mode:0x%x(0x%x)", handle, path, mode, kernelMode);
   return handle;
 }
 } // namespace
@@ -269,7 +269,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
   } else {
     // error if read only input file does not exist
     if (flags.mode == SceOpenMode::RDONLY && !std::filesystem::exists(mappedPath)) {
-      LOG_WARN(L"File doesn't exist: %s mode:0x%lx", mappedPath.c_str(), flags.mode);
+      LOG_WARN(L"File doesn't exist: %s mode:0x%x", mappedPath.c_str(), flags.mode);
       return getErr(ErrCode::_ENOENT);
     }
 
@@ -278,7 +278,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
       return getErr((ErrCode)err);
     }
     int const handle = accessFileManager().addFile(std::move(file), mappedPath);
-    LOG_INFO(L"OpenFile[%d]: %s mode:0x%lx(0x%lx)", handle, mappedPath.c_str(), *(int*)&flags, kernelMode);
+    LOG_INFO(L"OpenFile[%d]: %s mode:0x%x(0x%x)", handle, mappedPath.c_str(), *(int*)&flags, kernelMode);
 
     return handle;
   }
@@ -326,8 +326,6 @@ int chmod(const char* path, SceKernelMode mode) {
 }
 
 int checkReachability(const char* path) {
-  LOG_USE_MODULE(filesystem);
-  LOG_ERR(L"todo %S %S", __FUNCTION__, path);
   auto mapped = accessFileManager().getMappedPath(path);
   if (!mapped) {
     return getErr(ErrCode::_EACCES);

@@ -278,12 +278,13 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   void getSafeAreaRatio(float* area) final {
     auto ext = m_imageHandler.get()->getExtent();
     if (area != nullptr) {
-      *area = 0.781298f; // todo check what's up here
-      //*area = (float)ext.height / (float)ext.width;
+      *area = 1.f; // todo check what's up here
     }
   }
 
   vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
+
+  VkPhysicalDeviceLimits const* getVulkanLimits() const final { return vulkan::getPhysicalLimits(); }
 
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
   void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
@@ -631,6 +632,7 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
   //       .pitchInPixel = m_widthTotal,
   //   };
   // } else {
+
   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
       .tilingMode   = tiling_mode,
