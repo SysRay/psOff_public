@@ -77,7 +77,7 @@ void XIPController::init() {
 void XIPController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
   m_state                   = ControllerState::Closed;
-  xip_openedPads[m_xUserId] = true;
+  xip_openedPads[m_xUserId] = false;
 }
 
 bool XIPController::reconnect() {
@@ -130,7 +130,6 @@ uint32_t XIPController::getButtons(XINPUT_GAMEPAD* xgp) {
 }
 
 bool XIPController::readPadData(ScePadData& data) {
-
   if (m_state == ControllerState::Closed) return false;
 
   XINPUT_STATE xstate;
