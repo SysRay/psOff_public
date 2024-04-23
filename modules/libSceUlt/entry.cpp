@@ -93,6 +93,13 @@ EXPORT SYSV_ABI int32_t _sceUltSemaphoreCreate(SceUltSemaphore* sema, const char
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t _sceUltMutexOptParamInitialize(SceUltMutexOptParam* param) {
+  LOG_USE_MODULE(libSceUlt);
+  LOG_INFO(L"MutexOptParamInitialize| param: %P", param);
+  if (param == nullptr) return Err::Ult::ERROR_NULL;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceUltSemaphoreAcquire(SceUltSemaphore* sema, uint32_t numResource) {
   if (sema == nullptr) return Err::Ult::ERROR_NULL;
   if (numResource <= 0 || numResource >= 0x80000000) return Err::Ult::ERROR_RANGE;

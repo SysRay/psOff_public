@@ -57,3 +57,7 @@ struct SceUltQueue {
   SceUltWaitingQueueResourcePool* waitingQueue;
   char                            _unknown[336];
 };
+
+struct SceUltMutexOptParam {
+  char _unknown[128];
+};
