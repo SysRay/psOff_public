@@ -126,10 +126,14 @@
                 "additionalProperties": false,
                 "properties": {
                   "x": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 0.9
                   },
                   "y": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 0.9
                   }
                 },
                 "required": [
