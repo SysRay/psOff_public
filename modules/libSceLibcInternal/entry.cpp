@@ -379,7 +379,7 @@ EXPORT SYSV_ABI void* __NID(_ZnamRKSt9nothrow_t)(size_t sz, void* tag) {
  *
  */
 EXPORT SYSV_ABI void __NID(_ZdaPv)(char* ptr) {
-  delete ptr;
+  delete[] ptr;
 }
 
 /**
@@ -387,7 +387,7 @@ EXPORT SYSV_ABI void __NID(_ZdaPv)(char* ptr) {
  *
  */
 EXPORT SYSV_ABI void __NID(_ZdaPvm)(char* ptr, size_t sz) {
-  delete ptr;
+  delete[] ptr;
 }
 
 /**
@@ -395,7 +395,7 @@ EXPORT SYSV_ABI void __NID(_ZdaPvm)(char* ptr, size_t sz) {
  *
  */
 EXPORT SYSV_ABI void __NID(_ZdaPvmRKSt9nothrow_t)(char* ptr, size_t sz, void* tag) {
-  if (ptr != nullptr) delete ptr;
+  if (ptr != nullptr) delete[] ptr;
 }
 
 /**
@@ -403,7 +403,7 @@ EXPORT SYSV_ABI void __NID(_ZdaPvmRKSt9nothrow_t)(char* ptr, size_t sz, void* ta
  *
  */
 EXPORT SYSV_ABI void __NID(_ZdaPvRKSt9nothrow_t)(char* ptr, void* tag) {
-  if (ptr != nullptr) delete ptr;
+  if (ptr != nullptr) delete[] ptr;
 }
 
 /**
