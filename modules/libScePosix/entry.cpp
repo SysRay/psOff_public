@@ -40,7 +40,17 @@ EXPORT SYSV_ABI int __NID(sem_post)(boost::interprocess::interprocess_semaphore*
   return Ok;
 }
 
-// EXPORT SYSV_ABI int sem_reltimedwait_np(ScePthreadSem_t*sem, useconds_t);
+EXPORT SYSV_ABI int __NID(sem_reltimedwait_np)(boost::interprocess::interprocess_semaphore** sem, SceKernelTimespec* reltime) {
+  auto now     = boost::posix_time::microsec_clock::universal_time();
+  auto timeout = boost::posix_time::seconds(reltime->tv_sec) + boost::posix_time::microsec(reltime->tv_nsec / 1000);
+  return (*sem)->timed_wait(now + timeout) ? Ok : POSIX_SET(ErrCode::_ETIMEDOUT);
+}
+
+EXPORT SYSV_ABI int __NID(sem_timedwait)(boost::interprocess::interprocess_semaphore** sem, SceKernelTimespec* abstime) {
+  boost::posix_time::ptime pt = boost::posix_time::from_time_t(abstime->tv_sec) + boost::posix_time::microsec(abstime->tv_nsec / 1000);
+  return (*sem)->timed_wait(pt) ? Ok : POSIX_SET(ErrCode::_ETIMEDOUT);
+}
+
 EXPORT SYSV_ABI int __NID(sem_trywait)(boost::interprocess::interprocess_semaphore** sem) {
   if (sem == nullptr || *sem == nullptr) {
     return POSIX_SET(ErrCode::_ESRCH);

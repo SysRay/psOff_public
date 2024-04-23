@@ -49,6 +49,7 @@ EXPORT SYSV_ABI int scePadInit(void) {
 }
 
 EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
+  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
 
   auto pData = getData();
@@ -86,6 +87,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
 }
 
 EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
+  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
   return Ok;
@@ -109,6 +111,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
+  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
   auto pData = getData();
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
