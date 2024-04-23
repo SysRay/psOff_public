@@ -139,7 +139,7 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
   pController->readPadData(*pPadData);
 
   int retVal = std::memcmp((uint8_t*)&pData->controller[handle].prePadData, (uint8_t*)pPadData, offsetof(ScePadData, connected));
-  LOG_TRACE(L"buttons 0x%lx leftStick:%u/%u rightStick:%u/%u L2/R2:%u,%u diff:%d", pPadData->buttons, pPadData->leftStick.x, pPadData->leftStick.y,
+  LOG_TRACE(L"buttons 0x%x leftStick:%u/%u rightStick:%u/%u L2/R2:%u,%u diff:%d", pPadData->buttons, pPadData->leftStick.x, pPadData->leftStick.y,
             pPadData->rightStick.x, pPadData->rightStick.y, pPadData->analogButtons.l2, pPadData->analogButtons.r2, retVal);
 
   pData->controller[handle].prePadData = *pPadData;

@@ -46,14 +46,14 @@ std::pair<Handle_t, int32_t> open(std::filesystem::path path, filesystem::SceOpe
   HANDLE file = CreateFileW(pathString.c_str(), access, shareMode, 0, flags, FILE_ATTRIBUTE_NORMAL, 0);
   if (file == INVALID_HANDLE_VALUE) {
     auto const lastErr = GetLastError();
-    LOG_WARN(L"open file: %s flags:0x%lx access:0x%lx shareMode:0x%lx mode:0x%llx(%u) error:0x%lx ", pathString.c_str(), flags, access, shareMode,
+    LOG_WARN(L"open file: %s flags:0x%x access:0x%x shareMode:0x%x mode:0x%llx(%u) error:0x%x ", pathString.c_str(), flags, access, shareMode,
              *(uint32_t*)(&mode), mode.mode, lastErr);
     if (lastErr == 0x57) return {nullptr, (int)ErrCode::_EINVAL};
     if (lastErr == 0x20) return {nullptr, (int)ErrCode::_EALREADY};
     return {nullptr, Ok};
   }
 
-  LOG_DEBUG(L"[%lld] opened file: %s flags:0x%lx access:0x%lx shareMode:0x%lx mode:0x%lx(%u)", file, pathString.c_str(), flags, access, shareMode,
+  LOG_DEBUG(L"[%lld] opened file: %s flags:0x%x access:0x%x shareMode:0x%x mode:0x%x(%u)", file, pathString.c_str(), flags, access, shareMode,
             *(uint32_t*)(&mode), mode.mode);
   return {file, Ok};
 }
@@ -104,7 +104,7 @@ size_t TypeFile::read(void* buf, size_t nbytes) {
     auto const lastError = GetLastError();
     if (lastError != ERROR_IO_PENDING) {
       LOG_USE_MODULE(File);
-      LOG_WARN(L"Read error: 0x%lx", GetLastError());
+      LOG_WARN(L"Read error: 0x%x", GetLastError());
       m_errCode = (int)ErrCode::_EIO;
 
       return 0;
@@ -124,7 +124,7 @@ size_t TypeFile::write(void* buf, size_t nbytes) {
   DWORD numWrite = 0;
   if (!WriteFile(m_file, buf, nbytes, &numWrite, nullptr)) {
     LOG_USE_MODULE(File);
-    LOG_WARN(L"Write error: 0x%lx", GetLastError());
+    LOG_WARN(L"Write error: 0x%x", GetLastError());
     m_errCode = (int)ErrCode::_EIO;
     return 0;
   }

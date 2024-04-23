@@ -2,6 +2,7 @@
 
 #include "../imageHandler.h"
 #include "core/imports/exports/graphics.h"
+#include "core/initParams/initParams.h"
 #include "logging.h"
 #include "utility/utility.h"
 
@@ -32,23 +33,47 @@ void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut)
 
 std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj) {
   if (obj->surfaceCapabilities.formats.empty()) {
-    return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    return {VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
   }
-  bool found = false;
+
+  std::vector<std::pair<uint16_t, VkFormat>> formatsSrgb;
+  std::vector<std::pair<uint16_t, VkFormat>> formatsUnorm;
+
+  formatsSrgb.reserve(obj->surfaceCapabilities.formats.size());
+  formatsUnorm.reserve(obj->surfaceCapabilities.formats.size());
+
   for (auto const& format: obj->surfaceCapabilities.formats) {
-    if (format.format == VK_FORMAT_R8G8B8A8_SRGB) {
-      found = true;
+    switch (format.format) {
+      case VK_FORMAT_B8G8R8A8_SRGB: formatsSrgb.push_back({1, VK_FORMAT_B8G8R8A8_SRGB}); break;
+      case VK_FORMAT_R8G8B8A8_SRGB: formatsSrgb.push_back({2, VK_FORMAT_R8G8B8A8_SRGB}); break;
+      case VK_FORMAT_B8G8R8A8_UNORM: formatsUnorm.push_back({1, VK_FORMAT_B8G8R8A8_UNORM}); break;
+      case VK_FORMAT_B8G8R8A8_SNORM: formatsUnorm.push_back({2, VK_FORMAT_B8G8R8A8_SNORM}); break;
+      default: break;
     }
   }
 
-  if (!found) {
+  sort(formatsSrgb.begin(), formatsSrgb.end());
+  sort(formatsUnorm.begin(), formatsUnorm.end());
+
+  if (accessInitParams()->enableBrightness()) {
+    if (formatsSrgb.empty()) {
+      LOG_USE_MODULE(vulkanHelper);
+      for (auto const& format: obj->surfaceCapabilities.formats) {
+        LOG_ERR(L"format %S", string_VkFormat(format.format));
+      }
+      LOG_CRIT(L"VK_FORMAT_B8G8R8A8_SRGB not supported");
+    }
+    return {formatsSrgb[0].second, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+  }
+
+  if (formatsUnorm.empty()) {
     LOG_USE_MODULE(vulkanHelper);
     for (auto const& format: obj->surfaceCapabilities.formats) {
       LOG_ERR(L"format %S", string_VkFormat(format.format));
     }
-    LOG_CRIT(L"VK_FORMAT_B8G8R8A8_SRGB not supported");
+    LOG_CRIT(L"VK_FORMAT_B8G8R8A8_UNORM not supported");
   }
-  return {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+  return {formatsUnorm[0].second, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 }
 
 void submitDisplayTransfer(SwapchainData::DisplayBuffers const* displayBuffer, ImageData const& imageData, QueueInfo const* queue, VkSemaphore waitSema,
