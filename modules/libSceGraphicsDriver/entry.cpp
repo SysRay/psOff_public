@@ -525,7 +525,7 @@ int SYSV_ABI sceGnmDriverTraceInProgress() {
 int SYSV_ABI sceGnmDriverTriggerCapture(const char* filename) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_ERR(L"CaptureStatus: Something went wrong");
-  return RAZOR_NOT_LOADED;
+  return Err::RAZOR_NOT_LOADED;
 }
 
 void SYSV_ABI sceGnmDebugHardwareStatus(int flag) {
