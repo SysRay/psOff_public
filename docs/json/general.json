@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "netEnabled": {
+      "type": "boolean"
+    },
+    "netMAC": {
+      "type": "string"
+    },
+    "onlineUsers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "red",
+              "green",
+              "pink"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "color",
+          "name"
+        ]
+      }
+    },
+    "systemlang": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 29
+    },
+    "userIndex": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 4
+    }
+  },
+  "required": [
+    "netEnabled",
+    "netMAC",
+    "profiles",
+    "systemlang",
+    "userIndex"
+  ]
+}

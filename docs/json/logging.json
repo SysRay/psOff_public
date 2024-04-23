@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "sink": {
+      "type": "string",
+      "enum": [
+        "Null",
+        "Auto",
+        "Syslog",
+        "Console",
+        "FileTxt",
+        "FileBin",
+        "Baical"
+      ]
+    },
+    "verbosity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+    }
+  },
+  "required": [
+    "sink",
+    "verbosity"
+  ]
+}

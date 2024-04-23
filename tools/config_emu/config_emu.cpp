@@ -221,18 +221,29 @@ Config::Config() {
     };
   }
 
-  m_logging._future =
-      std::async(std::launch::async | std::launch::deferred, load, &m_logging, json({{"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+  m_logging._future = std::async(
+      std::launch::async | std::launch::deferred, load, &m_logging,
+      json({{"$schema", "https://raw.githubusercontent.com/SysRay/psOff_public/main/docs/json/logging.json"}, {"sink", "FileBin"}, {"verbosity", 1}}),
+      ConfigModFlag::LOGGING);
 
-  m_graphics._future =
-      std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
-                 json({{"display", 0u}, {"fullscreen", false}, {"width", 1920u}, {"height", 1080u}, {"xpos", -1}, {"ypos", -1}}), ConfigModFlag::GRAPHICS);
+  m_graphics._future = std::async(std::launch::async | std::launch::deferred, load, &m_graphics,
+                                  json({{"$schema", "https://raw.githubusercontent.com/SysRay/psOff_public/main/docs/json/graphics.json"},
+                                        {"display", 0u},
+                                        {"fullscreen", false},
+                                        {"width", 1920u},
+                                        {"height", 1080u},
+                                        {"xpos", -1},
+                                        {"ypos", -1}}),
+                                  ConfigModFlag::GRAPHICS);
 
-  m_audio._future =
-      std::async(std::launch::async | std::launch::deferred, load, &m_audio, json({{"device", "[default]"}, {"volume", 0.5f}}), ConfigModFlag::AUDIO);
+  m_audio._future = std::async(
+      std::launch::async | std::launch::deferred, load, &m_audio,
+      json({{"$schema", "https://raw.githubusercontent.com/SysRay/psOff_public/main/docs/json/audio.json"}, {"device", "[default]"}, {"volume", 0.5f}}),
+      ConfigModFlag::AUDIO);
 
   m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
                                   json({
+                                      {"$schema", "https://raw.githubusercontent.com/SysRay/psOff_public/main/docs/json/controls.json"},
                                       {"pads", defpads},
                                       {"keybinds",
                                        {
@@ -248,6 +259,7 @@ Config::Config() {
 
   m_general._future = std::async(std::launch::async, load, &m_general,
                                  json({
+                                     {"$schema", "https://raw.githubusercontent.com/SysRay/psOff_public/main/docs/json/general.json"},
                                      {"systemlang", 1u},
                                      {"netEnabled", false},
                                      {"netMAC", "00:00:00:00:00:00"},
