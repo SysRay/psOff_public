@@ -19,6 +19,6 @@ EXPORT SYSV_ABI bool sceAvPlayerGetVideoDataEx(IAvplayer* avPlayer, SceAvPlayerF
 
 EXPORT SYSV_ABI int32_t sceAvPlayerAddSourceEx(IAvplayer* avPlayer, SceAvPlayerUriType uriType, SceAvPlayerSourceDetails* sourceDetails) {
   if (avPlayer->setFile(sourceDetails->uri.name)) return Ok;
-  return Err::INVALID_PARAMS;
+  return Err::AvPlayer::INVALID_PARAMS;
 }
 }

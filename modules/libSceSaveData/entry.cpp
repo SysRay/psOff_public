@@ -39,7 +39,7 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
   if (doOpen || doCreate) {
     if (!accessFileManager().getMountPoint(MountType::Save, dirSaveFiles.filename().string()).empty()) {
       LOG_DEBUG(L"Savedir already created dir:%S", dirName);
-      return Err::SAVE_DATA_ERROR_BUSY;
+      return Err::SaveData::BUSY;
     }
   }
 
@@ -66,7 +66,7 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
           break;
         }
       }
-      if (mountPoint.empty()) return Err::SAVE_DATA_ERROR_MOUNT_FULL;
+      if (mountPoint.empty()) return Err::SaveData::MOUNT_FULL;
     }
     // - mountpoint
 
@@ -74,7 +74,7 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
 
     if (!std::filesystem::exists(dirSaveFiles)) {
       LOG_DEBUG(L"Savedir doesn't exist");
-      return Err::SAVE_DATA_ERROR_NOT_FOUND;
+      return Err::SaveData::NOT_FOUND;
     }
 
     auto const count = mountPoint.copy(mountResult->mountPoint.data, SCE_SAVE_DATA_MOUNT_POINT_DATA_MAXSIZE - 1);
@@ -176,7 +176,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataUmountWithBackup(const SceSaveDataMountPoint*
     zip_close(za);
   } else {
     LOG_ERR(L"Backup failed: %d", zerr);
-    return Err::SAVE_DATA_ERROR_INTERNAL;
+    return Err::SaveData::INTERNAL;
   }
 
   return sceSaveDataUmount(mountPoint);
@@ -452,7 +452,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataRestoreBackupData(const SceSaveDataRestoreBac
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataCheckBackupData(const SceSaveDataCheckBackupData* check) {
-  if (check->titleId != nullptr) return Err::SAVE_DATA_ERROR_INTERNAL;
+  if (check->titleId != nullptr) return Err::SaveData::INTERNAL;
 
   // todo: check if savedata directory is already mounted
 
@@ -470,7 +470,7 @@ EXPORT SYSV_ABI int32_t sceSaveDataCheckBackupData(const SceSaveDataCheckBackupD
     zip_close(za);
   }
 
-  return Err::SAVE_DATA_ERROR_NOT_FOUND;
+  return Err::SaveData::NOT_FOUND;
 }
 
 EXPORT SYSV_ABI int32_t sceSaveDataBackup(const SceSaveDataBackup* backup) {

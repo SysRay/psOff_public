@@ -182,20 +182,23 @@ bool XIPController::readPadData(ScePadData& data) {
       .touchData =
           {
               .touchNum = 0,
-              .touch    = {{
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 1,
-                        },
-                           {
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 2,
-                        }},
+              .touch =
+                  {
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 1,
+                      },
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 2,
+                      },
+                  },
 
           },
 
-      .connected           = m_state == ControllerState::Connected,
+      .connected           = IController::isConnected(),
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,

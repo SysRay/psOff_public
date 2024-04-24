@@ -3,31 +3,31 @@
 #include <string_view>
 
 namespace Err {
-
-constexpr int SAVE_DATA_ERROR_PARAMETER                            = -2137063424;
-constexpr int SAVE_DATA_ERROR_NOT_INITIALIZED                      = -2137063423;
-constexpr int SAVE_DATA_ERROR_OUT_OF_MEMORY                        = -2137063422;
-constexpr int SAVE_DATA_ERROR_BUSY                                 = -2137063421;
-constexpr int SAVE_DATA_ERROR_NOT_MOUNTED                          = -2137063420;
-constexpr int SAVE_DATA_ERROR_NO_PERMISSION                        = -2137063419;
-constexpr int SAVE_DATA_ERROR_FINGERPRINT_MISMATCH                 = -2137063418;
-constexpr int SAVE_DATA_ERROR_EXISTS                               = -2137063417;
-constexpr int SAVE_DATA_ERROR_NOT_FOUND                            = -2137063416;
-constexpr int SAVE_DATA_ERROR_NO_SPACE_FS                          = -2137063414;
-constexpr int SAVE_DATA_ERROR_INTERNAL                             = -2137063413;
-constexpr int SAVE_DATA_ERROR_MOUNT_FULL                           = -2137063412;
-constexpr int SAVE_DATA_ERROR_BAD_MOUNTED                          = -2137063411;
-constexpr int SAVE_DATA_ERROR_FILE_NOT_FOUND                       = -2137063410;
-constexpr int SAVE_DATA_ERROR_BROKEN                               = -2137063409;
-constexpr int SAVE_DATA_ERROR_INVALID_LOGIN_USER                   = -2137063407;
-constexpr int SAVE_DATA_ERROR_MEMORY_NOT_READY                     = -2137063406;
-constexpr int SAVE_DATA_ERROR_BACKUP_BUSY                          = -2137063405;
-constexpr int SAVE_DATA_ERROR_NOT_REGIST_CALLBACK                  = -2137063403;
-constexpr int SAVE_DATA_ERROR_BUSY_FOR_SAVING                      = -2137063402;
-constexpr int SAVE_DATA_ERROR_LIMITATION_OVER                      = -2137063401;
-constexpr int SAVE_DATA_ERROR_EVENT_BUSY                           = -2137063400;
-constexpr int SAVE_DATA_ERROR_PARAMSFO_TRANSFER_TITLE_ID_NOT_FOUND = -2137063399;
-
+namespace SaveData {
+constexpr int PARAMETER                            = -2137063424;
+constexpr int NOT_INITIALIZED                      = -2137063423;
+constexpr int OUT_OF_MEMORY                        = -2137063422;
+constexpr int BUSY                                 = -2137063421;
+constexpr int NOT_MOUNTED                          = -2137063420;
+constexpr int NO_PERMISSION                        = -2137063419;
+constexpr int FINGERPRINT_MISMATCH                 = -2137063418;
+constexpr int EXISTS                               = -2137063417;
+constexpr int NOT_FOUND                            = -2137063416;
+constexpr int NO_SPACE_FS                          = -2137063414;
+constexpr int INTERNAL                             = -2137063413;
+constexpr int MOUNT_FULL                           = -2137063412;
+constexpr int BAD_MOUNTED                          = -2137063411;
+constexpr int FILE_NOT_FOUND                       = -2137063410;
+constexpr int BROKEN                               = -2137063409;
+constexpr int INVALID_LOGIN_USER                   = -2137063407;
+constexpr int MEMORY_NOT_READY                     = -2137063406;
+constexpr int BACKUP_BUSY                          = -2137063405;
+constexpr int NOT_REGIST_CALLBACK                  = -2137063403;
+constexpr int BUSY_FOR_SAVING                      = -2137063402;
+constexpr int LIMITATION_OVER                      = -2137063401;
+constexpr int EVENT_BUSY                           = -2137063400;
+constexpr int PARAMSFO_TRANSFER_TITLE_ID_NOT_FOUND = -2137063399;
+} // namespace SaveData
 } // namespace Err
 
 constexpr uint32_t SCE_SAVE_DATA_TITLE_ID_DATA_SIZE       = 10;
