@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "device": {
+      "type": "string"
+    },
+    "volume": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    }
+  },
+  "required": [
+    "device",
+    "volume"
+  ]
+}

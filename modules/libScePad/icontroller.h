@@ -22,7 +22,10 @@ class IController {
   char                 m_name[33];
   ControllerConfig*    m_cfg;
 
-  IController(ControllerType type, ControllerConfig* cfg, uint32_t userid): m_type(type), m_cfg(cfg), m_userId(userid) {}
+  IController(ControllerType type, ControllerConfig* cfg, uint32_t userid): m_type(type), m_cfg(cfg), m_userId(userid) {
+    ::memset(m_guid, '0', sizeof(m_guid));
+    ::strcpy_s(m_name, "[NOT YET CONNECTED]");
+  }
 
   public:
   virtual ~IController() = default;

@@ -69,7 +69,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
     pData->controller[n].prePadData = ScePadData();
     pData->controller[n].userId     = userId;
 
-    switch (pData->cfg.GetPadType(n)) {
+    switch (pData->cfg.GetPadType(userId)) {
       case ControllerType::SDL: pController = createController_sdl(&pData->cfg, userId); break;
 
       case ControllerType::Xinput: pController = createController_xinput(&pData->cfg, userId); break;

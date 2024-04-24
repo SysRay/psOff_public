@@ -1,0 +1,177 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "keybinds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "circle": {
+          "type": "string"
+        },
+        "cross": {
+          "type": "string"
+        },
+        "dpad_down": {
+          "type": "string"
+        },
+        "dpad_left": {
+          "type": "string"
+        },
+        "dpad_right": {
+          "type": "string"
+        },
+        "dpad_up": {
+          "type": "string"
+        },
+        "l1": {
+          "type": "string"
+        },
+        "l2": {
+          "type": "string"
+        },
+        "l3": {
+          "type": "string"
+        },
+        "lx+": {
+          "type": "string"
+        },
+        "lx-": {
+          "type": "string"
+        },
+        "ly+": {
+          "type": "string"
+        },
+        "ly-": {
+          "type": "string"
+        },
+        "options": {
+          "type": "string"
+        },
+        "r1": {
+          "type": "string"
+        },
+        "r2": {
+          "type": "string"
+        },
+        "r3": {
+          "type": "string"
+        },
+        "rx+": {
+          "type": "string"
+        },
+        "rx-": {
+          "type": "string"
+        },
+        "ry+": {
+          "type": "string"
+        },
+        "ry-": {
+          "type": "string"
+        },
+        "square": {
+          "type": "string"
+        },
+        "touchpad": {
+          "type": "string"
+        },
+        "triangle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "circle",
+        "cross",
+        "dpad_down",
+        "dpad_left",
+        "dpad_right",
+        "dpad_up",
+        "l1",
+        "l2",
+        "l3",
+        "lx+",
+        "lx-",
+        "ly+",
+        "ly-",
+        "options",
+        "r1",
+        "r2",
+        "r3",
+        "rx+",
+        "rx-",
+        "ry+",
+        "ry-",
+        "square",
+        "touchpad",
+        "triangle"
+      ]
+    },
+    "pads": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "deadzones": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "left_stick": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 0.9
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 0.9
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ]
+              },
+              "right_stick": {
+                "$ref": "#/properties/pads/items/properties/deadzones/properties/left_stick"
+              }
+            },
+            "required": [
+              "left_stick",
+              "right_stick"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "gamepad",
+              "sdl",
+              "xinput",
+              "xbox",
+              "kbd",
+              "kb",
+              "keyboard"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "deadzones"
+        ]
+      }
+    }
+  },
+  "required": [
+    "keybinds",
+    "pads"
+  ]
+}
