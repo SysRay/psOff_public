@@ -37,7 +37,7 @@ int32_t OfflineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
 }
 
 int32_t OfflineNet::netCtlGetState(int32_t* state) {
-  *state = 0; // IP address obtained
+  *state = 0; // Network disconnected
   return Ok;
 }
 
