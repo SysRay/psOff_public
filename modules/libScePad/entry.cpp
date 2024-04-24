@@ -34,7 +34,7 @@ static auto* getData() {
 }
 
 static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
-  if (userId < 1 || userId > 4) return Err::Pad::INVALID_ARG;
+  if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
   if (type == PadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
   if (type != PadPortType::STANDARD && type != PadPortType::SPECIAL) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
@@ -110,7 +110,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
-  if (userId < 1 || userId > 4) return Err::Pad::INVALID_ARG;
+  if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
   auto pData = getData();
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
