@@ -16,6 +16,7 @@ class SDLPadManager {
   public:
   SDL_GameController* openNew() {
     for (int n = 0; n < SDL_NumJoysticks(); n++) {
+      if (!SDL_IsGameController(n)) continue;
       auto pad = SDL_GameControllerOpen(n);
       if (std::find(m_openedPads.begin(), m_openedPads.end(), pad) != m_openedPads.end()) continue;
       m_openedPads.push_back(pad);
@@ -191,20 +192,23 @@ bool SDLController::readPadData(ScePadData& data) {
       .touchData =
           {
               .touchNum = 0,
-              .touch    = {{
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 1,
-                        },
-                           {
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 2,
-                        }},
+              .touch =
+                  {
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 1,
+                      },
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 2,
+                      },
+                  },
 
           },
 
-      .connected           = m_state == ControllerState::Connected,
+      .connected           = IController::isConnected(),
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,

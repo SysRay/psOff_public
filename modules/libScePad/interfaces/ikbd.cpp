@@ -79,7 +79,6 @@ uint32_t KBDController::getButtons(const uint8_t* keys) {
 #define MAP_TRIGGER(_keys, _down) (uint8_t)(resolveBindFor(_keys, _down) ? 0xFF : 0x00)
 
 bool KBDController::readPadData(ScePadData& data) {
-
   if (m_state == ControllerState::Closed) return false;
 
   const uint8_t* keys = SDL_GetKeyboardState(nullptr);

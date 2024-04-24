@@ -212,7 +212,7 @@ int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index
 
 int32_t SYSV_ABI sceGnmValidateDrawCommandBuffers(uint32_t count, void* dcbGpuAddrs[], uint32_t* dcbSizesInBytes, void* ccbGpuAddrs[],
                                                   uint32_t* ccbSizesInBytes) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int SYSV_ABI sceGnmSubmitCommandBuffers(uint32_t count, void** dcb_gpu_addrs, const uint32_t* dcb_sizes_in_bytes, void** ccb_gpu_addrs,
@@ -443,31 +443,31 @@ void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
 }
 
 int SYSV_ABI sceGnmValidateCommandBuffers() {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDispatchCommandBuffers(uint32_t count, void* dcbGpuAddrs, uint32_t* dcbSizesInBytes) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDisableDiagnostics(uint32_t count, void* data) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDisableDiagnostics2(uint32_t count, uint32_t* diagList) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetDiagnosticInfo(int32_t query, void* diagnosticOutputs) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetDiagnostics(int32_t query, void* diagnosticOutputs) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateResetState() {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetVersion() {
@@ -499,7 +499,7 @@ int SYSV_ABI sceGnmRegisterResource(uint32_t* resource_handle, uint32_t owner_ha
     *resource_handle = rhandle;
   }
 
-  return Err::FAILURE;
+  return Err::Gnm::FAILURE;
 }
 
 int SYSV_ABI sceGnmUnregisterAllResourcesForOwner(uint32_t owner_handle) {
@@ -525,7 +525,7 @@ int SYSV_ABI sceGnmDriverTraceInProgress() {
 int SYSV_ABI sceGnmDriverTriggerCapture(const char* filename) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_ERR(L"CaptureStatus: Something went wrong");
-  return Err::RAZOR_NOT_LOADED;
+  return Err::Gnm::RAZOR_NOT_LOADED;
 }
 
 void SYSV_ABI sceGnmDebugHardwareStatus(int flag) {

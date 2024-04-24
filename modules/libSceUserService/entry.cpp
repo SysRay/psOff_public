@@ -71,7 +71,7 @@ EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
     }
   }
 
-  return Err::USER_SERVICE_ERROR_NO_EVENT;
+  return Err::UserService::NO_EVENT;
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList* userId_list) {
@@ -89,7 +89,7 @@ EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList*
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t size) {
-  if (userId < 1 || userId > 3 || name == nullptr || size == 0) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3 || name == nullptr || size == 0) return Err::UserService::INVALID_ARGUMENT;
 
   std::string username = "Anon";
   auto [lock, jData]   = accessConfig()->accessModule(ConfigModFlag::GENERAL);
@@ -101,14 +101,14 @@ EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t siz
   } catch (json::exception& ex) {
   }
 
-  if (size < (username.size() + 1)) return Err::USER_SERVICE_ERROR_BUFFER_TOO_SHORT;
+  if (size < (username.size() + 1)) return Err::UserService::BUFFER_TOO_SHORT;
   auto const count = username.copy(name, size - 1);
   name[count]      = '\0';
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceUserServiceGetUserColor(int userId, UserServiceUserColor* color) {
-  if (userId < 1 || userId > 3) return Err::USER_SERVICE_ERROR_INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3) return Err::UserService::INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   std::string _scolor;

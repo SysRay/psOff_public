@@ -1,15 +1,11 @@
 #include "cconfig.h"
 #include "common.h"
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
 #include "interfaces/ikbd.h"
 #include "interfaces/isdl.h"
 #include "interfaces/ixip.h"
 #include "logging.h"
 #include "types.h"
-
-#include <algorithm>
-#include <chrono>
 
 LOG_DEFINE_MODULE(libScePad);
 
@@ -28,28 +24,19 @@ struct Pimpl {
 
   std::mutex m_mutexInt;
 
-  ControllerConfig                                            cfg;
-  std::array<Controller, MAX_CONTROLLERS_COUNT /* Define? */> controller;
+  ControllerConfig                              cfg;
+  std::array<Controller, MAX_CONTROLLERS_COUNT> controller;
 };
 
 static auto* getData() {
   static Pimpl obj;
   return &obj;
 }
-} // namespace
 
-extern "C" {
-
-EXPORT const char* MODULE_NAME = "libScePad";
-
-EXPORT SYSV_ABI int scePadInit(void) {
-  LOG_USE_MODULE(libScePad);
-  (void)getData();
-  return Ok;
-}
-
-EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
-  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
+static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
+  if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
+  if (type == PadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
+  if (type != PadPortType::STANDARD && type != PadPortType::SPECIAL) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
 
   auto pData = getData();
@@ -58,7 +45,7 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
 
   // Check already opened
   for (uint32_t n = 0; n < MAX_CONTROLLERS_COUNT; ++n) {
-    if (pData->controller[n].userId == userId) return Err::ALREADY_OPENED;
+    if (pData->controller[n].userId == userId) return Err::Pad::ALREADY_OPENED;
   }
   // - already open
 
@@ -76,25 +63,37 @@ EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, 
 
       case ControllerType::Keyboard: pController = createController_keyboard(&pData->cfg, userId); break;
 
-      default: LOG_CRIT(L"Unimplemented controller type!"); return Err::FATAL;
+      default: LOG_CRIT(L"Unimplemented controller type!"); return Err::Pad::FATAL;
     }
 
     LOG_INFO(L"-> Pad[%d]: userId:%d name:%S guid:%S", n, userId, pController->getName(), pController->getGUID());
     return n;
   }
 
-  return Err::NO_HANDLE;
+  return Err::Pad::NO_HANDLE;
 }
+} // namespace
 
-EXPORT SYSV_ABI int scePadOpenExt(int userId, int type, int index, int param) {
-  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
+extern "C" {
+
+EXPORT const char* MODULE_NAME = "libScePad";
+
+EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
-  LOG_DEBUG(L"todo %S", __FUNCTION__);
+  (void)getData();
   return Ok;
 }
 
+EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* param) {
+  return _padOpen(userId, type, index, param);
+}
+
+EXPORT SYSV_ABI int scePadOpenExt(int userId, PadPortType type, int index, const void* param) {
+  return _padOpen(userId, type, index, param);
+}
+
 EXPORT SYSV_ABI int scePadClose(int32_t handle) {
-  if (handle < 0) return Ok;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Ok;
 
   LOG_USE_MODULE(libScePad);
 
@@ -111,7 +110,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
-  if (userId < 1 || userId > 4) return Err::INVALID_ARG;
+  if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
   auto pData = getData();
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
@@ -123,16 +122,16 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
     }
   }
 
-  return Err::NO_HANDLE;
+  return Err::Pad::NO_HANDLE;
 }
 
 EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num) {
   LOG_USE_MODULE(libScePad);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
   std::unique_lock const lock(pData->m_mutexInt);
 
@@ -153,70 +152,70 @@ EXPORT SYSV_ABI int scePadReadState(int32_t handle, ScePadData* pData) {
 
 EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
   LOG_USE_MODULE(libScePad);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
   pController->setMotion(bEnable);
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadSetAngularVelocityDeadbandState(int32_t handle, bool bEnable) {
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
-  return pController->resetOrientation() ? Ok : Err::FATAL;
+  return pController->resetOrientation() ? Ok : Err::Pad::FATAL;
 }
 
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
-  if (handle < 0) return Err::INVALID_HANDLE;
-  if (pParam == nullptr) return Err::INVALID_ARG;
+  if (handle < 0) return Err::Pad::INVALID_HANDLE;
+  if (pParam == nullptr) return Err::Pad::INVALID_ARG;
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
-  return pController->setRumble(pParam) ? Ok : Err::INVALID_ARG;
+  return pController->setRumble(pParam) ? Ok : Err::Pad::INVALID_ARG;
 }
 
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
-  if (handle < 0) return Err::INVALID_HANDLE;
-  if (pParam == nullptr) return Err::INVALID_ARG;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
+  if (pParam == nullptr) return Err::Pad::INVALID_ARG;
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
-  return pController->setLED(pParam) ? Ok : Err::INVALID_LIGHTBAR_SETTING;
+  return pController->setLED(pParam) ? Ok : Err::Pad::INVALID_LIGHTBAR_SETTING;
 }
 
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
 
   auto  pData       = getData();
   auto& pController = pData->controller[handle].padPtr;
-  if (!pController) return Err::INVALID_HANDLE;
+  if (!pController) return Err::Pad::INVALID_HANDLE;
 
-  return pController->resetLED() ? Ok : Err::INVALID_LIGHTBAR_SETTING;
+  return pController->resetLED() ? Ok : Err::Pad::INVALID_LIGHTBAR_SETTING;
 }
 
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   auto pData = getData();
 
   std::unique_lock const lock(pData->m_mutexInt);
@@ -258,21 +257,21 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
 EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData* pData, ScePadDeviceClassData* pDeviceClassData) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, ScePadDeviceClassExtendedInformation* pExtInfo) {
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
-  if (handle < 0) return Err::INVALID_HANDLE;
+  if (handle < 0 || handle >= MAX_CONTROLLERS_COUNT) return Err::Pad::INVALID_HANDLE;
   return Ok;
 }
 

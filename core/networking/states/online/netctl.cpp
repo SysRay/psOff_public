@@ -189,3 +189,8 @@ int32_t OnlineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
 
   return Ok;
 }
+
+int32_t OnlineNet::netCtlGetState(int32_t* state) {
+  *state = 3; // IP address obtained
+  return Ok;
+}

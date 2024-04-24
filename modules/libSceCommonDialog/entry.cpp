@@ -1,5 +1,5 @@
+#include "codes.h"
 #include "common.h"
-#include "errorcodes.h"
 #include "logging.h"
 
 LOG_DEFINE_MODULE(libSceCommonDialog);

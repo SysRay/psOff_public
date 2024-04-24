@@ -653,14 +653,14 @@ int VideoOut::registerBuffers(int handle, int startIndex, void* const* addresses
 
   [[unlikely]] if (setIndex > 15) {
     LOG_CRIT(L"buffersSetsCount > 15");
-    return ::Err::VIDEO_OUT_ERROR_NO_EMPTY_SLOT;
+    return Err::VideoOut::NO_EMPTY_SLOT;
   }
 
   auto& bufferSet = config.bufferSets[setIndex];
   bufferSet.buffers.resize(numBuffer);
 
   for (int i = startIndex; i < startIndex + numBuffer; ++i) {
-    if (config.buffers[i] >= 0) return ::Err::VIDEO_OUT_ERROR_SLOT_OCCUPIED;
+    if (config.buffers[i] >= 0) return Err::VideoOut::SLOT_OCCUPIED;
     config.buffers[i] = setIndex;
   }
 

@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
+namespace AvPlayer {
 constexpr int32_t INVALID_PARAMS          = -2140536831; /* 0x806A0001 */
 constexpr int32_t OPERATION_FAILED        = -2140536830; /* 0x806A0002 */
 constexpr int32_t NO_MEMORY               = -2140536829; /* 0x806A0003 */
@@ -13,4 +14,5 @@ constexpr int32_t INFO_MARLIN_ENCRY       = -2140536656; /* 0x806A00B0 */
 constexpr int32_t INFO_PLAYREADY_ENCRY    = -2140536652; /* 0x806A00B4 */
 constexpr int32_t INFO_AES_ENCRY          = -2140536651; /* 0x806A00B5 */
 constexpr int32_t INFO_OTHER_ENCRY        = -2140536641; /* 0x806A00BF */
+} // namespace AvPlayer
 } // namespace Err

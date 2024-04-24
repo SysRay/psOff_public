@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
+namespace AudioOut {
 constexpr int32_t NOT_OPENED          = -2144993279;
 constexpr int32_t BUSY                = -2144993278;
 constexpr int32_t INVALID_PORT        = -2144993277;
@@ -23,6 +24,7 @@ constexpr int32_t INVALID_FLAG        = -2144993261;
 constexpr int32_t INVALID_MIXLEVEL    = -2144993260;
 constexpr int32_t INVALID_ARG         = -2144993259;
 constexpr int32_t INVALID_PARAM       = -2144993258;
+} // namespace AudioOut
 } // namespace Err
 
 constexpr int PORT_OUT_MAX         = 6;
