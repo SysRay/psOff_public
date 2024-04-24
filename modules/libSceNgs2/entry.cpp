@@ -529,7 +529,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOpti
   LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
   if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
   if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr || sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
 
   SceNgs2ContextBufferInfo cbi = {
       .hostBuffer     = nullptr,
