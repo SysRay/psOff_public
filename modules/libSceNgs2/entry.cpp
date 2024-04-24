@@ -475,6 +475,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
 EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
                                                        SceNgs2Handle** outh) {
   if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
+  if (alloc == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
 
@@ -555,7 +556,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, c
   LOG_USE_MODULE(libSceNgs2);
   LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, cbi, outh);
   if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr && sysopt->size != sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
   if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
 
   *outh             = (SceNgs2Handle*)cbi->hostBuffer;
