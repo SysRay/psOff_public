@@ -7,6 +7,7 @@
     },
     "sink": {
       "type": "string",
+      "description": "Logging output.",
       "enum": [
         "Null",
         "Auto",
@@ -19,6 +20,7 @@
     },
     "verbosity": {
       "type": "integer",
+      "description": "Verbosity level of logger.\nPossible values:\n0 - Trace\n1 - Debug\n2 - Warning\n3 - Error\n4 - Critical\n5 - None",
       "minimum": 0,
       "maximum": 5
     }

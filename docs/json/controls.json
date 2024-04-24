@@ -1,85 +1,112 @@
 {
   "type": "object",
   "additionalProperties": false,
+  "definitions": {
+    "button": {
+      "type": "string",
+      "description": "This gamepad button will be pressed when you press the speified button on the keyboard.\n\"gamepad_key\": \"keyboard_key\"\n\nYou can find keyboard key names there: <https://wiki.libsdl.org/SDL2/SDL_Scancode>."
+    },
+    "deadzone": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.9
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.9
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    }
+  },
   "properties": {
     "$schema": {
       "type": "string"
     },
     "keybinds": {
       "type": "object",
+      "description": "Information about keybinds for gamepad emulation, hover your cursor on any key inside this object to get more info.",
       "additionalProperties": false,
       "properties": {
         "circle": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "cross": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "dpad_down": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "dpad_left": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "dpad_right": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "dpad_up": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "l1": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "l2": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "l3": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "lx+": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "lx-": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "ly+": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "ly-": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "options": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "r1": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "r2": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "r3": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "rx+": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "rx-": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "ry+": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "ry-": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "square": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "touchpad": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         },
         "triangle": {
-          "type": "string"
+          "$ref": "#/definitions/button"
         }
       },
       "required": [
@@ -111,38 +138,24 @@
     },
     "pads": {
       "type": "array",
+      "description": "This array contains information about connected pads.",
       "minItems": 4,
       "maxItems": 4,
       "items": {
         "type": "object",
+        "description": "The pad information itself.",
         "additionalProperties": false,
         "properties": {
           "deadzones": {
             "type": "object",
+            "description": "Dead zones are WIP, not working for now.",
             "additionalProperties": false,
             "properties": {
               "left_stick": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "x": {
-                    "type": "number",
-                    "minimum": 0.0,
-                    "maximum": 0.9
-                  },
-                  "y": {
-                    "type": "number",
-                    "minimum": 0.0,
-                    "maximum": 0.9
-                  }
-                },
-                "required": [
-                  "x",
-                  "y"
-                ]
+                "$ref": "#/definitions/deadzone"
               },
               "right_stick": {
-                "$ref": "#/properties/pads/items/properties/deadzones/properties/left_stick"
+                "$ref": "#/definitions/deadzone"
               }
             },
             "required": [
@@ -152,6 +165,7 @@
           },
           "type": {
             "type": "string",
+            "description": "Backend for this gamepad. Possible values:\n* for SDL: sdl; aliases: gamepad\n* for XInput: xinput; aliases: xbox\n* for gamepad emulation: keyboard; aliases: kb, kbd.",
             "enum": [
               "gamepad",
               "sdl",
