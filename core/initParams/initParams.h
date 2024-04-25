@@ -26,6 +26,7 @@ class InitParams {
   bool enableValidation();
   bool enableBrightness();
   bool useVSYNC();
+  bool try4K();
   ~InitParams();
 };
 

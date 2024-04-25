@@ -621,26 +621,25 @@ void VideoOut::getBufferAttribute(void* attribute, uint32_t pixel_format, int32_
 
   auto [displayFormat, _] = vulkan::getDisplayFormat(m_vulkanObj);
 
-  // todo: needs gpu memory display image recreate
-  // if (m_widthTotal >= 1920 && m_heightTotal >= 1080) {
-  //   *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
-  //       .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
-  //       .tilingMode   = tiling_mode,
-  //       .aspectRatio  = aspect_ratio,
-  //       .width        = m_widthTotal,
-  //       .height       = m_heightTotal,
-  //       .pitchInPixel = m_widthTotal,
-  //   };
-  // } else {
-
-  *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
-      .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
-      .tilingMode   = tiling_mode,
-      .aspectRatio  = aspect_ratio,
-      .width        = width,
-      .height       = height,
-      .pitchInPixel = pitchInPixel,
-  };
+  if (accessInitParams()->try4K()) {
+    *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
+        .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
+        .tilingMode   = tiling_mode,
+        .aspectRatio  = aspect_ratio,
+        .width        = 3840,
+        .height       = 2160,
+        .pitchInPixel = 3840,
+    };
+  } else {
+    *(SceVideoOutBufferAttribute*)attribute = SceVideoOutBufferAttribute {
+        .pixelFormat  = SceVideoOutPixelFormat::PIXEL_FORMAT_A8R8G8B8_SRGB, // todo get vulkan pixel_format?
+        .tilingMode   = tiling_mode,
+        .aspectRatio  = aspect_ratio,
+        .width        = std::min(width, 1920u),
+        .height       = std::min(height, 1080u),
+        .pitchInPixel = std::min(width, 1920u),
+    };
+  }
   //}
 }
 
