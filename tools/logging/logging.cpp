@@ -34,7 +34,7 @@ std::mutex& getMutex() {
   return mMutex;
 }
 
-const wchar_t* getParams(std::wstring_view name, std::wstring& params) {
+const wchar_t* getParams(std::wstring& params) {
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::LOGGING);
 
   auto readParam = [&params](json* field, json::value_t jsontype, const wchar_t* p7param) -> bool {
@@ -79,7 +79,7 @@ void* __registerLoggingModule(std::wstring_view name) {
         interested in is the trace.
       */
       std::wstring params = L"/P7.Pool=1024 /P7.Files=0 /P7.Roll=5hr";
-      *getClient()        = P7_Create_Client(getParams(name, params));
+      *getClient()        = P7_Create_Client(getParams(params));
       *trace              = P7_Create_Trace(*getClient(), __APPNAME);
     }
   }
