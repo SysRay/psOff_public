@@ -43,26 +43,28 @@ EXPORT SYSV_ABI int sceNpTrophyUnlockTrophy(SceNpTrophyContext context, SceNpTro
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyUnlockState(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyFlagArray* flags, uint32_t* count) {
-  flags->flagBits[0] = 0;
-  flags->flagBits[1] = 0;
-  flags->flagBits[2] = 0;
-  flags->flagBits[3] = 0;
-
+  if (flags != nullptr) {
+    flags->flagBits[0] = 0;
+    flags->flagBits[1] = 0;
+    flags->flagBits[2] = 0;
+    flags->flagBits[3] = 0;
+  }
   *count = 2;
 
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyGameDetails* details, SceNpTrophyGameData* data) {
-  details->numGroups   = 0;
-  details->numTrophies = 1;
-  details->numPlatinum = 0;
-  details->numGold     = 0;
-  details->numSilver   = 0;
-  details->numBronze   = 1;
-
-  strcpy_s(details->title, "tropyName");
-  strcpy_s(details->description, "tropyDesc");
+  if (details != nullptr) {
+    details->numGroups   = 0;
+    details->numTrophies = 1;
+    details->numPlatinum = 0;
+    details->numGold     = 0;
+    details->numSilver   = 0;
+    details->numBronze   = 1;
+    strcpy_s(details->title, "tropyName");
+    strcpy_s(details->description, "tropyDesc");
+  }
 
   if (data != nullptr) {
     data->unlockedTrophies   = 0;
