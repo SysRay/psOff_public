@@ -28,6 +28,7 @@ bool InitParams::init(int argc, char** argv) {
   ("d", "Wait for debugger")
   ("vkValidation", "Enable vulkan validation layers")
   ("bright", "use srgb display format (brightness)")
+  ("4k", "try 4K display mode if game supports it")
   ("vsync", po::value<bool>()->default_value(true), "Enable vertical synchronization")
   ("file", po::value<std::string>(), "fullpath to applications binary")
   ("root", po::value<std::string>(), "Applications root")
@@ -86,4 +87,8 @@ bool InitParams::enableBrightness() {
 
 bool InitParams::useVSYNC() {
   return _pImpl->m_vm["vsync"].as<bool>();
+}
+
+bool InitParams::try4K() {
+  return _pImpl->m_vm.count("4k");
 }
