@@ -626,7 +626,9 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
   };
 
   VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddress {
-      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES, .pNext = &colorWriteExt, .bufferDeviceAddress = VK_TRUE,
+      .sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
+      .pNext               = &colorWriteExt,
+      .bufferDeviceAddress = VK_TRUE,
 
       .bufferDeviceAddressCaptureReplay = enableValidation ? VK_TRUE : VK_FALSE,
   };
