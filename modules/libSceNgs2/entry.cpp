@@ -297,7 +297,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetUserData(SceNgs2Handle* rh, uintptr_t* use
 
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
   if (rh == nullptr) return Err::Ngs2::INVALID_RACK_HANDLE;
-  if (voiceId > 0) return Err::Ngs2::INVALID_VOICE_INDEX; // todo: how much indexes??
+  if (voiceId > rh->un.rack.info.maxVoices) return Err::Ngs2::INVALID_VOICE_INDEX;
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   // todo: write to outh voice handle from rack
@@ -465,11 +465,41 @@ EXPORT SYSV_ABI int32_t sceNgs2GeomResetSourceParam(SceNgs2GeomSourceParam* para
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2ContextBufferInfo* cbi,
+EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ropt, const SceNgs2ContextBufferInfo* cbi,
                                           SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  LOG_ERR(L"todo %S(%p, %d, %p, %p, %p)", __FUNCTION__, sysh, rackId, ropt, cbi, outh);
+  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
+  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
+  if (ropt != nullptr && ropt->size < sizeof(SceNgs2RackOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+
+  *outh                       = (SceNgs2Handle*)cbi->hostBuffer;
+  (*outh)->allocSet           = false;
+  (*outh)->alloc.allocHandler = nullptr;
+  (*outh)->alloc.freeHandler  = nullptr;
+  (*outh)->alloc.userData     = nullptr;
+  (*outh)->owner              = sysh;
+
+  if (ropt != nullptr) {
+    (*outh)->un.rack.info.maxPorts        = ropt->maxPorts;
+    (*outh)->un.rack.info.maxMatrices     = ropt->maxMatrices;
+    (*outh)->un.rack.info.maxGrainSamples = ropt->maxGrainSamples;
+    (*outh)->un.rack.info.maxVoices       = ropt->maxVoices;
+  } else {
+    (*outh)->un.rack.info.maxPorts        = 1;
+    (*outh)->un.rack.info.maxMatrices     = 1;
+    (*outh)->un.rack.info.maxGrainSamples = 1;
+    (*outh)->un.rack.info.maxVoices       = 1;
+  }
+
+  auto vo = (*outh)->un.rack.voices = new SceNgs2Handle;
+  vo->allocSet                      = false;
+  vo->alloc.allocHandler            = nullptr;
+  vo->alloc.freeHandler             = nullptr;
+  vo->alloc.userData                = nullptr;
+
+  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
@@ -513,10 +543,16 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
 EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBufferInfo* cbi) {
   if (rh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
   if (rh->allocSet) {
-    cbi->hostBuffer     = rh;
     cbi->hostBufferSize = sizeof(SceNgs2Handle);
+    cbi->hostBuffer     = rh->un.rack.voices;
     if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
+    cbi->hostBuffer = rh;
+    if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
+  } else {
+    if (rh->un.rack.voices != nullptr) delete rh->un.rack.voices;
+    delete rh;
   }
+
   return Ok;
 }
 
@@ -572,7 +608,10 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2Context
     cbi->hostBuffer     = sysh;
     cbi->hostBufferSize = sizeof(SceNgs2Handle);
     if (auto ret = sysh->alloc.freeHandler(cbi)) return ret;
+  } else {
+    delete sysh;
   }
+
   return Ok;
 }
 
