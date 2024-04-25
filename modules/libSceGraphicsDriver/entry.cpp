@@ -128,8 +128,24 @@ int SYSV_ABI sceGnmUpdatePsShader(uint32_t* cmdOut, uint64_t size, const uint32_
 int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
-  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-  memcpy(&cmdOut[1], ps_regs, 8 + size);
+  if (cmdOut == nullptr || size < 39) return -1;
+  if (ps_regs != nullptr) {
+    cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
+    memcpy(&cmdOut[1], ps_regs, 8 + size);
+  } else {
+    cmdOut[0]  = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
+    cmdOut[1]  = 0x00000000;
+    cmdOut[2]  = 0x00000000;
+    cmdOut[3]  = 0x00000000;
+    cmdOut[4]  = 0xc0011000;
+    cmdOut[5]  = 0xc01e0203;
+    cmdOut[6]  = 0x00000000;
+    cmdOut[7]  = 0xc0016900;
+    cmdOut[8]  = 0x0000008f;
+    cmdOut[9]  = 0x0000000f;
+    cmdOut[10] = 0xc01c1000;
+    cmdOut[11] = 0x00000000;
+  }
 
   return Ok;
 }
