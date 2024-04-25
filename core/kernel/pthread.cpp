@@ -474,7 +474,7 @@ int mutexDestroy(ScePthreadMutex* mutex) {
 
 auto mutexInit_intern(const ScePthreadMutexattr* attr) {
   auto mutex = std::make_unique<PthreadMutexPrivate>().release();
-  if (attr != nullptr) mutex->type = (*attr)->type;
+  if (attr != nullptr && *attr != nullptr) mutex->type = (*attr)->type;
   mutex->id = mutexCounter();
   LOG_USE_MODULE(pthread);
   // LOG_DEBUG(L"mutex ini| id:%llu type:%d", mutex->id, (int)mutex->type);
