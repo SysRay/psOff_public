@@ -23,6 +23,10 @@
       "description": "Verbosity level of logger.\nPossible values:\n0 - Trace\n1 - Debug\n2 - Warning\n3 - Error\n4 - Critical\n5 - None",
       "minimum": 0,
       "maximum": 5
+    },
+    "_customVerb": {
+      "type": "object",
+      "description": "Custom verbosity level for each module."
     }
   },
   "required": [

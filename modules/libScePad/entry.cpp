@@ -80,6 +80,7 @@ EXPORT const char* MODULE_NAME = "libScePad";
 
 EXPORT SYSV_ABI int scePadInit(void) {
   LOG_USE_MODULE(libScePad);
+  LOG_TRACE(L"scePadInit()");
   (void)getData();
   return Ok;
 }

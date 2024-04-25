@@ -142,6 +142,13 @@ Config::Config() {
 
       for (auto& [dkey, dval]: def.items()) {
         json& cval = getVal(obj, dkey);
+        if (dkey.starts_with("_")) { // Temporary (probably) workaround to stop fixing underscore objects
+          if (cval.is_null()) {
+            missing = true;
+            cval    = dval;
+          }
+          continue;
+        }
 
         if ((cval.is_null() && !dval.is_null()) || !isJsonTypesSimilar(cval, dval)) {
           cval    = dval;
@@ -171,6 +178,9 @@ Config::Config() {
       bool unused = false;
 
       for (auto& [ckey, cval]: obj.items()) {
+        if (ckey.starts_with("_")) { // Temporary (probably) workaround to stop removing underscore objects
+          continue;
+        }
         json& dval = getVal(def, ckey);
 
         if (dval.is_null()) {
@@ -221,8 +231,10 @@ Config::Config() {
     };
   }
 
-  m_logging._future = std::async(std::launch::async | std::launch::deferred, load, &m_logging,
-                                 json({{"$schema", "./.schemas/logging.json"}, {"sink", "FileBin"}, {"verbosity", 1}}), ConfigModFlag::LOGGING);
+  m_logging._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_logging,
+                 json({{"$schema", "./.schemas/logging.json"}, {"sink", "FileBin"}, {"verbosity", 1}, {"_customVerb", json(json::value_t::object)}}),
+                 ConfigModFlag::LOGGING);
 
   m_graphics._future = std::async(
       std::launch::async | std::launch::deferred, load, &m_graphics,
