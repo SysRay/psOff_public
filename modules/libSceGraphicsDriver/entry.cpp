@@ -133,8 +133,8 @@ int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
     memcpy(&cmdOut[1], ps_regs, 8 + size);
   } else {
-    cmdOut[0]  = 0xc0027600;
-    cmdOut[1]  = 0x00000008;
+    cmdOut[0]  = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
+    cmdOut[1]  = 0x00000000;
     cmdOut[2]  = 0x00000000;
     cmdOut[3]  = 0x00000000;
     cmdOut[4]  = 0xc0011000;
