@@ -12,7 +12,7 @@ class MemAllocator {
   virtual void  notifyError(int32_t error, size_t size, void* userData);
 };
 
-enum ValueType { Null = 0, Boolean, Integer, UnsignedInteger, Double, String, Array, Object };
+enum ValueType { eNull = 0, eBoolean, eInteger, eUnsignedInteger, eDouble, eString, eArray, eObject };
 
 enum SpecialFloatFormat { FloatString, FloatNull, FloatSym };
 
@@ -67,6 +67,47 @@ class Initializer {
 
   private:
   bool m_bIsInited;
+};
+
+struct RootParam;
+
+class String {};
+
+class Array {};
+
+class Object {};
+
+class Value {
+  private:
+  Value*     m_parent;
+  RootParam* m_rootParameter;
+
+  union {
+    bool     m_boolean;
+    int64_t  m_integer;
+    uint64_t m_uinteger;
+    double   m_double;
+    String*  m_string;
+    Array*   m_array;
+    Object*  m_object;
+  };
+
+  char      _padding[4];
+  ValueType m_type;
+
+  public:
+  ~Value();
+  Value();
+  Value(ValueType type);
+  Value(bool b);
+  Value(int64_t i);
+  Value(uint64_t ui);
+  Value(double d);
+  Value(const char* s);
+  Value(const String& s);
+  Value(const Array& a);
+  Value(const Object& o);
+  Value(const Value& v);
 };
 } // namespace Json
 } // namespace sce
