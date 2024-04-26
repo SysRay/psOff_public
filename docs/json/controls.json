@@ -165,14 +165,10 @@
           },
           "type": {
             "type": "string",
-            "description": "Backend for this gamepad. Possible values:\n* for SDL: sdl; aliases: gamepad\n* for XInput: xinput; aliases: xbox\n* for gamepad emulation: keyboard; aliases: kb, kbd.",
+            "description": "Backend for this gamepad. Possible values:\n* SDL (almost any gamepad): sdl\n* All Xbox-compatible gamepads: xinput\n* Gamepad emulation using keyboard: keyboard",
             "enum": [
-              "gamepad",
               "sdl",
               "xinput",
-              "xbox",
-              "kbd",
-              "kb",
               "keyboard"
             ]
           }

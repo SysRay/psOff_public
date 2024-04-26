@@ -1,16 +1,22 @@
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "(Windows) Launch",
-			"type": "cppvsdbg",
-			"request": "launch",
-			"program": "${workspaceRoot}/_build/_Install/emulator.exe",
-			"args": ["--file", "${config:psoff.game-path}/eboot.bin", "--d", "${config:psoff.add-arg}"],
-			"stopAtEntry": false,
-			"cwd": "${workspaceRoot}/_build/_Install",
-			"environment": [],
-			"console": "integratedTerminal"
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(Windows) Launch",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceRoot}/_build/_Install/emulator.exe",
+      "args": [
+        "--file",
+        "${config:psoff.game-path}/eboot.bin",
+        "--d",
+        "${config:psoff.add-arg}"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceRoot}/_build/_Install",
+      "environment": [],
+      "console": "integratedTerminal",
+      "symbolSearchPath": "${workspaceRoot}/_build/_Install/debug"
+    }
+  ]
 }
