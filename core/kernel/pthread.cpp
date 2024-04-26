@@ -353,6 +353,9 @@ int condWait(ScePthreadCond* cond, ScePthreadMutex* mutex) {
   if (int res = checkCondInit(cond); res != Ok) return res;
 
   LOG_USE_MODULE(pthread);
+
+  if ((*mutex)->p.recursion_count < 1) return getErr(ErrCode::_EPERM);
+
   // LOG_DEBUG(L"->Cond: %S mutex:%d", (*cond)->name.c_str(), (*mutex)->id);
   (*cond)->p.do_wait_until((*mutex)->p, boost::detail::internal_platform_timepoint::getMax());
 
