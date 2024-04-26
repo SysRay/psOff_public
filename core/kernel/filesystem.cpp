@@ -44,7 +44,7 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
   } else if (path == "/dev/null") {
     return createType_null();
   } else { // todo: other devices
-    LOG_CRIT(L"%S: unknown device!", path.c_str());
+    LOG_CRIT(L"%S: unknown device!", path.string().c_str());
   }
 
   return {};
