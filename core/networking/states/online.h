@@ -17,6 +17,7 @@ class OnlineNet: public INetworking {
    * @return int32_t
    */
   int32_t netCtlGetInfo(int32_t code, SceNetCtlInfo* info) final;
+  int32_t netCtlGetState(int32_t* state) final;
 
   /* SceNet facility */
 

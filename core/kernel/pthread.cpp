@@ -353,6 +353,9 @@ int condWait(ScePthreadCond* cond, ScePthreadMutex* mutex) {
   if (int res = checkCondInit(cond); res != Ok) return res;
 
   LOG_USE_MODULE(pthread);
+
+  if ((*mutex)->p.recursion_count < 1) return getErr(ErrCode::_EPERM);
+
   // LOG_DEBUG(L"->Cond: %S mutex:%d", (*cond)->name.c_str(), (*mutex)->id);
   (*cond)->p.do_wait_until((*mutex)->p, boost::detail::internal_platform_timepoint::getMax());
 
@@ -474,7 +477,7 @@ int mutexDestroy(ScePthreadMutex* mutex) {
 
 auto mutexInit_intern(const ScePthreadMutexattr* attr) {
   auto mutex = std::make_unique<PthreadMutexPrivate>().release();
-  if (attr != nullptr) mutex->type = (*attr)->type;
+  if (attr != nullptr && *attr != nullptr) mutex->type = (*attr)->type;
   mutex->id = mutexCounter();
   LOG_USE_MODULE(pthread);
   // LOG_DEBUG(L"mutex ini| id:%llu type:%d", mutex->id, (int)mutex->type);

@@ -250,4 +250,9 @@ EXPORT SYSV_ABI int sceHttpsSetSslCallback(int id, SceHttpsCallback cbfunc, void
 EXPORT SYSV_ABI int sceHttpsSetSslVersion(int id, SceSslVersion version) {
   return accessNetworking().httpsSetSslVersion(id, version);
 }
+
+EXPORT SYSV_ABI int sceHttpUriEscape(char* out, size_t* req, size_t outsz, const char* str) {
+  *req = 0;
+  return 0;
+}
 }

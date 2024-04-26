@@ -107,9 +107,10 @@ EXPORT SYSV_ABI void __NID(_ZN3sce4Json12MemAllocatorC2Ev)(sce::Json::MemAllocat
  * @brief sce::Json::Value::Value()
  *
  */
-EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueC1Ev)() {
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueC1Ev)(sce::Json::Value* _this) {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
+  ::memset((void*)_this, 0, sizeof(sce::Json::Value));
 }
 
 /**
@@ -156,10 +157,9 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5Value3setEd)() {
  * @brief sce::Json::Value::~Value()
  *
  */
-EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json5ValueD1Ev)() {
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueD1Ev)() {
   LOG_USE_MODULE(libSceJson2);
   LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
 }
 
 /**
@@ -245,6 +245,14 @@ EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerC1Ev)(sce::Json::Initializer
  */
 EXPORT SYSV_ABI void __NID(_ZN3sce4Json11InitializerD1Ev)(sce::Json::Initializer* _this) {
   _this->~Initializer();
+}
+
+/**
+ * @brief sce::Json::MemAllocator::notifyError(int, unsigned long, void*)
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json12MemAllocator11notifyErrorEimPv)(sce::Json::MemAllocator* _this, int32_t error, size_t size, void* userData) {
+  return _this->notifyError(error, size, userData);
 }
 
 EXPORT SYSV_ABI int32_t __NID(_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE)(sce::Json::Initializer*         _this,

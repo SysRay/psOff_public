@@ -6,9 +6,11 @@
       "type": "string"
     },
     "device": {
+      "description": "The name of your sound output device e.g. \"Speakers (Realtek(R) Audio)\".",
       "type": "string"
     },
     "volume": {
+      "description": "Master volume for every emulator's sound output.",
       "type": "number",
       "minimum": 0.0,
       "maximum": 1.0

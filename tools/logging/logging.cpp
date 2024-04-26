@@ -83,8 +83,25 @@ void* __registerLoggingModule(std::wstring_view name) {
       *trace              = P7_Create_Trace(*getClient(), __APPNAME);
     }
   }
+
+  auto getCustomVerb = [](std::wstring_view name) -> int32_t {
+    int32_t     vlevel;
+    std::string sname(name.begin(), name.end());
+    auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::LOGGING);
+
+    auto& modver = (*jData)["_customVerb"][sname];
+    if (modver.is_number_integer()) {
+      printf("Custom verbosity set for: %ls\n", name.data());
+      return modver.get_to(vlevel);
+    }
+
+    return -1;
+  };
+
   IP7_Trace::hModule pModule;
   (*trace)->Register_Module(name.data(), &pModule);
+  auto lvl = getCustomVerb(name);
+  if (lvl != -1) (*trace)->Set_Verbosity(pModule, (eP7Trace_Level)lvl);
   return pModule;
 }
 

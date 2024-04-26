@@ -35,8 +35,7 @@ EXPORT SYSV_ABI int sceNetCtlGetResult(int eventType, int* errorCode) {
 }
 
 EXPORT SYSV_ABI int sceNetCtlGetState(int* state) {
-  *state = 3; // IP address obtained
-  return Ok;
+  return accessNetworking().netCtlGetState(state);
 }
 
 EXPORT SYSV_ABI int sceNetCtlGetInfo(int code, SceNetCtlInfo* info) {

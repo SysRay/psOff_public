@@ -72,7 +72,7 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceAudioOut";
 
 EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
-  if (audioInited) return Err::ALREADY_INIT;
+  if (audioInited) return Err::AudioOut::ALREADY_INIT;
 
   if (SDL_InitSubSystem(SDL_INIT_AUDIO) == 0) {
     audioInited = true;
@@ -80,7 +80,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
     return Ok;
   }
 
-  return Err::OUT_OF_MEMORY;
+  return Err::AudioOut::OUT_OF_MEMORY;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, SceAudioOutParamFormat format) {
@@ -189,7 +189,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     return id + 1;
   }
 
-  return Err::PORT_FULL;
+  return Err::AudioOut::PORT_FULL;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
@@ -226,7 +226,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
   boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::INVALID_PORT;
+  if (!port.open) return Err::AudioOut::INVALID_PORT;
 
   for (int i = 0; i < port.channelsNum; i++, flag >>= 1u) {
     bool const bit = flag & 0x1u;
@@ -264,7 +264,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* o
   boost::unique_lock const lock(pimpl->mutexInt);
 
   auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::INVALID_PORT;
+  if (!port.open) return Err::AudioOut::INVALID_PORT;
   *outputTime = port.lastOutputTime;
   return Ok;
 }
@@ -294,6 +294,10 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state)
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetSystemDebugState(SceAudioOutSystemDebugStateElement elem, SceAudioOutSystemDebugStateParam* param) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringTerm() {
   return Ok;
 }
 }

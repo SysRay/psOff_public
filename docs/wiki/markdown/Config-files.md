@@ -2,7 +2,7 @@
 
 Config json-files are created on first start of the emulator and can be found under "./Config". It's enough to call `emulator.exe --h`.
 
-Versioning is todo, copying old config files may therefore break it.
+Our configuration engine automatically fixes your config files when you upgrade to a newer version of psOff-libs. All outdated keys will be deleted automatically and the new ones will be added with the default vaue. The corresponding messages will be displayed in the terminal window.
 
 ## controls.json : Gamepad layout
 

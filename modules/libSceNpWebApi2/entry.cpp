@@ -24,4 +24,8 @@ EXPORT SYSV_ABI int32_t sceNpWebApi2AddHttpRequestHeader() {
 EXPORT SYSV_ABI int32_t sceNpWebApi2SendRequest() {
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceNpWebApi2CreateUserContext() {
+  return Ok;
+}
 }

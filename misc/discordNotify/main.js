@@ -7,35 +7,35 @@ const maxMessageSize = 2000;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(() => resolve(), ms));
 
-const fetchRetry = ({url, fetchOpts = {}, retryDelay = 5000, retries = 5}) => new Promise((resolve, reject) => {
+const fetchRetry = ({ url, fetchOpts = {}, retryDelay = 5000, retries = 5 }) => new Promise((resolve, reject) => {
   const wrap = (n) => {
     fetch(url, fetchOpts)
-    .then(async (res) => {
-      if (res.ok) {
-        const rateRemain = res.headers.get('X-RateLimit-Remaining');
-        const rateReset = res.headers.get('X-RateLimit-Reset-After');
-        if (rateRemain !== null) {
-          if (parseInt(rateRemain) === 1)
-            await delay((rateReset ? parseInt(rateReset) : 1) * 1500); // Hold on there, cowboy
+      .then(async (res) => {
+        if (res.ok) {
+          const rateRemain = res.headers.get('X-RateLimit-Remaining');
+          const rateReset = res.headers.get('X-RateLimit-Reset-After');
+          if (rateRemain !== null) {
+            if (parseInt(rateRemain) === 1)
+              await delay((rateReset ? parseInt(rateReset) : 1) * 1500); // Hold on there, cowboy
+          }
+          return resolve(res);
         }
-        return resolve(res);
-      }
-      if (n === 0) return reject(`Failed after ${retries} retries.`);
-      if (res.status !== 429) return reject(res);
-      const jdata = res.json();
-      if (typeof jdata.retry_after === 'number') {
-        await delay(jdata.retry_after * 1000);
-        wrap(--n);
-      }
-    })
-    .catch(async (err) => {
-      if (n > 0) {
-        await delay(retryDelay);
-        wrap(--n);
-      } else {
-        reject(`Failed after ${retries} retries.`);
-      }
-    });
+        if (n === 0) return reject(`Failed after ${retries} retries.`);
+        if (res.status !== 429) return reject(res);
+        const jdata = res.json();
+        if (typeof jdata.retry_after === 'number') {
+          await delay(jdata.retry_after * 1000);
+          wrap(--n);
+        }
+      })
+      .catch(async (err) => {
+        if (n > 0) {
+          await delay(retryDelay);
+          wrap(--n);
+        } else {
+          reject(`Failed after ${retries} retries.`);
+        }
+      });
   };
 
   wrap(retries);
@@ -110,20 +110,20 @@ const guessCategory = (labels) => {
 };
 
 const catOpts = {
-  bugfixes: {display: 'Bugfixes 🪳'},
-  stubs: {display: 'Stubbed functions 🆒'},
-  impls: {display: 'Implementations 🥳'},
-  general: {display: 'General ✅'},
-  ench: {display: 'Enhancements 🧙'},
-  contrib: {display: 'Authors 🧑‍💻️', splitter: ', '},
+  bugfixes: { display: 'Bugfixes 🪳' },
+  stubs: { display: 'Stubbed functions 🆒' },
+  impls: { display: 'Implementations 🥳' },
+  general: { display: 'General ✅' },
+  ench: { display: 'Enhancements 🧙' },
+  contrib: { display: 'Authors 🧑‍💻️', splitter: ', ' },
 };
 
-octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1}).then(({data}) => {
+octokit.repos.listReleases({ repo: r_name, owner: r_owner, per_page: 2, page: 1 }).then(({ data }) => {
   const lastRelease = data[0], prevRelease = data[1];
 
   return new Promise((resolve, reject) => {
     const readPRs = async (pagenum, list = null, retries = 0) => {
-      const out = list ?? {general: [], bugfixes: [], stubs: [], impls: [], ench: [], contrib: []};
+      const out = list ?? { general: [], bugfixes: [], stubs: [], impls: [], ench: [], contrib: [] };
       const handled_contribs = {};
 
       const query = [];
@@ -131,7 +131,7 @@ octokit.repos.listReleases({repo: r_name, owner: r_owner, per_page: 2, page: 1})
       query.push('is:pr is:closed base:features sort:author-date-asc');
       query.push(`merged:${prevRelease.created_at}..${lastRelease.created_at}`);
 
-      return octokit.search.issuesAndPullRequests({q: query.join(' '), per_page: 100, page: pagenum}).then(({data}) => {
+      return octokit.search.issuesAndPullRequests({ q: query.join(' '), per_page: 100, page: pagenum }).then(({ data }) => {
         data.items.forEach((pr) => {
           const msg = `* PR #${pr.number}: ${pr.title}`;
           if (!handled_contribs[pr.user.login]) {

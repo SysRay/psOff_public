@@ -36,6 +36,11 @@ int32_t OfflineNet::netCtlGetInfo(int32_t code, SceNetCtlInfo* info) {
   return Err::NetCtl::NOT_CONNECTED;
 }
 
+int32_t OfflineNet::netCtlGetState(int32_t* state) {
+  *state = 0; // Network disconnected
+  return Ok;
+}
+
 SceNetId OfflineNet::resolverCreate(const char* name, int memid, int flags) {
   static SceNetId id = 0;
   return ++id;

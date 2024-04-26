@@ -43,7 +43,8 @@ class INetworking {
    * @param info
    * @return int32_t
    */
-  virtual int32_t netCtlGetInfo(int code, SceNetCtlInfo* info) = 0;
+  virtual int32_t netCtlGetInfo(int32_t code, SceNetCtlInfo* info) = 0;
+  virtual int32_t netCtlGetState(int32_t* state)                   = 0;
 
   /* SceNet facility */
 

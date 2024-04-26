@@ -26,7 +26,7 @@ EXPORT SYSV_ABI int32_t sceAvPlayerClose(IAvplayer* avPlayer) {
 
 EXPORT SYSV_ABI int32_t sceAvPlayerAddSource(IAvplayer* avPlayer, const char* filename) {
   if (avPlayer->setFile(filename)) return Ok;
-  return Err::INVALID_PARAMS;
+  return Err::AvPlayer::INVALID_PARAMS;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerStreamCount(IAvplayer* avPlayer) {

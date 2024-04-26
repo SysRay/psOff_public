@@ -128,8 +128,24 @@ int SYSV_ABI sceGnmUpdatePsShader(uint32_t* cmdOut, uint64_t size, const uint32_
 int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
-  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-  memcpy(&cmdOut[1], ps_regs, 8 + size);
+  if (cmdOut == nullptr || size < 39) return -1;
+  if (ps_regs != nullptr) {
+    cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
+    memcpy(&cmdOut[1], ps_regs, 8 + size);
+  } else {
+    cmdOut[0]  = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
+    cmdOut[1]  = 0x00000000;
+    cmdOut[2]  = 0x00000000;
+    cmdOut[3]  = 0x00000000;
+    cmdOut[4]  = 0xc0011000;
+    cmdOut[5]  = 0xc01e0203;
+    cmdOut[6]  = 0x00000000;
+    cmdOut[7]  = 0xc0016900;
+    cmdOut[8]  = 0x0000008f;
+    cmdOut[9]  = 0x0000000f;
+    cmdOut[10] = 0xc01c1000;
+    cmdOut[11] = 0x00000000;
+  }
 
   return Ok;
 }
@@ -212,7 +228,7 @@ int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index
 
 int32_t SYSV_ABI sceGnmValidateDrawCommandBuffers(uint32_t count, void* dcbGpuAddrs[], uint32_t* dcbSizesInBytes, void* ccbGpuAddrs[],
                                                   uint32_t* ccbSizesInBytes) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int SYSV_ABI sceGnmSubmitCommandBuffers(uint32_t count, void** dcb_gpu_addrs, const uint32_t* dcb_sizes_in_bytes, void** ccb_gpu_addrs,
@@ -443,31 +459,31 @@ void* SYSV_ABI sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
 }
 
 int SYSV_ABI sceGnmValidateCommandBuffers() {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDispatchCommandBuffers(uint32_t count, void* dcbGpuAddrs, uint32_t* dcbSizesInBytes) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDisableDiagnostics(uint32_t count, void* data) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateDisableDiagnostics2(uint32_t count, uint32_t* diagList) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetDiagnosticInfo(int32_t query, void* diagnosticOutputs) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetDiagnostics(int32_t query, void* diagnosticOutputs) {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateResetState() {
-  return Err::VALIDATION_NOT_ENABLED;
+  return Err::Gnm::VALIDATION_NOT_ENABLED;
 }
 
 int32_t SYSV_ABI sceGnmValidateGetVersion() {
@@ -499,7 +515,7 @@ int SYSV_ABI sceGnmRegisterResource(uint32_t* resource_handle, uint32_t owner_ha
     *resource_handle = rhandle;
   }
 
-  return Err::FAILURE;
+  return Err::Gnm::FAILURE;
 }
 
 int SYSV_ABI sceGnmUnregisterAllResourcesForOwner(uint32_t owner_handle) {
@@ -525,7 +541,7 @@ int SYSV_ABI sceGnmDriverTraceInProgress() {
 int SYSV_ABI sceGnmDriverTriggerCapture(const char* filename) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_ERR(L"CaptureStatus: Something went wrong");
-  return Err::RAZOR_NOT_LOADED;
+  return Err::Gnm::RAZOR_NOT_LOADED;
 }
 
 void SYSV_ABI sceGnmDebugHardwareStatus(int flag) {
