@@ -296,4 +296,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state)
 EXPORT SYSV_ABI int32_t sceAudioOutSetSystemDebugState(SceAudioOutSystemDebugStateElement elem, SceAudioOutSystemDebugStateParam* param) {
   return Ok;
 }
+
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringTerm() {
+  return Ok;
+}
 }
