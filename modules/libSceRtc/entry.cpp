@@ -108,10 +108,11 @@ EXPORT SYSV_ABI int sceRtcSetTime_t(SceRtcDateTime* pTime, time_t llTime) {
 }
 
 EXPORT SYSV_ABI int sceRtcGetTime_t(const SceRtcDateTime* pTime, time_t* pllTime) {
-  boost::posix_time::ptime ptime(boost::gregorian::date(pTime->year, pTime->month, pTime->day),
-                                 boost::posix_time::seconds(pTime->hour * 3600 + pTime->minute * 60 + pTime->second));
+  std::chrono::sys_time<std::chrono::milliseconds> timePoint =
+      std::chrono::sys_days {std::chrono::year {pTime->year} / std::chrono::month {pTime->month} / std::chrono::day {pTime->day}} +
+      std::chrono::hours {pTime->hour} + std::chrono::minutes {pTime->minute} + std::chrono::seconds {pTime->second};
 
-  *pllTime = boost::posix_time::to_time_t(ptime);
+  *pllTime = timePoint.time_since_epoch().count();
   return Ok;
 }
 
@@ -155,10 +156,11 @@ EXPORT SYSV_ABI int sceRtcSetTick(SceRtcDateTime* pTime, const SceRtcTick* pTick
 }
 
 EXPORT SYSV_ABI int sceRtcGetTick(const SceRtcDateTime* pTime, SceRtcTick* pTick) {
-  boost::posix_time::ptime ptime(boost::gregorian::date(pTime->year, pTime->month, pTime->day),
-                                 boost::posix_time::seconds(pTime->hour * 3600 + pTime->minute * 60 + pTime->second));
+  std::chrono::sys_time<std::chrono::microseconds> timePoint =
+      std::chrono::sys_days {std::chrono::year {pTime->year} / std::chrono::month {pTime->month} / std::chrono::day {pTime->day}} +
+      std::chrono::hours {pTime->hour} + std::chrono::minutes {pTime->minute} + std::chrono::seconds {pTime->second};
 
-  pTick->tick = boost::posix_time::to_time_t(ptime);
+  pTick->tick = timePoint.time_since_epoch().count();
   return Ok;
 }
 
