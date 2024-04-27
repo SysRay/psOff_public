@@ -8,7 +8,6 @@
 #include "modules_include/system_param.h"
 #include "nlohmann/json.hpp"
 
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
