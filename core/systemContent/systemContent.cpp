@@ -136,6 +136,7 @@ class SystemContent: public ISystemContent {
 };
 
 void SystemContent::init(std::filesystem::path const& root) {
+  if (!m_sfoParams.empty()) return;
   m_sfoParams = loadSFO(root);
 }
 
