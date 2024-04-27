@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
 set(PSOFF_LIB_VERSION v.0.0)
-set(PSOFF_RENDER_VERSION v.0.5-nightly_27.04.24 )
+set(PSOFF_RENDER_VERSION v.0.5-nightly_27.04.24)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -103,6 +103,7 @@ add_subdirectory(modules)
 add_subdirectory(core)
 add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
+add_subdirectory(tools/runtime)
 
 # #- Projects
 
