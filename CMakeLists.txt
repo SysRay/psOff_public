@@ -144,7 +144,7 @@ install(TARGETS psoff
   COMPONENT psoff
   RUNTIME_DEPENDENCIES
   PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" "vulkan-1\\.dll"
   DIRECTORIES
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
