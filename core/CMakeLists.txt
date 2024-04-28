@@ -31,7 +31,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:runtime>
 )
 
-add_dependencies(core logging third_party config_emu gamereport)
+add_dependencies(core logging third_party config_emu gamereport psoff_render)
 target_link_libraries(core PRIVATE
   libboost_url
   libboost_thread
