@@ -118,7 +118,7 @@ class SystemContent: public ISystemContent {
   public:
   void init(std::filesystem::path const& path) final;
 
-  std::optional<uint32_t> getInt(std::string_view name) final {
+  std::optional<uint32_t> getInt(std::string_view name) const final {
     if (auto it = m_sfoParams.find(name.data()); it != m_sfoParams.end()) {
       if (it->second.first != 0x0404) return {};
       return {*(uint32_t*)it->second.second.data()};
@@ -126,7 +126,7 @@ class SystemContent: public ISystemContent {
     return {};
   }
 
-  std::optional<std::string_view> getString(std::string_view name) {
+  std::optional<std::string_view> getString(std::string_view name) const final {
     if (auto it = m_sfoParams.find(name.data()); it != m_sfoParams.end()) {
       if (it->second.first != 0x0204) return {};
       return {(const char*)it->second.second.data()};

@@ -5,7 +5,7 @@ add_library(videoout OBJECT
   imageHandler.cpp
 )
 
-add_dependencies(videoout third_party psOff_utility gamereport initParams imports config_emu)
+add_dependencies(videoout third_party psOff_utility gamereport initParams config_emu psoff_render)
 
 target_include_directories(videoout PRIVATE
   ${Vulkan_INCLUDE_DIRS}

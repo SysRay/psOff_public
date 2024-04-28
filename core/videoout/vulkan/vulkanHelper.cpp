@@ -1,7 +1,6 @@
 #include "vulkanHelper.h"
 
 #include "../imageHandler.h"
-#include "core/imports/exports/graphics.h"
 #include "core/initParams/initParams.h"
 #include "logging.h"
 #include "utility/utility.h"
@@ -14,6 +13,7 @@
 #include <boost/assert.hpp>
 #include <chrono>
 #include <format>
+#include <graphics.h>
 #include <mutex>
 #include <optick.h>
 #include <string>

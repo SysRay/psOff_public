@@ -21,7 +21,7 @@ class ISystemContent {
    * @param name
    * @return std::optional<uint32_t>
    */
-  virtual std::optional<uint32_t> getInt(std::string_view name) = 0;
+  virtual std::optional<uint32_t> getInt(std::string_view name) const = 0;
 
   /**
    * @brief Get an string value from the sfo
@@ -29,7 +29,7 @@ class ISystemContent {
    * @param name
    * @return std::optional<std::string_view>
    */
-  virtual std::optional<std::string_view> getString(std::string_view name) = 0;
+  virtual std::optional<std::string_view> getString(std::string_view name) const = 0;
 };
 
 #if defined(__APICALL_EXTERN)

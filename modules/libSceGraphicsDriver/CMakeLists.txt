@@ -13,7 +13,7 @@ target_include_directories(${libName} PRIVATE
   ${PRJ_SRC_DIR}/tools/sb2spirv/lib/include
 )
 
-add_dependencies(${libName} core)
-target_link_libraries(${libName} PRIVATE core.lib)
+add_dependencies(${libName} core psoff_render)
+target_link_libraries(${libName} PRIVATE core.lib psoff_render.lib)
 
 setupModule(${libName})

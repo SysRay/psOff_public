@@ -2,8 +2,8 @@
 #include "dmem.h"
 #undef __APICALL_EXTERN
 
-#include "core/imports/exports/procParam.h"
 #include "core/kernel/filesystem.h"
+#include "core/runtime/procParam.h"
 #include "core/runtime/runtimeLinker.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"

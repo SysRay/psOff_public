@@ -46,6 +46,7 @@ include_directories(BEFORE
   ${PRJ_SRC_DIR}/tools/gamereport
   ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/include
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/include
 )
 
 link_directories(BEFORE
@@ -54,6 +55,7 @@ link_directories(BEFORE
   ${CMAKE_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_BINARY_DIR}/bin
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
 )
 
 ExternalProject_Add(third_party
@@ -75,7 +77,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     URL https://github.com/SysRay/psOff_Renderer/releases/download/${PSOFF_RENDER_VERSION}/psOff-renderer.zip
   )
 
-  install(FILES ${CMAKE_BINARY_DIR}/psoff_render/src/renderer/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(FILES ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
@@ -88,6 +90,8 @@ endif()
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
+add_subdirectory(asm)
+
 add_dependencies(dll2Nids third_party)
 
 # -
@@ -109,7 +113,14 @@ add_executable(psoff
   main.cpp
 )
 
-add_dependencies(psoff logging)
+add_dependencies(psoff logging core psOff_utility)
+
+target_link_libraries(psoff PRIVATE
+  core.lib
+  psOff_utility
+  $<TARGET_OBJECTS:asmHelper>
+)
+
 target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
 
 # # Install
@@ -128,3 +139,22 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/" DESTINATION ${CMAKE_INSTALL_PREFIX}
 install(DIRECTORY "${PRJ_SRC_DIR}/docs/json/" DESTINATION ${CMAKE_INSTALL_PREFIX}/config/.schemas
   FILES_MATCHING PATTERN "*.json"
 )
+
+install(TARGETS psoff
+  COMPONENT psoff
+  RUNTIME_DEPENDENCIES
+  PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+  DIRECTORIES
+  $<TARGET_FILE_DIR:psoff>
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
+  ${CMAKE_BINARY_DIR}/bin
+  ${CMAKE_BINARY_DIR}/lib
+  ${CMAKE_SOURCE_DIR}/VULKAN_SDK/bin
+  ${CMAKE_BINARY_DIR}/public_repo/core
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  DESTINATION .
+)
+
+install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)

@@ -3,9 +3,6 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
-#include "core/imports/exports/graphics.h"
-#include "core/imports/imports_func.h"
-#include "core/imports/imports_ver.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
@@ -25,11 +22,13 @@
 #include <assert.h>
 #include <format>
 #include <functional>
+#include <graphics.h>
 #include <list>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <mutex>
 #include <optick.h>
+#include <psoff_render_version.h>
 #include <queue>
 #include <thread>
 
@@ -160,7 +159,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
   }();
 
   return std::format("{} | {}(v{}): wnd={} frame={} fps={}(locked:{}) version:{}", title, id, ver, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
-                     getEmulatorVersion().data());
+                     psoff_render_version);
 }
 
 } // namespace
@@ -248,7 +247,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   void doFlip(Context& ctx, int handle);
 
   public:
-  VideoOut() = default;
+  VideoOut() { init(); }
 
   virtual ~VideoOut();
 
@@ -256,7 +255,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
    * @brief Preinit handle 1(index 0) with main window
    * Needed for early vulkan init and with it all the managers
    */
-  void init() final;
+  void init();
+
   int  open(int userId) final;
   void close(int handle) final;
 
@@ -757,7 +757,7 @@ void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
           .title    = title ? title.value().data() : "Your PS4 Game Name",
           .title_id = title_id ? title_id.value().data() : "CUSA00000",
           .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-          .emu_ver  = getEmulatorVersion().data(),
+          .emu_ver  = psoff_render_version,
           .wnd      = window,
 
           .type = IGameReport::Type::USER,

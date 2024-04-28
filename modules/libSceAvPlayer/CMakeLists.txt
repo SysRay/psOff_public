@@ -22,7 +22,7 @@ set(FFMPEG_LIBS
   swresample
 )
 
-add_dependencies(${libName} core)
-target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS})
+add_dependencies(${libName} core psoff_render)
+target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS} psoff_render.lib)
 
 setupModule(${libName})

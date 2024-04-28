@@ -11,7 +11,6 @@ add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(networking)
 add_subdirectory(fileManager)
-add_subdirectory(imports)
 add_subdirectory(memory)
 add_subdirectory(dmem)
 add_subdirectory(unwinding)
@@ -26,7 +25,6 @@ add_library(core SHARED
   $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
-  $<TARGET_OBJECTS:imports>
   $<TARGET_OBJECTS:memory>
   $<TARGET_OBJECTS:dmem>
   $<TARGET_OBJECTS:unwinding>
@@ -40,6 +38,7 @@ target_link_libraries(core PRIVATE
   libboost_chrono
   libboost_program_options
   sdl2
+  psoff_render.lib
   gamereport.lib
   OptickCore
   psOff_utility
