@@ -13,9 +13,9 @@ static createGraphics_t g_createGraphics = nullptr;
 
 static getEmulatorVersion_t g_getEmulatorVersion = nullptr;
 
-std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance) {
+std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, std::shared_ptr<vulkan::DeviceInfo>& deviceInfo) {
   assert(g_createGraphics != nullptr);
-  return g_createGraphics(listener, device, physDev, instance);
+  return g_createGraphics(listener, deviceInfo);
 }
 
 std::string_view getEmulatorVersion() {

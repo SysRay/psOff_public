@@ -14,7 +14,7 @@ constexpr uint32_t NUM_DISPLAY_BUFFERS = 3;
 class ImageHandler: public IImageHandler {
   uint32_t m_maxImages = 1;
 
-  VkDevice m_device;
+  std::shared_ptr<vulkan::DeviceInfo> m_deviceInfo;
 
   // Vulkan internal
   VkSwapchainKHR m_swapchain   = nullptr;
@@ -45,8 +45,8 @@ class ImageHandler: public IImageHandler {
   bool m_stop = false;
 
   public:
-  ImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback)
-      : IImageHandler(extentWindow, queue, callback), m_device(vkDevice) {};
+  ImageHandler(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback)
+      : IImageHandler(extentWindow, queue, callback), m_deviceInfo(deviceInfo) {};
 
   virtual ~ImageHandler() = default;
 
@@ -68,14 +68,15 @@ class ImageHandler: public IImageHandler {
   VkSwapchainKHR getSwapchain() const final { return m_swapchain; }
 };
 
-std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback) {
-  return std::make_unique<ImageHandler>(vkDevice, extentWindow, queue, callback);
+std::unique_ptr<IImageHandler> createImageHandler(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, VkExtent2D extentWindow, vulkan::QueueInfo* queue,
+                                                  ImageHandlerCB* callback) {
+  return std::make_unique<ImageHandler>(deviceInfo, extentWindow, queue, callback);
 }
 
 void ImageHandler::recreate() {
   LOG_USE_MODULE(ImageHandler);
 
-  vkDeviceWaitIdle(m_device);
+  vkDeviceWaitIdle(m_deviceInfo->device);
 
   auto const newExtent = m_callback->getWindowSize();
   if (newExtent.width != m_extentWindow.width || newExtent.height != m_extentWindow.height) {
@@ -85,19 +86,19 @@ void ImageHandler::recreate() {
     m_swapchainCreateInfo.oldSwapchain = m_swapchain;
 
     VkSwapchainKHR newSwapchain;
-    if (auto result = vkCreateSwapchainKHR(m_device, &m_swapchainCreateInfo, nullptr, &newSwapchain); result != VK_SUCCESS) {
+    if (auto result = vkCreateSwapchainKHR(m_deviceInfo->device, &m_swapchainCreateInfo, nullptr, &newSwapchain); result != VK_SUCCESS) {
       LOG_CRIT(L"Couldn't recreate swapchain: %d", result);
     }
 
-    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr); // Destroys images as well
+    vkDestroySwapchainKHR(m_deviceInfo->device, m_swapchain, nullptr); // Destroys images as well
 
     m_swapchain = newSwapchain;
 
     uint32_t numImages = 0;
-    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, nullptr);
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, nullptr);
     m_scImages.resize(numImages);
 
-    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, m_scImages.data());
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_scImages.data());
   }
 }
 
@@ -127,7 +128,7 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
     VkResult result = VK_SUCCESS;
     for (; numTries >= 0; --numTries) {
       // toggle every 1ms
-      if (result = vkAcquireNextImageKHR(m_device, m_swapchain, (uint64_t)1e6, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index);
+      if (result = vkAcquireNextImageKHR(m_deviceInfo->device, m_swapchain, (uint64_t)1e6, imageData.semImageReady, VK_NULL_HANDLE, &imageData.index);
           result != VK_SUCCESS) {
         if (result == VK_NOT_READY) {
           std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -177,8 +178,8 @@ void ImageHandler::notify_done(ImageData const& imageData) {
   LOG_USE_MODULE(ImageHandler);
 
   // vkQueuePresentKHR: amd waits and nvidia doesn't -> manual wait
-  vkWaitForFences(m_device, 1, &imageData.submitFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(m_device, 1, &imageData.submitFence);
+  vkWaitForFences(m_deviceInfo->device, 1, &imageData.submitFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(m_deviceInfo->device, 1, &imageData.submitFence);
 
   vkResetCommandBuffer(imageData.cmdBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
@@ -212,9 +213,9 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
     m_fenceSubmit.resize(m_maxImages);
 
     for (size_t n = 0; n < m_maxImages; ++n) {
-      vkCreateSemaphore(m_device, &semCreateInfo, nullptr, &m_semsImageReady[n]);
-      vkCreateSemaphore(m_device, &semCreateInfo, nullptr, &m_semsImageCopied[n]);
-      vkCreateFence(obj->deviceInfo.device, &fenceCreateInfo, nullptr, &m_fenceSubmit[n]);
+      vkCreateSemaphore(m_deviceInfo->device, &semCreateInfo, nullptr, &m_semsImageReady[n]);
+      vkCreateSemaphore(m_deviceInfo->device, &semCreateInfo, nullptr, &m_semsImageCopied[n]);
+      vkCreateFence(m_deviceInfo->device, &fenceCreateInfo, nullptr, &m_fenceSubmit[n]);
     }
   }
 
@@ -254,15 +255,15 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .oldSwapchain          = nullptr,
     };
 
-    vkCreateSwapchainKHR(obj->deviceInfo.device, &m_swapchainCreateInfo, nullptr, &m_swapchain);
+    vkCreateSwapchainKHR(m_deviceInfo->device, &m_swapchainCreateInfo, nullptr, &m_swapchain);
   }
 
   { // swapchain images
     uint32_t numImages = 0;
-    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, nullptr);
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, nullptr);
     m_scImages.resize(numImages);
 
-    vkGetSwapchainImagesKHR(m_device, m_swapchain, &numImages, m_scImages.data());
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_scImages.data());
   }
 
   { // Command buffer
@@ -273,7 +274,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .queueFamilyIndex = m_queue->family,
     };
 
-    if (auto result = vkCreateCommandPool(obj->deviceInfo.device, &poolInfo, nullptr, &m_commandPool); result != VK_SUCCESS) {
+    if (auto result = vkCreateCommandPool(m_deviceInfo->device, &poolInfo, nullptr, &m_commandPool); result != VK_SUCCESS) {
       LOG_CRIT(L"Couldn't create commandpool(graphics): %d", result);
     }
 
@@ -285,7 +286,7 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
         .commandBufferCount = m_maxImages,
     };
 
-    if (auto result = vkAllocateCommandBuffers(obj->deviceInfo.device, &allocInfo, m_commandBuffer.data()); result != VK_SUCCESS) {
+    if (auto result = vkAllocateCommandBuffers(m_deviceInfo->device, &allocInfo, m_commandBuffer.data()); result != VK_SUCCESS) {
       LOG_CRIT(L"Couldn't create commandbuffers(graphics): %d", result);
     }
   }
@@ -295,17 +296,17 @@ void ImageHandler::deinit() {
   printf("deinit ImageHandler\n");
 
   for (auto& sem: m_semsImageReady) {
-    vkDestroySemaphore(m_device, sem, nullptr);
+    vkDestroySemaphore(m_deviceInfo->device, sem, nullptr);
   }
   for (auto& sem: m_semsImageCopied) {
-    vkDestroySemaphore(m_device, sem, nullptr);
+    vkDestroySemaphore(m_deviceInfo->device, sem, nullptr);
   }
   for (auto& fence: m_fenceSubmit) {
-    vkDestroyFence(m_device, fence, nullptr);
+    vkDestroyFence(m_deviceInfo->device, fence, nullptr);
   }
 
-  if (m_commandPool != nullptr) vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-  if (m_swapchain != nullptr) vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+  if (m_commandPool != nullptr) vkDestroyCommandPool(m_deviceInfo->device, m_commandPool, nullptr);
+  if (m_swapchain != nullptr) vkDestroySwapchainKHR(m_deviceInfo->device, m_swapchain, nullptr);
 
   printf("deinit ImageHandler| done\n");
 }

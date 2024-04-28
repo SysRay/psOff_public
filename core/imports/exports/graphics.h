@@ -28,11 +28,7 @@ class IEventsGraphics {
   public:
   virtual void eventDoFlip(int handle, int index, int64_t flipArg, VkSemaphore waitSema, size_t waitValue) = 0;
 
-  virtual vulkan::DeviceInfo* getDeviceInfo() = 0;
-
   virtual vulkan::QueueInfo* getQueue(vulkan::QueueType type) = 0;
-
-  virtual VkPhysicalDeviceLimits const* getVulkanLimits() const = 0;
 };
 
 class IGraphics {
@@ -163,4 +159,14 @@ class IGraphics {
    * @return true success
    */
   virtual bool copyDisplayBuffer(uint64_t vaddr, VkCommandBuffer cmdBuffer, VkImage dstImage, VkExtent2D dstExtent) = 0;
+
+  /**
+   * @brief Get the required memory alignment. Dont' call from constructor.
+   *
+   * @param format
+   * @param extent shouldn't matter if not 100% correct
+   * @return memory alignment
+   */
+
+  virtual uint64_t getImageAlignment(VkFormat format, VkExtent3D const& extent) = 0;
 };

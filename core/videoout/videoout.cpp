@@ -1,7 +1,5 @@
 #define __APICALL_EXTERN
 #include "videoout.h"
-
-#include "intern.h"
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
@@ -281,10 +279,6 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
       *area = 1.f; // todo check what's up here
     }
   }
-
-  vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
-
-  VkPhysicalDeviceLimits const* getVulkanLimits() const final { return vulkan::getPhysicalLimits(); }
 
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
   void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
@@ -922,16 +916,15 @@ std::thread VideoOut::createSDLThread() {
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
             m_vulkanObj = vulkan::initVulkan(window.window, window.surface, accessInitParams()->enableValidation());
-            auto& info  = m_vulkanObj->deviceInfo;
 
-            m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
+            m_graphics = createGraphics(*this, m_vulkanObj->deviceInfo);
 
             auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
 
             m_useVsync = accessInitParams()->useVSYNC();
 
-            m_imageHandler =
-                createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
+            m_imageHandler = createImageHandler(m_vulkanObj->deviceInfo, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight},
+                                                queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
 
             *item.result = 0;
@@ -982,31 +975,4 @@ std::thread VideoOut::createSDLThread() {
     }
     SDL_Quit();
   });
-}
-
-uint64_t getImageAlignment(VkFormat format, VkExtent3D const& extent) {
-  auto device = ((VideoOut&)accessVideoOut()).getDeviceInfo()->device;
-
-  VkImageCreateInfo const imageInfo {
-      .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext         = nullptr,
-      .flags         = 0,
-      .imageType     = VK_IMAGE_TYPE_2D,
-      .format        = format,
-      .extent        = extent,
-      .mipLevels     = 1,
-      .arrayLayers   = 1,
-      .samples       = VK_SAMPLE_COUNT_1_BIT,
-      .tiling        = VK_IMAGE_TILING_OPTIMAL,
-      .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-      .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-  };
-
-  VkImage              image;
-  VkMemoryRequirements reqs;
-  vkCreateImage(device, &imageInfo, nullptr, &image);
-  vkGetImageMemoryRequirements(device, image, &reqs);
-  vkDestroyImage(device, image, nullptr);
-  return reqs.alignment;
 }

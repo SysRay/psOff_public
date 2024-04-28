@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/videoout/vulkan/vulkanTypes.h"
 #include "exports/graphics.h"
 
 #include <memory>
@@ -14,7 +15,7 @@
 #define __APICALL
 #endif
 
-using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
+using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, std::shared_ptr<vulkan::DeviceInfo>& deviceInfo);
 
 using getEmulatorVersion_t = std::string_view (*)();
 

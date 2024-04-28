@@ -717,33 +717,33 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
       .ppEnabledExtensionNames = extensions.requiredExtensions.data(),
   };
 
-  if (VkResult result = vkCreateInstance(&instInfo, nullptr, &obj->deviceInfo.instance); result != VK_SUCCESS) {
+  if (VkResult result = vkCreateInstance(&instInfo, nullptr, &obj->deviceInfo->instance); result != VK_SUCCESS) {
     if (result == VK_ERROR_INCOMPATIBLE_DRIVER)
       LOG_CRIT(L"vkCreateInstance() Error:VK_ERROR_INCOMPATIBLE_DRIVER");
     else
       LOG_CRIT(L"vkCreateInstance() Error:%S", string_VkResult(result));
   }
-  g_VkInstance = obj->deviceInfo.instance;
+  g_VkInstance = obj->deviceInfo->instance;
 
   if (extensions.enableValidationLayers) {
     // dbgCreateInfo.pNext = nullptr;
-    if (auto result = createDebugUtilsMessengerEXT(obj->deviceInfo.instance, &dbgCreateInfo, nullptr, &obj->debugMessenger); result != VK_SUCCESS) {
+    if (auto result = createDebugUtilsMessengerEXT(obj->deviceInfo->instance, &dbgCreateInfo, nullptr, &obj->debugMessenger); result != VK_SUCCESS) {
       LOG_CRIT(L"createDebugUtilsMessengerEXT() %S", string_VkResult(result));
     }
   }
   // -
 
-  if (auto result = SDL_Vulkan_CreateSurface(window, obj->deviceInfo.instance, &surface); result != true) {
+  if (auto result = SDL_Vulkan_CreateSurface(window, obj->deviceInfo->instance, &surface); result != true) {
     LOG_CRIT(L"SDL_Vulkan_CreateSurface() Error:%S", SDL_GetError());
   }
 
   VulkanQueues queues;
-  findPhysicalDevice(obj->deviceInfo.instance, surface, &obj->surfaceCapabilities, &obj->deviceInfo.physicalDevice, &queues, enableValidation);
-  if (obj->deviceInfo.physicalDevice == nullptr) {
+  findPhysicalDevice(obj->deviceInfo->instance, surface, &obj->surfaceCapabilities, &obj->deviceInfo->physicalDevice, &queues, enableValidation);
+  if (obj->deviceInfo->physicalDevice == nullptr) {
     LOG_CRIT(L"Couldn't find a suitable device");
   }
 
-  vkGetPhysicalDeviceProperties(obj->deviceInfo.physicalDevice, &g_PhysicalDeviceProperties);
+  vkGetPhysicalDeviceProperties(obj->deviceInfo->physicalDevice, &g_PhysicalDeviceProperties);
 
   {
     auto const text =
@@ -754,7 +754,7 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
 
     // Debug infos
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(obj->deviceInfo.physicalDevice, &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(obj->deviceInfo->physicalDevice, &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
       LOG_DEBUG(L"%u| Memory Type: index:%u flags:%S", i, memProperties.memoryTypes[i].heapIndex,
@@ -767,7 +767,7 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
     // -
   }
 
-  obj->deviceInfo.device = createDevice(obj->deviceInfo.physicalDevice, surface, extensions, queues, enableValidation);
+  obj->deviceInfo->device = createDevice(obj->deviceInfo->physicalDevice, surface, extensions, queues, enableValidation);
 
   // Create queues
   {
@@ -779,21 +779,13 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
       }
     };
 
-    queueFunc(obj->deviceInfo.device, queues.compute, obj->queues.items[getIndex(QueueType::compute)]);
-    queueFunc(obj->deviceInfo.device, queues.present, obj->queues.items[getIndex(QueueType::present)]);
-    queueFunc(obj->deviceInfo.device, queues.transfer, obj->queues.items[getIndex(QueueType::transfer)]);
-    queueFunc(obj->deviceInfo.device, queues.graphics, obj->queues.items[getIndex(QueueType::graphics)]);
+    queueFunc(obj->deviceInfo->device, queues.compute, obj->queues.items[getIndex(QueueType::compute)]);
+    queueFunc(obj->deviceInfo->device, queues.present, obj->queues.items[getIndex(QueueType::present)]);
+    queueFunc(obj->deviceInfo->device, queues.transfer, obj->queues.items[getIndex(QueueType::transfer)]);
+    queueFunc(obj->deviceInfo->device, queues.graphics, obj->queues.items[getIndex(QueueType::graphics)]);
   }
   //-
   return obj;
-}
-
-VkPhysicalDeviceLimits const* getPhysicalLimits() {
-  return &g_PhysicalDeviceProperties.limits;
-}
-
-VkInstance const getVkInstance() {
-  return g_VkInstance;
 }
 
 std::string_view const getGPUName() {
@@ -801,8 +793,8 @@ std::string_view const getGPUName() {
 }
 
 void deinitVulkan(VulkanObj* obj) {
-  vkDestroyInstance(obj->deviceInfo.instance, nullptr);
-  vkDestroyDevice(obj->deviceInfo.device, nullptr);
+  vkDestroyInstance(obj->deviceInfo->instance, nullptr);
+  vkDestroyDevice(obj->deviceInfo->device, nullptr);
 
   delete obj;
 }

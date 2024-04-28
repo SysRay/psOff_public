@@ -1,6 +1,5 @@
 add_library(imports OBJECT
   imports.cpp
-  exit.cpp
   intercepts.cpp
 )
 

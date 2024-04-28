@@ -22,9 +22,7 @@ if(NOT PRJ_SRC_DIR)
   set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
-if(NOT DEFINED IMAGE_BASE)
-  set(IMAGE_BASE 0x10000000)
-endif()
+set(IMAGE_BASE 0x10000000)
 
 # # Gather Infos
 
@@ -68,16 +66,16 @@ ExternalProject_Add(third_party
 )
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  ExternalProject_Add(renderer
+  ExternalProject_Add(psoff_render
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    PREFIX ${CMAKE_BINARY_DIR}/renderer
+    PREFIX ${CMAKE_BINARY_DIR}/psoff_render
     BUILD_IN_SOURCE 1
     URL https://github.com/SysRay/psOff_Renderer/releases/download/${PSOFF_RENDER_VERSION}/psOff-renderer.zip
   )
 
-  install(FILES ${CMAKE_BINARY_DIR}/renderer/src/renderer/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(FILES ${CMAKE_BINARY_DIR}/psoff_render/src/renderer/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
@@ -105,6 +103,14 @@ add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
 
 # #- Projects
+
+# Executable
+add_executable(psoff
+  main.cpp
+)
+
+add_dependencies(psoff logging)
+target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
 
 # # Install
 install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/src/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}

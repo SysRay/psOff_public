@@ -23,5 +23,5 @@
  * @param instance
  * @return object
  */
-__APICALL std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
+__APICALL std::unique_ptr<IGraphics> createGraphics(IEventsGraphics& listener, std::shared_ptr<vulkan::DeviceInfo>& deviceInfo);
 #undef __APICALL

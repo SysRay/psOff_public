@@ -4,6 +4,7 @@ add_library(runtime OBJECT
   util/virtualmemory.cpp
 
   formats/elf64.cpp
+  exports/intern.cpp
 
   runtimeLinker.cpp
 )
