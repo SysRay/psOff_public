@@ -103,7 +103,6 @@ add_subdirectory(modules)
 add_subdirectory(core)
 add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
-add_subdirectory(tools/runtime)
 
 # #- Projects
 

@@ -16,13 +16,9 @@
 
 using createGraphics_t = std::unique_ptr<IGraphics> (*)(IEventsGraphics& listener, VkDevice device, VkPhysicalDevice physDev, VkInstance instance);
 
-using runtimeExport_t = class IRuntimeExport*;
-
 using getEmulatorVersion_t = std::string_view (*)();
 
 __APICALL void setCallback_createGraphics(createGraphics_t);
-
-__APICALL void setCallback_accessRuntimeExport(runtimeExport_t);
 
 __APICALL void setCallback_getEmulatorVersion(getEmulatorVersion_t);
 

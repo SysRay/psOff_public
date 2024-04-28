@@ -3,8 +3,8 @@
 #undef __APICALL_EXTERN
 
 #include "core/imports/exports/procParam.h"
-#include "core/imports/imports_runtime.h"
 #include "core/kernel/filesystem.h"
+#include "core/runtime/runtimeLinker.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "modules/libkernel/codes.h"
@@ -95,7 +95,7 @@ class DirectMemory: public IDirectMemory {
 
   uint64_t getSDKVersion() {
     if (m_sdkVersion == 0) {
-      auto* procParam = (ProcParam*)accessRuntimeExport()->mainModuleInfo().procParamAddr;
+      auto* procParam = (ProcParam*)accessRuntimeLinker().mainModuleInfo().procParamAddr;
       m_sdkVersion    = procParam->header.sdkVersion;
     }
 
