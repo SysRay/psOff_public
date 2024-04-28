@@ -63,7 +63,7 @@ int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelM
 
   auto      file   = createType_dev(path, mode);
   int const handle = accessFileManager().addFile(std::move(file), path);
-  LOG_INFO(L"OpenFile[%d]: %s mode:0x%x(0x%x)", handle, path, mode, kernelMode);
+  LOG_INFO(L"OpenFile[%d]: %S mode:0x%x(0x%x)", handle, path, mode, kernelMode);
   return handle;
 }
 } // namespace
