@@ -45,11 +45,11 @@ You can change the layout now in _controls.json_, if you want to.
   // These objects describes the parameters for each pad
   "pads": [
     {
-      // Possible values for "type"
-      // 1) XInput: xbox/xinput
-      // 2) SDL2: gamepad/sdl
-      // 3) Keyboard: keyboard/kbd/kb
-      "type": "gamepad",
+      // Which controller backend should be used for this gamepad:
+      // * SDL (almost any gamepad): sdl
+      // * All Xbox-compatible gamepads: xinput
+      // * Gamepad emulation using keyboard: keyboard
+      "type": "sdl",
       "deadzones": { // Ignore it for now, not implemented
         "left_stick": {
           "x": 0.0,
