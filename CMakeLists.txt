@@ -36,6 +36,7 @@ message("Vulkan Path: ${VulkanPath}")
 
 # # - Gather Infos
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
+add_definitions(-DPSOFF_RENDER_VERSION="${PSOFF_RENDER_VERSION}")
 
 #
 include_directories(BEFORE
