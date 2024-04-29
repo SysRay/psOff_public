@@ -140,18 +140,21 @@ install(DIRECTORY "${PRJ_SRC_DIR}/docs/json/" DESTINATION ${CMAKE_INSTALL_PREFIX
   FILES_MATCHING PATTERN "*.json"
 )
 
+if(ISACTION)
+  file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/bin/vulkan-1.dll CONTENT "") # cmake needs to find the file in order to ignore it
+endif()
+
 install(TARGETS psoff
   COMPONENT psoff
   RUNTIME_DEPENDENCIES
   PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*VULKAN_SDK/.*\\.dll"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*vulkan-1\\.dll"
   DIRECTORIES
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/lib
-  ${CMAKE_SOURCE_DIR}/VULKAN_SDK/bin
   ${CMAKE_BINARY_DIR}/public_repo/core
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
   DESTINATION .
