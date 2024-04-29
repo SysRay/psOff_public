@@ -44,7 +44,7 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
   } else if (path == "/dev/null") {
     return createType_null();
   } else { // todo: other devices
-    LOG_CRIT(L"%S: unknown device!", path.c_str());
+    LOG_CRIT(L"%s: unknown device!", path.c_str());
   }
 
   return {};
@@ -63,7 +63,7 @@ int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelM
 
   auto      file   = createType_dev(path, mode);
   int const handle = accessFileManager().addFile(std::move(file), path);
-  LOG_INFO(L"OpenFile[%d]: %s mode:0x%x(0x%x)", handle, path, mode, kernelMode);
+  LOG_INFO(L"OpenFile[%d]: %S mode:0x%x(0x%x)", handle, path, mode, kernelMode);
   return handle;
 }
 } // namespace

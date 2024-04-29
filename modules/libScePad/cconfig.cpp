@@ -11,18 +11,18 @@ LOG_DEFINE_MODULE(libScePad_config);
 ControllerType MapControllerType(json& type) {
   LOG_USE_MODULE(libScePad_config);
 
-  if (type == "keyboard" || type == "kb" || type == "kbd") {
+  if (type == "keyboard") {
     return ControllerType::Keyboard;
-  } else if (type == "sdl" || type == "gamepad") {
+  } else if (type == "sdl") {
     return ControllerType::SDL;
-  } else if (type == "xinput" || type == "xbox") {
+  } else if (type == "xinput") {
     return ControllerType::Xinput;
   }
 
   std::string temp;
   type.get_to(temp);
-  LOG_CRIT(L"Unknown controller type: %S", temp.c_str());
-  return ControllerType::Unknown;
+  LOG_ERR(L"Unknown controller type \"%S\" falling back to \"SDL\"", temp.c_str());
+  return ControllerType::SDL;
 }
 
 static std::unordered_map<std::string_view, ControllerKey> jsonKeys = {

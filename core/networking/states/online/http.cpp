@@ -174,7 +174,7 @@ static int httpMethodStringToInt(const char* method) {
     return SCE_HTTP_POST;
   }
   LOG_USE_MODULE(OnlineNetCore_http);
-  LOG_TRACE(L"unsupported http method: %s", method);
+  LOG_TRACE(L"unsupported http method: %S", method);
 
   return -1;
 }
@@ -197,7 +197,7 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
         return Err::HTTP_SSL_ERROR;
       }
       if (std::strcmp(connection->scheme, "http") != 0) {
-        LOG_TRACE(L"unknown scheme: %s://", connection->scheme);
+        LOG_TRACE(L"unknown scheme: %S://", connection->scheme);
 
         return Err::HTTP_BAD_SCHEME;
       }
@@ -269,7 +269,7 @@ static int32_t performHttpRequest(HttpRequestParams* request, HttpResponse* resp
     }
     bool tooLow;
     if ((tooLow = contentLength < 1) || contentLength > 1610612736) {
-      LOG_TRACE(L"bad content length: %s", (tooLow ? "less than 1 byte" : "more than 1.5 GiB"));
+      LOG_TRACE(L"bad content length: %S", (tooLow ? "less than 1 byte" : "more than 1.5 GiB"));
 
       return Err::HTTP_FAILURE;
     }

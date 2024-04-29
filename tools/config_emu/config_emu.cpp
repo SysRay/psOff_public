@@ -222,7 +222,7 @@ Config::Config() {
   for (int i = 0; i < 4; i++) {
     defprofiles[i] = {{"name", std::format("Anon #{}", i + 1)}, {"color", colors[i]}};
     defpads[i]     = {
-        {"type", "gamepad"},
+        {"type", "sdl"},
         {"deadzones",
              {
              {"left_stick", {{"x", 0.0f}, {"y", 0.0f}}},

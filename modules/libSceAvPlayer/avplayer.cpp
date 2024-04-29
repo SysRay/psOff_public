@@ -203,12 +203,12 @@ bool Avplayer::setFile(const char* filename) {
 
   // Init ffmpeg
   if (avformat_open_input(&m_pFmtCtx, m_filename.string().c_str(), NULL, NULL) < 0) {
-    LOG_ERR(L"avformat_open_input %s", filename, m_filename.c_str());
+    LOG_ERR(L"avformat_open_input %s", m_filename.c_str());
     return false;
   }
 
   if (avformat_find_stream_info(m_pFmtCtx, NULL) < 0) {
-    LOG_ERR(L"avformat_find_stream_info %s", filename, m_filename.c_str());
+    LOG_ERR(L"avformat_find_stream_info %s", m_filename.c_str());
     avformat_close_input(&m_pFmtCtx);
     return false;
   }

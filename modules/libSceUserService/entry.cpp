@@ -53,12 +53,14 @@ EXPORT SYSV_ABI int32_t sceUserServiceTerminate() {
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetInitialUser(int* userId) {
+  if (userId == nullptr) return Err::UserService::INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
   if (!getJsonParam(jData, "userIndex", *userId) || (*userId < 1 || *userId > 3)) *userId = 1;
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
+  if (event == nullptr) return Err::UserService::INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   int onlineUsers;
@@ -75,13 +77,14 @@ EXPORT SYSV_ABI int sceUserServiceGetEvent(UserServiceEvent* event) {
 }
 
 EXPORT SYSV_ABI int sceUserServiceGetLoginUserIdList(UserServiceLoginUserIdList* userId_list) {
+  if (userId_list == nullptr) return Err::UserService::INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   int onlineUsers;
   if (getJsonParam(jData, "onlineUsers", onlineUsers)) {
     onlineUsers = std::max(1, std::min(onlineUsers, 4));
     for (int i = 0; i < 4; i++) {
-      userId_list->userId[i] = onlineUsers >= i ? (i + 1) : -1;
+      userId_list->userId[i] = onlineUsers > i ? (i + 1) : -1;
     }
   }
 
@@ -108,7 +111,7 @@ EXPORT SYSV_ABI int sceUserServiceGetUserName(int userId, char* name, size_t siz
 }
 
 EXPORT SYSV_ABI int32_t sceUserServiceGetUserColor(int userId, UserServiceUserColor* color) {
-  if (userId < 1 || userId > 3) return Err::UserService::INVALID_ARGUMENT;
+  if (userId < 1 || userId > 3 || color == nullptr) return Err::UserService::INVALID_ARGUMENT;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
 
   std::string _scolor;

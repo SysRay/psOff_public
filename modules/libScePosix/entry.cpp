@@ -127,52 +127,57 @@ EXPORT SYSV_ABI int __NID(sched_yield)(void) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(socket)(const char* name, int family, int type, int protocol) {
+EXPORT SYSV_ABI int __NID(socket)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(bind)(SceNetId s, const SceNetSockaddr* addr, SceNetSocklen_t addrlen) {
+EXPORT SYSV_ABI int __NID(bind)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(setsockopt)(SceNetId s, int level, int optname, const void* optval, SceNetSocklen_t optlen) {
+EXPORT SYSV_ABI int __NID(setsockopt)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(select)(SceNetId s, void* readfds, void* writefds, void* exceptfds, void* timeout) {
+EXPORT SYSV_ABI int __NID(select)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(recvfrom)(SceNetId s, void* buf, size_t len, int flags, SceNetSockaddr* from, SceNetSocklen_t* fromlen) {
+EXPORT SYSV_ABI int __NID(recvfrom)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(listen)(SceNetId s, int backlog) {
+EXPORT SYSV_ABI int __NID(listen)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(accept)(SceNetId s, SceNetSockaddr* addr, SceNetSocklen_t* addrlen) {
+EXPORT SYSV_ABI int __NID(accept)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(sendto)(SceNetId s, const void* msg, size_t len, int flags, const SceNetSockaddr* to, SceNetSocklen_t tolen) {
+EXPORT SYSV_ABI int __NID(sendto)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(getsockname)(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+EXPORT SYSV_ABI int __NID(recvmsg)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
 
-EXPORT SYSV_ABI int __NID(connect)(SceNetId s, SceNetSockaddr* name, SceNetSocklen_t* namelen) {
+EXPORT SYSV_ABI int __NID(getsockname)() {
+  LOG_USE_MODULE(libScePosix);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int __NID(connect)() {
   LOG_USE_MODULE(libScePosix);
   return Ok;
 }
