@@ -54,15 +54,15 @@ For testing, just download the latest release and install the Vulkan SDK.
 ### Executing a program
 
 ```
-.\emulator.exe --h
-.\emulator.exe --file="C:/****/eboot.bin"
+.\psoff.exe --h
+.\psoff.exe --file="C:/****/eboot.bin"
 ```
 If no --root is defined, it uses the folder from --file \
 For testing/benchmark, use --vsync=0
 
 Update (app1):  _--update_
 ```
-.\emulator.exe --file="C:/****/eboot.bin" --update="C:/FolderWithUpdate"
+.\psoff.exe --file="C:/****/eboot.bin" --update="C:/FolderWithUpdate"
 ```
 
 It expects the undecrypted Target to be in the following format:
@@ -82,6 +82,6 @@ Project uses p7 for tracing -> Baical server.
 
 * modules: the ps4 libraries
 * core: kernel, memory etc.
-* emulator.exe: (From Releases) contains the runtime and rendering
+* psoff.exe: (From Releases) contains the runtime and rendering
 
 I'm using vscode, '.vscode\tasks.json' contains the config & build tasks.
