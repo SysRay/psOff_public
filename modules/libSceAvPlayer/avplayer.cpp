@@ -115,6 +115,9 @@ class Avplayer: public IAvplayer {
   } m_video, m_audio;
 
   void destroyAVData() {
+    m_isAudioActive = false;
+    m_isVideoActive = false;
+
     if (m_pFmtCtx != nullptr) {
       avformat_close_input(&m_pFmtCtx);
     }
@@ -264,7 +267,7 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
   LOG_USE_MODULE(AvPlayer);
 
   std::unique_lock lock(m_mutexDecode);
-  if (m_isVideoActive == false) return false;
+  if (!m_isVideoActive) return false;
 
   // Get Frame from decoder
   while (m_video.getNewFrame) {
@@ -371,7 +374,7 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   LOG_USE_MODULE(AvPlayer);
 
   std::unique_lock lock(m_mutexDecode);
-  if (m_isAudioActive == false) return false;
+  if (!m_isAudioActive) return false;
 
   // Get Frame from decoder
   while (true) {

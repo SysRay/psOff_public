@@ -2,14 +2,13 @@
 
 #include "assert.h"
 #include "common.h"
-#include "core/dmem/dmem.h"
+#include "core/dmem/memoryManager.h"
 #include "core/kernel/filesystem.h"
 #include "core/memory/memory.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "modules_include/common.h"
 #include "types.h"
-
 LOG_DEFINE_MODULE(dmem);
 
 namespace {} // namespace
@@ -19,30 +18,21 @@ extern "C" {
 EXPORT SYSV_ABI size_t sceKernelGetDirectMemorySize() {
   LOG_USE_MODULE(dmem);
 
-  auto size = accessDirectMemory().size();
+  auto size = accessMemoryManager()->directMemory()->size();
   LOG_DEBUG(L"%S size:0x%08llx", __FUNCTION__, size);
   return size;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapNamedFlexibleMemory(void** addrInOut, size_t len, int prot, int flags, const char* name) {
-  auto const inAddr  = reinterpret_cast<uint64_t>(*addrInOut);
-  auto const outAddr = accessFlexibleMemory().alloc(inAddr, len, prot);
-  *addrInOut         = reinterpret_cast<void*>(outAddr);
-
-  if (outAddr == 0) {
-    return getErr(ErrCode::_ENOMEM);
-  }
-
-  return Ok;
+EXPORT SYSV_ABI int32_t sceKernelMapNamedFlexibleMemory(uint64_t* addrInOut, size_t len, int prot, int flags, const char* name) {
+  return accessMemoryManager()->flexibleMemory()->map(*addrInOut, 0, len, prot, flags, 0, addrInOut);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapFlexibleMemory(void** addrInOut, size_t len, int prot, int flags) {
+EXPORT SYSV_ABI int32_t sceKernelMapFlexibleMemory(uint64_t* addrInOut, size_t len, int prot, int flags) {
   return sceKernelMapNamedFlexibleMemory(addrInOut, len, prot, flags, "");
 }
 
-EXPORT SYSV_ABI int32_t sceKernelReleaseFlexibleMemory(void* addr, size_t len) {
-  accessFlexibleMemory().release((uint64_t)addr, len);
-  return Ok;
+EXPORT SYSV_ABI int32_t sceKernelReleaseFlexibleMemory(uint64_t addr, size_t len) {
+  return accessMemoryManager()->flexibleMemory()->unmap(addr, len);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelSetPrtAperture(int index, void* addr, size_t len) {
@@ -63,7 +53,7 @@ EXPORT SYSV_ABI int32_t sceKernelAllocateDirectMemory(uint64_t searchStart, uint
     return getErr(ErrCode::_EINVAL);
   }
 
-  return accessDirectMemory().alloc(len, alignment, memoryType, physAddrOut);
+  return accessMemoryManager()->directMemory()->alloc(len, alignment, memoryType, physAddrOut);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelAllocateMainDirectMemory(size_t len, size_t alignment, int memoryType, uint64_t* physAddrOut) {
@@ -71,19 +61,19 @@ EXPORT SYSV_ABI int32_t sceKernelAllocateMainDirectMemory(size_t len, size_t ali
     return getErr(ErrCode::_EINVAL);
   }
 
-  return accessDirectMemory().alloc(len, alignment, memoryType, physAddrOut);
+  return accessMemoryManager()->directMemory()->alloc(len, alignment, memoryType, physAddrOut);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelReleaseDirectMemory(off_t start, size_t len) {
-  return accessDirectMemory().free(start, len);
+  return accessMemoryManager()->directMemory()->free(start, len);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelCheckedReleaseDirectMemory(off_t start, size_t len) {
-  return accessDirectMemory().free(start, len);
+  return accessMemoryManager()->directMemory()->free(start, len);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelMapNamedDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t offset, size_t alignment, const char* name) {
-  return accessDirectMemory().map(*addr, offset, len, prot, flags, alignment, addr);
+  return accessMemoryManager()->directMemory()->map(*addr, offset, len, prot, flags, alignment, addr);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelMapDirectMemory(uint64_t* addr, size_t len, int prot, int flags, off_t offset, size_t maxPageSize) {
@@ -107,7 +97,8 @@ EXPORT SYSV_ABI int32_t sceKernelBatchMap2(SceKernelBatchMapEntry* entries, int 
 
     switch (batchEntry.operation) {
       case SceKernelMapOp::MAP_DIRECT: {
-        auto res = accessDirectMemory().map(batchEntry.start, batchEntry.physAddr, batchEntry.length, batchEntry.prot, flags, 0, &batchEntry.start);
+        auto res =
+            accessMemoryManager()->directMemory()->map(batchEntry.start, batchEntry.physAddr, batchEntry.length, batchEntry.prot, flags, 0, &batchEntry.start);
         if (res != Ok) {
           return res;
         }
@@ -224,7 +215,7 @@ EXPORT SYSV_ABI int sceKernelReserveVirtualRange(uintptr_t* addr, size_t len, in
     return getErr(ErrCode::_EINVAL);
   }
 
-  return accessDirectMemory().reserve(*addr, len, alignment, flags, addr);
+  return accessMemoryManager()->directMemory()->reserve(*addr, len, alignment, flags, addr);
 }
 
 struct QueryInfo {
@@ -266,7 +257,7 @@ EXPORT SYSV_ABI int32_t sceKernelMtypeprotect(const void* addr, size_t size, int
 }
 
 EXPORT SYSV_ABI int32_t sceKernelAvailableDirectMemorySize(off_t start, off_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
-  accessDirectMemory().getAvailableSize(start, end, alignment, startOut, sizeOut);
+  accessMemoryManager()->directMemory()->getAvailableSize(start, end, alignment, startOut, sizeOut);
   return Ok;
 }
 
@@ -335,12 +326,11 @@ EXPORT SYSV_ABI int32_t sceKernelMemoryPoolReserve(uint64_t addrIn, uint64_t len
 }
 
 EXPORT SYSV_ABI int32_t sceKernelAvailableFlexibleMemorySize(size_t* sizeOut) {
-  *sizeOut = accessFlexibleMemory().available();
-  return Ok;
+  return accessMemoryManager()->flexibleMemory()->getAvailableSize(0, 0, 0, 0, sizeOut);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelConfiguredFlexibleMemorySize(size_t* sizeOut) {
-  *sizeOut = accessFlexibleMemory().size();
+  *sizeOut = accessMemoryManager()->flexibleMemory()->size();
   return Ok;
 }
 

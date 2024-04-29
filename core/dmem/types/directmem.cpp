@@ -1,14 +1,11 @@
-#define __APICALL_EXTERN
-#include "dmem.h"
-#undef __APICALL_EXTERN
-
+#include "../memoryManager.h"
 #include "core/kernel/filesystem.h"
 #include "core/runtime/procParam.h"
 #include "core/runtime/runtimeLinker.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
+#include "memory.h"
 #include "modules/libkernel/codes.h"
-#include "modules/libkernel/dmem.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>
@@ -80,8 +77,10 @@ DWORD convProtection(int prot) {
 }
 } // namespace
 
-class DirectMemory: public IDirectMemory {
+class DirectMemory: public IMemoryType {
   boost::mutex m_mutexInt;
+
+  IMemoryManager* m_parent;
 
   std::map<uint64_t, MemoryInfo>    m_objects;
   std::map<uint64_t, MemoryMapping> m_mappings;
@@ -110,7 +109,7 @@ class DirectMemory: public IDirectMemory {
   MemoryInfo* getMemoryInfo(uint64_t len, uint64_t alignment, int prot, VmaVirtualAllocation& outAlloc, uint64_t& outAddr);
 
   public:
-  DirectMemory() {
+  DirectMemory(IMemoryManager* parent): m_parent(parent) {
     LOG_USE_MODULE(DirectMemory);
     VmaVirtualBlockCreateInfo blockCreateInfo = {
         .size = SCE_KERNEL_MAIN_DMEM_SIZE,
@@ -124,6 +123,9 @@ class DirectMemory: public IDirectMemory {
   virtual ~DirectMemory() { deinit(); }
 
   // ### Interface
+
+  void setTotalSize(uint64_t totalSize) final;
+
   int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) final;
   int free(off_t start, size_t len) final;
 
@@ -139,9 +141,22 @@ class DirectMemory: public IDirectMemory {
   void deinit() final;
 };
 
-IDirectMemory& accessDirectMemory() {
-  static DirectMemory obj;
-  return obj;
+std::unique_ptr<IMemoryType> createDirectMemory(IMemoryManager* parent) {
+  return std::make_unique<DirectMemory>(parent);
+}
+
+void DirectMemory::setTotalSize(uint64_t totalSize) {
+  LOG_USE_MODULE(DirectMemory);
+
+  vmaDestroyVirtualBlock(m_virtualDeviceMemory);
+
+  VmaVirtualBlockCreateInfo blockCreateInfo = {
+      .size = totalSize,
+  };
+
+  if (auto result = vmaCreateVirtualBlock(&blockCreateInfo, &m_virtualDeviceMemory); result != VK_SUCCESS) {
+    LOG_CRIT(L"vmaCreateVirtualBlock err:%S", string_VkResult(result));
+  }
 }
 
 MemoryInfo* DirectMemory::getMemoryInfo(uint64_t len, uint64_t alignment, int prot, VmaVirtualAllocation& outAlloc, uint64_t& outAddr) {
@@ -255,7 +270,7 @@ int DirectMemory::free(off_t start, size_t len) {
         LOG_TRACE(L"Missing unmap for addr:0x%08llx len:0x%08llx, force unmap", item.second.addr, item.second.size);
 
         vmaVirtualFree(itHeap->second.vmaBlock, item.second.vmaAlloc);
-        unregisterMapping(item.first);
+        m_parent->unregisterMapping(item.first);
         dump.push_back(item.first);
       }
 
@@ -323,7 +338,8 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   *outAddr = (uint64_t)info->allocAddr + fakeAddrOffset;
   m_mappings.emplace(
       std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
-  registerMapping(*outAddr, MappingType::Direct);
+
+  m_parent->registerMapping(*outAddr, MappingType::Direct);
   m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
