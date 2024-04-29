@@ -148,14 +148,14 @@ install(TARGETS psoff
   COMPONENT psoff
   RUNTIME_DEPENDENCIES
   PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*vulkan-1\\.dll"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
   DIRECTORIES
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/lib
-  ${CMAKE_BINARY_DIR}/core
+  ${CMAKE_CURRENT_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
   DESTINATION .
 )
