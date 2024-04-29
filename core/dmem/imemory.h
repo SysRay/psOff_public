@@ -12,6 +12,12 @@ class IMemoryType {
   public:
   virtual ~IMemoryType() = default;
 
+  /**
+   * @brief Only for init
+   *
+   */
+  virtual void setTotalSize(uint64_t totalSize) = 0;
+
   virtual int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) = 0;
   virtual int free(off_t start, size_t len)                                          = 0;
 

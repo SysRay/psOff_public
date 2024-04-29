@@ -1,5 +1,5 @@
 #include "asm/helper.h"
-#include "core/dmem/dmem.h"
+#include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/pthread.h"
@@ -181,7 +181,9 @@ int main(int argc, char** argv) {
   // Set flexiblememory size if available
   if (procParam->header.size < (8 + offsetof(ProcParam, PSceLibcParam))) {
     auto memparam = procParam->_sceKernelMemParam;
-    if (memparam != 0 && memparam->sceKernelFlexibleMemorySize != nullptr) accessFlexibleMemory().setConfiguredSize(*memparam->sceKernelFlexibleMemorySize);
+    if (memparam != 0 && memparam->sceKernelFlexibleMemorySize != nullptr) {
+      accessMemoryManager()->flexibleMemory()->setTotalSize(*memparam->sceKernelFlexibleMemorySize);
+    }
   }
 
   accessTimer().init();

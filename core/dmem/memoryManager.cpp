@@ -20,7 +20,10 @@ class MemoryManager: public IMemoryManager {
   std::unordered_map<uint64_t, MappingType> m_mappings;
 
   public:
-  MemoryManager() { m_directMemory = createDirectMemory(this); }
+  MemoryManager() {
+    m_directMemory   = createDirectMemory(this);
+    m_flexibleMemory = createFlexibleMemory(this);
+  }
 
   ~MemoryManager() = default;
 
@@ -29,6 +32,8 @@ class MemoryManager: public IMemoryManager {
   MappingType unregisterMapping(uint64_t vaddr) final;
 
   IMemoryType* directMemory() final { return m_directMemory.get(); }
+
+  IMemoryType* flexibleMemory() final { return m_flexibleMemory.get(); }
 };
 
 IMemoryManager* accessMemoryManager() {

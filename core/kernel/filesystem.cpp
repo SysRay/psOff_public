@@ -1,6 +1,5 @@
 #include "filesystem.h"
 
-#include "core/dmem/dmem.h"
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
@@ -86,10 +85,10 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   }
 
   if (flags.type == SceMapType::ANON) {
-    *res = (void*)accessFlexibleMemory().alloc((uint64_t)addr, len, prot); // registers mapping (flexible)
+    int result = accessMemoryManager()->flexibleMemory()->alloc((uint64_t)addr, len, prot, (uint64_t*)*res); // registers mapping (flexible)
 
     LOG_DEBUG(L"Mmap anon addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
-    return getErr(ErrCode::_EINVAL);
+    return result;
   }
   // -
 
@@ -163,7 +162,7 @@ int munmap(void* addr, size_t len) {
     } break;
 
     case MappingType::Flexible: {
-      return accessFlexibleMemory().destroy((uint64_t)addr, len) != 0 ? Ok : -1;
+      return accessMemoryManager()->flexibleMemory()->unmap((uint64_t)addr, len);
     } break;
 
     case MappingType::Fixed: {

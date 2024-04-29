@@ -32,7 +32,8 @@ class IMemoryManager {
    */
   virtual MappingType unregisterMapping(uint64_t vaddr) = 0;
 
-  virtual IMemoryType* directMemory() = 0;
+  virtual IMemoryType* directMemory()   = 0;
+  virtual IMemoryType* flexibleMemory() = 0;
 };
 
 #if defined(__APICALL_EXTERN)

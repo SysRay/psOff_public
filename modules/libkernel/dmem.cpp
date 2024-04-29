@@ -2,7 +2,6 @@
 
 #include "assert.h"
 #include "common.h"
-#include "core/dmem/dmem.h"
 #include "core/dmem/memoryManager.h"
 #include "core/kernel/filesystem.h"
 #include "core/memory/memory.h"
@@ -24,25 +23,16 @@ EXPORT SYSV_ABI size_t sceKernelGetDirectMemorySize() {
   return size;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapNamedFlexibleMemory(void** addrInOut, size_t len, int prot, int flags, const char* name) {
-  auto const inAddr  = reinterpret_cast<uint64_t>(*addrInOut);
-  auto const outAddr = accessFlexibleMemory().alloc(inAddr, len, prot);
-  *addrInOut         = reinterpret_cast<void*>(outAddr);
-
-  if (outAddr == 0) {
-    return getErr(ErrCode::_ENOMEM);
-  }
-
-  return Ok;
+EXPORT SYSV_ABI int32_t sceKernelMapNamedFlexibleMemory(uint64_t* addrInOut, size_t len, int prot, int flags, const char* name) {
+  return accessMemoryManager()->flexibleMemory()->map(*addrInOut, 0, len, prot, flags, 0, addrInOut);
 }
 
-EXPORT SYSV_ABI int32_t sceKernelMapFlexibleMemory(void** addrInOut, size_t len, int prot, int flags) {
+EXPORT SYSV_ABI int32_t sceKernelMapFlexibleMemory(uint64_t* addrInOut, size_t len, int prot, int flags) {
   return sceKernelMapNamedFlexibleMemory(addrInOut, len, prot, flags, "");
 }
 
-EXPORT SYSV_ABI int32_t sceKernelReleaseFlexibleMemory(void* addr, size_t len) {
-  accessFlexibleMemory().release((uint64_t)addr, len);
-  return Ok;
+EXPORT SYSV_ABI int32_t sceKernelReleaseFlexibleMemory(uint64_t addr, size_t len) {
+  return accessMemoryManager()->flexibleMemory()->unmap(addr, len);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelSetPrtAperture(int index, void* addr, size_t len) {
@@ -336,12 +326,11 @@ EXPORT SYSV_ABI int32_t sceKernelMemoryPoolReserve(uint64_t addrIn, uint64_t len
 }
 
 EXPORT SYSV_ABI int32_t sceKernelAvailableFlexibleMemorySize(size_t* sizeOut) {
-  *sizeOut = accessFlexibleMemory().available();
-  return Ok;
+  return accessMemoryManager()->flexibleMemory()->getAvailableSize(0, 0, 0, 0, sizeOut);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelConfiguredFlexibleMemorySize(size_t* sizeOut) {
-  *sizeOut = accessFlexibleMemory().size();
+  *sizeOut = accessMemoryManager()->flexibleMemory()->size();
   return Ok;
 }
 

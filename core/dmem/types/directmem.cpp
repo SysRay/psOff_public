@@ -6,7 +6,6 @@
 #include "logging.h"
 #include "memory.h"
 #include "modules/libkernel/codes.h"
-#include "modules/libkernel/dmem.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>
@@ -124,6 +123,9 @@ class DirectMemory: public IMemoryType {
   virtual ~DirectMemory() { deinit(); }
 
   // ### Interface
+
+  void setTotalSize(uint64_t totalSize) final;
+
   int alloc(size_t len, size_t alignment, int memoryType, uint64_t* outAddr) final;
   int free(off_t start, size_t len) final;
 
@@ -141,6 +143,20 @@ class DirectMemory: public IMemoryType {
 
 std::unique_ptr<IMemoryType> createDirectMemory(IMemoryManager* parent) {
   return std::make_unique<DirectMemory>(parent);
+}
+
+void DirectMemory::setTotalSize(uint64_t totalSize) {
+  LOG_USE_MODULE(DirectMemory);
+
+  vmaDestroyVirtualBlock(m_virtualDeviceMemory);
+
+  VmaVirtualBlockCreateInfo blockCreateInfo = {
+      .size = totalSize,
+  };
+
+  if (auto result = vmaCreateVirtualBlock(&blockCreateInfo, &m_virtualDeviceMemory); result != VK_SUCCESS) {
+    LOG_CRIT(L"vmaCreateVirtualBlock err:%S", string_VkResult(result));
+  }
 }
 
 MemoryInfo* DirectMemory::getMemoryInfo(uint64_t len, uint64_t alignment, int prot, VmaVirtualAllocation& outAlloc, uint64_t& outAddr) {
