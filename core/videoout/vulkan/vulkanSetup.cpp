@@ -672,9 +672,6 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
   return device;
 }
 
-static VkPhysicalDeviceProperties g_PhysicalDeviceProperties;
-static VkInstance                 g_VkInstance;
-
 VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableValidation) {
   LOG_USE_MODULE(vulkanSetup);
   auto obj = new VulkanObj;
@@ -723,7 +720,6 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
     else
       LOG_CRIT(L"vkCreateInstance() Error:%S", string_VkResult(result));
   }
-  g_VkInstance = obj->deviceInfo->instance;
 
   if (extensions.enableValidationLayers) {
     // dbgCreateInfo.pNext = nullptr;
@@ -743,13 +739,12 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
     LOG_CRIT(L"Couldn't find a suitable device");
   }
 
-  vkGetPhysicalDeviceProperties(obj->deviceInfo->physicalDevice, &g_PhysicalDeviceProperties);
-  obj->deviceInfo->limits = g_PhysicalDeviceProperties.limits;
+  vkGetPhysicalDeviceProperties(obj->deviceInfo->physicalDevice, &obj->deviceInfo->devProperties);
 
   {
     auto const text =
-        std::format("Selected GPU:{} api:{}.{}.{}", g_PhysicalDeviceProperties.deviceName, VK_API_VERSION_MAJOR(g_PhysicalDeviceProperties.apiVersion),
-                    VK_API_VERSION_MINOR(g_PhysicalDeviceProperties.apiVersion), VK_API_VERSION_PATCH(g_PhysicalDeviceProperties.apiVersion));
+        std::format("Selected GPU:{} api:{}.{}.{}", obj->deviceInfo->devProperties.deviceName, VK_API_VERSION_MAJOR(obj->deviceInfo->devProperties.apiVersion),
+                    VK_API_VERSION_MINOR(obj->deviceInfo->devProperties.apiVersion), VK_API_VERSION_PATCH(obj->deviceInfo->devProperties.apiVersion));
     printf("%s\n", text.data());
     LOG_INFO(L"%S", text.data());
 
@@ -787,10 +782,6 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
   }
   //-
   return obj;
-}
-
-std::string_view const getGPUName() {
-  return g_PhysicalDeviceProperties.deviceName;
 }
 
 void deinitVulkan(VulkanObj* obj) {

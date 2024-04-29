@@ -75,7 +75,5 @@ void       deinitVulkan(VulkanObj* obj);
 
 void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut);
 
-std::string_view const getGPUName();
-
 std::pair<VkFormat, VkColorSpaceKHR> getDisplayFormat(VulkanObj* obj);
 } // namespace vulkan

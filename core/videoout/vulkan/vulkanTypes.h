@@ -8,6 +8,6 @@ struct DeviceInfo {
   VkPhysicalDevice physicalDevice = nullptr;
   VkDevice         device         = nullptr;
 
-  VkPhysicalDeviceLimits limits;
+  VkPhysicalDeviceProperties devProperties;
 };
 } // namespace vulkan
