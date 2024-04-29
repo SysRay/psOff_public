@@ -5,6 +5,7 @@
 #include "core/memory/memory.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
+#include "memoryManager.h"
 #include "utility/utility.h"
 
 #include <algorithm>
@@ -68,7 +69,7 @@ uint64_t FlexibleMemory::alloc(uint64_t vaddr, size_t len, int prot) {
 
   auto const outAddr = memory::alloc(vaddr, len, prot);
 
-  registerMapping(outAddr, MappingType::Flexible);
+  accessMemoryManager()->registerMapping(outAddr, MappingType::Flexible);
   LOG_INFO(L"--> Heap| vaddr:0x%08llx len:%llu prot:0x%x total:0x%08llx -> @0x%08llx", vaddr, len, prot, m_totalAllocated, outAddr);
   return outAddr;
 }

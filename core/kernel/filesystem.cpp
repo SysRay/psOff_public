@@ -1,6 +1,7 @@
 #include "filesystem.h"
 
 #include "core/dmem/dmem.h"
+#include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/fileManager/types/type_file.h"
 #include "core/fileManager/types/type_null.h"
@@ -134,7 +135,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
               offset, GetLastError());
     } else {
       LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
-      registerMapping((uint64_t)*res, MappingType::File);
+      accessMemoryManager()->registerMapping((uint64_t)*res, MappingType::File);
     }
   }
 
@@ -150,7 +151,7 @@ int munmap(void* addr, size_t len) {
   LOG_USE_MODULE(filesystem);
 
   // unregister and then delete
-  auto type = unregisterMapping((uint64_t)addr);
+  auto type = accessMemoryManager()->unregisterMapping((uint64_t)addr);
 
   switch (type) {
     case MappingType::File: {
@@ -158,7 +159,7 @@ int munmap(void* addr, size_t len) {
     } break;
 
     case MappingType::Direct: {
-      return accessDirectMemory().unmap((uint64_t)addr, len);
+      return accessMemoryManager()->directMemory()->unmap((uint64_t)addr, len);
     } break;
 
     case MappingType::Flexible: {

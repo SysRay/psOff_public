@@ -1,6 +1,8 @@
 add_library(dmem OBJECT
   dmem.cpp
-  directmem.cpp
+
+  memoryManager.cpp
+  types/directmem.cpp
 )
 
 add_dependencies(dmem third_party psOff_utility)
