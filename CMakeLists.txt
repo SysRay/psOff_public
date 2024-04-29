@@ -123,7 +123,6 @@ target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BAS
 
 set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
-
 # # Install
 install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/src/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
   FILES_MATCHING PATTERN "*.dll"
@@ -161,4 +160,6 @@ install(TARGETS psoff
   DESTINATION .
 )
 
-install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
+if(NOT ISACTION)
+  install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
+endif()
