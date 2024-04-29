@@ -8,12 +8,12 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
+#include "core/videoout/videoout.h"
 #include "logging.h"
 
 #include <chrono>
 #include <filesystem>
 #include <fstream>
-#include <psoff_render_version.h>
 #include <set>
 #include <thread>
 #include <windows.h>
@@ -76,7 +76,7 @@ bool loadModule(std::string_view strFullpath) {
 int main(int argc, char** argv) {
   LOG_USE_MODULE(MAIN);
 
-  printf("Emulator version: %s\n", psoff_render_version);
+  printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
 
   auto initParams = accessInitParams();
 

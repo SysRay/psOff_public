@@ -28,7 +28,6 @@
 #include <memory>
 #include <mutex>
 #include <optick.h>
-#include <psoff_render_version.h>
 #include <queue>
 #include <thread>
 
@@ -159,7 +158,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
   }();
 
   return std::format("{} | {}(v{}): wnd={} frame={} fps={}(locked:{}) version:{}", title, id, ver, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
-                     psoff_render_version);
+                     PSOFF_RENDER_VERSION);
 }
 
 } // namespace
@@ -757,7 +756,7 @@ void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
           .title    = title ? title.value().data() : "Your PS4 Game Name",
           .title_id = title_id ? title_id.value().data() : "CUSA00000",
           .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-          .emu_ver  = psoff_render_version,
+          .emu_ver  = PSOFF_RENDER_VERSION,
           .wnd      = window,
 
           .type = IGameReport::Type::USER,

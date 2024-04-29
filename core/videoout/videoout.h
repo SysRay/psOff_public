@@ -171,6 +171,10 @@ class IVideoOut {
   virtual bool isGPULocal(uint64_t vaddr) = 0;
 };
 
+#ifndef PSOFF_RENDER_VERSION
+#define PSOFF_RENDER_VERSION "unknown"
+#endif
+
 #if defined(__APICALL_EXTERN)
 #define __APICALL __declspec(dllexport)
 #elif defined(__APICALL_IMPORT)
