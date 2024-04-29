@@ -140,7 +140,7 @@ install(DIRECTORY "${PRJ_SRC_DIR}/docs/json/" DESTINATION ${CMAKE_INSTALL_PREFIX
   FILES_MATCHING PATTERN "*.json"
 )
 
-if(ISACTION)
+if(DEFINED ISACTION)
   file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/bin/vulkan-1.dll CONTENT "") # cmake needs to find the file in order to ignore it
 endif()
 
@@ -160,6 +160,4 @@ install(TARGETS psoff
   DESTINATION .
 )
 
-if(NOT ISACTION)
-  install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
-endif()
+install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
