@@ -11,7 +11,7 @@ unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -O0 -fno-strict-aliasing")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
@@ -150,13 +150,14 @@ install(TARGETS psoff
   RUNTIME_DEPENDENCIES
   PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
   POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*vulkan-1\\.dll"
+
   DIRECTORIES
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/lib
-  ${CMAKE_BINARY_DIR}/core
+  ${CMAKE_CURRENT_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
   DESTINATION .
 )
