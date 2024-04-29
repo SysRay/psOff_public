@@ -744,6 +744,7 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
   }
 
   vkGetPhysicalDeviceProperties(obj->deviceInfo->physicalDevice, &g_PhysicalDeviceProperties);
+  obj->deviceInfo->limits = g_PhysicalDeviceProperties.limits;
 
   {
     auto const text =
