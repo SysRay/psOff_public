@@ -143,8 +143,8 @@ install(DIRECTORY "${PRJ_SRC_DIR}/docs/json/" DESTINATION ${CMAKE_INSTALL_PREFIX
 install(TARGETS psoff
   COMPONENT psoff
   RUNTIME_DEPENDENCIES
-  PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "vulkan"
-  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*VULKAN_SDK/.*\.dll"
+  PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*VULKAN_SDK/.*\\.dll"
   DIRECTORIES
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
