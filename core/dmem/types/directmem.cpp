@@ -413,7 +413,7 @@ int DirectMemory::unmap(uint64_t vaddr, uint64_t size) {
 }
 
 uint64_t DirectMemory::size() const {
-  return m_allocSize;
+  return SCE_KERNEL_MAIN_DMEM_SIZE;
 }
 
 int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
@@ -421,7 +421,7 @@ int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignmen
   LOG_DEBUG(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
 
   *startOut = m_usedSize;
-  *sizeOut  = m_allocSize - m_usedSize;
+  *sizeOut  = SCE_KERNEL_MAIN_DMEM_SIZE - m_usedSize;
 
   return Ok;
 }
