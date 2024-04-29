@@ -1,4 +1,5 @@
 #pragma once
+#include "core/videoout/vulkan/vulkanTypes.h"
 #include "utility/utility.h"
 
 #include <optional>
@@ -69,4 +70,5 @@ class IImageHandler {
   virtual VkSwapchainKHR getSwapchain() const = 0;
 };
 
-std::unique_ptr<IImageHandler> createImageHandler(VkDevice vkDevice, VkExtent2D extentWindow, vulkan::QueueInfo* queue, ImageHandlerCB* callback);
+std::unique_ptr<IImageHandler> createImageHandler(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, VkExtent2D extentWindow, vulkan::QueueInfo* queue,
+                                                  ImageHandlerCB* callback);

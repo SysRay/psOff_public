@@ -1,7 +1,6 @@
 #include "vulkanHelper.h"
 
 #include "../imageHandler.h"
-#include "core/imports/exports/graphics.h"
 #include "core/initParams/initParams.h"
 #include "logging.h"
 #include "utility/utility.h"
@@ -14,6 +13,7 @@
 #include <boost/assert.hpp>
 #include <chrono>
 #include <format>
+#include <graphics.h>
 #include <mutex>
 #include <optick.h>
 #include <string>
@@ -26,7 +26,7 @@ namespace vulkan {
 
 void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut) {
   LOG_USE_MODULE(vulkanHelper);
-  if (SDL_Vulkan_CreateSurface(window, obj->deviceInfo.instance, &surfaceOut)) {
+  if (SDL_Vulkan_CreateSurface(window, obj->deviceInfo->instance, &surfaceOut)) {
     LOG_CRIT(L"Couldn't create surface");
   }
 }
@@ -186,64 +186,3 @@ void presentImage(ImageData const& imageData, VkSwapchainKHR swapchain, QueueInf
   }
 }
 } // namespace vulkan
-
-// ### Vulkan EXT Function Definitions
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
-  static auto fn = (PFN_vkCreateShadersEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCreateShadersEXT");
-  return fn(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) {
-  static auto fn = (PFN_vkCmdSetDepthClipNegativeOneToOneEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetDepthClipNegativeOneToOneEXT");
-  fn(commandBuffer, negativeOneToOne);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount, const VkBool32* pColorWriteEnables) {
-  static auto fn = (PFN_vkCmdSetColorWriteEnableEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetColorWriteEnableEXT");
-  fn(commandBuffer, attachmentCount, pColorWriteEnables);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                                     const VkColorComponentFlags* pColorWriteMasks) {
-  static auto fn = (PFN_vkCmdSetColorWriteMaskEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetColorWriteMaskEXT");
-  fn(commandBuffer, firstAttachment, attachmentCount, pColorWriteMasks);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                                       const VkBool32* pColorBlendEnables) {
-  static auto fn = (PFN_vkCmdSetColorBlendEnableEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetColorBlendEnableEXT");
-  fn(commandBuffer, firstAttachment, attachmentCount, pColorBlendEnables);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
-                                                         const VkColorBlendEquationEXT* pColorBlendEquations) {
-  static auto fn = (PFN_vkCmdSetColorBlendEquationEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetColorBlendEquationEXT");
-  fn(commandBuffer, firstAttachment, attachmentCount, pColorBlendEquations);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {
-  static auto fn = (PFN_vkCmdSetPolygonModeEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetPolygonModeEXT");
-  fn(commandBuffer, polygonMode);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples) {
-  static auto fn = (PFN_vkCmdSetRasterizationSamplesEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetRasterizationSamplesEXT");
-  fn(commandBuffer, rasterizationSamples);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) {
-  static auto fn = (PFN_vkCmdSetAlphaToCoverageEnableEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetAlphaToCoverageEnableEXT");
-  fn(commandBuffer, alphaToCoverageEnable);
-}
-
-VKAPI_ATTR void VKAPI_CALL vkCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) {
-  static auto fn = (PFN_vkCmdSetAlphaToOneEnableEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkCmdSetAlphaToOneEnableEXT");
-  fn(commandBuffer, alphaToOneEnable);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL vkGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHostPointer,
-                                                                   VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties) {
-  static auto fn = (PFN_vkGetMemoryHostPointerPropertiesEXT)vkGetInstanceProcAddr(vulkan::getVkInstance(), "vkGetMemoryHostPointerPropertiesEXT");
-  return fn(device, handleType, pHostPointer, pMemoryHostPointerProperties);
-}

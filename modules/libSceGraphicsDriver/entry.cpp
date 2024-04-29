@@ -1,5 +1,4 @@
 #include "common.h"
-#include "core/imports/exports/graphics.h"
 #include "core/imports/exports/pm4_custom.h"
 #include "core/kernel/eventqueue_types.h"
 #include "core/memory/memory.h"
@@ -7,6 +6,8 @@
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
+
+#include <graphics.h>
 
 LOG_DEFINE_MODULE(libSceGraphicsDriver);
 
@@ -206,8 +207,8 @@ int SYSV_ABI sceGnmDrawIndexOffset(uint32_t* cmdOut, uint64_t size, uint32_t ind
   LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DRAW_INDEX_OFFSET);
-  cmdOut[1] = index_count;
-  cmdOut[2] = index_offset;
+  cmdOut[1] = index_offset;
+  cmdOut[2] = index_count;
   cmdOut[3] = flags;
   cmdOut[4] = 0;
   cmdOut[5] = 0;

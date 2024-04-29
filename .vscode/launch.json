@@ -5,7 +5,7 @@
       "name": "(Windows) Launch",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceRoot}/_build/_Install/emulator.exe",
+      "program": "${workspaceRoot}/_build/_Install/psoff.exe",
       "args": [
         "--d",
         "${config:psoff.add-arg}",

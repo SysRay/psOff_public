@@ -33,7 +33,7 @@ Finally, type this command:
 `cmake.exe --install _build/_Release`
  Its execution usually takes under 2 or 3 seconds
 
-Done! Now you can try to modify the emulator's code and see how it works. Just open `_build/_Install/` folder and you'll see `emulator.exe` there.
+Done! Now you can try to modify the emulator's code and see how it works. Just open `_build/_Install/` folder and you'll see `psoff.exe` there.
  
 ---
 author: [igor](https://github.com/igor725)

@@ -1,10 +1,11 @@
 #include "avplayer.h"
 
 #include "core/fileManager/fileManager.h"
-#include "core/videoout/intern.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "typesEx.h"
+
+#include <graphics.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -230,7 +231,7 @@ bool Avplayer::setFile(const char* filename) {
       return false;
     }
 
-    uint64_t const alignment = getImageAlignment(VK_FORMAT_R8G8_UNORM, VkExtent3D {1920, 1080, 1}); // image size doesn't matter
+    uint64_t const alignment = accessVideoOut().getGraphics()->getImageAlignment(VK_FORMAT_R8G8_UNORM, VkExtent3D {1920, 1080, 1}); // image size doesn't matter
     m_videoBuffer            = (void*)((uint64_t)m_memAlloc.allocateTexture(m_memAlloc.objectPointer, alignment, videobufferSize));
 
     m_videoStride = std::array<int, 4> {m_video.codecContext->width, m_video.codecContext->width, 0, 0};

@@ -63,6 +63,9 @@
         "kind": "build",
         "isDefault": true
       },
+      "dependsOn": [
+        "Build"
+      ],
       "presentation": {},
     },
     {

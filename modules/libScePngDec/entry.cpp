@@ -112,6 +112,8 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
   png_read_image(pngh->png, row_ptr);
 
   auto ptr = (png_bytep)param->imageAddr;
+  LOG_INFO(L"PNG vaddr:0x%08llx", param->imageAddr);
+
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w * 4 /*RGBA*/; x++) {
       *ptr++ = row_ptr[y][x];

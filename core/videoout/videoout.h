@@ -25,12 +25,6 @@ class IVideoOut {
   virtual ~IVideoOut() = default;
 
   /**
-   * @brief init interals
-   *
-   */
-  virtual void init() = 0;
-
-  /**
    * @brief Open a window
    *
    * @param userId

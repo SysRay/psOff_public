@@ -11,10 +11,10 @@ add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(networking)
 add_subdirectory(fileManager)
-add_subdirectory(imports)
 add_subdirectory(memory)
 add_subdirectory(dmem)
 add_subdirectory(unwinding)
+add_subdirectory(runtime)
 
 # Build
 add_library(core SHARED
@@ -25,19 +25,20 @@ add_library(core SHARED
   $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
-  $<TARGET_OBJECTS:imports>
   $<TARGET_OBJECTS:memory>
   $<TARGET_OBJECTS:dmem>
   $<TARGET_OBJECTS:unwinding>
+  $<TARGET_OBJECTS:runtime>
 )
 
-add_dependencies(core logging third_party config_emu gamereport)
+add_dependencies(core logging third_party config_emu gamereport psoff_render)
 target_link_libraries(core PRIVATE
   libboost_url
   libboost_thread
   libboost_chrono
   libboost_program_options
   sdl2
+  psoff_render.lib
   gamereport.lib
   OptickCore
   psOff_utility

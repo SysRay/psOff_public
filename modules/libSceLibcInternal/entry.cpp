@@ -1,5 +1,5 @@
 #include "common.h"
-#include "core/imports/imports_runtime.h"
+#include "core/runtime/runtimeLinker.h"
 #include "core/unwinding/unwind.h"
 #include "logging.h"
 #include "types.h"
@@ -324,7 +324,7 @@ EXPORT SYSV_ABI int __NID(__cxa_atexit)(void (*func)(void*), void* arg, int modu
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_TRACE(L"%S", __FUNCTION__);
 
-  accessRuntimeExport()->cxa_add_atexit(
+  accessRuntimeLinker().cxa_add_atexit(
       CxaDestructor {
           .destructor_func   = func,
           .destructor_object = arg,
@@ -337,7 +337,7 @@ EXPORT SYSV_ABI void __NID(__cxa_finalize)(int moduleId) {
   LOG_USE_MODULE(libSceLibcInternal);
   LOG_DEBUG(L"%S", __FUNCTION__);
 
-  accessRuntimeExport()->cxa_finalize(moduleId);
+  accessRuntimeLinker().cxa_finalize(moduleId);
 }
 
 typedef void SYSV_ABI (*newhandler_func)(void* mem);

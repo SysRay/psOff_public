@@ -2,8 +2,7 @@
 #include "imports_intercepts.h"
 #undef __APICALL_EXTERN
 
-#include "exports/runtimeExport.h"
-#include "imports_runtime.h"
+#include "core/runtime/runtimeLinker.h"
 
 void core_initIntercepts() {
   /*Usage

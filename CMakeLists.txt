@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
 set(PSOFF_LIB_VERSION v.0.0)
-set(PSOFF_RENDER_VERSION v.0.5-nightly_27.04.24 )
+set(PSOFF_RENDER_VERSION v.0.5-nightly_29.04.24)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -22,9 +22,7 @@ if(NOT PRJ_SRC_DIR)
   set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
-if(NOT DEFINED IMAGE_BASE)
-  set(IMAGE_BASE 0x10000000)
-endif()
+set(IMAGE_BASE 0x10000000)
 
 # # Gather Infos
 
@@ -48,6 +46,7 @@ include_directories(BEFORE
   ${PRJ_SRC_DIR}/tools/gamereport
   ${PRJ_SRC_DIR}
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/include
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/include
 )
 
 link_directories(BEFORE
@@ -56,6 +55,7 @@ link_directories(BEFORE
   ${CMAKE_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_BINARY_DIR}/bin
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
 )
 
 ExternalProject_Add(third_party
@@ -68,16 +68,14 @@ ExternalProject_Add(third_party
 )
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  ExternalProject_Add(renderer
+  ExternalProject_Add(psoff_render
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    PREFIX ${CMAKE_BINARY_DIR}/renderer
+    PREFIX ${CMAKE_BINARY_DIR}/psoff_render
     BUILD_IN_SOURCE 1
     URL https://github.com/SysRay/psOff_Renderer/releases/download/${PSOFF_RENDER_VERSION}/psOff-renderer.zip
   )
-
-  install(FILES ${CMAKE_BINARY_DIR}/renderer/src/renderer/emulator.exe DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
 
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
@@ -90,6 +88,8 @@ endif()
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
+add_subdirectory(asm)
+
 add_dependencies(dll2Nids third_party)
 
 # -
@@ -105,6 +105,23 @@ add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
 
 # #- Projects
+
+# Executable
+add_executable(psoff
+  main.cpp
+)
+
+add_dependencies(psoff logging core psOff_utility)
+
+target_link_libraries(psoff PRIVATE
+  core.lib
+  psOff_utility
+  $<TARGET_OBJECTS:asmHelper>
+)
+
+target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
+
+set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
 # # Install
 install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/src/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
@@ -122,3 +139,25 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/" DESTINATION ${CMAKE_INSTALL_PREFIX}
 install(DIRECTORY "${PRJ_SRC_DIR}/docs/json/" DESTINATION ${CMAKE_INSTALL_PREFIX}/config/.schemas
   FILES_MATCHING PATTERN "*.json"
 )
+
+if(DEFINED ISACTION)
+  file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/bin/vulkan-1.dll CONTENT "") # cmake needs to find the file in order to ignore it
+endif()
+
+install(TARGETS psoff
+  COMPONENT psoff
+  RUNTIME_DEPENDENCIES
+  PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*vulkan-1\\.dll"
+  DIRECTORIES
+  $<TARGET_FILE_DIR:psoff>
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
+  ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
+  ${CMAKE_BINARY_DIR}/bin
+  ${CMAKE_BINARY_DIR}/lib
+  ${CMAKE_BINARY_DIR}/core
+  ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  DESTINATION .
+)
+
+install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)

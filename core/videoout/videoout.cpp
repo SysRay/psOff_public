@@ -1,13 +1,8 @@
 #define __APICALL_EXTERN
 #include "videoout.h"
-
-#include "intern.h"
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
-#include "core/imports/exports/graphics.h"
-#include "core/imports/imports_func.h"
-#include "core/imports/imports_ver.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
@@ -27,11 +22,13 @@
 #include <assert.h>
 #include <format>
 #include <functional>
+#include <graphics.h>
 #include <list>
 #include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <mutex>
 #include <optick.h>
+#include <psoff_render_version.h>
 #include <queue>
 #include <thread>
 
@@ -162,7 +159,7 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
   }();
 
   return std::format("{} | {}(v{}): wnd={} frame={} fps={}(locked:{}) version:{}", title, id, ver, handle, frame, fps, magic_enum::enum_name(maxFPS).data(),
-                     getEmulatorVersion().data());
+                     psoff_render_version);
 }
 
 } // namespace
@@ -250,7 +247,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   void doFlip(Context& ctx, int handle);
 
   public:
-  VideoOut() = default;
+  VideoOut() { init(); }
 
   virtual ~VideoOut();
 
@@ -258,7 +255,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
    * @brief Preinit handle 1(index 0) with main window
    * Needed for early vulkan init and with it all the managers
    */
-  void init() final;
+  void init();
+
   int  open(int userId) final;
   void close(int handle) final;
 
@@ -281,10 +279,6 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
       *area = 1.f; // todo check what's up here
     }
   }
-
-  vulkan::DeviceInfo* getDeviceInfo() final { return &m_vulkanObj->deviceInfo; }
-
-  VkPhysicalDeviceLimits const* getVulkanLimits() const final { return vulkan::getPhysicalLimits(); }
 
   int  addEvent(int handle, EventQueue::KernelEqueueEvent const& event, Kernel::EventQueue::IKernelEqueue_t eq) final;
   void removeEvent(int handle, Kernel::EventQueue::IKernelEqueue_t eq, int const ident) final;
@@ -763,7 +757,7 @@ void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
           .title    = title ? title.value().data() : "Your PS4 Game Name",
           .title_id = title_id ? title_id.value().data() : "CUSA00000",
           .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-          .emu_ver  = getEmulatorVersion().data(),
+          .emu_ver  = psoff_render_version,
           .wnd      = window,
 
           .type = IGameReport::Type::USER,
@@ -922,16 +916,15 @@ std::thread VideoOut::createSDLThread() {
           LOG_INFO(L"--> VideoOut Open(%S)| %d:%d", title.c_str(), window.config.resolution.paneWidth, window.config.resolution.paneHeight);
           if (m_vulkanObj == nullptr) {
             m_vulkanObj = vulkan::initVulkan(window.window, window.surface, accessInitParams()->enableValidation());
-            auto& info  = m_vulkanObj->deviceInfo;
 
-            m_graphics = createGraphics(*this, info.device, info.physicalDevice, info.instance);
+            m_graphics = createGraphics(*this, m_vulkanObj->deviceInfo);
 
             auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
 
             m_useVsync = accessInitParams()->useVSYNC();
 
-            m_imageHandler =
-                createImageHandler(info.device, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight}, queue, &window);
+            m_imageHandler = createImageHandler(m_vulkanObj->deviceInfo, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight},
+                                                queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
 
             *item.result = 0;
@@ -982,31 +975,4 @@ std::thread VideoOut::createSDLThread() {
     }
     SDL_Quit();
   });
-}
-
-uint64_t getImageAlignment(VkFormat format, VkExtent3D const& extent) {
-  auto device = ((VideoOut&)accessVideoOut()).getDeviceInfo()->device;
-
-  VkImageCreateInfo const imageInfo {
-      .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .pNext         = nullptr,
-      .flags         = 0,
-      .imageType     = VK_IMAGE_TYPE_2D,
-      .format        = format,
-      .extent        = extent,
-      .mipLevels     = 1,
-      .arrayLayers   = 1,
-      .samples       = VK_SAMPLE_COUNT_1_BIT,
-      .tiling        = VK_IMAGE_TILING_OPTIMAL,
-      .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-      .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-  };
-
-  VkImage              image;
-  VkMemoryRequirements reqs;
-  vkCreateImage(device, &imageInfo, nullptr, &image);
-  vkGetImageMemoryRequirements(device, image, &reqs);
-  vkDestroyImage(device, image, nullptr);
-  return reqs.alignment;
 }

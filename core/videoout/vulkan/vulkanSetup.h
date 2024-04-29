@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vulkanTypes.h"
+
 #include <array>
 #include <boost/thread/thread.hpp>
 #include <memory>
@@ -13,12 +15,6 @@
 struct SDL_Window;
 
 namespace vulkan {
-
-struct DeviceInfo {
-  VkInstance       instance       = nullptr;
-  VkPhysicalDevice physicalDevice = nullptr;
-  VkDevice         device         = nullptr;
-};
 
 enum class QueueType : uint8_t {
   graphics = 0,
@@ -67,7 +63,7 @@ struct SurfaceCapabilities {
 };
 
 struct VulkanObj {
-  DeviceInfo deviceInfo;
+  std::shared_ptr<vulkan::DeviceInfo> deviceInfo = std::make_shared<DeviceInfo>();
 
   VkDebugUtilsMessengerEXT debugMessenger = nullptr;
   SurfaceCapabilities      surfaceCapabilities;
@@ -78,10 +74,6 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool useValidat
 void       deinitVulkan(VulkanObj* obj);
 
 void createSurface(VulkanObj* obj, SDL_Window* window, VkSurfaceKHR& surfaceOut);
-
-VkPhysicalDeviceLimits const* getPhysicalLimits();
-
-VkInstance const getVkInstance();
 
 std::string_view const getGPUName();
 

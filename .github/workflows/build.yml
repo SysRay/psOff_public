@@ -94,7 +94,7 @@ jobs:
       - name: Configure
         run: |
           echo "::add-matcher::tools/matchers/cmake.json"
-          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DTEST_BENCH=ON
+          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DTEST_BENCH=ON -DISACTION=1
 
       - name: Build
         run: |
@@ -114,5 +114,9 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: psOff-libs
-          path: _build/_Install/*
+          name: psOff-emu
+          path: | 
+                _build/_Install/*
+                !_build/_Install/debug/*
+                !_build/_Install/vulkan-1.dll
+                !_build/_Install/semaphore_test.exe

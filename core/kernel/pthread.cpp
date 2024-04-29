@@ -9,7 +9,7 @@
 
 #define __APICALL_IMPORT
 #include "core/fileManager/fileManager.h"
-#include "core/imports/imports_runtime.h"
+#include "core/runtime/runtimeLinker.h"
 #include "core/timer/timer.h"
 #undef __APICALL_IMPORT
 
@@ -97,7 +97,7 @@ void initTLS(ScePthread_obj obj) {
   pthread->dtv[0] = 0;
   std::fill(&pthread->dtv[1], &pthread->dtv[DTV_SIZE - 2], 0); // skip mainprog
   pthread->dtv[DTV_SIZE - 1] = XSAVE_CHK_GUARD;
-  accessRuntimeExport()->initTLS(obj); // reset tls
+  accessRuntimeLinker().initTLS(obj); // reset tls
 }
 
 void init_pThread() {
@@ -409,7 +409,7 @@ int join(ScePthread_obj obj, void** value) {
 }
 
 int keyDelete(ScePthreadKey key) {
-  accessRuntimeExport()->deleteTLSKey(key);
+  accessRuntimeLinker().deleteTLSKey(key);
   return Ok;
 }
 
@@ -418,7 +418,7 @@ int keyCreate(ScePthreadKey* key, pthread_key_destructor_func_t destructor) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  *key = accessRuntimeExport()->createTLSKey((void*)destructor);
+  *key = accessRuntimeLinker().createTLSKey((void*)destructor);
   if (*key < 0) {
     return getErr(ErrCode::_EAGAIN);
   }
@@ -785,12 +785,12 @@ int rwlockattrGettype(ScePthreadRwlockattr* attr, int* type) {
 }
 
 int setspecific(ScePthreadKey key, const void* value) {
-  accessRuntimeExport()->setTLSKey(key, value);
+  accessRuntimeLinker().setTLSKey(key, value);
   return Ok;
 }
 
 void* getspecific(ScePthreadKey key) {
-  return accessRuntimeExport()->getTLSKey(key);
+  return accessRuntimeLinker().getTLSKey(key);
 }
 
 int cancel(ScePthread_obj obj) {
@@ -1120,7 +1120,7 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
   std::unique_lock lock(getData()->mutex);
 
   // Create thread
-  auto const tlsStaticSize = accessRuntimeExport()->getTLSStaticBlockSize();
+  auto const tlsStaticSize = accessRuntimeLinker().getTLSStaticBlockSize();
   *obj                     = new uint8_t[sizeof(tlsStaticSize) + tlsStaticSize + sizeof(PthreadPrivate)] {};
   ((uint64_t*)*obj)[0]     = sizeof(tlsStaticSize) + tlsStaticSize; // pthreadOffset
 
@@ -1225,7 +1225,7 @@ void cleanup_thread() {
     thread_dtors();
   }
 
-  accessRuntimeExport()->destroyTLSKeys(getSelf());
+  accessRuntimeLinker().destroyTLSKeys(getSelf());
 
   // Delete here if detached, else in join()
   if (thread->detached) {
