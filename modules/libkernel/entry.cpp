@@ -318,10 +318,7 @@ EXPORT SYSV_ABI void _sceKernelRtldSetApplicationHeapAPI(void* api[]) {
 }
 
 EXPORT SYSV_ABI void sceKernelDebugRaiseException(int reason, int id) {
-  LOG_USE_MODULE(libkernel);
-
-  auto const retAddr = (uint64_t)_ReturnAddress();
-  LOG_CRIT(L"Exception: reason:0x%x id:0x%x @0x%08llx", reason, id, retAddr);
+  RaiseException(id, reason, 0, 0);
 }
 
 EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint64_t dtor_vaddr) {
