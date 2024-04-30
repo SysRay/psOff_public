@@ -27,13 +27,70 @@ struct PortOut {
   int                    volume[8]      = {};
   SDL_AudioDeviceID      device         = 0;
   SDL_AudioFormat        sdlFormat      = AUDIO_F32;
+  float                  volumeModifier = 0.5f;
   std::vector<uint8_t>   mixedAudio;
-  float                  volumeModifier;
+};
+
+class PortsOut {
+  private:
+  std::array<PortOut, AudioOut::PORT_OUT_MAX> m_ports = {};
+
+  static inline uint8_t rangeStart(uint16_t range) { return (range >> 8) & 0xFF; }
+
+  static inline uint8_t rangeEnd(uint16_t range) { return range & 0xFF; }
+
+  public:
+  PortOut* GetPort(int handle) {
+    if (handle < 1 || handle > m_ports.size()) return nullptr;
+    auto port = &m_ports[handle - 1];
+    if (port->open) return port;
+    return nullptr;
+  }
+
+  PortOut* AcquirePort(SceAudioOutPortType type, int* handle) {
+    uint16_t range = 0x0000;
+
+    switch (type) {
+      case SceAudioOutPortType::MAIN: range = 0x0007; break;     // 00..07
+      case SceAudioOutPortType::BGM: range = 0x0808; break;      // 08..08
+      case SceAudioOutPortType::VOICE: range = 0x090C; break;    // 09..12
+      case SceAudioOutPortType::PERSONAL: range = 0x0D10; break; // 13..16
+      case SceAudioOutPortType::PADSPK: range = 0x1114; break;   // 17..20
+      case SceAudioOutPortType::AUX: range = 0x1515; break;      // 21..21
+    }
+
+    for (int i = rangeStart(range); i <= rangeEnd(range); i++) {
+      auto& port = m_ports[i];
+      if (port.open) continue;
+
+      port.open           = true;
+      port.type           = type;
+      port.lastOutputTime = 0;
+      *handle             = (i + 1);
+      return &port;
+    }
+
+    return nullptr;
+  }
+
+  int32_t UnacquirePort(int handle) {
+    auto port = GetPort(handle);
+    if (port == nullptr) return Err::AudioOut::INVALID_PORT;
+
+    port->open = false;
+    if (port->device > 0) {
+      port->mixedAudio.clear();
+      SDL_CloseAudioDevice(port->device);
+    }
+
+    return Ok;
+  };
 };
 
 struct Pimpl {
-  boost::mutex                                mutexInt;
-  std::array<PortOut, AudioOut::PORT_OUT_MAX> portsOut;
+
+  boost::mutex mutexInt;
+  PortsOut     portsOut;
   Pimpl() = default;
 };
 
@@ -43,42 +100,44 @@ Pimpl* getData() {
 }
 
 int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
-  auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::AudioOut::NOT_OPENED;
   if (ptr == nullptr) return 0;
 
-  using namespace std::chrono;
-  port.lastOutputTime = duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
+  if (auto port = pimpl->portsOut.GetPort(handle)) {
+    using namespace std::chrono;
+    port->lastOutputTime = duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
 
-  const size_t bytesize_1ch = port.samplesNum * port.sampleSize;
+    const size_t bytesize_1ch = port->samplesNum * port->sampleSize;
 
-  if (port.type == SceAudioOutPortType::NULLDEV) {
-    LOG_USE_MODULE(libSceAudioOut);
-    LOG_TRACE(L"Nulled audio port, playing nothing (handle=%d)", handle);
-    float duration = bytesize_1ch / float(port.freq * port.sampleSize);
-    SDL_Delay(int(duration * 1000)); // Pretending that we playing something
-    return port.samplesNum;
+    if (port->device == 0) {
+      LOG_USE_MODULE(libSceAudioOut);
+      LOG_TRACE(L"Nulled audio port, playing nothing (handle=%d)", handle);
+      float duration = bytesize_1ch / float(port->freq * port->sampleSize);
+      SDL_Delay(int(duration * 1000)); // Pretending that we playing something
+      return port->samplesNum;
+    }
+
+    const size_t bytesize  = bytesize_1ch * port->channelsNum;
+    const int    maxVolume = SDL_MIX_MAXVOLUME * port->volumeModifier;
+    auto&        mixed     = port->mixedAudio;
+    std::fill(mixed.begin(), mixed.end(), 0);
+
+    for (size_t i = 0; i < port->channelsNum; i++) {
+      auto ch_offset = i * bytesize_1ch;
+      SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port->sdlFormat, bytesize_1ch,
+                         maxVolume * ((float)port->volume[i] / AudioOut::VOLUME_0DB));
+    }
+
+    if (SDL_GetAudioDeviceStatus(port->device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port->device, 0);
+
+    int ret = SDL_QueueAudio(port->device, mixed.data(), bytesize);
+
+    while ((ret == 0) && (SDL_GetQueuedAudioSize(port->device) > bytesize * 2))
+      SDL_Delay(0);
+
+    return ret == 0 ? port->samplesNum : Err::AudioOut::TRANS_EVENT;
   }
 
-  const size_t bytesize  = bytesize_1ch * port.channelsNum;
-  const int    maxVolume = SDL_MIX_MAXVOLUME * port.volumeModifier;
-  auto&        mixed     = port.mixedAudio;
-  std::fill(mixed.begin(), mixed.end(), 0);
-
-  for (size_t i = 0; i < port.channelsNum; i++) {
-    auto ch_offset = i * bytesize_1ch;
-    SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port.sdlFormat, bytesize_1ch,
-                       maxVolume * ((float)port.volume[i] / AudioOut::VOLUME_0DB));
-  }
-
-  if (SDL_GetAudioDeviceStatus(port.device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port.device, 0);
-
-  int ret = SDL_QueueAudio(port.device, mixed.data(), bytesize);
-
-  while ((ret == 0) && (SDL_GetQueuedAudioSize(port.device) > bytesize * 2))
-    SDL_Delay(0);
-
-  return ret == 0 ? port.samplesNum : Err::AudioOut::TRANS_EVENT;
+  return Err::AudioOut::NOT_OPENED;
 }
 } // namespace
 
@@ -104,9 +163,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   auto pimpl = getData();
 
   static std::unordered_map<SceAudioOutPortType, const char*> devnames = {
-      {SceAudioOutPortType::NULLDEV, "NULL"}, {SceAudioOutPortType::MAIN, "Main"},         {SceAudioOutPortType::BGM, "Background Music"},
-      {SceAudioOutPortType::VOICE, "Voice"},  {SceAudioOutPortType::PERSONAL, "Personal"}, {SceAudioOutPortType::PADSPK, "PadSpk"},
-      {SceAudioOutPortType::AUX, "AUX"},
+      {SceAudioOutPortType::MAIN, "Main"},         {SceAudioOutPortType::BGM, "Background Music"}, {SceAudioOutPortType::VOICE, "Voice"},
+      {SceAudioOutPortType::PERSONAL, "Personal"}, {SceAudioOutPortType::PADSPK, "PadSpk"},        {SceAudioOutPortType::AUX, "AUX"},
   };
 
   auto getDevName = [](SceAudioOutPortType type) {
@@ -117,66 +175,61 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
   boost::unique_lock const lock(pimpl->mutexInt);
 
-  for (int id = 0; id < pimpl->portsOut.size(); id++) {
-    auto& port = pimpl->portsOut[id];
-    if (port.open) continue;
-
-    port.userId         = userId;
-    port.open           = true;
-    port.type           = type;
-    port.samplesNum     = len;
-    port.freq           = freq;
-    port.format         = format;
-    port.lastOutputTime = 0;
+  int handle;
+  if (auto port = pimpl->portsOut.AcquirePort(type, &handle)) {
+    port->userId     = userId;
+    port->samplesNum = len;
+    port->freq       = freq;
+    port->format     = format;
 
     switch (format) {
       case SceAudioOutParamFormat::S16_MONO:
-        port.sdlFormat   = AUDIO_S16;
-        port.channelsNum = 1;
-        port.sampleSize  = 2;
+        port->sdlFormat   = AUDIO_S16;
+        port->channelsNum = 1;
+        port->sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_MONO:
-        port.sdlFormat   = AUDIO_F32;
-        port.channelsNum = 1;
-        port.sampleSize  = 4;
+        port->sdlFormat   = AUDIO_F32;
+        port->channelsNum = 1;
+        port->sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_STEREO:
-        port.sdlFormat   = AUDIO_S16;
-        port.channelsNum = 2;
-        port.sampleSize  = 2;
+        port->sdlFormat   = AUDIO_S16;
+        port->channelsNum = 2;
+        port->sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_STEREO:
-        port.sdlFormat   = AUDIO_F32;
-        port.channelsNum = 2;
-        port.sampleSize  = 4;
+        port->sdlFormat   = AUDIO_F32;
+        port->channelsNum = 2;
+        port->sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH:
-        port.sdlFormat   = AUDIO_S16;
-        port.channelsNum = 8;
-        port.sampleSize  = 2;
+        port->sdlFormat   = AUDIO_S16;
+        port->channelsNum = 8;
+        port->sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH:
-        port.sdlFormat   = AUDIO_F32;
-        port.channelsNum = 8;
-        port.sampleSize  = 4;
+        port->sdlFormat   = AUDIO_F32;
+        port->channelsNum = 8;
+        port->sampleSize  = 4;
         break;
       case SceAudioOutParamFormat::S16_8CH_STD:
-        port.sdlFormat   = AUDIO_S16;
-        port.channelsNum = 8;
-        port.sampleSize  = 2;
+        port->sdlFormat   = AUDIO_S16;
+        port->channelsNum = 8;
+        port->sampleSize  = 2;
         break;
       case SceAudioOutParamFormat::FLOAT_8CH_STD:
-        port.sdlFormat   = AUDIO_F32;
-        port.channelsNum = 8;
-        port.sampleSize  = 4;
+        port->sdlFormat   = AUDIO_F32;
+        port->channelsNum = 8;
+        port->sampleSize  = 4;
         break;
     }
 
     SDL_AudioSpec fmt {
         .freq     = static_cast<int>(freq),
-        .format   = port.sdlFormat,
-        .channels = static_cast<uint8_t>(port.channelsNum),
-        .samples  = static_cast<uint16_t>(port.samplesNum),
+        .format   = port->sdlFormat,
+        .channels = static_cast<uint8_t>(port->channelsNum),
+        .samples  = static_cast<uint16_t>(port->samplesNum),
         .callback = nullptr,
         .userdata = nullptr,
     };
@@ -186,10 +239,10 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::AUDIO);
 
     try {
-      (*jData)["volume"].get_to(port.volumeModifier);
+      (*jData)["volume"].get_to(port->volumeModifier);
     } catch (const json::exception& e) {
       LOG_ERR(L"Invalid audio volume setting: %S", e.what());
-      port.volumeModifier = 0.5f;
+      port->volumeModifier = 0.5f;
     }
 
     if (type == SceAudioOutPortType::PADSPK) {
@@ -197,21 +250,21 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
       if (devn == "[null]") {
         LOG_INFO(L"Pad speaker for user #%d is nulled!", userId);
-        port.type = SceAudioOutPortType::NULLDEV;
-        return id + 1;
+        port->device = 0;
+        return handle;
       } else {
         try {
           devn.get_to(jdname);
           dname = jdname.c_str();
         } catch (const json::exception& e) {
           LOG_ERR(L"Failed to get pad speaker audio device for user #%d, nulling it", userId);
-          port.type = SceAudioOutPortType::NULLDEV;
-          return id + 1;
+          port->device = 0;
+          return handle;
         }
       }
 
-      for (int i = 0; i < port.channelsNum; i++) {
-        port.volume[i] = AudioOut::VOLUME_0DB;
+      for (int i = 0; i < port->channelsNum; i++) {
+        port->volume[i] = AudioOut::VOLUME_0DB;
       }
     } else {
       if ((*jData)["device"] == "[default]") {
@@ -219,8 +272,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
       } else if ((*jData)["device"] == "[null]") {
         LOG_INFO(L"%S audio output device is nulled!", getDevName(type));
-        port.type = SceAudioOutPortType::NULLDEV;
-        return id + 1;
+        port->device = 0;
+        return handle;
       } else {
         try {
           (*jData)["device"].get_to(jdname);
@@ -231,19 +284,19 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         }
       }
 
-      for (int i = 0; i < port.channelsNum; i++) {
-        port.volume[i] = AudioOut::VOLUME_0DB;
+      for (int i = 0; i < port->channelsNum; i++) {
+        port->volume[i] = AudioOut::VOLUME_0DB;
       }
     }
 
-    if ((port.device = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0)) == 0) {
+    if ((port->device = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0)) == 0) {
       LOG_ERR(L"%S audio device initialization failed: %S", getDevName(type), SDL_GetError());
       return Err::AudioOut::INVALID_PARAM;
     }
 
     LOG_INFO(L"%S audio device %S opened for user #%d", getDevName(type), dname, userId);
-    port.mixedAudio.resize(port.sampleSize * port.samplesNum * port.channelsNum);
-    return id + 1;
+    port->mixedAudio.resize(port->sampleSize * port->samplesNum * port->channelsNum);
+    return handle;
   }
 
   return Err::AudioOut::PORT_FULL;
@@ -255,18 +308,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
   auto pimpl = getData();
 
   boost::unique_lock const lock(pimpl->mutexInt);
-
-  auto& port = pimpl->portsOut[handle - 1];
-  if (port.open) {
-    port.open = false;
-
-    if (port.device > 0) {
-      port.mixedAudio.clear();
-      SDL_CloseAudioDevice(port.device);
-    }
-  }
-
-  return Ok;
+  return pimpl->portsOut.UnacquirePort(handle);
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
@@ -282,27 +324,28 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
 
   boost::unique_lock const lock(pimpl->mutexInt);
 
-  auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::AudioOut::NOT_OPENED;
+  if (auto port = pimpl->portsOut.GetPort(handle)) {
+    for (int i = 0; i < port->channelsNum; i++, flag >>= 1u) {
+      bool const bit = flag & 0x1u;
+      if (!bit) continue;
 
-  for (int i = 0; i < port.channelsNum; i++, flag >>= 1u) {
-    bool const bit = flag & 0x1u;
-    if (!bit) continue;
-
-    int srcIndex = i;
-    if (port.format == SceAudioOutParamFormat::FLOAT_8CH_STD || port.format == SceAudioOutParamFormat::S16_8CH_STD) {
-      switch (i) {
-        case 4: srcIndex = 6; break;
-        case 5: srcIndex = 7; break;
-        case 6: srcIndex = 4; break;
-        case 7: srcIndex = 5; break;
-        default:;
+      int srcIndex = i;
+      if (port->format == SceAudioOutParamFormat::FLOAT_8CH_STD || port->format == SceAudioOutParamFormat::S16_8CH_STD) {
+        switch (i) {
+          case 4: srcIndex = 6; break;
+          case 5: srcIndex = 7; break;
+          case 6: srcIndex = 4; break;
+          case 7: srcIndex = 5; break;
+          default:;
+        }
       }
+      port->volume[i] = vol[srcIndex];
+      LOG_DEBUG(L"port.volume[%d] volume[%d] (%d)", i, srcIndex, vol[srcIndex]);
     }
-    port.volume[i] = vol[srcIndex];
-    LOG_DEBUG(L"port.volume[%d] volume[%d] (%d)", i, srcIndex, vol[srcIndex]);
+    return Ok;
   }
-  return Ok;
+
+  return Err::AudioOut::NOT_OPENED;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
@@ -320,10 +363,12 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* o
 
   boost::unique_lock const lock(pimpl->mutexInt);
 
-  auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::AudioOut::NOT_OPENED;
-  *outputTime = port.lastOutputTime;
-  return Ok;
+  if (auto port = pimpl->portsOut.GetPort(handle)) {
+    *outputTime = port->lastOutputTime;
+    return Ok;
+  }
+
+  return Err::AudioOut::NOT_OPENED;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mixLevel) {
@@ -331,11 +376,13 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mix
 
   boost::unique_lock const lock(pimpl->mutexInt);
 
-  auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::AudioOut::NOT_OPENED;
-  if (port.type != SceAudioOutPortType::PADSPK) return Err::AudioOut::INVALID_PORT_TYPE;
+  if (auto port = pimpl->portsOut.GetPort(handle)) {
+    if (port->type != SceAudioOutPortType::PADSPK) return Err::AudioOut::INVALID_PORT_TYPE;
+    // todo ???
+    return Ok;
+  }
 
-  return Ok;
+  return Err::AudioOut::NOT_OPENED;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortState* state) {
@@ -343,14 +390,14 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortS
 
   boost::unique_lock const lock(pimpl->mutexInt);
 
-  auto& port = pimpl->portsOut[handle - 1];
-  if (!port.open) return Err::AudioOut::NOT_OPENED;
+  if (auto port = pimpl->portsOut.GetPort(handle)) {
+    state->channel = port->channelsNum;
+    state->volume  = 127;
+    state->output  = (uint16_t)SceAudioOutStateOutput::CONNECTED_PRIMARY;
+    return Ok;
+  }
 
-  state->channel = port.channelsNum;
-  state->volume  = 127;
-  state->output  = (uint16_t)SceAudioOutStateOutput::CONNECTED_PRIMARY;
-
-  return Ok;
+  return Err::AudioOut::NOT_OPENED;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state) {
