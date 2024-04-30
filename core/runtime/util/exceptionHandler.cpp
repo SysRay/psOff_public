@@ -1,6 +1,8 @@
 #include "exceptionHandler.h"
 
 #include "../runtimeLinker.h"
+#include "core/memory/memory.h"
+#include "core/runtime/util/virtualmemory.h"
 #include "logging.h"
 
 #include <boost/stacktrace.hpp>
@@ -16,7 +18,33 @@ LOG_DEFINE_MODULE(ExceptionHandler);
 
 namespace {
 
+struct UnwindInfo {
+  uint8_t Version : 3;
+  uint8_t Flags   : 5;
+  uint8_t SizeOfProlog;
+  uint8_t CountOfCodes;
+  uint8_t FrameRegister : 4;
+  uint8_t FrameOffset   : 4;
+  ULONG   ExceptionHandler;
+  void*   ExceptionData;
+};
+
+struct JmpHandlerData {
+  void setHandler(uint64_t func) { *(uint64_t*)(&m_code[2]) = func; }
+
+  // mov rax, 0x1122334455667788
+  // jmp rax
+  uint8_t m_code[16] = {0x48, 0xB8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0xFF, 0xE0};
+};
+
+struct ExData {
+  JmpHandlerData   handlerCode;
+  RUNTIME_FUNCTION runtimeFunction;
+  UnwindInfo       unwindInfo;
+};
+
 std::optional<std::pair<uint64_t, std::string>> findModule(uint64_t address) {
+
   std::unordered_map<uint64_t, std::string> modules;
 
   HANDLE  hProcess = GetCurrentProcess();
@@ -94,13 +122,12 @@ void stackTrace(uint64_t addr) {
 
 enum class AccessViolationType { Unknown, Read, Write, Execute };
 
-LONG WINAPI DefaultExceptionHandler(PEXCEPTION_POINTERS exception) {
+static EXCEPTION_DISPOSITION DefaultExceptionHandler(PEXCEPTION_RECORD   exception_record, ULONG64 /*EstablisherFrame*/, PCONTEXT /*ContextRecord*/,
+                                                     PDISPATCHER_CONTEXT dispatcher_context) {
   LOG_USE_MODULE(ExceptionHandler);
 
-  PEXCEPTION_RECORD exceptionRecord = exception->ExceptionRecord;
-
-  auto exceptionAddr = (uint64_t)(exceptionRecord->ExceptionAddress);
-  auto violationAddr = exceptionRecord->ExceptionInformation[1];
+  auto exceptionAddr = (uint64_t)(exception_record->ExceptionAddress);
+  auto violationAddr = exception_record->ExceptionInformation[1];
 
   stackTrace(exceptionAddr);
 
@@ -114,7 +141,7 @@ LONG WINAPI DefaultExceptionHandler(PEXCEPTION_POINTERS exception) {
   }
 
   AccessViolationType violationType;
-  switch (exceptionRecord->ExceptionInformation[0]) {
+  switch (exception_record->ExceptionInformation[0]) {
     case 0: violationType = AccessViolationType::Read; break;
     case 1: violationType = AccessViolationType::Write; break;
     case 8: violationType = AccessViolationType::Execute; break;
@@ -125,27 +152,38 @@ LONG WINAPI DefaultExceptionHandler(PEXCEPTION_POINTERS exception) {
            violationAddr, (violationAddr == accessRuntimeLinker().getAddrInvalidMemory() ? L"(Unpatched object)" : L""), baseAddr, moduleName.data());
   //);
 
-  return EXCEPTION_CONTINUE_EXECUTION;
+  return ExceptionContinueExecution;
 }
 
-std::once_flag INSTALL_FLAG;
 } // namespace
 
 namespace ExceptionHandler {
+uint64_t getAllocSize() {
+  return sizeof(ExData);
+}
 
-std::unique_ptr<uint8_t[]> install(uint64_t imageAddr, uint64_t imageSize) {
-  auto funcTableData = std::make_unique<uint8_t[]>(sizeof(RUNTIME_FUNCTION));
+void install(uint64_t imageAddr, uint64_t handlerDstAddr, uint64_t imageSize) {
+  auto functionTable = new ((void*)handlerDstAddr) ExData;
 
-  auto functionTable = (RUNTIME_FUNCTION*)funcTableData.get();
+  auto& func        = functionTable->runtimeFunction;
+  func.BeginAddress = 0;
+  func.EndAddress   = imageSize;
+  func.UnwindData   = (uint64_t)&functionTable->unwindInfo - imageAddr;
 
-  functionTable->BeginAddress = 0;
-  functionTable->EndAddress   = imageSize;
-  functionTable->UnwindData   = 0;
+  auto& unwindData            = functionTable->unwindInfo;
+  unwindData.Version          = 1;
+  unwindData.Flags            = UNW_FLAG_EHANDLER;
+  unwindData.SizeOfProlog     = 0;
+  unwindData.CountOfCodes     = 0;
+  unwindData.FrameRegister    = 0;
+  unwindData.FrameOffset      = 0;
+  unwindData.ExceptionHandler = (uint64_t)&functionTable->handlerCode - imageAddr;
+  unwindData.ExceptionData    = nullptr;
 
-  RtlAddFunctionTable(functionTable, 1, imageAddr);
+  functionTable->handlerCode.setHandler((uint64_t)DefaultExceptionHandler);
 
-  std::call_once(INSTALL_FLAG, [] { AddVectoredExceptionHandler(1, DefaultExceptionHandler); });
+  RtlAddFunctionTable(&functionTable->runtimeFunction, 1, imageAddr);
 
-  return funcTableData;
+  flushInstructionCache((uint64_t)&functionTable->handlerCode, sizeof(JmpHandlerData));
 }
 } // namespace ExceptionHandler
