@@ -7,7 +7,6 @@
 #include <array>
 #include <chrono>
 #include <mutex>
-#include <unordered_map>
 
 LOG_DEFINE_MODULE(libSceAudioOut);
 
@@ -162,15 +161,16 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
 
-  static std::unordered_map<SceAudioOutPortType, const char*> devnames = {
-      {SceAudioOutPortType::MAIN, "Main"},         {SceAudioOutPortType::BGM, "Background Music"}, {SceAudioOutPortType::VOICE, "Voice"},
-      {SceAudioOutPortType::PERSONAL, "Personal"}, {SceAudioOutPortType::PADSPK, "PadSpk"},        {SceAudioOutPortType::AUX, "AUX"},
-  };
-
   auto getDevName = [](SceAudioOutPortType type) {
-    auto it = devnames.find(type);
-    if (it == devnames.end()) return "Unknown";
-    return it->second;
+    switch (type) {
+      case SceAudioOutPortType::MAIN: return "Main";
+      case SceAudioOutPortType::BGM: return "Background Music";
+      case SceAudioOutPortType::VOICE: return "Voice";
+      case SceAudioOutPortType::PERSONAL: return "Personal";
+      case SceAudioOutPortType::PADSPK: return "PadSpeaker";
+      case SceAudioOutPortType::AUX: return "AUX";
+      default: return "Unknown";
+    }
   };
 
   boost::unique_lock const lock(pimpl->mutexInt);
