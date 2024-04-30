@@ -1085,7 +1085,7 @@ bool Parser_ELF64::init() {
 void Parser_ELF64::getAllocInfo(uint64_t& baseSize, uint64_t& baseSizeAligned, uint64_t& sizeAlloc) {
   baseSize        = calcBaseSize(m_elfHeader, m_progHeader);
   baseSizeAligned = (baseSize & ~(static_cast<uint64_t>(0x1000) - 1)) + 0x1000;
-  sizeAlloc       = baseSizeAligned;
+  sizeAlloc       = baseSizeAligned + ExceptionHandler::getAllocSize();
 }
 
 bool Parser_ELF64::load2Mem(Program* prog) {
@@ -1114,15 +1114,15 @@ bool Parser_ELF64::load2Mem(Program* prog) {
   bool const shared = isShared();
   // bool const nextGen = isNextGen();
 
-  prog->baseVaddr = memory::alloc(prog->desiredBaseAddr, prog->allocSize + /*fs_table: */ sizeof(uint64_t) * (1 + fsPatchAddrList.size()),
+  prog->baseVaddr = memory::alloc(prog->desiredBaseAddr, prog->baseSizeAligned + /*fs_table: */ sizeof(uint64_t) * (1 + fsPatchAddrList.size()),
                                   SceProtExecute | SceProtRead | SceProtWrite);
 
   printf("[%llu] %S| Image allocation, addr:0x%08llx size:0x%08llx\n", prog->id, m_filename.c_str(), prog->baseVaddr, prog->allocSize);
   LOG_DEBUG(L"[%llu] %s| Image allocation, addr:0x%08llx(0x%08llx) size:0x%08llx", prog->id, m_filename.c_str(), prog->baseVaddr, prog->desiredBaseAddr,
             prog->allocSize);
 
-  m_baseVaddr            = prog->baseVaddr;
-  prog->exceptionHandler = ExceptionHandler::install(prog->baseVaddr, prog->baseSize);
+  m_baseVaddr = prog->baseVaddr;
+  ExceptionHandler::install(prog->baseVaddr, (prog->baseVaddr + prog->baseSizeAligned) - ExceptionHandler::getAllocSize(), prog->baseSize);
 
   strcpy_s(prog->moduleInfoEx.name, prog->filename.string().c_str());
   prog->moduleInfoEx.id = prog->id;
@@ -1197,7 +1197,7 @@ bool Parser_ELF64::load2Mem(Program* prog) {
   // ### PATCHING
   // patch fs
   if (!fsPatchAddrList.empty()) {
-    uint64_t const addrFsList = util::alignUp(prog->baseVaddr + prog->allocSize, 64);
+    uint64_t const addrFsList = util::alignUp(prog->baseVaddr + prog->baseSizeAligned, 64);
     prog->trampolines_fs.resize(TRAMP_SIZE * fsPatchAddrList.size());
 
     LOG_DEBUG(L"tramp(fs) table:0x%08llx data:0x%08llx", addrFsList, (uint64_t)prog->trampolines_fs.data());

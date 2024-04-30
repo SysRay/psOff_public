@@ -85,7 +85,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
   }
 
   if (flags.type == SceMapType::ANON) {
-    int result = accessMemoryManager()->flexibleMemory()->map((uint64_t)addr, 0, len, prot, (int&)flags, 0, (uint64_t*)*res); // registers mapping (flexible)
+    int result = accessMemoryManager()->flexibleMemory()->map((uint64_t)addr, 0, len, prot, (int&)flags, 0, (uint64_t*)res); // registers mapping (flexible)
 
     LOG_DEBUG(L"Mmap anon addr:0x%08llx len:0x%08llx prot:%d flags:%d fd:%d offset:%lld -> out:0x%08llx", addr, len, prot, flags, fd, offset, *res);
     return result;

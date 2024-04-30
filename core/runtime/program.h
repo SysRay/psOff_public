@@ -26,8 +26,7 @@ struct RelocateHandlerPayload {
 };
 
 struct Program {
-  std::unique_ptr<uint8_t[]> exceptionHandler;
-  RelocateHandlerPayload     relocatePayload;
+  RelocateHandlerPayload relocatePayload;
 
   uint64_t baseVaddr    = 0;
   uint64_t entryOffAddr = 0;
