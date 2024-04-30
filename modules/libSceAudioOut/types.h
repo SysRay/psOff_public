@@ -11,13 +11,14 @@ struct SceAudioOutOutputParam {
 };
 
 enum class SceAudioOutPortType {
-  MAIN     = 0,  // Main Audio
-  BGM      = 1,  // Background Music
-  VOICE    = 2,  // Voice
-  PERSONAL = 3,  // Personal Audio
-  PADSPK   = 4,  // Pad Speaker
-  AUX      = 127 // Auxiliary Audio
-
+  NULLDEV  = -1,  // Not an actual SCE type, for internal usage only
+  MAIN     = 0,   // Main Audio
+  BGM      = 1,   // Background Music
+  VOICE    = 2,   // Voice
+  PERSONAL = 3,   // Personal Audio
+  PADSPK   = 4,   // Pad Speaker
+  AUX      = 127, // Auxiliary Audio
+  _MAX,
 };
 
 enum class SceAudioOutParamFormat : unsigned int {
