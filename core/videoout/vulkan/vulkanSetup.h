@@ -63,11 +63,13 @@ struct SurfaceCapabilities {
 };
 
 struct VulkanObj {
-  std::shared_ptr<vulkan::DeviceInfo> deviceInfo = std::make_shared<DeviceInfo>();
+  std::shared_ptr<vulkan::DeviceInfo> deviceInfo;
 
   VkDebugUtilsMessengerEXT debugMessenger = nullptr;
   SurfaceCapabilities      surfaceCapabilities;
   Queues                   queues;
+
+  VulkanObj() { deviceInfo = std::make_shared<DeviceInfo>(); }
 };
 
 VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool useValidation);
