@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <array>
 #include <chrono>
+#include <core/videoout/videoout.h>
 #include <mutex>
 
 LOG_DEFINE_MODULE(libSceAudioOut);
@@ -28,6 +29,7 @@ struct PortOut {
   SDL_AudioFormat        sdlFormat      = AUDIO_F32;
   float                  volumeModifier = 0.5f;
   std::vector<uint8_t>   mixedAudio;
+  std::string            deviceName;
 };
 
 class PortsOut {
@@ -39,6 +41,65 @@ class PortsOut {
   static inline uint8_t rangeEnd(uint16_t range) { return range & 0xFF; }
 
   public:
+  PortsOut() {
+    auto handler = [](SDL_Event* event, void* ud) {
+      if (event->adevice.iscapture) return; // Ignoring capture device events
+      PortsOut* self = (PortsOut*)ud;
+      switch (event->type) {
+        case SDL_AUDIODEVICEADDED: self->AlertConnect(event->adevice.which); break;
+
+        case SDL_AUDIODEVICEREMOVED: self->AlertDisconnect(event->adevice.which); break;
+      }
+    };
+
+    accessVideoOut().SDLEventReg(SDL_AUDIODEVICEADDED, handler, this);
+    accessVideoOut().SDLEventReg(SDL_AUDIODEVICEREMOVED, handler, this);
+  }
+
+  void AlertConnect(int devIndex) {
+    LOG_USE_MODULE(libSceAudioOut);
+    auto devName = SDL_GetAudioDeviceName(devIndex, 0);
+
+    for (int i = 0; i < m_ports.size(); i++) {
+      auto& port = m_ports[i];
+      if (!port.open || port.device != 0 || port.deviceName.length() == 0) continue;
+      /**
+       * SDL appends to reconnected device's name "(<number>)" string.
+       * So we have to politely ignore it.
+       */
+      if (port.deviceName.compare(0, std::string::npos, devName, 0, port.deviceName.length()) != 0) continue;
+
+      SDL_AudioSpec fmt {
+          .freq     = static_cast<int>(port.freq),
+          .format   = port.sdlFormat,
+          .channels = static_cast<uint8_t>(port.channelsNum),
+          .samples  = static_cast<uint16_t>(port.samplesNum),
+          .callback = nullptr,
+          .userdata = nullptr,
+      };
+
+      if ((port.device = SDL_OpenAudioDevice(devName, 0, &fmt, NULL, 0)) == 0) {
+        LOG_ERR(L"Failed to reopen %S audio device: %S", devName, SDL_GetError());
+        return;
+      }
+
+      LOG_INFO(L"Welcome back, %S!", devName);
+      return;
+    }
+  }
+
+  void AlertDisconnect(int devIndex) {
+    LOG_USE_MODULE(libSceAudioOut);
+    for (int i = 0; i < m_ports.size(); i++) {
+      auto& port = m_ports[i];
+      if (!port.open || (port.device != devIndex)) continue;
+      SDL_CloseAudioDevice(port.device);
+      port.device = 0;
+      LOG_ERR(L"Oh no! %S got disconnected", port.deviceName.c_str());
+      return;
+    }
+  }
+
   PortOut* GetPort(int handle) {
     if (handle < 1 || handle > m_ports.size()) return nullptr;
     auto port = &m_ports[handle - 1];
@@ -90,7 +151,8 @@ struct Pimpl {
 
   boost::mutex mutexInt;
   PortsOut     portsOut;
-  Pimpl() = default;
+
+  Pimpl(): portsOut() {}
 };
 
 Pimpl* getData() {
@@ -267,8 +329,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         port->volume[i] = AudioOut::VOLUME_0DB;
       }
     } else {
+      SDL_AudioSpec fmt_curr;
       if ((*jData)["device"] == "[default]") {
-        SDL_AudioSpec fmt_curr;
         SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
       } else if ((*jData)["device"] == "[null]") {
         LOG_INFO(L"%S audio output device is nulled!", getDevName(type));
@@ -281,6 +343,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         } catch (const json::exception& e) {
           LOG_ERR(L"Invalid audio device name: %S", e.what());
           dname = NULL;
+          SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
         }
       }
 
@@ -296,6 +359,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 
     LOG_INFO(L"%S audio device %S opened for user #%d", getDevName(type), dname, userId);
     port->mixedAudio.resize(port->sampleSize * port->samplesNum * port->channelsNum);
+    port->deviceName.assign(dname);
     return handle;
   }
 
