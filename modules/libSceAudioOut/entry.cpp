@@ -21,6 +21,7 @@ struct PortOut {
   uint8_t                sampleSize     = 0;
   uint32_t               samplesNum     = 0;
   uint32_t               freq           = 0;
+  uint32_t               queued         = 0;
   SceAudioOutParamFormat format         = SceAudioOutParamFormat::FLOAT_MONO;
   uint64_t               lastOutputTime = 0;
   int                    channelsNum    = 0;
@@ -160,45 +161,63 @@ Pimpl* getData() {
   return &obj;
 }
 
-int writeOut(Pimpl* pimpl, int32_t handle, const void* ptr) {
-  if (ptr == nullptr) return 0;
+void syncPort(PortOut* port) {
+  if (port == nullptr || !port->open) return;
+  const uint32_t bytesize_1ch = port->samplesNum * port->sampleSize;
+  const uint32_t bytesize     = bytesize_1ch * port->channelsNum;
 
-  if (auto port = pimpl->portsOut.GetPort(handle)) {
-    using namespace std::chrono;
-    port->lastOutputTime = duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
-
-    const size_t bytesize_1ch = port->samplesNum * port->sampleSize;
-
-    if (port->device == 0) {
-      LOG_USE_MODULE(libSceAudioOut);
-      LOG_TRACE(L"Nulled audio port, playing nothing (handle=%d)", handle);
-      float duration = bytesize_1ch / float(port->freq * port->sampleSize);
-      SDL_Delay(int(duration * 1000)); // Pretending that we playing something
-      return port->samplesNum;
-    }
-
-    const size_t bytesize  = bytesize_1ch * port->channelsNum;
-    const int    maxVolume = SDL_MIX_MAXVOLUME * port->volumeModifier;
-    auto&        mixed     = port->mixedAudio;
-    std::fill(mixed.begin(), mixed.end(), 0);
-
-    for (size_t i = 0; i < port->channelsNum; i++) {
-      auto ch_offset = i * bytesize_1ch;
-      SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port->sdlFormat, bytesize_1ch,
-                         maxVolume * ((float)port->volume[i] / AudioOut::VOLUME_0DB));
-    }
-
-    if (SDL_GetAudioDeviceStatus(port->device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port->device, 0);
-
-    int ret = SDL_QueueAudio(port->device, mixed.data(), bytesize);
-
-    while ((ret == 0) && (SDL_GetQueuedAudioSize(port->device) > bytesize * 2))
-      SDL_Delay(0);
-
-    return ret == 0 ? port->samplesNum : Err::AudioOut::TRANS_EVENT;
+  if (port->device == 0) {
+    float duration = bytesize_1ch / float(port->freq * port->sampleSize);
+    SDL_Delay(int(duration * 1000)); // Pretending that we playing something
+    return;
   }
 
-  return Err::AudioOut::NOT_OPENED;
+  while (port->queued > (bytesize * 2)) {
+    SDL_Delay(0);
+    port->queued = SDL_GetQueuedAudioSize(port->device);
+  }
+}
+
+void clearQueue(PortOut* port) {
+  if (port == nullptr || !port->open || port->device == 0) return;
+  SDL_ClearQueuedAudio(port->device);
+  port->queued = 0;
+}
+
+int writeOut(PortOut* port, const void* ptr, bool sync = true) {
+  if (port == nullptr) return Err::AudioOut::NOT_OPENED;
+  if (ptr == nullptr) return 0;
+
+  using namespace std::chrono;
+  port->lastOutputTime = duration_cast<microseconds>(high_resolution_clock::now().time_since_epoch()).count();
+
+  const uint32_t bytesize_1ch = port->samplesNum * port->sampleSize;
+
+  if (port->device == 0) {
+    LOG_USE_MODULE(libSceAudioOut);
+    LOG_TRACE(L"Nulled audio port, playing nothing (port=%p)", port);
+    if (sync) syncPort(port);
+    return port->samplesNum;
+  }
+
+  const uint32_t bytesize  = bytesize_1ch * port->channelsNum;
+  const int      maxVolume = SDL_MIX_MAXVOLUME * port->volumeModifier;
+  auto&          mixed     = port->mixedAudio;
+  std::fill(mixed.begin(), mixed.end(), 0);
+
+  for (int i = 0; i < port->channelsNum; i++) {
+    auto ch_offset = i * bytesize_1ch;
+    SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port->sdlFormat, bytesize_1ch,
+                       maxVolume * ((float)port->volume[i] / AudioOut::VOLUME_0DB));
+  }
+
+  if (SDL_GetAudioDeviceStatus(port->device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port->device, 0);
+
+  int ret = SDL_QueueAudio(port->device, mixed.data(), bytesize);
+  if (ret == 0) port->queued = SDL_GetQueuedAudioSize(port->device);
+  if (sync) syncPort(port);
+
+  return ret == 0 ? port->samplesNum : Err::AudioOut::TRANS_EVENT;
 }
 } // namespace
 
@@ -379,7 +398,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
   auto pimpl = getData();
 
   // boost::unique_lock const lock(pimpl->mutexInt);
-  return writeOut(pimpl, handle, ptr);
+  return writeOut(pimpl->portsOut.GetPort(handle), ptr);
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32_t* vol) {
@@ -413,12 +432,33 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
+  if (param == nullptr) return Err::AudioOut::INVALID_POINTER;
+  if (num == 0) return Err::AudioOut::PORT_FULL;
   auto pimpl = getData();
 
   // boost::unique_lock const lock(pimpl->mutexInt); // dont block, causes audio artifacts
+  PortOut* firstport = nullptr;
+
   for (uint32_t i = 0; i < num; i++) {
-    if (auto err = writeOut(pimpl, param[i].handle, param[i].ptr); err != 0) return err;
+    auto port = pimpl->portsOut.GetPort(param[i].handle);
+    if (auto err = writeOut(port, param[i].ptr, false); err != 0) {
+      for (uint32_t j = 0; j < num; j++) {
+        clearQueue(pimpl->portsOut.GetPort(param[i].handle));
+      }
+      return err;
+    }
+    if (!firstport)
+      firstport = port;
+    else if ((firstport->freq != port->freq) || (firstport->samplesNum != port->samplesNum) || (firstport->format != port->format))
+      return Err::AudioOut::INVALID_SIZE;
   }
+
+  /**
+   * Passing the audio from SDL to OS. We should do this thing
+   * only once since all the devices playing audio simultaneously.
+   */
+  syncPort(firstport);
+
   return Ok;
 }
 
