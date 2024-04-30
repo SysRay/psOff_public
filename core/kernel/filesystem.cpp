@@ -134,7 +134,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
               offset, GetLastError());
     } else {
       LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
-      accessMemoryManager()->registerMapping((uint64_t)*res, MappingType::File);
+      accessMemoryManager()->registerMapping((uint64_t)*res, len, MappingType::File);
     }
   }
 
