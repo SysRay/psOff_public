@@ -26,10 +26,10 @@ namespace vulkan {
 struct VulkanExtensions {
   bool enableValidationLayers = true;
 
-  std::vector<const char*> requiredExtensions;
+  std::list<std::string> requiredExtensions;
 
   std::vector<VkExtensionProperties> availableExtensions;
-  std::vector<const char*>           requiredLayers;
+  std::list<std::string>             requiredLayers;
   std::vector<VkLayerProperties>     availableLayers;
 };
 
@@ -118,7 +118,9 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
   VulkanExtensions r = {.enableValidationLayers = enableValidation};
 
   SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, NULL);
+
   auto extensions = static_cast<const char**>(SDL_malloc(sizeof(char*) * countRequiredExtensions));
+
   SDL_Vulkan_GetInstanceExtensions(window, &countRequiredExtensions, extensions);
   for (size_t n = 0; n < countRequiredExtensions; n++) {
     r.requiredExtensions.push_back(extensions[n]);
@@ -136,8 +138,8 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
     r.enableValidationLayers = false;
   }
 
-  for (size_t n = 0; n < r.requiredExtensions.size(); ++n) {
-    LOG_INFO(L"SDL2 required extension: %S", r.requiredExtensions[n]);
+  for (auto& ext: r.requiredExtensions) {
+    LOG_INFO(L"SDL2 required extension: %S", ext.c_str());
   }
 
   for (const auto& ext: r.availableExtensions) {
@@ -156,8 +158,9 @@ VulkanExtensions getExtensions(SDL_Window* window, bool enableValidation) {
   if (r.enableValidationLayers) {
     r.requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
     for (auto const l: r.requiredLayers) {
-      if (std::find_if(r.availableLayers.begin(), r.availableLayers.end(), [&l](auto s) { return strcmp(s.layerName, l) == 0; }) == r.availableLayers.end()) {
-        LOG_INFO(L"no validation layer:%S", l);
+      if (std::find_if(r.availableLayers.begin(), r.availableLayers.end(), [&l](auto s) { return strcmp(s.layerName, l.c_str()) == 0; }) ==
+          r.availableLayers.end()) {
+        LOG_INFO(L"no validation layer:%S", l.c_str());
         r.enableValidationLayers = false;
         break;
       }
@@ -651,14 +654,21 @@ VkDevice createDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, Vul
       .provokingVertexLast = VK_TRUE,
   };
 
+  std::vector<const char*> reqLayers;
+  reqLayers.reserve(1 + extensions.requiredLayers.size());
+
+  for (auto& req: extensions.requiredLayers) {
+    reqLayers.push_back(req.c_str());
+  }
+
   VkDeviceCreateInfo const createInfo {
       .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
       .pNext                   = &provVertex,
       .flags                   = 0,
       .queueCreateInfoCount    = numQueueCreateInfo,
       .pQueueCreateInfos       = queueCreateInfo.data(),
-      .enabledLayerCount       = (uint32_t)extensions.requiredLayers.size(),
-      .ppEnabledLayerNames     = extensions.requiredLayers.data(),
+      .enabledLayerCount       = (uint32_t)reqLayers.size(),
+      .ppEnabledLayerNames     = reqLayers.data(),
       .enabledExtensionCount   = requiredExtensions.size(),
       .ppEnabledExtensionNames = requiredExtensions.data(),
       .pEnabledFeatures        = &deviceFeatures,
@@ -696,22 +706,36 @@ VulkanObj* initVulkan(SDL_Window* window, VkSurfaceKHR& surface, bool enableVali
       .pNext              = nullptr,
       .pApplicationName   = "psOff",
       .applicationVersion = 1,
-      .pEngineName        = "psEngine",
+      .pEngineName        = "psOff_render",
       .engineVersion      = 1,
       .apiVersion         = VK_API_VERSION_1_3,
   };
 
   auto extensions = getExtensions(window, enableValidation);
 
+  std::vector<const char*> reqLayers;
+  reqLayers.reserve(1 + extensions.requiredLayers.size());
+
+  for (auto& req: extensions.requiredLayers) {
+    reqLayers.push_back(req.c_str());
+  }
+
+  std::vector<const char*> reqExt;
+  reqExt.reserve(1 + extensions.requiredLayers.size());
+
+  for (auto& req: extensions.requiredExtensions) {
+    reqExt.push_back(req.c_str());
+  }
+
   VkInstanceCreateInfo const instInfo {
       .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
       .pNext                   = extensions.enableValidationLayers ? &dbgCreateInfo : nullptr,
       .flags                   = 0,
       .pApplicationInfo        = &appInfo,
-      .enabledLayerCount       = (uint32_t)extensions.requiredLayers.size(),
-      .ppEnabledLayerNames     = extensions.requiredLayers.data(),
-      .enabledExtensionCount   = (uint32_t)extensions.requiredExtensions.size(),
-      .ppEnabledExtensionNames = extensions.requiredExtensions.data(),
+      .enabledLayerCount       = (uint32_t)reqLayers.size(),
+      .ppEnabledLayerNames     = reqLayers.data(),
+      .enabledExtensionCount   = (uint32_t)reqExt.size(),
+      .ppEnabledExtensionNames = reqExt.data(),
   };
 
   if (VkResult result = vkCreateInstance(&instInfo, nullptr, &obj->deviceInfo->instance); result != VK_SUCCESS) {
