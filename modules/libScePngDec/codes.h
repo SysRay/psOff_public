@@ -14,5 +14,9 @@ constexpr int32_t FATAL          = -2140602336;
 } // namespace PngDec
 } // namespace Err
 
-constexpr uint8_t SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE  = 1;
-constexpr uint8_t SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST = 2;
+namespace PngDec {
+namespace ImageFlag {
+constexpr uint8_t ADAM7_INTERLACE  = 1;
+constexpr uint8_t TRNS_CHUNK_EXIST = 2;
+} // namespace ImageFlag
+}; // namespace PngDec
