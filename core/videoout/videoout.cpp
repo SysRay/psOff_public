@@ -163,6 +163,51 @@ std::string getTitle(int handle, uint64_t frame, size_t fps, FlipRate maxFPS) {
 
 } // namespace
 
+class EventSDL {
+  struct SDLEvent {
+    uint32_t     type;
+    SDLEventFunc func;
+    void*        userData;
+  };
+
+  std::vector<SDLEvent> m_events = {};
+
+  public:
+  void addListener(uint32_t type, SDLEventFunc func, void* userData) { m_events.push_back({type, func, userData}); }
+
+  bool removeListener(uint32_t type, SDLEventFunc func) {
+    for (auto it = m_events.begin(); it != m_events.end(); ++it) {
+      if (it->type == type && it->func == func) {
+        m_events.erase(it);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool removeListener(SDLEventFunc func) {
+    bool removed = false;
+
+    for (auto it = m_events.begin(); it != m_events.end();) {
+      if (it->func == func) {
+        it = m_events.erase(it);
+        continue;
+      }
+
+      ++it;
+    }
+
+    return removed;
+  }
+
+  void call(SDL_Event* event) {
+    for (auto& handler: m_events) {
+      if (event->type == handler.type) handler.func(event, handler.userData);
+    }
+  }
+};
+
 class VideoOut: public IVideoOut, private IEventsGraphics {
   std::array<Context, WindowsMAX> m_windows;
 
@@ -184,7 +229,15 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
   std::queue<Message> m_messages;
 
+  EventSDL m_sdlEvents;
+
   uint64_t m_vblankTime = (uint64_t)(1e6 / 59.0); // in us
+
+  void SDLEventReg(uint32_t type, SDLEventFunc func, void* userData) { m_sdlEvents.addListener(type, func, userData); }
+
+  bool SDLEventUnreg(uint32_t type, SDLEventFunc func) { return m_sdlEvents.removeListener(type, func); }
+
+  bool SDLEventUnreg(SDLEventFunc func) { return m_sdlEvents.removeListener(func); }
 
   void vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime);
 
@@ -782,7 +835,7 @@ std::thread VideoOut::createSDLThread() {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     // SDL polling helper
-    auto func_pollSDL = [](auto& window) {
+    auto func_pollSDL = [this](auto& window) {
       SDL_Event event;
       while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -800,6 +853,8 @@ std::thread VideoOut::createSDLThread() {
 
           default: break;
         }
+
+        m_sdlEvents.call(&event);
       }
     };
     // -

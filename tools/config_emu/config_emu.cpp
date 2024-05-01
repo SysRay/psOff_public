@@ -216,11 +216,13 @@ Config::Config() {
 
   json defprofiles = json::array();
   json defpads     = json::array();
+  json defspeakers = json::array();
 
   static const char* colors[4] = {"blue", "red", "green", "pink"};
 
   for (int i = 0; i < 4; i++) {
     defprofiles[i] = {{"name", std::format("Anon #{}", i + 1)}, {"color", colors[i]}};
+    defspeakers[i] = "[null]";
     defpads[i]     = {
         {"type", "sdl"},
         {"deadzones",
@@ -241,8 +243,9 @@ Config::Config() {
       json({{"$schema", "./.schemas/graphics.json"}, {"display", 0u}, {"fullscreen", false}, {"width", 1920u}, {"height", 1080u}, {"xpos", -1}, {"ypos", -1}}),
       ConfigModFlag::GRAPHICS);
 
-  m_audio._future = std::async(std::launch::async | std::launch::deferred, load, &m_audio,
-                               json({{"$schema", "./.schemas/audio.json"}, {"device", "[default]"}, {"volume", 0.5f}}), ConfigModFlag::AUDIO);
+  m_audio._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_audio,
+                 json({{"$schema", "./.schemas/audio.json"}, {"device", "[default]"}, {"padspeakers", defspeakers}, {"volume", 0.5f}}), ConfigModFlag::AUDIO);
 
   m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
                                   json({

@@ -7,12 +7,15 @@
 
 namespace vulkan {
 struct SwapchainData;
-}
+} // namespace vulkan
 
 constexpr int VIDEO_OUT_EVENT_FLIP   = 0;
 constexpr int VIDEO_OUT_EVENT_VBLANK = 1;
 
 class IGraphics;
+union SDL_Event;
+
+typedef void (*SDLEventFunc)(SDL_Event*, void*);
 
 class IVideoOut {
   CLASS_NO_COPY(IVideoOut);
@@ -153,6 +156,32 @@ class IVideoOut {
    * @return 0: success
    */
   virtual int SDLInit(uint32_t flags) = 0;
+
+  /**
+   * @brief Register SDL event listener
+   *
+   * @param type
+   * @param eventFunc
+   * @return int
+   */
+  virtual void SDLEventReg(uint32_t type, SDLEventFunc eventFunc, void* userData) = 0;
+
+  /**
+   * @brief Unrgister SDL event listener by type and function pointer
+   *
+   * @param type
+   * @param eventFunc
+   * @return int
+   */
+  virtual bool SDLEventUnreg(uint32_t type, SDLEventFunc eventFunc) = 0;
+
+  /**
+   * @brief Unrgister all the SDL event listeners by function pointer
+   *
+   * @param eventFunc
+   * @return int
+   */
+  virtual bool SDLEventUnreg(SDLEventFunc eventFunc) = 0;
 
   /**
    * @brief Notify a gpu visible memory range
