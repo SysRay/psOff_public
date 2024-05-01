@@ -237,7 +237,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   return Err::AudioOut::OUT_OF_MEMORY;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, SceAudioOutParamFormat format) {
+EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, uint32_t param) {
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
@@ -261,9 +261,9 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     port->userId     = userId;
     port->samplesNum = len;
     port->freq       = freq;
-    port->format     = format;
+    port->format     = SceAudioOutParamFormat(param & 0x000000FE);
 
-    switch (format) {
+    switch (port->format) {
       case SceAudioOutParamFormat::S16_MONO:
         port->sdlFormat   = AUDIO_S16;
         port->channelsNum = 1;
@@ -306,15 +306,6 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         break;
     }
 
-    SDL_AudioSpec fmt {
-        .freq     = static_cast<int>(freq),
-        .format   = port->sdlFormat,
-        .channels = static_cast<uint8_t>(port->channelsNum),
-        .samples  = static_cast<uint16_t>(port->samplesNum),
-        .callback = nullptr,
-        .userdata = nullptr,
-    };
-
     std::string jdname; // Device name from JSON
     const char* dname;  // Actual device name that will be passed to SDL
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::AUDIO);
@@ -345,7 +336,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       }
 
       for (int i = 0; i < port->channelsNum; i++) {
-        port->volume[i] = AudioOut::VOLUME_0DB;
+        port->volume[i] = AudioOut::MIXLEVEL_PADSPK_0DB;
       }
     } else {
       SDL_AudioSpec fmt_curr;
@@ -370,6 +361,15 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         port->volume[i] = AudioOut::VOLUME_0DB;
       }
     }
+
+    SDL_AudioSpec fmt {
+        .freq     = static_cast<int>(freq),
+        .format   = port->sdlFormat,
+        .channels = static_cast<uint8_t>(port->channelsNum),
+        .samples  = static_cast<uint16_t>(port->samplesNum),
+        .callback = nullptr,
+        .userdata = nullptr,
+    };
 
     if ((port->device = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0)) == 0) {
       LOG_ERR(L"%S audio device initialization failed: %S", getDevName(type), SDL_GetError());
