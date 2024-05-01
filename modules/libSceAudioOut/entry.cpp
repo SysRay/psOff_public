@@ -341,7 +341,11 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     } else {
       SDL_AudioSpec fmt_curr;
       if ((*jData)["device"] == "[default]") {
-        SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
+        if (SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0) != 0) {
+          LOG_ERR(L"Failed to get the default audio device, port #%d is nulled! (%S)", handle, SDL_GetError());
+          port->device = 0;
+          return handle;
+        }
       } else if ((*jData)["device"] == "[null]") {
         LOG_INFO(L"%S audio output device is nulled!", getDevName(type));
         port->device = 0;
@@ -351,9 +355,13 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
           (*jData)["device"].get_to(jdname);
           dname = jdname.c_str();
         } catch (const json::exception& e) {
-          LOG_ERR(L"Invalid audio device name: %S", e.what());
+          LOG_ERR(L"Invalid audio device name: %S, falling back to default", e.what());
           dname = NULL;
-          SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0);
+          if (SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0) != 0) {
+            LOG_ERR(L"Falling back to default device failed, port #%d is nulled! (%S)", handle, SDL_GetError());
+            port->device = 0;
+            return handle;
+          }
         }
       }
 
@@ -372,11 +380,13 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     };
 
     if ((port->device = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0)) == 0) {
-      LOG_ERR(L"%S audio device initialization failed: %S", getDevName(type), SDL_GetError());
-      return Err::AudioOut::INVALID_PARAM;
+      LOG_ERR(L"Failed to open %S audio device: %S", getDevName(type), SDL_GetError());
+      // Since audio connect/disconnect event is implemented now, we can fall through there.
+      // The audio device will be opened automatically when available.
+    } else {
+      LOG_INFO(L"%S audio device %S opened for user #%d", getDevName(type), dname, userId);
     }
 
-    LOG_INFO(L"%S audio device %S opened for user #%d", getDevName(type), dname, userId);
     port->mixedAudio.resize(port->sampleSize * port->samplesNum * port->channelsNum);
     port->deviceName.assign(dname);
     return handle;
