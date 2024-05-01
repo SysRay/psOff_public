@@ -36,6 +36,8 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libScePngDec";
 
 EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam* param, void* mem, uint32_t size, ScePngDecHandle* handle) {
+  if (param == nullptr) return Err::PngDec::INVALID_PARAM;
+  if (handle == nullptr) return Err::PngDec::INVALID_HANDLE;
   if (mem == nullptr) return Err::PngDec::INVALID_ADDR;
   if (size < sizeof(_PngHandle)) return Err::PngDec::INVALID_SIZE;
   auto pngh = (_PngHandle*)mem;
@@ -55,7 +57,7 @@ EXPORT SYSV_ABI int32_t scePngDecCreate(const ScePngDecCreateParam* param, void*
 
 EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecDecodeParam* param, ScePngDecImageInfo* ii) {
   LOG_USE_MODULE(libScePngDec);
-  if (param->pngAddr == nullptr || param->imageAddr == nullptr) return Err::PngDec::INVALID_ADDR;
+  if (param == nullptr || param->pngAddr == nullptr || param->imageAddr == nullptr) return Err::PngDec::INVALID_ADDR;
   if (param->pngSize < 8) return Err::PngDec::INVALID_SIZE;
   if (png_sig_cmp((png_const_bytep)param->pngAddr, 0, 8) != 0) return Err::PngDec::INVALID_DATA;
   if (handle == nullptr) return Err::PngDec::INVALID_HANDLE;
@@ -91,8 +93,8 @@ EXPORT SYSV_ABI int32_t scePngDecDecode(ScePngDecHandle handle, const ScePngDecD
     ii->imageHeight = h;
     ii->imageFlag   = 0;
     ii->colorSpace  = map_png_color(ct);
-    if (in == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
-    if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
+    if (in == 1) ii->imageFlag |= PngDec::ImageFlag::ADAM7_INTERLACE;
+    if (png_get_valid(pngh->png, pngh->info, PNG_INFO_tRNS)) ii->imageFlag |= PngDec::ImageFlag::TRNS_CHUNK_EXIST;
   }
 
   if ((w * h * 4) > param->imageSize) return Err::PngDec::INVALID_SIZE;
@@ -133,7 +135,7 @@ EXPORT SYSV_ABI int32_t scePngDecDelete(ScePngDecHandle handle) {
 }
 
 EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, ScePngDecImageInfo* ii) {
-  if (param->pngAddr == nullptr) return Err::PngDec::INVALID_ADDR;
+  if (param == nullptr || param->pngAddr == nullptr) return Err::PngDec::INVALID_ADDR;
   if (param->pngSize < 8) return Err::PngDec::INVALID_SIZE;
   if (png_sig_cmp((png_const_bytep)param->pngAddr, 0, 8) != 0) return Err::PngDec::INVALID_DATA;
 
@@ -171,15 +173,15 @@ EXPORT SYSV_ABI int32_t scePngDecParseHeader(const ScePngDecParseParam* param, S
   ii->imageFlag  = 0;
   ii->bitDepth   = bitdepth;
   ii->colorSpace = map_png_color(color);
-  if (inter == 1) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_ADAM7_INTERLACE;
-  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) ii->imageFlag |= SCE_PNG_DEC_IMAGE_FLAG_TRNS_CHUNK_EXIST;
+  if (inter == 1) ii->imageFlag |= PngDec::ImageFlag::ADAM7_INTERLACE;
+  if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) ii->imageFlag |= PngDec::ImageFlag::TRNS_CHUNK_EXIST;
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t scePngDecQueryMemorySize(const ScePngDecCreateParam* param) {
-  if (param == nullptr) return Err::PngDec::INVALID_ADDR;
+  if (param == nullptr) return Err::PngDec::INVALID_PARAM;
   if (param->cbSize != sizeof(ScePngDecCreateParam)) return Err::PngDec::INVALID_SIZE;
   if (param->maxImageWidth > 1000000) return Err::PngDec::INVALID_PARAM;
   return sizeof(_PngHandle);
