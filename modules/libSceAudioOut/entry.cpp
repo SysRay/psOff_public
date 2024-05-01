@@ -263,6 +263,10 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     port->freq       = freq;
     port->format     = SceAudioOutParamFormat(param & 0x0000007F);
 
+    if ((param & 0x000F0000) != 0) {
+      LOG_ERR(L"todo handle attributes");
+    }
+
     switch (port->format) {
       case SceAudioOutParamFormat::S16_MONO:
         port->sdlFormat   = AUDIO_S16;
