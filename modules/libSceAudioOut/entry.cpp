@@ -261,7 +261,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     port->userId     = userId;
     port->samplesNum = len;
     port->freq       = freq;
-    port->format     = SceAudioOutParamFormat(param & 0x000000FE);
+    port->format     = SceAudioOutParamFormat(param & 0x0000007F);
 
     switch (port->format) {
       case SceAudioOutParamFormat::S16_MONO:
@@ -451,7 +451,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
 
   for (uint32_t i = 0; i < num; i++) {
     auto port = pimpl->portsOut.GetPort(param[i].handle);
-    if (auto err = writeOut(port, param[i].ptr, false); err != 0) {
+    if (auto err = writeOut(port, param[i].ptr, false); err <= 0) {
       for (uint32_t j = 0; j < num; j++) {
         clearQueue(pimpl->portsOut.GetPort(param[i].handle));
       }
@@ -459,7 +459,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
     }
     if (!firstport)
       firstport = port;
-    else if ((firstport->freq != port->freq) || (firstport->samplesNum != port->samplesNum) || (firstport->format != port->format))
+    else if (firstport->samplesNum != port->samplesNum)
       return Err::AudioOut::INVALID_SIZE;
   }
 

@@ -280,7 +280,7 @@ EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
   return 0;
 }
 
-EXPORT SYSV_ABI int __NID(gmtime_s)(tm* tm, const time_t* time) {
+EXPORT SYSV_ABI int __NID(gmtime_s)(const time_t* time, tm* tm) {
   return ::gmtime_s(tm, time);
 }
 
