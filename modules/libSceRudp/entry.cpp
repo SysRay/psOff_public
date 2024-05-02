@@ -50,8 +50,7 @@ EXPORT SYSV_ABI int sceRudpGetContextStatus(int ctxId, SceRudpContextStatus* sta
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceRudpGetLocalInfo(int ctxId, int* soc, struct SceNetSockaddr* addr, SceNetSocklen_t* addrLen,
-	                                      uint16_t* vport, uint8_t* muxMode) {
+EXPORT SYSV_ABI int sceRudpGetLocalInfo(int ctxId, int* soc, struct SceNetSockaddr* addr, SceNetSocklen_t* addrLen, uint16_t* vport, uint8_t* muxMode) {
   return Ok;
 }
 
@@ -83,8 +82,7 @@ EXPORT SYSV_ABI int sceRudpGetSizeWritable(int ctxId) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceRudpRead(int ctxId, void* data, size_t len, uint8_t flags,
-	                              SceRudpReadInfo* info) {
+EXPORT SYSV_ABI int sceRudpRead(int ctxId, void* data, size_t len, uint8_t flags, SceRudpReadInfo* info) {
   return Ok;
 }
 
@@ -128,8 +126,7 @@ EXPORT SYSV_ABI int sceRudpInitiate(int ctxId, struct SceNetSockaddr const* to, 
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceRudpNetReceived(int soc, uint8_t const* data, size_t dataLen, struct SceNetSockaddr const* from,
-	                                     SceNetSocklen_t fromLen) {
+EXPORT SYSV_ABI int sceRudpNetReceived(int soc, uint8_t const* data, size_t dataLen, struct SceNetSockaddr const* from, SceNetSocklen_t fromLen) {
   return Ok;
 }
 

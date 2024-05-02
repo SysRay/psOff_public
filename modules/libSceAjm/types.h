@@ -8,9 +8,9 @@ typedef unsigned int SceAjmBatchId;
 
 struct SceAjmSidebandStreamResult {
   struct {
-      int iSizeConsumed;
-      int iSizeProduced;
-      unsigned int uiTotalDecodedSamples;
+    int          iSizeConsumed;
+    int          iSizeProduced;
+    unsigned int uiTotalDecodedSamples;
   } sStream;
 };
 

@@ -10,8 +10,8 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceFaceTracker";
 
-EXPORT SYSV_ABI int sceFaceTrackerInitialize(int width, int height, int rowstride, int maxTrackingNum,
-	                                           uint32_t* threadFuncMutex, const SceFaceTrackerConfig* pConfig, void* work, int workSize) {
+EXPORT SYSV_ABI int sceFaceTrackerInitialize(int width, int height, int rowstride, int maxTrackingNum, uint32_t* threadFuncMutex,
+                                             const SceFaceTrackerConfig* pConfig, void* work, int workSize) {
   return Ok;
 }
 
@@ -79,7 +79,8 @@ EXPORT SYSV_ABI int sceFaceTrackerRegisterLostTargetCallback(SceFaceTrackerLostT
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceFaceTrackerRegisterRecoveryFromLostTargetCallback(SceFaceTrackerRecoveryFromLostTargetCallbackFunc func, void* callbackParam, void* work) {
+EXPORT SYSV_ABI int sceFaceTrackerRegisterRecoveryFromLostTargetCallback(SceFaceTrackerRecoveryFromLostTargetCallbackFunc func, void* callbackParam,
+                                                                         void* work) {
   return Ok;
 }
 

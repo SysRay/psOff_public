@@ -14,52 +14,52 @@ typedef void* SceFaceShapeModelDictPtr;
 
 struct SceFaceAgeDistrData {
   float score[AGE_BIN_SIZE];
-	int   numIntegrated;
+  int   numIntegrated;
 };
 
 struct SceFaceAttribResult {
   unsigned int attribId;
-	float        score;
+  float        score;
 };
 
 struct SceFaceAgeRangeResult {
   unsigned char maxAge;
-	unsigned char minAge;
+  unsigned char minAge;
 };
 
 struct SceFaceDetectionResult {
   float faceX;
-	float faceY;
-	float faceW;
-	float faceH;
-	float faceRoll;
-	float facePitch;
-	float faceYaw;
-	float score;
+  float faceY;
+  float faceW;
+  float faceH;
+  float faceRoll;
+  float facePitch;
+  float faceYaw;
+  float score;
 };
 
 struct SceFacePartsResult {
   unsigned int partsId;
-	float        partsX;
-	float        partsY;
-	float        score;
+  float        partsX;
+  float        partsY;
+  float        score;
 };
 
 struct SceFaceDetectionParam {
   int   version;
-	int   size;
-	float magBegin;
-	float magStep;
-	float magEnd;
-	int   xScanStart;
-	int   yScanStart;
-	int   xScanStep;
-	int   yScanStep;
-	float xScanOver;
-	float yScanOver;
-	float thresholdScore;
-	int   resultPrecision;
-	int   searchType;
+  int   size;
+  float magBegin;
+  float magStep;
+  float magEnd;
+  int   xScanStart;
+  int   yScanStart;
+  int   xScanStep;
+  int   yScanStep;
+  float xScanOver;
+  float yScanOver;
+  float thresholdScore;
+  int   resultPrecision;
+  int   searchType;
 };
 
 struct SceFaceIdentifyFeature {
@@ -76,30 +76,30 @@ struct SceFaceIdentifyExFeature {
 
 struct SceFaceShapeResult {
   int           modelID;
-	int           pointNum;
-	float         pointX[SHAPE_POINT_NUM_MAX];
-	float         pointY[SHAPE_POINT_NUM_MAX];
-	int           isLost[SHAPE_POINT_NUM_MAX];
-	float         fourPointX[PARTS_NUM_MAX];
-	float         fourPointY[PARTS_NUM_MAX];
-	float         rectCenterX;
-	float         rectCenterY;
-	float         rectWidth;
-	float         rectHeight;
-	float         faceRoll;
-	float         facePitch;
-	float         faceYaw;
-	float         score;
-	unsigned char data[4096];
+  int           pointNum;
+  float         pointX[SHAPE_POINT_NUM_MAX];
+  float         pointY[SHAPE_POINT_NUM_MAX];
+  int           isLost[SHAPE_POINT_NUM_MAX];
+  float         fourPointX[PARTS_NUM_MAX];
+  float         fourPointY[PARTS_NUM_MAX];
+  float         rectCenterX;
+  float         rectCenterY;
+  float         rectWidth;
+  float         rectHeight;
+  float         faceRoll;
+  float         facePitch;
+  float         faceYaw;
+  float         score;
+  unsigned char data[4096];
 };
 
-struct SceFacePose {	
+struct SceFacePose {
   float faceRoll;
-	float facePitch;
-	float faceYaw;
+  float facePitch;
+  float faceYaw;
 };
 
-struct SceFaceRegion {	
+struct SceFaceRegion {
   float faceRegionX[4];
-	float faceRegionY[4];
+  float faceRegionY[4];
 };

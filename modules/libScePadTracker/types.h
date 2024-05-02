@@ -19,7 +19,7 @@ struct ScePadTrackerImage {
   int   gain;
   int   width;
   int   height;
-  void* data; 
+  void* data;
 };
 
 struct ScePadTrackerInput {
@@ -28,6 +28,5 @@ struct ScePadTrackerInput {
 };
 
 struct ScePadTrackerData {
-  ScePadTrackerImageCoordinates 
-  imageCoordinates[TRACKER_IMAGE_MAX];
+  ScePadTrackerImageCoordinates imageCoordinates[TRACKER_IMAGE_MAX];
 };
