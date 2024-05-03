@@ -40,15 +40,26 @@ EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_
   if (ctx.created) return Err::NpTrophy::ALREADY_EXISTS;
   // static std::once_flag init;
   // std::call_once(init, []() {
-  //   ITrophies::trp_ent_cb ent = {
-  //       .func =
-  //           [](ITrophies::trp_ent_cb::data_t* data) {
-  //             LOG_USE_MODULE(libSceNpTrophy);
-  //             LOG_ERR(L"Trophy! %S: %S (id:%d)", data->name.c_str(), data->detail.c_str(), data->id);
-  //             return false; // Do not cancel this callback
+  //   ITrophies::trp_context ctx = {
+  //       .lightweight = false,
+
+  //       .entry =
+  //           {
+  //               .func = [](ITrophies::trp_ent_cb::data_t* data) -> bool {
+  //                 printf("Trophy! %s: %s (id:%d)\n", data->name.c_str(), data->detail.c_str(), data->id);
+  //                 return false; // Do not cancel this callback
+  //               },
+  //           },
+  //       .itrop =
+  //           {
+  //               .func = [](ITrophies::trp_inf_cb::data_t* data) -> bool {
+  //                 printf("Trophyset info: %s, %s, %s\n", data->trophyset_version.c_str(), data->title_name.c_str(), data->title_detail.c_str());
+  //                 return true;
+  //               },
   //           },
   //   };
-  //   accessTrophies().parseTRP(nullptr, &ent);
+
+  //   accessTrophies().parseTRP(&ctx);
   // });
   ctx.created = true;
   ctx.label   = serviceLabel;
@@ -89,8 +100,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
     details->numGold     = 0;
     details->numSilver   = 0;
     details->numBronze   = 1;
-    strcpy_s(details->title, "tropyName");
-    strcpy_s(details->description, "tropyDesc");
+    strcpy_s(details->title, "gameName");
+    strcpy_s(details->description, "gameDesc");
   }
 
   if (data != nullptr) {

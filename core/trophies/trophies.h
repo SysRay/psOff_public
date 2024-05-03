@@ -18,7 +18,9 @@ class ITrophies {
 
   enum class ErrCodes {
     SUCCESS = 0,     // No errors, we're fine
-    CONTINUE,        // Not an actual error code. \bFor internal usage only!\b
+    INVALID_CONTEXT, // Context is nullptr
+    NO_ITROP,        // There are no trophyset info in lightweight file
+    CONTINUE,        // Not an actual error code. For internal usage only!
     NO_KEY_SET,      // No root key installed
     INVALID_MAGIC,   // TRP file has invalid magic in its header
     INVALID_VERSION, // TRP file version is not valid
@@ -66,7 +68,29 @@ class ITrophies {
     std::function<bool(data_t*)> func;
   };
 
-  virtual ErrCodes parseTRP(trp_grp_cb* grpcb = nullptr, trp_ent_cb* trpcb = nullptr, trp_png_cb* pngcb = nullptr, bool lightweight = false) = 0;
+  struct trp_inf_cb {
+    struct data_t {
+      std::string title_name;
+      std::string title_detail;
+      std::string trophyset_version;
+    } data;
+
+    bool                         cancelled;
+    std::function<bool(data_t*)> func;
+  };
+
+  struct trp_context {
+    bool lightweight;
+
+    trp_ent_cb entry = {.data = {}, .cancelled = false, .func = nullptr};
+    trp_grp_cb group = {.data = {}, .cancelled = false, .func = nullptr};
+    trp_png_cb pngim = {.data = {}, .cancelled = false, .func = nullptr};
+    trp_inf_cb itrop = {.data = {}, .cancelled = false, .func = nullptr};
+
+    inline bool cancelled() { return entry.cancelled && group.cancelled && pngim.cancelled && itrop.cancelled; }
+  };
+
+  virtual ErrCodes parseTRP(trp_context* context) = 0;
 };
 
 #if defined(__APICALL_EXTERN)

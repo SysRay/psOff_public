@@ -3,7 +3,6 @@
 #undef __APICALL_EXTERN
 
 #include "core/fileManager/fileManager.h"
-#include "logging.h"
 #include "modules_include/system_param.h"
 #include "tools/config_emu/config_emu.h"
 
@@ -13,10 +12,7 @@
 #include <xml3all.h>
 
 #define TR_AES_BLOCK_SIZE 16
-// We don't need it there
-#undef min
-
-LOG_DEFINE_MODULE(core_trophies);
+#undef min // We don't need it there
 
 class Trophies: public ITrophies {
   struct trp_header {
@@ -47,93 +43,111 @@ class Trophies: public ITrophies {
   std::string m_localizedTrophyFile      = {};
   std::mutex  m_mutexParse;
 
-  static ErrCodes XML_parse(const char* mem, trp_grp_cb* grpcb, trp_ent_cb* trpcb, bool lightweight) {
+  static ErrCodes XML_parse(const char* mem, trp_context* ctx) {
     XML3::XML xml(mem, strlen(mem));
 
     { // xml parser
       auto& rootel = xml.GetRootElement();
       if (rootel.GetElementName() == "trophyconf") {
+        // Prepare trophyset info structure to save some data
+        if (!ctx->itrop.cancelled) {
+          ctx->itrop.data.title_name.clear();
+          ctx->itrop.data.title_detail.clear();
+          ctx->itrop.data.trophyset_version.clear();
+        }
+
         for (auto& chel: rootel.GetChildren()) {
           auto& cheln = chel->GetElementName();
-          if (trpcb != nullptr && cheln == "trophy") {
-            trpcb->data.id    = -1;
-            trpcb->data.group = -1;
-            trpcb->data.type  = 0xFF;
-            trpcb->data.name.clear();
-            trpcb->data.detail.clear();
+          if (!ctx->entry.cancelled && cheln == "trophy") {
+            ctx->entry.data.id    = -1;
+            ctx->entry.data.group = -1;
+            ctx->entry.data.type  = 0xFF;
+            ctx->entry.data.name.clear();
+            ctx->entry.data.detail.clear();
 
             for (auto& chvar: chel->GetVariables()) {
               auto& vname = chvar->GetName();
               if (vname == "id") {
-                trpcb->data.id = chvar->GetValueInt(-1);
+                ctx->entry.data.id = chvar->GetValueInt(-1);
               } else if (vname == "hidden") {
-                trpcb->data.hidden = chvar->GetValue() == "yes";
+                ctx->entry.data.hidden = chvar->GetValue() == "yes";
               } else if (vname == "ttype") {
-                trpcb->data.type = chvar->GetValue().at(0);
+                ctx->entry.data.type = chvar->GetValue().at(0);
               } else if (vname == "gid") {
-                trpcb->data.group = chvar->GetValueInt(-1);
+                ctx->entry.data.group = chvar->GetValueInt(-1);
               }
             }
 
             // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-            if (lightweight == true) continue;
+            if (ctx->lightweight) continue;
 
             for (auto& chch: chel->GetChildren()) {
               auto& cname = chch->GetElementName();
               if (cname == "name") {
-                trpcb->data.name.assign(chch->GetContent());
+                ctx->entry.data.name.assign(chch->GetContent());
               } else if (cname == "detail") {
-                trpcb->data.detail.assign(chch->GetContent());
+                ctx->entry.data.detail.assign(chch->GetContent());
               }
             }
 
-            trpcb->cancelled = trpcb->func(&trpcb->data);
-          } else if (grpcb != nullptr && cheln == "group") {
+            ctx->entry.cancelled = ctx->entry.func(&ctx->entry.data);
+          } else if (!ctx->group.cancelled && cheln == "group") {
             for (auto& chvar: chel->GetVariables()) {
+              if (ctx->group.cancelled) break;
               auto& vname = chvar->GetName();
               if (vname == "id") {
-                grpcb->data.id = chvar->GetValueInt(-1);
+                ctx->group.data.id = chvar->GetValueInt(-1);
               }
 
               // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-              if (lightweight == true) continue;
+              if (ctx->lightweight) continue;
 
               for (auto& chch: chel->GetChildren()) {
                 auto& cname = chch->GetElementName();
                 if (cname == "name") {
-                  grpcb->data.name.assign(chch->GetContent());
+                  ctx->group.data.name.assign(chch->GetContent());
                 } else if (cname == "detail") {
-                  grpcb->data.detail.assign(chch->GetContent());
+                  ctx->group.data.detail.assign(chch->GetContent());
                 }
               }
 
-              grpcb->cancelled = grpcb->func(&grpcb->data);
+              ctx->group.cancelled = ctx->group.func(&ctx->group.data);
+            }
+          } else if (!ctx->itrop.cancelled) {
+            if (cheln == "trophyset-version") {
+              ctx->itrop.data.trophyset_version.assign(chel->GetContent());
+            } else if (cheln == "title-name") {
+              ctx->itrop.data.title_name.assign(chel->GetContent());
+            } else if (cheln == "title-detail") {
+              ctx->itrop.data.title_detail.assign(chel->GetContent());
             }
           }
         }
 
+        // Pass the final trophyset info to itrop callback
+        if (!ctx->itrop.cancelled) ctx->itrop.func(&ctx->itrop.data);
+
         // We already parsed trophy info, we don't need more of it
-        if (trpcb != nullptr) trpcb->cancelled = true;
-        if (grpcb != nullptr) grpcb->cancelled = true;
+        ctx->entry.cancelled = true;
+        ctx->group.cancelled = true;
+        ctx->itrop.cancelled = true;
       } // element: trophyconf
     }   // xml parser
 
     return ErrCodes::CONTINUE; // todo: check xml errors
   }
 
-  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_grp_cb* grpcb, trp_ent_cb* trpcb, trp_png_cb* pngcb,
-                         bool lightweight) {
-    LOG_USE_MODULE(core_trophies);
-    if (pngcb != nullptr && !pngcb->cancelled) {
+  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx) {
+    if (!ctx->pngim.cancelled) {
       static std::string_view ext(".png");
       std::string_view        name(ent.name);
       if (std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) { // Test trp file extension
         if (((ent.flag >> 24) & 0x03) == 0) {
-          pngcb->data.pngsize = ent.len;
-          pngcb->data.pngdata = new char[ent.len]; // Developer should free this memory manually
+          ctx->pngim.data.pngsize = ent.len;
+          ctx->pngim.data.pngdata = new char[ent.len]; // Developer should free this memory manually
           trfile.seekg(ent.pos);
-          if (trfile.read((char*)pngcb->data.pngdata, ent.len)) {
-            pngcb->cancelled = pngcb->func(&pngcb->data);
+          if (trfile.read((char*)ctx->pngim.data.pngdata, ent.len)) {
+            ctx->pngim.cancelled = ctx->pngim.func(&ctx->pngim.data);
             return ErrCodes::CONTINUE;
           }
 
@@ -145,15 +159,15 @@ class Trophies: public ITrophies {
       }
     }
 
-    if (grpcb != nullptr || trpcb != nullptr) {
+    if (!ctx->group.cancelled || !ctx->entry.cancelled || !ctx->itrop.cancelled) {
       static std::string_view ext(".esfm");
       std::string_view        name(ent.name);
       if (!std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) return ErrCodes::CONTINUE;
       if ((ent.len % 16) != 0) return ErrCodes::INVALID_AES;
-      if (lightweight == true) {
+      if (ctx->lightweight) {
         static std::string_view lwfile("tropconf.esfm");
         if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) return ErrCodes::CONTINUE;
-      } else if (m_bIgnoreMissingLocale == false) {
+      } else if (!m_bIgnoreMissingLocale) {
         static std::string_view dfile("trop.esfm");
         if (m_localizedTrophyFile.length() == 0) {
           // No localized trophy needed, using the English one
@@ -272,7 +286,7 @@ class Trophies: public ITrophies {
           }
         }
 
-        if (success == false) { // We failed to decrypt xml with saved NPID, now we search it
+        if (!success) { // We failed to decrypt xml with saved NPID, now we search it
           for (uint32_t n = 0; n < 99999; n++) {
             trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE);
             if ((success = trydecrypt(n)) == true) {
@@ -281,7 +295,7 @@ class Trophies: public ITrophies {
             }
           }
 
-          if (success == true) { // NPID found, saving it to cache file
+          if (success) { // NPID found, saving it to cache file
             std::ofstream npid_f(npid_path, std::ios::out);
             if (npid_f.is_open()) {
               npid_f << npid;
@@ -289,13 +303,10 @@ class Trophies: public ITrophies {
           }
         }
 
-        if (success == false) {
-          LOG_ERR(L"Failed to guess ID for trophy file");
-          return ErrCodes::DECRYPT;
-        }
+        if (!success) return ErrCodes::DECRYPT;
       }
 
-      return XML_parse(mem.get(), grpcb, trpcb, lightweight);
+      return XML_parse(mem.get(), ctx);
     } // group & trophy callbacks
 
     return ErrCodes::CONTINUE;
@@ -329,16 +340,22 @@ class Trophies: public ITrophies {
     }
   }
 
-  ErrCodes parseTRP(trp_grp_cb* grpcb = nullptr, trp_ent_cb* trpcb = nullptr, trp_png_cb* pngcb = nullptr, bool lightweight = false) final {
-    if (grpcb == nullptr && trpcb == nullptr && pngcb == nullptr) return ErrCodes::NO_CALLBACKS;
-    std::unique_lock lock(m_mutexParse);
+  ErrCodes parseTRP(trp_context* ctx) final {
+    if (!m_bKeySet) return ErrCodes::NO_KEY_SET;
+    if (ctx == nullptr) return ErrCodes::INVALID_CONTEXT;
+    // We don't want every callback to be cancelled before we even begin
+    ctx->group.cancelled = (ctx->group.func == nullptr);
+    ctx->entry.cancelled = (ctx->entry.func == nullptr);
+    ctx->pngim.cancelled = (ctx->pngim.func == nullptr);
+    ctx->itrop.cancelled = (ctx->itrop.func == nullptr);
+    if (ctx->cancelled()) return ErrCodes::NO_CALLBACKS;
+    if (ctx->lightweight && !ctx->itrop.cancelled) return ErrCodes::NO_ITROP;
 
-    if (m_bKeySet == false) return ErrCodes::NO_KEY_SET;
-    LOG_USE_MODULE(core_trophies);
+    std::unique_lock lock(m_mutexParse);
     m_bIgnoreMissingLocale = false;
 
     auto mpath = accessFileManager().getMappedPath("/app0/sce_sys/trophy/trophy00.trp");
-    if (mpath.has_value() == false) return ErrCodes::NO_TROPHIES;
+    if (!mpath.has_value()) return ErrCodes::NO_TROPHIES;
 
     std::ifstream trfile(mpath->c_str(), std::ios::in | std::ios::binary);
 
@@ -359,8 +376,7 @@ class Trophies: public ITrophies {
 
       trp_entry ent, dent = {0};
       for (uint32_t i = 0; i < hdr.entry_num; ++i) {
-        if ((pngcb != nullptr && pngcb->cancelled) && (grpcb != nullptr && grpcb->cancelled) && (trpcb != nullptr && trpcb->cancelled))
-          return ErrCodes::SUCCESS;
+        if (ctx->cancelled()) return ErrCodes::SUCCESS;
 
         trfile.seekg(sizeof(trp_header) + (sizeof(trp_entry) * i));
         if (!trfile.read((char*)&ent, sizeof(trp_entry))) return ErrCodes::IO_FAIL;
@@ -368,15 +384,15 @@ class Trophies: public ITrophies {
         ent.pos = _byteswap_uint64(ent.pos);
         ent.len = _byteswap_uint64(ent.len);
 
-        auto ret = TRP_readentry(ent, dent, trfile, grpcb, trpcb, pngcb, lightweight);
+        auto ret = TRP_readentry(ent, dent, trfile, ctx);
         if (ret != ErrCodes::CONTINUE) return ret;
       } // entries loop
 
       // Group or trophy callback is not cancelled yet, looks like we missed localized esfm file, trying to use the default one
-      if ((grpcb != nullptr && grpcb->cancelled != true) || (trpcb != nullptr && trpcb->cancelled != true)) {
+      if (!ctx->group.cancelled || !ctx->entry.cancelled || !ctx->itrop.cancelled) {
         m_bIgnoreMissingLocale = true;
         if (dent.len != 0) {
-          auto ret = TRP_readentry(dent, dent, trfile, grpcb, trpcb, pngcb, lightweight);
+          auto ret = TRP_readentry(dent, dent, trfile, ctx);
           if (ret != ErrCodes::CONTINUE) return ret;
         }
       }
