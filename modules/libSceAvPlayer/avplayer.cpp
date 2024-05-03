@@ -115,22 +115,25 @@ class Avplayer: public IAvplayer {
   } m_video, m_audio;
 
   void destroyAVData() {
-    m_isAudioActive = false;
-    m_isVideoActive = false;
+    {
+      std::unique_lock lock(m_mutexDecode);
 
-    if (m_pFmtCtx != nullptr) {
-      avformat_close_input(&m_pFmtCtx);
-    }
-    if (m_swsCtx != nullptr) {
-      sws_freeContext(m_swsCtx);
-    }
-    if (m_swrCtx != nullptr) {
-      swr_free(&m_swrCtx);
-    }
+      m_isAudioActive = false;
+      m_isVideoActive = false;
 
-    m_video.destroy();
-    m_audio.destroy();
+      if (m_pFmtCtx != nullptr) {
+        avformat_close_input(&m_pFmtCtx);
+      }
+      if (m_swsCtx != nullptr) {
+        sws_freeContext(m_swsCtx);
+      }
+      if (m_swrCtx != nullptr) {
+        swr_free(&m_swrCtx);
+      }
 
+      m_video.destroy();
+      m_audio.destroy();
+    }
     m_condDecode.notify_one();
     if (m_decodeThread) m_decodeThread->join();
 
@@ -147,7 +150,7 @@ class Avplayer: public IAvplayer {
     LOG_USE_MODULE(AvPlayer);
     LOG_DEBUG(L"destruct");
     m_isStop = true;
-    std::unique_lock lock(m_mutexDecode);
+    std::unique_lock lock(m_mutex_int);
     destroyAVData();
   };
 
@@ -166,7 +169,7 @@ class Avplayer: public IAvplayer {
     std::unique_lock lock(m_mutexDecode);
 
     LOG_TRACE(L"isPlaying:%u", m_isVideoActive | m_isAudioActive);
-    return m_isVideoActive | m_isAudioActive;
+    return m_isVideoActive || m_isAudioActive;
   }
 
   void stop() final {
@@ -526,13 +529,13 @@ std::unique_ptr<std::thread> Avplayer::threadFunc() {
       // - new frames
 
       // Decode Frame
-      while (true) {
+      while (!m_isStop) {
         sendFunc(m_video);
         sendFunc(m_audio);
 
         std::unique_lock lock(m_mutexDecode);
         if (m_video.pending && !m_video.decodeQueue.empty() && m_audio.pending && !m_audio.decodeQueue.empty()) {
-          m_condDecode.wait(lock, [&] { return m_video.pending; });
+          m_condDecode.wait(lock, [&] { return m_isStop || m_video.pending; });
           continue;
         }
         break;
