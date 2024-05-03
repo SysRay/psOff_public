@@ -45,6 +45,7 @@ target_link_libraries(core PRIVATE
   config_emu.lib
   onecore.lib
   IPHLPAPI.lib
+  wepoll.lib
   Ws2_32.lib
   ntdll.dll
   VulkanMemoryAllocator
