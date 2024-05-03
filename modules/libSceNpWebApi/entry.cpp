@@ -70,6 +70,10 @@ EXPORT SYSV_ABI int32_t sceNpWebApiDeleteRequest(int64_t requestId) {
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNpWebApiSendRequest(int64_t requestId, const void* pData, size_t dataSize, SceNpWebApiResponseInformationOption* pRespInfoOption) {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNpWebApiSendRequest2(int64_t requestId, const void* pData, size_t dataSize, SceNpWebApiResponseInformationOption* pRespInfoOption) {
   return Ok;
 }
@@ -100,6 +104,10 @@ EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpResponseHeaderValueLength(int64_t requ
 }
 
 EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpResponseHeaderValue(int64_t requestId, const char* pFieldName, char* pValue, size_t valueSize) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpStatusCode(int64_t requestId, int32_t* pStatusCode) {
   return Ok;
 }
 

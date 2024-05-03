@@ -91,7 +91,21 @@ EXPORT SYSV_ABI int sceKernelAioSubmitWriteCommandsMultiple(SceKernelAioRWReques
 
 EXPORT SYSV_ABI void sceKernelAioInitializeParam(SceKernelAioParam* param) {
   LOG_USE_MODULE(aio);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  (param->low).schedulingWindowSize  = 0x20;
+  (param->low).delayedCountLimit     = 0x20;
+  (param->low).enableSplit           = 1;
+  (param->low).splitSize             = 0x100000;
+  (param->low).splitChunkSize        = 0x100000;
+  (param->mid).schedulingWindowSize  = 0x20;
+  (param->mid).delayedCountLimit     = 0x20;
+  (param->mid).enableSplit           = 1;
+  (param->mid).splitSize             = 0x100000;
+  (param->mid).splitChunkSize        = 0x100000;
+  (param->high).schedulingWindowSize = 0x20;
+  (param->high).delayedCountLimit    = 0x20;
+  (param->high).enableSplit          = 0;
+  (param->high).splitSize            = 0;
+  (param->high).splitChunkSize       = 0;
 }
 
 EXPORT SYSV_ABI int sceKernelAioSetParam(SceKernelAioSchedulingParam* param, int schedulingWindowSize, int handleelayedCountLimit, uint32_t enableSplit,
