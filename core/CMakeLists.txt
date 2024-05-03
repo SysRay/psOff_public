@@ -39,6 +39,7 @@ target_link_libraries(core PRIVATE
   libboost_thread
   libboost_chrono
   libboost_program_options
+  libboost_filesystem
   sdl2
   psoff_render.lib
   gamereport.lib

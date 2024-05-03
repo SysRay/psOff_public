@@ -6,6 +6,6 @@
 #include <utility>
 #include <vector>
 
-std::pair<void*, std::unique_ptr<Symbols::SymbolExport>> loadModule(const char* name, const char* filepath, int libVersion);
+std::pair<void*, std::unique_ptr<Symbols::SymbolExport>> loadModule(const char* name, const wchar_t* filepath, int libVersion);
 
 void unloadModule(void* handle);

@@ -6,11 +6,11 @@
 #include "logging.h"
 #include "modules_include/system_param.h"
 #include "tools/config_emu/config_emu.h"
-#include "xml3all.h"
 
 #include <boost/scoped_ptr.hpp>
 #include <fstream>
 #include <openssl/evp.h>
+#include <xml3all.h>
 
 #define TR_AES_BLOCK_SIZE 16
 // We don't need it there
@@ -67,7 +67,7 @@ class Trophies: public ITrophies {
               if (vname == "id") {
                 trpcb->data.id = chvar->GetValueInt(-1);
               } else if (vname == "hidden") {
-                trpcb->data.hidden = chvar->GetValue() != "no";
+                trpcb->data.hidden = chvar->GetValue() == "yes";
               } else if (vname == "ttype") {
                 trpcb->data.type = chvar->GetValue().at(0);
               } else if (vname == "gid") {
@@ -118,7 +118,7 @@ class Trophies: public ITrophies {
       } // element: trophyconf
     }   // xml parser
 
-    return ErrCodes::CONTINUE; // todo: error checkers
+    return ErrCodes::CONTINUE; // todo: check xml errors
   }
 
   ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_grp_cb* grpcb, trp_ent_cb* trpcb, trp_png_cb* pngcb,
@@ -174,7 +174,7 @@ class Trophies: public ITrophies {
         if (!trfile.read(mem.get(), ent.len)) return ErrCodes::IO_FAIL;
       } else {
         static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
-        static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3;
+        static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3; // 384 encrypted bits is just enough to find interesting for us string
 
         uint8_t d_iv[TR_AES_BLOCK_SIZE];
         uint8_t kg_iv[TR_AES_BLOCK_SIZE];
@@ -182,8 +182,6 @@ class Trophies: public ITrophies {
         ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
 
         if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ErrCodes::IO_FAIL;
-
-        // 384 encrypted bits is just enough to find interesting for us string
         if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ErrCodes::IO_FAIL;
 
         const auto trydecrypt = [this, &mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {

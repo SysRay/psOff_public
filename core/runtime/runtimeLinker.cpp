@@ -11,6 +11,7 @@
 #include "util/moduleLoader.h"
 #include "util/plt.h"
 #include "util/virtualmemory.h"
+#include "utility/progloc.h"
 #include "utility/utility.h"
 
 #include <boost/uuid/detail/sha1.hpp>
@@ -24,8 +25,8 @@ LOG_DEFINE_MODULE(RuntimeLinker);
 
 namespace {
 using atexit_func_t = SYSV_ABI void (*)();
-using entry_func_t  = SYSV_ABI void (*)(EntryParams const* params, atexit_func_t atexit_func);
-using module_func_t = SYSV_ABI int (*)(size_t args, const void* argp, atexit_func_t atexit_func);
+using entry_func_t  = SYSV_ABI void  (*)(EntryParams const* params, atexit_func_t atexit_func);
+using module_func_t = SYSV_ABI int  (*)(size_t args, const void* argp, atexit_func_t atexit_func);
 
 struct FrameS {
   FrameS*   next;
@@ -489,13 +490,13 @@ void RuntimeLinker::loadModules(std::string_view libName) {
       LOG_DEBUG(L"Needs library %S", name.data());
 
       // 1/2 Sepcial case: old->new, build filepath
-      std::string filepath = std::string("modules/");
+      auto filepath = std::format(L"{}/modules/", util::getProgramLoc());
       if (name == "libSceGnmDriver") {
-        filepath += "libSceGraphicsDriver";
+        filepath += L"libSceGraphicsDriver";
       } else {
-        filepath += std::string(name);
+        filepath += std::wstring(name.begin(), name.end());
       }
-      filepath += ".dll";
+      filepath += L".dll";
       //- filepath
 
       if (std::filesystem::exists(filepath) && !m_libHandles.contains(name)) {
