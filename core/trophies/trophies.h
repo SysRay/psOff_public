@@ -60,8 +60,9 @@ class ITrophies {
 
   struct trp_png_cb {
     struct data_t {
-      void*  pngdata;
-      size_t pngsize;
+      std::string pngname;
+      void*       pngdata;
+      size_t      pngsize;
     } data;
 
     bool                         cancelled;
@@ -73,6 +74,7 @@ class ITrophies {
       std::string title_name;
       std::string title_detail;
       std::string trophyset_version;
+      uint32_t    trophy_count;
     } data;
 
     bool                         cancelled;
@@ -91,6 +93,11 @@ class ITrophies {
   };
 
   virtual ErrCodes parseTRP(trp_context* context) = 0;
+
+  virtual bool createContext(int32_t userId, uint32_t label)     = 0;
+  virtual bool getProgress(int32_t userId, uint32_t progress[4]) = 0;
+  virtual bool unlockTrophy(int32_t userId, int32_t trophyId)    = 0;
+  virtual bool resetUserInfo(int32_t userId)                     = 0;
 };
 
 #if defined(__APICALL_EXTERN)

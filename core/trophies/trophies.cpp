@@ -15,6 +15,19 @@
 #undef min // We don't need it there
 
 class Trophies: public ITrophies {
+  struct usr_context {
+    struct trophy {
+      uint32_t id;
+      uint32_t re; // reserved
+      uint64_t ts;
+    };
+
+    bool     created;
+    uint32_t label;
+
+    std::vector<struct trophy> trophies;
+  } m_ctx[4];
+
   struct trp_header {
     uint32_t magic; // should be 0xDCA24D00
     uint32_t version;
@@ -113,13 +126,16 @@ class Trophies: public ITrophies {
 
               ctx->group.cancelled = ctx->group.func(&ctx->group.data);
             }
-          } else if (!ctx->itrop.cancelled) {
+          }
+          if (!ctx->itrop.cancelled) {
             if (cheln == "trophyset-version") {
               ctx->itrop.data.trophyset_version.assign(chel->GetContent());
             } else if (cheln == "title-name") {
               ctx->itrop.data.title_name.assign(chel->GetContent());
             } else if (cheln == "title-detail") {
               ctx->itrop.data.title_detail.assign(chel->GetContent());
+            } else if (cheln == "trophy") {
+              ++ctx->itrop.data.trophy_count;
             }
           }
         }
@@ -144,6 +160,7 @@ class Trophies: public ITrophies {
       if (std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) { // Test trp file extension
         if (((ent.flag >> 24) & 0x03) == 0) {
           ctx->pngim.data.pngsize = ent.len;
+          ctx->pngim.data.pngname.assign(ent.name);
           ctx->pngim.data.pngdata = new char[ent.len]; // Developer should free this memory manually
           trfile.seekg(ent.pos);
           if (trfile.read((char*)ctx->pngim.data.pngdata, ent.len)) {
@@ -402,6 +419,14 @@ class Trophies: public ITrophies {
 
     return ErrCodes::NO_TROPHIES;
   } // parseTRP()
+
+  bool createContext(int32_t userId, uint32_t label) final {}
+
+  bool getProgress(int32_t userId, uint32_t progress[4]) final {}
+
+  bool unlockTrophy(int32_t userId, int32_t trophyId) final {}
+
+  bool resetUserInfo(int32_t userId) final {}
 };
 
 ITrophies& accessTrophies() {

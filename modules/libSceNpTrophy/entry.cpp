@@ -9,14 +9,7 @@
 
 LOG_DEFINE_MODULE(libSceNpTrophy);
 
-namespace {
-struct trp_context {
-  bool              created;
-  SceNpServiceLabel label;
-};
-
-static trp_context contexts[4] = {};
-} // namespace
+namespace {} // namespace
 
 extern "C" {
 
@@ -36,35 +29,7 @@ EXPORT SYSV_ABI int sceNpTrophyAbortHandle(SceNpTrophyHandle handle) {
 }
 
 EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_t userId, SceNpServiceLabel serviceLabel, uint64_t options) {
-  auto& ctx = contexts[userId];
-  if (ctx.created) return Err::NpTrophy::ALREADY_EXISTS;
-  // static std::once_flag init;
-  // std::call_once(init, []() {
-  //   ITrophies::trp_context ctx = {
-  //       .lightweight = false,
-
-  //       .entry =
-  //           {
-  //               .func = [](ITrophies::trp_ent_cb::data_t* data) -> bool {
-  //                 printf("Trophy! %s: %s (id:%d)\n", data->name.c_str(), data->detail.c_str(), data->id);
-  //                 return false; // Do not cancel this callback
-  //               },
-  //           },
-  //       .itrop =
-  //           {
-  //               .func = [](ITrophies::trp_inf_cb::data_t* data) -> bool {
-  //                 printf("Trophyset info: %s, %s, %s\n", data->trophyset_version.c_str(), data->title_name.c_str(), data->title_detail.c_str());
-  //                 return true;
-  //               },
-  //           },
-  //   };
-
-  //   accessTrophies().parseTRP(&ctx);
-  // });
-  ctx.created = true;
-  ctx.label   = serviceLabel;
-  *context    = userId;
-  return Ok;
+  return accessTrophies().createContext(userId, (uint32_t)serviceLabel) ? Ok : Err::NpTrophy::ALREADY_EXISTS;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyDestroyContext(SceNpTrophyContext context) {
@@ -162,20 +127,56 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyInfo(SceNpTrophyContext context, SceNpTr
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrophyHandle handle, void* buffer, size_t* size) {
-  *size              = 8;
-  *(uint64_t*)buffer = 0;
+  ITrophies::trp_context ctx = {
+      .pngim =
+          {
+              .func = [buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+                if (data->pngname == "ICON0.PNG") {
+                  if (data->pngsize <= *size) {
+                    ::memcpy(buffer, data->pngdata, data->pngsize);
+                    *size = data->pngsize;
+                  }
+                  delete data->pngdata;
+                  return true;
+                }
 
-  return Ok;
+                return false;
+              },
+          },
+  };
+
+  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyGroupId groupId, void* buffer, size_t* size) {
+  *size              = 8;
+  *(uint64_t*)buffer = 0;
+
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyId trophyId, void* buffer, size_t* size) {
-  *size              = 8;
-  *(uint64_t*)buffer = 0;
-  return Ok;
+  auto name = std::format("TROP{:3}.PNG", trophyId);
+
+  ITrophies::trp_context ctx = {
+      .pngim =
+          {
+              .func = [name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+                if (data->pngname == name) {
+                  if (data->pngsize <= *size) {
+                    ::memcpy(buffer, data->pngdata, data->pngsize);
+                    *size = data->pngsize;
+                  }
+                  delete data->pngdata;
+                  return true;
+                }
+
+                return false;
+              },
+          },
+  };
+
+  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyShowTrophyList(SceNpTrophyContext context, SceNpTrophyHandle handle) {
