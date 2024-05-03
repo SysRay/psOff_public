@@ -6,7 +6,6 @@ add_library(networking OBJECT
   states/online/socket.cpp
   states/online/epoll.cpp
   states/online/http.cpp
-  wepoll.c
 
   networking.cpp
 )
