@@ -371,9 +371,9 @@ class Trophies: public ITrophies {
               if (trpcb != nullptr) trpcb->cancelled = true;
               if (grpcb != nullptr) grpcb->cancelled = true;
             } // element: trophyconf
-          } // xml parser
-        } // group & trophy callbacks
-      } // entries loop
+          }   // xml parser
+        }     // group & trophy callbacks
+      }       // entries loop
 
       return ErrCodes::SUCCESS;
     } // trfile.is_open()
