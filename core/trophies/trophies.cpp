@@ -43,6 +43,81 @@ class Trophies: public ITrophies {
   bool    m_bKeySet                  = false;
   uint8_t m_trkey[TR_AES_BLOCK_SIZE] = {};
 
+  static ErrCodes XML_parse(const char* mem, trp_grp_cb* grpcb, trp_ent_cb* trpcb, bool lightweight) {
+    XML3::XML xml(mem, strlen(mem));
+    delete[] mem;
+
+    { // xml parser
+      auto& rootel = xml.GetRootElement();
+      if (rootel.GetElementName() == "trophyconf") {
+        for (auto& chel: rootel.GetChildren()) {
+          auto& cheln = chel->GetElementName();
+          if (trpcb != nullptr && cheln == "trophy") {
+            trpcb->data.id    = -1;
+            trpcb->data.group = -1;
+            trpcb->data.type  = 0xFF;
+            trpcb->data.name.clear();
+            trpcb->data.detail.clear();
+
+            for (auto& chvar: chel->GetVariables()) {
+              auto& vname = chvar->GetName();
+              if (vname == "id") {
+                trpcb->data.id = chvar->GetValueInt(-1);
+              } else if (vname == "hidden") {
+                trpcb->data.hidden = chvar->GetValue() != "no";
+              } else if (vname == "ttype") {
+                trpcb->data.type = chvar->GetValue().at(0);
+              } else if (vname == "gid") {
+                trpcb->data.group = chvar->GetValueInt(-1);
+              }
+            }
+
+            // There is no `name` and `detail` fields if we read TROPCONF.ESFM
+            if (lightweight == true) continue;
+
+            for (auto& chch: chel->GetChildren()) {
+              auto& cname = chch->GetElementName();
+              if (cname == "name") {
+                trpcb->data.name.assign(chch->GetContent());
+              } else if (cname == "detail") {
+                trpcb->data.detail.assign(chch->GetContent());
+              }
+            }
+
+            trpcb->cancelled = trpcb->func(&trpcb->data);
+          } else if (grpcb != nullptr && cheln == "group") {
+            for (auto& chvar: chel->GetVariables()) {
+              auto& vname = chvar->GetName();
+              if (vname == "id") {
+                grpcb->data.id = chvar->GetValueInt(-1);
+              }
+
+              // There is no `name` and `detail` fields if we read TROPCONF.ESFM
+              if (lightweight == true) continue;
+
+              for (auto& chch: chel->GetChildren()) {
+                auto& cname = chch->GetElementName();
+                if (cname == "name") {
+                  grpcb->data.name.assign(chch->GetContent());
+                } else if (cname == "detail") {
+                  grpcb->data.detail.assign(chch->GetContent());
+                }
+              }
+
+              grpcb->cancelled = grpcb->func(&grpcb->data);
+            }
+          }
+        }
+
+        // We already parsed trophy info, we don't need more of it
+        if (trpcb != nullptr) trpcb->cancelled = true;
+        if (grpcb != nullptr) grpcb->cancelled = true;
+      } // element: trophyconf
+    }   // xml parser
+
+    return ErrCodes::SUCCESS; // todo: error checkers
+  }
+
   public:
   Trophies() {
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
@@ -174,9 +249,12 @@ class Trophies: public ITrophies {
               return ErrCodes::IO_FAIL;
             }
           } else {
+            static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
+            static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3;
+
             uint8_t d_iv[TR_AES_BLOCK_SIZE];
             uint8_t kg_iv[TR_AES_BLOCK_SIZE];
-            uint8_t enc_xmlh[48];
+            uint8_t enc_xmlh[ENC_SCE_SIGN_SIZE];
             ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
 
             if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) {
@@ -185,7 +263,7 @@ class Trophies: public ITrophies {
             }
 
             // 384 encrypted bits is just enough to find interesting for us string
-            if (!trfile.read((char*)enc_xmlh, 48)) {
+            if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) {
               delete[] mem;
               return ErrCodes::IO_FAIL;
             }
@@ -226,7 +304,7 @@ class Trophies: public ITrophies {
                   EVP_CIPHER_CTX_free(data_ctx);
                   return false;
                 }
-                if (!EVP_DecryptUpdate(data_ctx, outbuffer, &outlen, enc_xmlh, 48)) {
+                if (!EVP_DecryptUpdate(data_ctx, outbuffer, &outlen, enc_xmlh, ENC_SCE_SIGN_SIZE)) {
                   EVP_CIPHER_CTX_free(data_ctx);
                   return false;
                 }
@@ -238,11 +316,13 @@ class Trophies: public ITrophies {
                 // We found valid NPID, now we can continue our thing
                 ::memcpy(mem, outbuffer, outlen);
                 char* mem_off = mem + outlen;
-                trfile.seekg(ent.pos + 64);
+                // Seeking to unread encrypted data position (skip Init Vector + Signature Comkment Part)
+                trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE + ENC_SCE_SIGN_SIZE);
 
                 size_t copied;
                 while ((copied = size_t(mem_off - mem)) < ent.len) {
                   size_t len = std::min(ent.len - copied, sizeof(inbuffer));
+                  // Reading the rest of AES data block by block
                   if (!trfile.read((char*)inbuffer, len)) {
                     EVP_CIPHER_CTX_free(data_ctx);
                     return false;
@@ -268,6 +348,7 @@ class Trophies: public ITrophies {
             auto npid_path = accessFileManager().getGameFilesDir() / ".npcommid";
 
             {
+              // Trying to obtain cached NPID for this title and use it for trophies decrypting
               std::ifstream npid_f(npid_path);
               if (npid_f.is_open()) {
                 npid_f >> npid;
@@ -275,7 +356,7 @@ class Trophies: public ITrophies {
               }
             }
 
-            if (success == false) {
+            if (success == false) { // We failed to decrypt xml with saved NPID, now we search it
               for (uint32_t n = 0; n < 99999; n++) {
                 trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE);
                 if ((success = trydecrypt(n)) == true) {
@@ -284,7 +365,7 @@ class Trophies: public ITrophies {
                 }
               }
 
-              if (success == true) {
+              if (success == true) { // NPID found, saving it to cache file
                 std::ofstream npid_f(npid_path, std::ios::out);
                 if (npid_f.is_open()) {
                   npid_f << npid;
@@ -302,78 +383,9 @@ class Trophies: public ITrophies {
             }
           }
 
-          XML3::XML xml(mem, strlen(mem));
-          delete[] mem;
-
-          { // xml parser
-            auto& rootel = xml.GetRootElement();
-            if (rootel.GetElementName() == "trophyconf") {
-              for (auto& chel: rootel.GetChildren()) {
-                auto& cheln = chel->GetElementName();
-                if (trpcb != nullptr && cheln == "trophy") {
-                  trpcb->data.id    = -1;
-                  trpcb->data.group = -1;
-                  trpcb->data.type  = 0xFF;
-                  trpcb->data.name.clear();
-                  trpcb->data.detail.clear();
-
-                  for (auto& chvar: chel->GetVariables()) {
-                    auto& vname = chvar->GetName();
-                    if (vname == "id") {
-                      trpcb->data.id = chvar->GetValueInt(-1);
-                    } else if (vname == "hidden") {
-                      trpcb->data.hidden = chvar->GetValue() != "no";
-                    } else if (vname == "ttype") {
-                      trpcb->data.type = chvar->GetValue().at(0);
-                    } else if (vname == "gid") {
-                      trpcb->data.group = chvar->GetValueInt(-1);
-                    }
-                  }
-
-                  // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-                  if (lightweight == true) continue;
-
-                  for (auto& chch: chel->GetChildren()) {
-                    auto& cname = chch->GetElementName();
-                    if (cname == "name") {
-                      trpcb->data.name.assign(chch->GetContent());
-                    } else if (cname == "detail") {
-                      trpcb->data.detail.assign(chch->GetContent());
-                    }
-                  }
-
-                  trpcb->cancelled = trpcb->func(&trpcb->data);
-                } else if (grpcb != nullptr && cheln == "group") {
-                  for (auto& chvar: chel->GetVariables()) {
-                    auto& vname = chvar->GetName();
-                    if (vname == "id") {
-                      grpcb->data.id = chvar->GetValueInt(-1);
-                    }
-
-                    // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-                    if (lightweight == true) continue;
-
-                    for (auto& chch: chel->GetChildren()) {
-                      auto& cname = chch->GetElementName();
-                      if (cname == "name") {
-                        grpcb->data.name.assign(chch->GetContent());
-                      } else if (cname == "detail") {
-                        grpcb->data.detail.assign(chch->GetContent());
-                      }
-                    }
-
-                    grpcb->cancelled = grpcb->func(&grpcb->data);
-                  }
-                }
-              }
-
-              // We already parsed trophy info, we don't need more of it
-              if (trpcb != nullptr) trpcb->cancelled = true;
-              if (grpcb != nullptr) grpcb->cancelled = true;
-            } // element: trophyconf
-          }   // xml parser
-        }     // group & trophy callbacks
-      }       // entries loop
+          return XML_parse(mem, grpcb, trpcb, lightweight);
+        } // group & trophy callbacks
+      }   // entries loop
 
       return ErrCodes::SUCCESS;
     } // trfile.is_open()
