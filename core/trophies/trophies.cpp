@@ -41,8 +41,11 @@ class Trophies: public ITrophies {
 
   static bool caseequal(char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
 
-  bool    m_bKeySet                  = false;
-  uint8_t m_trkey[TR_AES_BLOCK_SIZE] = {};
+  bool        m_bKeySet                  = false;
+  bool        m_bIgnoreMissingLocale     = false;
+  uint8_t     m_trkey[TR_AES_BLOCK_SIZE] = {};
+  std::string m_localizedTrophyFile      = {};
+  std::mutex  m_mutexParse;
 
   static ErrCodes XML_parse(const char* mem, trp_grp_cb* grpcb, trp_ent_cb* trpcb, bool lightweight) {
     XML3::XML xml(mem, strlen(mem));
@@ -115,7 +118,189 @@ class Trophies: public ITrophies {
       } // element: trophyconf
     }   // xml parser
 
-    return ErrCodes::SUCCESS; // todo: error checkers
+    return ErrCodes::CONTINUE; // todo: error checkers
+  }
+
+  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_grp_cb* grpcb, trp_ent_cb* trpcb, trp_png_cb* pngcb,
+                         bool lightweight) {
+    LOG_USE_MODULE(core_trophies);
+    if (pngcb != nullptr && !pngcb->cancelled) {
+      static std::string_view ext(".png");
+      std::string_view        name(ent.name);
+      if (std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) { // Test trp file extension
+        if (((ent.flag >> 24) & 0x03) == 0) {
+          pngcb->data.pngsize = ent.len;
+          pngcb->data.pngdata = new char[ent.len]; // Developer should free this memory manually
+          trfile.seekg(ent.pos);
+          if (trfile.read((char*)pngcb->data.pngdata, ent.len)) {
+            pngcb->cancelled = pngcb->func(&pngcb->data);
+            return ErrCodes::CONTINUE;
+          }
+
+          return ErrCodes::IO_FAIL;
+        } else {
+          // Is this even possible?
+          return ErrCodes::NOT_IMPLEMENTED;
+        }
+      }
+    }
+
+    if (grpcb != nullptr || trpcb != nullptr) {
+      static std::string_view ext(".esfm");
+      std::string_view        name(ent.name);
+      if (!std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) return ErrCodes::CONTINUE;
+      if ((ent.len % 16) != 0) return ErrCodes::INVALID_AES;
+      if (lightweight == true) {
+        static std::string_view lwfile("tropconf.esfm");
+        if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) return ErrCodes::CONTINUE;
+      } else if (m_bIgnoreMissingLocale == false) {
+        static std::string_view dfile("trop.esfm");
+        if (m_localizedTrophyFile.length() == 0) {
+          // No localized trophy needed, using the English one
+          if (!std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) return ErrCodes::CONTINUE;
+        } else {
+          // Trying to find localized trophy
+          if (!std::equal(name.begin(), name.end(), m_localizedTrophyFile.begin(), m_localizedTrophyFile.end(), caseequal)) {
+            if (std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) dent = ent;
+            return ErrCodes::CONTINUE;
+          }
+        }
+      }
+
+      boost::scoped_ptr<char> mem(new char[ent.len]);
+      trfile.seekg(ent.pos); // Seek to file position
+
+      if (((ent.flag >> 24) & 0x03) == 0) {
+        if (!trfile.read(mem.get(), ent.len)) return ErrCodes::IO_FAIL;
+      } else {
+        static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
+        static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3;
+
+        uint8_t d_iv[TR_AES_BLOCK_SIZE];
+        uint8_t kg_iv[TR_AES_BLOCK_SIZE];
+        uint8_t enc_xmlh[ENC_SCE_SIGN_SIZE];
+        ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
+
+        if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ErrCodes::IO_FAIL;
+
+        // 384 encrypted bits is just enough to find interesting for us string
+        if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ErrCodes::IO_FAIL;
+
+        const auto trydecrypt = [this, &mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {
+          uint8_t outbuffer[512];
+          uint8_t inbuffer[512];
+
+          ::memset(outbuffer, 0, 512);
+          ::memset(inbuffer, 0, 512);
+          ::sprintf_s((char*)inbuffer, sizeof(inbuffer), "NPWR%05d_00", npid);
+
+          int outlen;
+
+          //  Key creation context
+          {
+            EVP_CIPHER_CTX* key_ctx = EVP_CIPHER_CTX_new();
+            if (!EVP_EncryptInit(key_ctx, EVP_aes_128_cbc(), m_trkey, kg_iv)) {
+              EVP_CIPHER_CTX_free(key_ctx);
+              return false;
+            }
+            if (!EVP_EncryptUpdate(key_ctx, outbuffer, &outlen, inbuffer, TR_AES_BLOCK_SIZE)) {
+              EVP_CIPHER_CTX_free(key_ctx);
+              return false;
+            }
+            /**
+             * Cipher finalizing is not really necessary there,
+             * since we use only 16 bytes encrypted by the update function above
+             */
+            EVP_CIPHER_CTX_free(key_ctx);
+          }
+          //- Key creation context
+
+          //  Data decipher context
+          EVP_CIPHER_CTX* data_ctx = EVP_CIPHER_CTX_new();
+          {
+            if (!EVP_DecryptInit(data_ctx, EVP_aes_128_cbc(), outbuffer, d_iv)) {
+              EVP_CIPHER_CTX_free(data_ctx);
+              return false;
+            }
+            if (!EVP_DecryptUpdate(data_ctx, outbuffer, &outlen, enc_xmlh, ENC_SCE_SIGN_SIZE)) {
+              EVP_CIPHER_CTX_free(data_ctx);
+              return false;
+            }
+            if (::_strnicmp((char*)outbuffer, "<!--Sce-Np-Trophy-Signature", 27) != 0) {
+              EVP_CIPHER_CTX_free(data_ctx);
+              return false;
+            }
+
+            // We found valid NPID, now we can continue our thing
+            ::memcpy(mem.get(), outbuffer, outlen);
+            char* mem_off = mem.get() + outlen;
+            // Seeking to unread encrypted data position (skip Init Vector + Signature Comkment Part)
+            trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE + ENC_SCE_SIGN_SIZE);
+
+            size_t copied;
+            while ((copied = size_t(mem_off - mem.get())) < ent.len) {
+              size_t len = std::min(ent.len - copied, sizeof(inbuffer));
+              // Reading the rest of AES data block by block
+              if (!trfile.read((char*)inbuffer, len)) {
+                EVP_CIPHER_CTX_free(data_ctx);
+                return false;
+              }
+              if (!EVP_DecryptUpdate(data_ctx, (uint8_t*)mem_off, &outlen, inbuffer, len)) {
+                EVP_CIPHER_CTX_free(data_ctx);
+                return false;
+              }
+
+              mem_off += outlen;
+            }
+
+            EVP_CIPHER_CTX_free(data_ctx);
+            *mem_off = '\0'; // Finally
+          }
+          //- Data decipher context
+
+          return true;
+        }; // lambda: trydecrypt
+
+        int  npid;
+        bool success   = false;
+        auto npid_path = accessFileManager().getGameFilesDir() / ".npcommid";
+
+        {
+          // Trying to obtain cached NPID for this title and use it for trophies decrypting
+          std::ifstream npid_f(npid_path);
+          if (npid_f.is_open()) {
+            npid_f >> npid;
+            success = trydecrypt(npid);
+          }
+        }
+
+        if (success == false) { // We failed to decrypt xml with saved NPID, now we search it
+          for (uint32_t n = 0; n < 99999; n++) {
+            trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE);
+            if ((success = trydecrypt(n)) == true) {
+              npid = n;
+              break;
+            }
+          }
+
+          if (success == true) { // NPID found, saving it to cache file
+            std::ofstream npid_f(npid_path, std::ios::out);
+            if (npid_f.is_open()) {
+              npid_f << npid;
+            }
+          }
+        }
+
+        if (success == false) {
+          LOG_ERR(L"Failed to guess ID for trophy file");
+          return ErrCodes::DECRYPT;
+        }
+      }
+
+      return XML_parse(mem.get(), grpcb, trpcb, lightweight);
+    } // group & trophy callbacks
+
+    return ErrCodes::CONTINUE;
   }
 
   public:
@@ -132,13 +317,27 @@ class Trophies: public ITrophies {
         m_trkey[i / 2] = (uint8_t)std::strtol(byte.c_str(), nullptr, 16);
       }
     }
+
+    {
+      SystemParamLang systemlang;
+
+      try {
+        (*jData)["systemlang"].get_to(systemlang);
+      } catch (const json::exception& e) {
+        systemlang = SystemParamLang::EnglishUS;
+      }
+
+      if (systemlang != SystemParamLang::EnglishUS) m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
+    }
   }
 
   ErrCodes parseTRP(trp_grp_cb* grpcb = nullptr, trp_ent_cb* trpcb = nullptr, trp_png_cb* pngcb = nullptr, bool lightweight = false) final {
     if (grpcb == nullptr && trpcb == nullptr && pngcb == nullptr) return ErrCodes::NO_CALLBACKS;
-    if (pngcb != nullptr && lightweight == true) return ErrCodes::NO_PNG;
+    std::unique_lock lock(m_mutexParse);
+
     if (m_bKeySet == false) return ErrCodes::NO_KEY_SET;
     LOG_USE_MODULE(core_trophies);
+    m_bIgnoreMissingLocale = false;
 
     auto mpath = accessFileManager().getMappedPath("/app0/sce_sys/trophy/trophy00.trp");
     if (mpath.has_value() == false) return ErrCodes::NO_TROPHIES;
@@ -160,222 +359,29 @@ class Trophies: public ITrophies {
       hdr.entry_size = _byteswap_ulong(hdr.entry_size);
       if (hdr.entry_size != sizeof(trp_entry)) return ErrCodes::INVALID_ENTSIZE;
 
-      std::string localized_trp;
-      {
-        SystemParamLang systemlang;
-        auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
-
-        try {
-          (*jData)["systemlang"].get_to(systemlang);
-        } catch (const json::exception& e) {
-          systemlang = SystemParamLang::EnglishUS;
-        }
-
-        if (systemlang != SystemParamLang::EnglishUS) localized_trp = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
-      }
-
       trp_entry ent, dent = {0};
       for (uint32_t i = 0; i < hdr.entry_num; ++i) {
         if ((pngcb != nullptr && pngcb->cancelled) && (grpcb != nullptr && grpcb->cancelled) && (trpcb != nullptr && trpcb->cancelled))
           return ErrCodes::SUCCESS;
 
+        trfile.seekg(sizeof(trp_header) + (sizeof(trp_entry) * i));
         if (!trfile.read((char*)&ent, sizeof(trp_entry))) return ErrCodes::IO_FAIL;
 
         ent.pos = _byteswap_uint64(ent.pos);
         ent.len = _byteswap_uint64(ent.len);
 
-        if (pngcb != nullptr && !pngcb->cancelled) {
-          static std::string_view ext(".png");
-          std::string_view        name(ent.name);
-          if (std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) { // Test trp file extension
-            if (((ent.flag >> 24) & 0x03) == 0) {
-              pngcb->data.pngsize = ent.len;
-              pngcb->data.pngdata = new char[ent.len]; // Developer should free this memory manually
-              auto ppos           = trfile.tellg();
-              trfile.seekg(ent.pos);
-              if (trfile.read((char*)pngcb->data.pngdata, ent.len)) {
-                pngcb->cancelled = pngcb->func(&pngcb->data);
-                trfile.seekg(ppos);
-                continue;
-              }
+        auto ret = TRP_readentry(ent, dent, trfile, grpcb, trpcb, pngcb, lightweight);
+        if (ret != ErrCodes::CONTINUE) return ret;
+      } // entries loop
 
-              return ErrCodes::IO_FAIL;
-            } else {
-              // Is this even possible?
-              return ErrCodes::NOT_IMPLEMENTED;
-            }
-          }
+      // Group or trophy callback is not cancelled yet, looks like we missed localized esfm file, trying to use the default one
+      if ((grpcb != nullptr && grpcb->cancelled != true) || (trpcb != nullptr && trpcb->cancelled != true)) {
+        m_bIgnoreMissingLocale = true;
+        if (dent.len != 0) {
+          auto ret = TRP_readentry(dent, dent, trfile, grpcb, trpcb, pngcb, lightweight);
+          if (ret != ErrCodes::CONTINUE) return ret;
         }
-
-        if (grpcb != nullptr || trpcb != nullptr) {
-          static std::string_view ext(".esfm");
-          std::string_view        name(ent.name);
-          if (!std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) continue;
-          if ((ent.len % 16) != 0) return ErrCodes::INVALID_AES;
-          if (lightweight == true) {
-            static std::string_view lwfile("tropconf.esfm");
-            if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) continue;
-          } else {
-            static std::string_view dfile("trop.esfm");
-            if (localized_trp.length() == 0) {
-              // No localized trophy needed, using the English one
-              if (!std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) continue;
-            } else {
-              // Trying to find localized trophy
-              if (!std::equal(name.begin(), name.end(), localized_trp.begin(), localized_trp.end(), caseequal)) {
-                if (std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) dent = ent;
-                // End of trophy.trp file reached
-                if (i == (hdr.entry_num - 1)) {
-                  // Failed to find localized and non-localized trophy, probably file packed incorrectly
-                  if (dent.len == 0) continue;
-                  // We failed to find localized trophy, so we use the default one
-                  ent = dent;
-                } else {
-                  // Not the last entry yet, check the next one
-                  continue;
-                }
-              }
-            }
-          }
-
-          boost::scoped_ptr<char> mem(new char[ent.len]);
-          auto                    ppos = trfile.tellg();
-          trfile.seekg(ent.pos); // Seek to file position
-
-          if (((ent.flag >> 24) & 0x03) == 0) {
-            auto ppos = trfile.tellg();
-            if (!trfile.read(mem.get(), ent.len)) return ErrCodes::IO_FAIL;
-          } else {
-            static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
-            static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3;
-
-            uint8_t d_iv[TR_AES_BLOCK_SIZE];
-            uint8_t kg_iv[TR_AES_BLOCK_SIZE];
-            uint8_t enc_xmlh[ENC_SCE_SIGN_SIZE];
-            ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
-
-            if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ErrCodes::IO_FAIL;
-
-            // 384 encrypted bits is just enough to find interesting for us string
-            if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ErrCodes::IO_FAIL;
-
-            const auto trydecrypt = [this, &mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {
-              uint8_t outbuffer[512];
-              uint8_t inbuffer[512];
-
-              ::memset(outbuffer, 0, 512);
-              ::memset(inbuffer, 0, 512);
-              ::sprintf_s((char*)inbuffer, sizeof(inbuffer), "NPWR%05d_00", npid);
-
-              int outlen;
-
-              //  Key creation context
-              {
-                EVP_CIPHER_CTX* key_ctx = EVP_CIPHER_CTX_new();
-                if (!EVP_EncryptInit(key_ctx, EVP_aes_128_cbc(), m_trkey, kg_iv)) {
-                  EVP_CIPHER_CTX_free(key_ctx);
-                  return false;
-                }
-                if (!EVP_EncryptUpdate(key_ctx, outbuffer, &outlen, inbuffer, TR_AES_BLOCK_SIZE)) {
-                  EVP_CIPHER_CTX_free(key_ctx);
-                  return false;
-                }
-                /**
-                 * Cipher finalizing is not really necessary there,
-                 * since we use only 16 bytes encrypted by the update function above
-                 */
-                EVP_CIPHER_CTX_free(key_ctx);
-              }
-              //- Key creation context
-
-              //  Data decipher context
-              EVP_CIPHER_CTX* data_ctx = EVP_CIPHER_CTX_new();
-              {
-                if (!EVP_DecryptInit(data_ctx, EVP_aes_128_cbc(), outbuffer, d_iv)) {
-                  EVP_CIPHER_CTX_free(data_ctx);
-                  return false;
-                }
-                if (!EVP_DecryptUpdate(data_ctx, outbuffer, &outlen, enc_xmlh, ENC_SCE_SIGN_SIZE)) {
-                  EVP_CIPHER_CTX_free(data_ctx);
-                  return false;
-                }
-                if (::_strnicmp((char*)outbuffer, "<!--Sce-Np-Trophy-Signature", 27) != 0) {
-                  EVP_CIPHER_CTX_free(data_ctx);
-                  return false;
-                }
-
-                // We found valid NPID, now we can continue our thing
-                ::memcpy(mem.get(), outbuffer, outlen);
-                char* mem_off = mem.get() + outlen;
-                // Seeking to unread encrypted data position (skip Init Vector + Signature Comkment Part)
-                trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE + ENC_SCE_SIGN_SIZE);
-
-                size_t copied;
-                while ((copied = size_t(mem_off - mem.get())) < ent.len) {
-                  size_t len = std::min(ent.len - copied, sizeof(inbuffer));
-                  // Reading the rest of AES data block by block
-                  if (!trfile.read((char*)inbuffer, len)) {
-                    EVP_CIPHER_CTX_free(data_ctx);
-                    return false;
-                  }
-                  if (!EVP_DecryptUpdate(data_ctx, (uint8_t*)mem_off, &outlen, inbuffer, len)) {
-                    EVP_CIPHER_CTX_free(data_ctx);
-                    return false;
-                  }
-
-                  mem_off += outlen;
-                }
-
-                EVP_CIPHER_CTX_free(data_ctx);
-                *mem_off = '\0'; // Finally
-              }
-              //- Data decipher context
-
-              return true;
-            }; // lambda: trydecrypt
-
-            int  npid;
-            bool success   = false;
-            auto npid_path = accessFileManager().getGameFilesDir() / ".npcommid";
-
-            {
-              // Trying to obtain cached NPID for this title and use it for trophies decrypting
-              std::ifstream npid_f(npid_path);
-              if (npid_f.is_open()) {
-                npid_f >> npid;
-                success = trydecrypt(npid);
-              }
-            }
-
-            if (success == false) { // We failed to decrypt xml with saved NPID, now we search it
-              for (uint32_t n = 0; n < 99999; n++) {
-                trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE);
-                if ((success = trydecrypt(n)) == true) {
-                  npid = n;
-                  break;
-                }
-              }
-
-              if (success == true) { // NPID found, saving it to cache file
-                std::ofstream npid_f(npid_path, std::ios::out);
-                if (npid_f.is_open()) {
-                  npid_f << npid;
-                }
-              }
-            }
-
-            // Restore cursor position to file list
-            trfile.seekg(ppos);
-
-            if (success == false) {
-              LOG_ERR(L"Failed to guess ID for trophy file");
-              return ErrCodes::DECRYPT;
-            }
-          }
-
-          return XML_parse(mem.get(), grpcb, trpcb, lightweight);
-        } // group & trophy callbacks
-      }   // entries loop
+      }
 
       return ErrCodes::SUCCESS;
     } // trfile.is_open()

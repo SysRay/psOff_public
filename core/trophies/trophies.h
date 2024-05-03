@@ -17,18 +17,18 @@ class ITrophies {
   ~ITrophies() = default;
 
   enum class ErrCodes {
-    SUCCESS = 0,
-    NO_KEY_SET,
-    INVALID_MAGIC,
-    INVALID_VERSION,
-    INVALID_ENTSIZE,
-    INVALID_AES,
-    NOT_IMPLEMENTED,
-    IO_FAIL,
-    NO_CALLBACKS,
-    NO_PNG,
-    DECRYPT,
-    NO_TROPHIES,
+    SUCCESS = 0,     // No errors, we're fine
+    CONTINUE,        // Not an actual error code. \bFor internal usage only!\b
+    NO_KEY_SET,      // No root key installed
+    INVALID_MAGIC,   // TRP file has invalid magic in its header
+    INVALID_VERSION, // TRP file version is not valid
+    INVALID_ENTSIZE, // TRP file has bigger entries
+    INVALID_AES,     // TRP file contains unaligned AES blocks
+    NOT_IMPLEMENTED, // This feature is not implemented yet
+    IO_FAIL,         // Failed to read TRP file
+    NO_CALLBACKS,    // Parser called with no callbacks, it's pointless
+    DECRYPT,         // TRP file decryption failed
+    NO_TROPHIES,     // Failed to open TRP file or the said file does not contain any esfm file
   };
 
   struct trp_grp_cb {
