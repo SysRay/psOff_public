@@ -25,8 +25,8 @@ LOG_DEFINE_MODULE(RuntimeLinker);
 
 namespace {
 using atexit_func_t = SYSV_ABI void (*)();
-using entry_func_t  = SYSV_ABI void  (*)(EntryParams const* params, atexit_func_t atexit_func);
-using module_func_t = SYSV_ABI int  (*)(size_t args, const void* argp, atexit_func_t atexit_func);
+using entry_func_t  = SYSV_ABI void (*)(EntryParams const* params, atexit_func_t atexit_func);
+using module_func_t = SYSV_ABI int (*)(size_t args, const void* argp, atexit_func_t atexit_func);
 
 struct FrameS {
   FrameS*   next;
