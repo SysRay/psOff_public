@@ -1,11 +1,22 @@
 #include "../libSceNpManager/types.h"
 #include "common.h"
+#include "core/fileManager/fileManager.h"
+#include "core/trophies/trophies.h"
 #include "logging.h"
 #include "types.h"
 
+#include <fstream>
+
 LOG_DEFINE_MODULE(libSceNpTrophy);
 
-namespace {} // namespace
+namespace {
+struct trp_context {
+  bool              created;
+  SceNpServiceLabel label;
+};
+
+static trp_context contexts[4] = {};
+} // namespace
 
 extern "C" {
 
@@ -25,7 +36,20 @@ EXPORT SYSV_ABI int sceNpTrophyAbortHandle(SceNpTrophyHandle handle) {
 }
 
 EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_t userId, SceNpServiceLabel serviceLabel, uint64_t options) {
-  *context = 1;
+  auto& ctx = contexts[userId];
+  if (ctx.created) return Err::NpTrophy::ALREADY_EXISTS;
+  // static std::once_flag init;
+  // std::call_once(init, []() {
+  //   ITrophies::trp_ent_cb ent = {.func = [](ITrophies::trp_ent_cb::data_t* data) {
+  //     LOG_USE_MODULE(libSceNpTrophy);
+  //     LOG_ERR(L"Trophy! %S: %S (id:%d)", data->name.c_str(), data->detail.c_str(), data->id);
+  //     return false; // Do not cancel this callback
+  //   }};
+  //   accessTrophies().parseTRP(nullptr, &ent);
+  // });
+  ctx.created = true;
+  ctx.label   = serviceLabel;
+  *context    = userId;
   return Ok;
 }
 
@@ -38,7 +62,7 @@ EXPORT SYSV_ABI int sceNpTrophyRegisterContext(SceNpTrophyContext context, SceNp
 }
 
 EXPORT SYSV_ABI int sceNpTrophyUnlockTrophy(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyId trophyId, SceNpTrophyId* platinumId) {
-  *platinumId = Err::SCE_NP_TROPHY_INVALID_TROPHY_ID;
+  *platinumId = NpTrophy::INVALID_TROPHY_ID;
   return Ok;
 }
 

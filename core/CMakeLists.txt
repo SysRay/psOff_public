@@ -10,6 +10,7 @@ add_subdirectory(initParams)
 add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(networking)
+add_subdirectory(trophies)
 add_subdirectory(fileManager)
 add_subdirectory(memory)
 add_subdirectory(dmem)
@@ -23,6 +24,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:timer>
   $<TARGET_OBJECTS:systemContent>
   $<TARGET_OBJECTS:networking>
+  $<TARGET_OBJECTS:trophies>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:memory>
@@ -46,6 +48,8 @@ target_link_libraries(core PRIVATE
   onecore.lib
   IPHLPAPI.lib
   Ws2_32.lib
+  libcrypto.lib
+  libssl.lib
   ntdll.dll
   VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}

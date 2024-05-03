@@ -269,6 +269,7 @@ Config::Config() {
                                      {"systemlang", 1u},
                                      {"netEnabled", false},
                                      {"netMAC", "00:00:00:00:00:00"},
+                                     {"trophyKey", ""},
                                      {"userIndex", 1u},
                                      {"onlineUsers", 1u},
                                      {"profiles", defprofiles},
