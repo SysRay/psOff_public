@@ -8,6 +8,7 @@
 #include "tools/config_emu/config_emu.h"
 #include "xml3all.h"
 
+#include <boost/scoped_ptr.hpp>
 #include <fstream>
 #include <openssl/evp.h>
 
@@ -45,7 +46,6 @@ class Trophies: public ITrophies {
 
   static ErrCodes XML_parse(const char* mem, trp_grp_cb* grpcb, trp_ent_cb* trpcb, bool lightweight) {
     XML3::XML xml(mem, strlen(mem));
-    delete[] mem;
 
     { // xml parser
       auto& rootel = xml.GetRootElement();
@@ -238,16 +238,13 @@ class Trophies: public ITrophies {
             }
           }
 
-          auto mem  = new char[ent.len];
-          auto ppos = trfile.tellg();
+          boost::scoped_ptr<char> mem(new char[ent.len]);
+          auto                    ppos = trfile.tellg();
           trfile.seekg(ent.pos); // Seek to file position
 
           if (((ent.flag >> 24) & 0x03) == 0) {
             auto ppos = trfile.tellg();
-            if (!trfile.read(mem, ent.len)) {
-              delete[] mem;
-              return ErrCodes::IO_FAIL;
-            }
+            if (!trfile.read(mem.get(), ent.len)) return ErrCodes::IO_FAIL;
           } else {
             static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
             static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3;
@@ -257,18 +254,12 @@ class Trophies: public ITrophies {
             uint8_t enc_xmlh[ENC_SCE_SIGN_SIZE];
             ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
 
-            if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) {
-              delete[] mem;
-              return ErrCodes::IO_FAIL;
-            }
+            if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ErrCodes::IO_FAIL;
 
             // 384 encrypted bits is just enough to find interesting for us string
-            if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) {
-              delete[] mem;
-              return ErrCodes::IO_FAIL;
-            }
+            if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ErrCodes::IO_FAIL;
 
-            const auto trydecrypt = [this, mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {
+            const auto trydecrypt = [this, &mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {
               uint8_t outbuffer[512];
               uint8_t inbuffer[512];
 
@@ -314,13 +305,13 @@ class Trophies: public ITrophies {
                 }
 
                 // We found valid NPID, now we can continue our thing
-                ::memcpy(mem, outbuffer, outlen);
-                char* mem_off = mem + outlen;
+                ::memcpy(mem.get(), outbuffer, outlen);
+                char* mem_off = mem.get() + outlen;
                 // Seeking to unread encrypted data position (skip Init Vector + Signature Comkment Part)
                 trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE + ENC_SCE_SIGN_SIZE);
 
                 size_t copied;
-                while ((copied = size_t(mem_off - mem)) < ent.len) {
+                while ((copied = size_t(mem_off - mem.get())) < ent.len) {
                   size_t len = std::min(ent.len - copied, sizeof(inbuffer));
                   // Reading the rest of AES data block by block
                   if (!trfile.read((char*)inbuffer, len)) {
@@ -378,12 +369,11 @@ class Trophies: public ITrophies {
 
             if (success == false) {
               LOG_ERR(L"Failed to guess ID for trophy file");
-              delete[] mem;
               return ErrCodes::DECRYPT;
             }
           }
 
-          return XML_parse(mem, grpcb, trpcb, lightweight);
+          return XML_parse(mem.get(), grpcb, trpcb, lightweight);
         } // group & trophy callbacks
       }   // entries loop
 
