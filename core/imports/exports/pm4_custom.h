@@ -6,7 +6,7 @@ namespace Pm4 {
 
 #define PM4_GET(u, r, f) (((u) >> Pm4::r##_##f##_SHIFT) & Pm4::r##_##f##_MASK)
 
-enum class Custom : uint16_t {
+enum class Custom : uint8_t {
   R_VS,
   R_PS,
   R_DRAW_INDEX,
@@ -29,7 +29,7 @@ enum class Custom : uint16_t {
 };
 
 constexpr uint32_t create(uint16_t len, Custom baseIndex) {
-  return 0x40000000u | (((static_cast<uint16_t>(len) - 2u) & 0x3fffu) << 16u) | (uint16_t)baseIndex;
+  return 0x60000000u | (((len - 2u) & 0x3fffu) << 8u) | (uint8_t)baseIndex;
 }
 
 } // namespace Pm4
