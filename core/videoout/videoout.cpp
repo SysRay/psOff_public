@@ -13,6 +13,7 @@
 #include "modules/libSceVideoOut/codes.h"
 #include "modules/libSceVideoOut/types.h"
 #include "modules_include/common.h"
+#include "overlay/overlay.h"
 #include "vulkan/vulkanHelper.h"
 
 #include <SDL2/SDL.h>
@@ -172,8 +173,10 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
   vulkan::VulkanObj* m_vulkanObj = nullptr;
 
-  std::unique_ptr<IGraphics>     m_graphics;
-  std::unique_ptr<IImageHandler> m_imageHandler;
+  std::unique_ptr<IGraphics> m_graphics;
+
+  std::unique_ptr<IImageHandler>   m_imageHandler;
+  std::unique_ptr<IOverlayHandler> m_overlayHandler;
 
   std::thread             m_threadSDL2;
   std::condition_variable m_condSDL2;
@@ -332,6 +335,8 @@ VideoOut::~VideoOut() {
   // printf("VideoOut| waiting on gpu idle\n");
   m_imageHandler->stop();
   m_graphics->stop();
+  m_overlayHandler->stop();
+
   vkQueueWaitIdle(m_imageHandler->getQueue()->queue);
 
   // shutdown graphics first (uses vulkan)
@@ -346,6 +351,8 @@ VideoOut::~VideoOut() {
 
   m_imageHandler->deinit();
   m_imageHandler.reset();
+
+  m_overlayHandler.reset();
 
   printf("VideoOut| Destroy vulkan\n");
 
@@ -492,6 +499,7 @@ int VideoOut::SDLInit(uint32_t flags) {
 void VideoOut::transferDisplay(ImageData const& imageData, vulkan::SwapchainData::DisplayBuffers& displayBufferMeta, VkSemaphore waitSema, size_t waitValue) {
 
   vulkan::transfer2Display(&displayBufferMeta, imageData, m_graphics.get());
+  m_overlayHandler->submit(imageData);
   vulkan::submitDisplayTransfer(&displayBufferMeta, imageData, m_imageHandler->getQueue(), waitSema, waitValue);
 }
 
@@ -782,9 +790,11 @@ std::thread VideoOut::createSDLThread() {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
     // SDL polling helper
-    auto func_pollSDL = [](auto& window) {
+    auto func_pollSDL = [&](auto& window) {
       SDL_Event event;
       while (SDL_PollEvent(&event)) {
+        m_overlayHandler->processEvent(&event);
+
         switch (event.type) {
           case SDL_WINDOWEVENT:
             switch (event.window.event) {
@@ -925,6 +935,9 @@ std::thread VideoOut::createSDLThread() {
             m_imageHandler = createImageHandler(m_vulkanObj->deviceInfo, VkExtent2D {window.config.resolution.paneWidth, window.config.resolution.paneHeight},
                                                 queue, &window);
             m_imageHandler->init(m_vulkanObj, window.surface);
+
+            auto [format, _] = vulkan::getDisplayFormat(m_vulkanObj);
+            m_overlayHandler = createOverlay(m_vulkanObj->deviceInfo, window.window, queue, format);
 
             *item.result = 0;
           } else {

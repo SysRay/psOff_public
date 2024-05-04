@@ -80,6 +80,10 @@ void submitDisplayTransfer(SwapchainData::DisplayBuffers const* displayBuffer, I
                            size_t waitValue) {
   LOG_USE_MODULE(vulkanHelper);
 
+  if (vkEndCommandBuffer(imageData.cmdBuffer) != VK_SUCCESS) {
+    LOG_CRIT(L"Couldn't end commandbuffer");
+  }
+
   size_t   waitValues[] = {0, waitValue};
   uint32_t waitCount    = waitSema != nullptr ? 2 : 1;
 
@@ -89,7 +93,7 @@ void submitDisplayTransfer(SwapchainData::DisplayBuffers const* displayBuffer, I
       .pWaitSemaphoreValues    = waitValues,
   };
 
-  VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
+  VkPipelineStageFlags waitStage[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
   VkSemaphore          sems[]      = {imageData.semImageReady, waitSema};
 
   VkSubmitInfo const submitInfo {
@@ -155,12 +159,6 @@ void transfer2Display(SwapchainData::DisplayBuffers const* displayBuffer, ImageD
     vkCmdPipelineBarrier(imageData.cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
   }
   // - Present layout
-
-  // End CmdBuffer -> Submit
-  if (vkEndCommandBuffer(imageData.cmdBuffer) != VK_SUCCESS) {
-    LOG_CRIT(L"Couldn't end commandbuffer");
-  }
-  // -
 }
 
 void presentImage(ImageData const& imageData, VkSwapchainKHR swapchain, QueueInfo const* queue) {

@@ -47,6 +47,7 @@ target_link_libraries(core PRIVATE
   IPHLPAPI.lib
   Ws2_32.lib
   ntdll.dll
+  imgui
   VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}
 )
