@@ -1254,7 +1254,7 @@ ScePthread setup_thread(void* arg) {
     LOG_DEBUG(L"thread[%d] stack addr:0x%08llx size:0x%08llx", thread->unique_id, tib->StackBase, stackSize);
     if (attr.getStackSize() < stackSize) {
       LOG_USE_MODULE(pthread);
-      LOG_WARN(L"wrong stack size");
+      LOG_ERR(L"wrong stack size");
     }
     attr.setStackSize(stackSize);
   }
