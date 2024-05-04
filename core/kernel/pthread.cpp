@@ -8,6 +8,7 @@
 #include "pthread_intern.h"
 
 #define __APICALL_IMPORT
+#include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/runtime/runtimeLinker.h"
 #include "core/timer/timer.h"
@@ -1227,6 +1228,8 @@ void cleanup_thread() {
 
   accessRuntimeLinker().destroyTLSKeys(getSelf());
 
+  accessMemoryManager()->unregisterStack((uint64_t)thread->attr.getStackAddr());
+
   // Delete here if detached, else in join()
   if (thread->detached) {
     LOG_DEBUG(L"Delete thread:%d", thread->unique_id);
@@ -1250,6 +1253,8 @@ ScePthread setup_thread(void* arg) {
 
     attr.setStackAddr(tib->StackLimit); // lowest addressable byte
     auto const stackSize = (uint64_t)tib->StackBase - (uint64_t)tib->StackLimit;
+
+    accessMemoryManager()->registerStack((uint64_t)tib->StackLimit, stackSize);
 
     LOG_DEBUG(L"thread[%d] stack addr:0x%08llx size:0x%08llx", thread->unique_id, tib->StackBase, stackSize);
     if (attr.getStackSize() < stackSize) {

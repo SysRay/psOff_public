@@ -7,6 +7,8 @@
 
 enum class MappingType { None, File, Flexible, Fixed, Direct };
 
+struct SceKernelVirtualQueryInfo;
+
 class IMemoryManager {
   CLASS_NO_COPY(IMemoryManager);
   CLASS_NO_MOVE(IMemoryManager);
@@ -22,7 +24,7 @@ class IMemoryManager {
    * @param vaddr
    * @param type
    */
-  virtual void registerMapping(uint64_t vaddr, MappingType type) = 0;
+  virtual void registerMapping(uint64_t vaddr, uint64_t size, MappingType type) = 0;
 
   /**
    * @brief Unregisters mapping and returns the type of the mapping
@@ -31,6 +33,11 @@ class IMemoryManager {
    * @return None: Mapping didn't exist
    */
   virtual MappingType unregisterMapping(uint64_t vaddr) = 0;
+
+  virtual void registerStack(uint64_t addr, uint64_t size) = 0;
+  virtual void unregisterStack(uint64_t addr)              = 0;
+
+  virtual int32_t virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const = 0;
 
   virtual IMemoryType* directMemory()   = 0;
   virtual IMemoryType* flexibleMemory() = 0;

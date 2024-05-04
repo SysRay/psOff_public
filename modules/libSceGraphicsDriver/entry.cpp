@@ -68,35 +68,35 @@ int SYSV_ABI sceGnmSetVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
   // }
   // // -- hooking caller
 
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VS);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], vs_regs, size - 1);
+  memcpy(&cmdOut[2], vs_regs, size - 2);
 
   return Ok;
 }
 
 int SYSV_ABI sceGnmUpdateVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* vs_regs, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VS_UPDATE);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], vs_regs, size - 1);
+  memcpy(&cmdOut[2], vs_regs, size - 2);
 
   return Ok;
 }
 
 int SYSV_ABI sceGnmSetPsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   if (ps_regs == nullptr) {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
     cmdOut[1] = 0;
   } else {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS);
-    memcpy(&cmdOut[1], ps_regs, 8 + size);
+    memcpy(&cmdOut[1], ps_regs, size - 1);
   }
 
   return Ok;
@@ -104,13 +104,13 @@ int SYSV_ABI sceGnmSetPsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
 
 int SYSV_ABI sceGnmSetPsShader350(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   if (ps_regs == nullptr) {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
     cmdOut[1] = 0;
   } else {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS);
-    memcpy(&cmdOut[1], ps_regs, 8 + size);
+    memcpy(&cmdOut[1], ps_regs, size - 1);
   }
 
   return Ok;
@@ -118,34 +118,24 @@ int SYSV_ABI sceGnmSetPsShader350(uint32_t* cmdOut, uint64_t size, const uint32_
 
 int SYSV_ABI sceGnmUpdatePsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-  memcpy(&cmdOut[1], ps_regs, 8 + size);
+  memcpy(&cmdOut[1], ps_regs, size - 1);
 
   return Ok;
 }
 
 int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint32_t* ps_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   if (cmdOut == nullptr || size < 39) return -1;
   if (ps_regs != nullptr) {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-    memcpy(&cmdOut[1], ps_regs, 8 + size);
+    memcpy(&cmdOut[1], ps_regs, size - 1);
   } else {
-    cmdOut[0]  = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
-    cmdOut[1]  = 0x00000000;
-    cmdOut[2]  = 0x00000000;
-    cmdOut[3]  = 0x00000000;
-    cmdOut[4]  = 0xc0011000;
-    cmdOut[5]  = 0xc01e0203;
-    cmdOut[6]  = 0x00000000;
-    cmdOut[7]  = 0xc0016900;
-    cmdOut[8]  = 0x0000008f;
-    cmdOut[9]  = 0x0000000f;
-    cmdOut[10] = 0xc01c1000;
-    cmdOut[11] = 0x00000000;
+    cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
+    cmdOut[1] = 0x0;
   }
 
   return Ok;
@@ -153,25 +143,25 @@ int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint
 
 int SYSV_ABI sceGnmSetCsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* cs_regs) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_CS);
   cmdOut[1] = 0;
-  memcpy(&cmdOut[2], cs_regs, size);
+  memcpy(&cmdOut[2], cs_regs, size - 2);
   return Ok;
 }
 
 int SYSV_ABI sceGnmSetCsShaderWithModifier(uint32_t* cmdOut, uint64_t size, const uint32_t* cs_regs, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_CS);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], cs_regs, size);
+  memcpy(&cmdOut[2], cs_regs, size - 2);
   return Ok;
 }
 
 int SYSV_ABI sceGnmSetEmbeddedPsShader(uint32_t* cmdOut, uint64_t size, uint32_t id, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
   cmdOut[1] = shader_modifier;
@@ -181,7 +171,7 @@ int SYSV_ABI sceGnmSetEmbeddedPsShader(uint32_t* cmdOut, uint64_t size, uint32_t
 
 int SYSV_ABI sceGnmSetEmbeddedVsShader(uint32_t* cmdOut, uint64_t size, uint32_t id, uint32_t shader_modifier) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VS_EMBEDDED);
   cmdOut[1] = shader_modifier;
@@ -191,7 +181,7 @@ int SYSV_ABI sceGnmSetEmbeddedVsShader(uint32_t* cmdOut, uint64_t size, uint32_t
 
 int SYSV_ABI sceGnmDrawIndex(uint32_t* cmdOut, uint64_t size, uint32_t index_count, const void* index_addr, uint32_t flags, uint32_t type) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DRAW_INDEX);
   cmdOut[1] = index_count;
@@ -204,7 +194,7 @@ int SYSV_ABI sceGnmDrawIndex(uint32_t* cmdOut, uint64_t size, uint32_t index_cou
 
 int SYSV_ABI sceGnmDrawIndexOffset(uint32_t* cmdOut, uint64_t size, uint32_t index_offset, uint32_t index_count, uint32_t flags) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DRAW_INDEX_OFFSET);
   cmdOut[1] = index_offset;
@@ -218,7 +208,7 @@ int SYSV_ABI sceGnmDrawIndexOffset(uint32_t* cmdOut, uint64_t size, uint32_t ind
 
 int SYSV_ABI sceGnmDrawIndexAuto(uint32_t* cmdOut, uint64_t size, uint32_t index_count, uint32_t flags) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S 0x%08llx", __FUNCTION__, (uint64_t)cmdOut);
+  LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DRAW_INDEX_AUTO);
   cmdOut[1] = index_count;
@@ -283,7 +273,7 @@ void SYSV_ABI sceGnmFlushGarlic() {
 
 int SYSV_ABI sceGnmSetVgtControl(uint32_t* cmdOut, uint64_t size, uint32_t primGroupSizeMinusOne, uint32_t partialVsWaveMode, uint32_t wdSwitchOnlyOnEopMode) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S", __FUNCTION__);
+  LOG_TRACE(L"%S %u", __FUNCTION__, size);
 
   if (size == 3 && primGroupSizeMinusOne < 0x100 && ((wdSwitchOnlyOnEopMode | partialVsWaveMode) < 2)) {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VGT_CONTROL);
@@ -296,7 +286,7 @@ int SYSV_ABI sceGnmSetVgtControl(uint32_t* cmdOut, uint64_t size, uint32_t primG
 
 int SYSV_ABI sceGnmResetVgtControl(uint32_t* cmdOut, int32_t param) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S", __FUNCTION__);
+  LOG_TRACE(L"%S %u", __FUNCTION__, param);
 
   if (param == 3) {
     cmdOut[0] = Pm4::create(3, Pm4::Custom::R_VGT_CONTROL);
@@ -310,7 +300,7 @@ int SYSV_ABI sceGnmResetVgtControl(uint32_t* cmdOut, int32_t param) {
 
 uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState(uint32_t* cmdOut, uint64_t size) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_DEBUG(L"%S", __FUNCTION__);
+  LOG_DEBUG(L"%S %u", __FUNCTION__, size);
 
   cmdOut[0] = Pm4::create(2, Pm4::Custom::R_DRAW_RESET);
   return 2;
@@ -393,7 +383,7 @@ int SYSV_ABI sceGnmDispatchDirect(uint32_t* cmdOut, uint64_t size, uint32_t thre
 
 uint32_t SYSV_ABI sceGnmMapComputeQueue(uint32_t pipe_id, uint32_t queue_id, uint32_t* ring_addr, uint32_t ring_size_dw, uint32_t* read_ptr_addr) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S", __FUNCTION__);
+  LOG_ERR(L"%S", __FUNCTION__);
 
   // todo compute queue (8 commandprocessors with 8 compute rings (total 64))
   uint32_t const v = pipe_id * 8 + queue_id;
@@ -403,7 +393,7 @@ uint32_t SYSV_ABI sceGnmMapComputeQueue(uint32_t pipe_id, uint32_t queue_id, uin
 
 int SYSV_ABI sceGnmComputeWaitOnAddress(uint32_t* cmdOut, uint64_t size, uint32_t* gpu_addr, uint32_t mask, uint32_t func, uint32_t ref) {
   LOG_USE_MODULE(libSceGraphicsDriver);
-  LOG_TRACE(L"%S", __FUNCTION__);
+  LOG_ERR(L"%S", __FUNCTION__);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DISPATCH_WAIT_MEM);
   cmdOut[1] = static_cast<uint32_t>(reinterpret_cast<uint64_t>(gpu_addr) & 0xffffffffu);
@@ -432,8 +422,7 @@ int SYSV_ABI sceGnmInsertPushMarker(uint32_t* cmdOut, uint64_t size, const char*
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S", __FUNCTION__);
 
-  auto const len = strlen(str) + 1;
-  cmdOut[0]      = Pm4::create(size, Pm4::Custom::R_PUSH_MARKER);
+  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PUSH_MARKER);
   // memcpy(cmdOut + 1, str, len);
 
   return Ok;

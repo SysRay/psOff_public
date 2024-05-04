@@ -32,7 +32,8 @@ class ImageHandler: public IImageHandler {
 
   uint32_t m_countImages = 0;
 
-  std::vector<VkImage> m_scImages;
+  std::vector<VkImage>     m_srcImages;
+  std::vector<VkImageView> m_srcImageViews;
   // - vulkan
 
   boost::mutex m_mutexInt;
@@ -96,9 +97,9 @@ void ImageHandler::recreate() {
 
     uint32_t numImages = 0;
     vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, nullptr);
-    m_scImages.resize(numImages);
+    m_srcImages.resize(numImages);
 
-    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_scImages.data());
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_srcImages.data());
   }
 }
 
@@ -155,7 +156,8 @@ std::optional<ImageData> ImageHandler::getImage_blocking() {
   m_nextIndex = (++m_nextIndex) % m_maxImages;
   ++m_countImages;
 
-  imageData.swapchainImage = m_scImages[imageData.index];
+  imageData.swapchainImage = m_srcImages[imageData.index];
+  imageData.imageView      = m_srcImageViews[imageData.index];
 
   imageData.extent = m_extentWindow;
 
@@ -261,9 +263,32 @@ void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {
   { // swapchain images
     uint32_t numImages = 0;
     vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, nullptr);
-    m_scImages.resize(numImages);
+    m_srcImages.resize(numImages);
+    m_srcImageViews.resize(numImages);
 
-    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_scImages.data());
+    vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_srcImages.data());
+
+    for (size_t n = 0; n < numImages; ++n) {
+      VkImageViewCreateInfo createInfo {
+          .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+          .pNext      = nullptr,
+          .flags      = 0,
+          .image      = m_srcImages[n],
+          .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+          .format     = m_imageFormat, // todo swizzle?
+          .components = {},
+          .subresourceRange =
+              {
+                  .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                  .baseMipLevel   = 0,
+                  .levelCount     = 1,
+                  .baseArrayLayer = 0,
+                  .layerCount     = 1u,
+              },
+      };
+
+      vkCreateImageView(m_deviceInfo->device, &createInfo, nullptr, &m_srcImageViews[n]);
+    }
   }
 
   { // Command buffer
@@ -304,8 +329,12 @@ void ImageHandler::deinit() {
   for (auto& fence: m_fenceSubmit) {
     vkDestroyFence(m_deviceInfo->device, fence, nullptr);
   }
+  for (auto& view: m_srcImageViews) {
+    vkDestroyImageView(m_deviceInfo->device, view, nullptr);
+  }
 
   if (m_commandPool != nullptr) vkDestroyCommandPool(m_deviceInfo->device, m_commandPool, nullptr);
+
   if (m_swapchain != nullptr) vkDestroySwapchainKHR(m_deviceInfo->device, m_swapchain, nullptr);
 
   printf("deinit ImageHandler| done\n");
