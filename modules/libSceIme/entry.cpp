@@ -2,9 +2,20 @@
 #include "logging.h"
 #include "types.h"
 
+#include <SDL2/SDL.h>
+#include <vector>
+
 LOG_DEFINE_MODULE(libSceIme);
 
-namespace {} // namespace
+namespace {
+struct ImeHandler {
+  int32_t            userId;
+  SceImeEventHandler func;
+  char               kbdstate[256];
+};
+
+std::vector<ImeHandler> g_handlers = {};
+} // namespace
 
 extern "C" {
 
@@ -14,8 +25,16 @@ EXPORT SYSV_ABI int sceImeOpen(const SceImeParam* param, const SceImeParamExtend
   return Ok;
 }
 
-EXPORT SYSV_ABI int sceImeUpdate(SceImeEventHandler handler) {
-  return Ok;
+EXPORT SYSV_ABI int sceImeUpdate(SceImeEventHandler func) {
+  for (auto& handler: g_handlers) {
+    if (handler.func == func) {
+      int32_t length;
+      auto    currstate = SDL_GetKeyboardState(&length);
+      return Ok;
+    }
+  }
+
+  return Err::Ime::NOT_OPENED;
 }
 
 EXPORT SYSV_ABI int sceImeSetText(const wchar_t* text, uint32_t length) {
@@ -57,6 +76,12 @@ EXPORT SYSV_ABI int sceImeDisableController(void) {
 EXPORT SYSV_ABI void sceImeParamInit(SceImeParam* param) {}
 
 EXPORT SYSV_ABI int sceImeKeyboardOpen(SceUserServiceUserId userId, const SceImeKeyboardParam* param) {
+  if (param == nullptr) return Err::Ime::INVALID_ARG;
+  if (param->handler == nullptr) return Err::Ime::INVALID_HANDLER;
+  for (auto& handler: g_handlers) {
+    if (handler.userId == userId) return Err::Ime::BUSY;
+  }
+  g_handlers.push_back({userId, param->handler});
   return Ok;
 }
 

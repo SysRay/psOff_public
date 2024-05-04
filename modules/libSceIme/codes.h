@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
+namespace Ime {
 constexpr int32_t BUSY                         = -2135162879;
 constexpr int32_t NOT_OPENED                   = -2135162878;
 constexpr int32_t NO_MEMORY                    = -2135162877;
@@ -36,17 +37,30 @@ constexpr int32_t INVALID_ADDRESS              = -2135162831;
 constexpr int32_t INVALID_RESERVED             = -2135162830;
 constexpr int32_t INVALID_TIMING               = -2135162829;
 constexpr int32_t INTERNAL                     = -2135162625;
+} // namespace Ime
 } // namespace Err
 
-constexpr uint32_t SCE_IME_OSK_DISPLAY_SIZE_WIDTH          = 1920;
-constexpr uint32_t SCE_IME_OSK_DISPLAY_SIZE_HEIGHT         = 1080;
-constexpr uint32_t SCE_IME_OSK_OVER_2K_DISPLAY_SIZE_WIDTH  = 3840;
-constexpr uint32_t SCE_IME_OSK_OVER_2K_DISPLAY_SIZE_HEIGHT = 2160;
-constexpr uint32_t SCE_IME_MAX_PREEDIT_LENGTH              = 30;
-constexpr uint32_t SCE_IME_MAX_EXPANDED_PREEDIT_LENGTH     = 120;
-constexpr uint32_t SCE_IME_MAX_TEXT_LENGTH                 = 2048;
-constexpr uint32_t SCE_IME_MAX_TEXT_AREA                   = 4;
-constexpr uint32_t SCE_IME_MAX_CANDIDATE_WORD_LENGTH       = 55;
-constexpr uint32_t SCE_IME_MAX_CANDIDATE_LIST_SIZE         = 100;
-constexpr uint32_t SCE_IME_WORK_BUFFER_SIZE                = 20 * 1024;
-constexpr uint32_t SCE_IME_KEYBOARD_MAX_NUMBER             = 5;
+namespace Ime {
+constexpr uint32_t OSK_DISPLAY_SIZE_WIDTH          = 1920;
+constexpr uint32_t OSK_DISPLAY_SIZE_HEIGHT         = 1080;
+constexpr uint32_t OSK_OVER_2K_DISPLAY_SIZE_WIDTH  = 3840;
+constexpr uint32_t OSK_OVER_2K_DISPLAY_SIZE_HEIGHT = 2160;
+constexpr uint32_t MAX_PREEDIT_LENGTH              = 30;
+constexpr uint32_t MAX_EXPANDED_PREEDIT_LENGTH     = 120;
+constexpr uint32_t MAX_TEXT_LENGTH                 = 2048;
+constexpr uint32_t MAX_TEXT_AREA                   = 4;
+constexpr uint32_t MAX_CANDIDATE_WORD_LENGTH       = 55;
+constexpr uint32_t MAX_CANDIDATE_LIST_SIZE         = 100;
+constexpr uint32_t WORK_BUFFER_SIZE                = 20 * 1024;
+constexpr uint32_t KEYBOARD_MAX_NUMBER             = 5;
+
+namespace Option {
+constexpr uint32_t DEFAULT                = 0x00;
+constexpr uint32_t REPEAT                 = 0x01;
+constexpr uint32_t REPEAT_EACH_KEY        = 0x02;
+constexpr uint32_t ADD_OSK                = 0x04;
+constexpr uint32_t EFFECTIVE_WITH_IME     = 0x08;
+constexpr uint32_t DISABLE_RESUME         = 0x10;
+constexpr uint32_t CAPSLOCK_WITHOUT_SHIFT = 0x20;
+} // namespace Option
+} // namespace Ime
