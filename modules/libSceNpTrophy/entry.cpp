@@ -235,10 +235,31 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrop
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyGroupId groupId, void* buffer, size_t* size) {
-  *size              = 8;
-  *(uint64_t*)buffer = 0;
+  auto name = std::format("GR{:3}.PNG", groupId);
 
-  return Ok;
+  ITrophies::trp_context ctx = {
+      .pngim =
+          {
+              .func = [name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+                if (data->pngname == name) {
+                  if (data->pngsize <= *size) {
+                    ::memcpy(buffer, data->pngdata, data->pngsize);
+                    *size = data->pngsize;
+                  } else {
+                    LOG_USE_MODULE(libSceNpTrophy);
+                    LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
+                    *size = 0;
+                  }
+                  ::free(data->pngdata);
+                  return true;
+                }
+
+                return false;
+              },
+          },
+  };
+
+  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyId trophyId, void* buffer, size_t* size) {
