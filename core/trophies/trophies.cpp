@@ -89,7 +89,7 @@ class Trophies: public ITrophies {
           if (!ctx->entry.cancelled && cheln == "trophy") {
             ctx->entry.data.id    = -1;
             ctx->entry.data.group = -1;
-            ctx->entry.data.type  = 0xFF;
+            ctx->entry.data.grade = 0xFF;
             ctx->entry.data.name.clear();
             ctx->entry.data.detail.clear();
 
@@ -100,7 +100,7 @@ class Trophies: public ITrophies {
               } else if (vname == "hidden") {
                 ctx->entry.data.hidden = chvar->GetValue() == "yes";
               } else if (vname == "ttype") {
-                ctx->entry.data.type = std::tolower(chvar->GetValue().at(0));
+                ctx->entry.data.grade = std::tolower(chvar->GetValue().at(0));
               } else if (vname == "gid") {
                 ctx->entry.data.group = chvar->GetValueInt(-1);
               }

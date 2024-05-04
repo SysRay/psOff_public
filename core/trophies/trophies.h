@@ -50,7 +50,7 @@ class ITrophies {
       int32_t     id;
       int32_t     group;
       bool        hidden;
-      uint8_t     type;
+      uint8_t     grade;
       std::string name;
       std::string detail;
     } data;
