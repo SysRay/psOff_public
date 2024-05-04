@@ -14,7 +14,7 @@ struct SceNpId {
   unsigned char reserved[8];
 };
 
-typedef void (*SceNpSignalingHandler)(uint32_t ctxId, uint32_t subjectId, int event, int errorCode, void* arg);
+typedef void SYSV_ABI (*SceNpSignalingHandler)(uint32_t ctxId, uint32_t subjectId, int event, int errorCode, void* arg);
 
 struct SceNpSignalingNetInfo {
   size_t       size;
