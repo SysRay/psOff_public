@@ -100,6 +100,32 @@ void ImageHandler::recreate() {
     m_srcImages.resize(numImages);
 
     vkGetSwapchainImagesKHR(m_deviceInfo->device, m_swapchain, &numImages, m_srcImages.data());
+
+    for (auto& view: m_srcImageViews) {
+      vkDestroyImageView(m_deviceInfo->device, view, nullptr);
+    }
+
+    for (size_t n = 0; n < numImages; ++n) {
+      VkImageViewCreateInfo createInfo {
+          .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+          .pNext      = nullptr,
+          .flags      = 0,
+          .image      = m_srcImages[n],
+          .viewType   = VK_IMAGE_VIEW_TYPE_2D,
+          .format     = m_imageFormat, // todo swizzle?
+          .components = {},
+          .subresourceRange =
+              {
+                  .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                  .baseMipLevel   = 0,
+                  .levelCount     = 1,
+                  .baseArrayLayer = 0,
+                  .layerCount     = 1u,
+              },
+      };
+
+      vkCreateImageView(m_deviceInfo->device, &createInfo, nullptr, &m_srcImageViews[n]);
+    }
   }
 }
 
