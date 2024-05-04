@@ -6,7 +6,9 @@
 #include <vulkan/vulkan_core.h>
 
 struct ImageData {
-  VkImage         swapchainImage = nullptr;
+  VkImage     swapchainImage = nullptr;
+  VkImageView imageView      = nullptr;
+
   VkSemaphore     semImageReady  = nullptr; /// image is ready for operation
   VkSemaphore     semImageCopied = nullptr; /// Image has been copied, ready to swap
   VkCommandBuffer cmdBuffer      = nullptr; /// Commandbuffer to  be used for transer etc. Already called begin!

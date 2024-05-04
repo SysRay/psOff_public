@@ -391,10 +391,10 @@ EXPORT SYSV_ABI void* sceKernelGetProcParam() {
 EXPORT SYSV_ABI int sceKernelGetModuleList(int* modules, size_t size, size_t* sizeOut) {
   auto const modules_ = accessRuntimeLinker().getModules();
 
-  for (size_t n = 0; n < std::min(size, modules_.size()); ++n) {
-    modules[n] = modules_[n];
+  for (*sizeOut = 0; *sizeOut < std::min(size, modules_.size()); ++(*sizeOut)) {
+    modules[*sizeOut] = modules_[*sizeOut];
   }
-  *sizeOut = modules_.size();
+
   if (modules_.size() > size) return getErr(ErrCode::_ENOMEM);
 
   return Ok;

@@ -54,6 +54,7 @@ target_link_libraries(core PRIVATE
   libssl.lib
   pugixml.lib
   ntdll.dll
+  imgui
   VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}
 )

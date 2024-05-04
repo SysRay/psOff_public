@@ -8,6 +8,10 @@ typedef uint32_t SceNetSocklen_t;
 
 typedef int SceNetId;
 
+struct SceNetInAddr {
+  SceNetInAddr_t s_addr;
+};
+
 enum class SceStunCheckResult {
   RUnchecked = 0,
   RFailed    = 1,

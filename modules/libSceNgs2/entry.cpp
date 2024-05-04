@@ -550,7 +550,6 @@ EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBuff
     if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
   } else {
     if (rh->un.rack.voices != nullptr) delete rh->un.rack.voices;
-    delete rh;
   }
 
   return Ok;

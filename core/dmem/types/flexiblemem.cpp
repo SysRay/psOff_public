@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "memory.h"
 #include "modules/libkernel/codes.h"
+#include "modules/libkernel/dmem.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>
@@ -57,7 +58,7 @@ DWORD convProtection(int prot) {
 } // namespace
 
 class FlexibleMemory: public IMemoryType {
-  boost::mutex m_mutexInt;
+  mutable boost::mutex m_mutexInt;
 
   IMemoryManager* m_parent;
 
@@ -86,7 +87,11 @@ class FlexibleMemory: public IMemoryType {
 
   uint64_t size() const final;
 
-  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) final;
+  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const final;
+
+  int32_t virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const final;
+
+  int32_t directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const final;
 
   void deinit() final;
 };
@@ -154,7 +159,7 @@ int FlexibleMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int 
 
   m_mappings.emplace(std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .size = len, .prot = prot}));
 
-  m_parent->registerMapping(*outAddr, MappingType::Flexible);
+  m_parent->registerMapping(*outAddr, len, MappingType::Flexible);
   m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
@@ -210,7 +215,7 @@ uint64_t FlexibleMemory::size() const {
   return m_configuresSize;
 }
 
-int FlexibleMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
+int FlexibleMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const {
   LOG_USE_MODULE(FlexibleMemory);
 
   *sizeOut = m_configuresSize - m_usedSize;
@@ -228,4 +233,35 @@ void FlexibleMemory::deinit() {
     }
   }
   m_mappings.clear();
+}
+
+int32_t FlexibleMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const {
+  boost::unique_lock lock(m_mutexInt);
+
+  auto itMapping = m_mappings.lower_bound(addr);
+  if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != addr)) --itMapping; // Get the correct item
+
+  if (!(itMapping->first <= addr && (itMapping->first + itMapping->second.size >= addr))) {
+    return getErr(ErrCode::_EACCES);
+  }
+
+  info->protection       = itMapping->second.prot;
+  info->memoryType       = 3;
+  info->isFlexibleMemory = true;
+  info->isDirectMemory   = false;
+  info->isPooledMemory   = false;
+  // info->isStack   = false; // done by parent
+
+  info->start  = (void*)itMapping->first;
+  info->end    = (void*)(itMapping->first + itMapping->second.size);
+  info->offset = 0;
+
+  info->isCommitted = true;
+  return Ok;
+}
+
+int32_t FlexibleMemory::directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const {
+  LOG_USE_MODULE(FlexibleMemory);
+  LOG_CRIT(L"NOT IMPLEMENTED");
+  return Ok;
 }

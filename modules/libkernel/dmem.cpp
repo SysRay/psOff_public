@@ -170,37 +170,30 @@ EXPORT SYSV_ABI int32_t sceKernelIsStack(void* addr, void** start, void** end) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceKernelVirtualQuery(const void* addr, int flags, SceKernelVirtualQueryInfo* info, size_t infoSize) {
+EXPORT SYSV_ABI int32_t sceKernelVirtualQuery(uintptr_t addr, int flags, SceKernelVirtualQueryInfo* info, size_t infoSize) {
+  if (info == nullptr || infoSize != sizeof(SceKernelVirtualQueryInfo)) return getErr(ErrCode::_EFAULT);
+
+  if (accessMemoryManager()->virtualQuery((uint64_t)addr, info) == Ok) return Ok;
+
   LOG_USE_MODULE(dmem);
 
   uint64_t base = (uint64_t)addr;
 
   if ((uint64_t)addr < IMAGE_BASE) {
-    info->start      = 0;
-    info->end        = (void*)IMAGE_BASE;
-    info->protection = SCE_KERNEL_PROT_CPU_ALL;
-  } else {
-    base = memory::queryAlloc((uintptr_t)addr, (uintptr_t*)&info->start, (uintptr_t*)&info->end, &info->protection);
-    if (base <= 0) {
-      LOG_TRACE(L"Query Error: addr:0x%08llx, flag:%d, infoSize:%llu - start:0x%08llx, end:0x%08llx, type:%d", addr, flags, infoSize, info->start, info->end,
-                info->memoryType);
-      return getErr(ErrCode::_EACCES);
-    }
+    addr = IMAGE_BASE;
   }
 
-  if (accessVideoOut().isGPULocal(base)) {
-    info->memoryType     = 3;
-    info->isDirectMemory = true;
-    info->protection |= 0x30; // GPU read write
-  } else {
-    info->isDirectMemory = false;
+  base = memory::queryAlloc(addr, (uintptr_t*)&info->start, (uintptr_t*)&info->end, &info->protection);
+  if (base <= 0) {
+    LOG_TRACE(L"Query Error: addr:0x%08llx -> start:0x%08llx, end:0x%08llx, type:%d", addr, info->start, info->end, info->memoryType);
+    return getErr(ErrCode::_EACCES);
   }
 
   info->isCommitted      = true;
   info->isFlexibleMemory = true;
   info->offset           = (int64_t)addr - (int64_t)info->start;
-  LOG_TRACE(L"Query OK: addr:0x%08llx, flag:%d, infoSize:%llu - start:0x%08llx end:0x%08llx prot:%d type:%d", addr, flags, infoSize, info->start, info->end,
-            info->protection, info->memoryType);
+
+  LOG_TRACE(L"Query OK: addr:0x%08llx -> start:0x%08llx end:0x%08llx prot:%d type:%d", addr, info->start, info->end, info->protection, info->memoryType);
   return Ok;
 }
 
@@ -218,36 +211,15 @@ EXPORT SYSV_ABI int sceKernelReserveVirtualRange(uintptr_t* addr, size_t len, in
   return accessMemoryManager()->directMemory()->reserve(*addr, len, alignment, flags, addr);
 }
 
-struct QueryInfo {
-  uintptr_t start;
-  uintptr_t end;
-  int       memoryType;
-};
-
-EXPORT SYSV_ABI int32_t sceKernelDirectMemoryQuery(uint64_t offset, int flags, QueryInfo* query_info, size_t infoSize) {
+EXPORT SYSV_ABI int32_t sceKernelDirectMemoryQuery(uint64_t offset, int flags, SceKernelDirectMemoryQueryInfo* queryInfo, size_t infoSize) {
 
   LOG_USE_MODULE(dmem);
 
-  if (offset < 0 || infoSize != sizeof(QueryInfo) || query_info == nullptr) {
+  if (offset < 0 || infoSize != sizeof(SceKernelDirectMemoryQueryInfo) || queryInfo == nullptr) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  offset = std::max(offset, DIRECTMEM_START);
-
-  int prot;
-
-  int64_t base = memory::queryAlloc(offset, &query_info->start, &query_info->end, &prot);
-  if (base <= 0) {
-    LOG_TRACE(L"Query Error: offset:0x%08llx, flag:%d, infoSize:%llu - start:0x%08llx, end:0x%08llx, type:%d", offset, flags, infoSize, query_info->start,
-              query_info->end, query_info->memoryType);
-    return getErr(ErrCode::_EACCES);
-  }
-
-  query_info->memoryType = accessVideoOut().isGPULocal(base) ? 3 : 0;
-
-  LOG_TRACE(L"Query Ok: offset:0x%08llx, flag:%d, infoSize:%llu - start:0x%08llx, end:0x%08llx, type:%d", offset, flags, infoSize, query_info->start,
-            query_info->end, query_info->memoryType);
-  return Ok;
+  return accessMemoryManager()->directMemory()->directQuery(offset, queryInfo);
 }
 
 EXPORT SYSV_ABI int32_t sceKernelMtypeprotect(const void* addr, size_t size, int type, int prot) {

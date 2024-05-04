@@ -530,9 +530,8 @@ int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t arg
 
   auto ifFile = util::openFile(path);
   if (!ifFile) {
-
-    LOG_CRIT(L"Couldn't open file %s", path.c_str());
-    return 0;
+    LOG_ERR(L"Couldn't open file %s", path.c_str());
+    return getErr(ErrCode::_ENOENT);
   }
 
   // Load Module

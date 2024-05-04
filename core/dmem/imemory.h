@@ -2,6 +2,9 @@
 
 #include "utility/utility.h"
 
+struct SceKernelVirtualQueryInfo;
+struct SceKernelDirectMemoryQueryInfo;
+
 class IMemoryType {
   CLASS_NO_COPY(IMemoryType);
   CLASS_NO_MOVE(IMemoryType);
@@ -26,8 +29,12 @@ class IMemoryType {
 
   virtual int reserve(uint64_t start, size_t len, size_t alignment, int flags, uint64_t* outAddr) = 0;
 
-  virtual uint64_t size() const                                                                                          = 0;
-  virtual int      getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) = 0;
+  virtual uint64_t size() const = 0;
+
+  virtual int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const = 0;
+
+  virtual int32_t virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const       = 0;
+  virtual int32_t directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const = 0;
 
   virtual void deinit() = 0;
 };

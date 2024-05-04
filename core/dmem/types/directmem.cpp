@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "memory.h"
 #include "modules/libkernel/codes.h"
+#include "modules/libkernel/dmem.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>
@@ -78,7 +79,7 @@ DWORD convProtection(int prot) {
 } // namespace
 
 class DirectMemory: public IMemoryType {
-  boost::mutex m_mutexInt;
+  mutable boost::mutex m_mutexInt;
 
   IMemoryManager* m_parent;
 
@@ -136,7 +137,10 @@ class DirectMemory: public IMemoryType {
 
   uint64_t size() const final;
 
-  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) final;
+  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const final;
+
+  int32_t virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const final;
+  int32_t directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const final;
 
   void deinit() final;
 };
@@ -304,8 +308,18 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   VmaVirtualAllocation alloc = nullptr;
 
   // search for free space
-  uint64_t    fakeAddrOffset = 0;
-  MemoryInfo* info           = getMemoryInfo(len, alignment, prot, alloc, fakeAddrOffset);
+  uint64_t fakeAddrOffset = 0;
+
+  MemoryInfo* info = nullptr;
+  if (flags & (int)filesystem::SceMapMode::FIXED) {
+    for (auto& item: m_objects) {
+      if (item.second.state == MemoryState::Reserved && item.first <= vaddr && (item.first + item.second.size) > (vaddr + len)) {
+        info = &item.second;
+      }
+    }
+  }
+  if (info == nullptr) info = getMemoryInfo(len, alignment, prot, alloc, fakeAddrOffset);
+
   if (info == nullptr) return retNoMem();
   // -
 
@@ -339,7 +353,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   m_mappings.emplace(
       std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
 
-  m_parent->registerMapping(*outAddr, MappingType::Direct);
+  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
@@ -416,7 +430,7 @@ uint64_t DirectMemory::size() const {
   return SCE_KERNEL_MAIN_DMEM_SIZE;
 }
 
-int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
+int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const {
   LOG_USE_MODULE(DirectMemory);
   LOG_DEBUG(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
 
@@ -435,4 +449,68 @@ void DirectMemory::deinit() {
     }
   }
   m_objects.clear();
+}
+
+int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+
+  auto itItem = m_objects.lower_bound(addr);
+  if (itItem == m_objects.end() || (itItem != m_objects.begin() && itItem->first != addr)) --itItem; // Get the correct item
+
+  if (!(itItem->first <= addr && (itItem->first + itItem->second.size >= addr))) {
+    return getErr(ErrCode::_EACCES);
+  }
+
+  info->protection       = itItem->second.prot;
+  info->memoryType       = itItem->second.memoryType;
+  info->isFlexibleMemory = false;
+  info->isDirectMemory   = true;
+  info->isPooledMemory   = false;
+  // info->isStack   = false; // done by parent
+
+  auto itMapping = m_mappings.lower_bound(addr);
+  if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != addr)) --itMapping; // Get the correct item
+
+  if (!(itMapping->first <= addr && (itMapping->first + itMapping->second.size >= addr))) {
+    if (itItem->second.state == MemoryState::Reserved) {
+      info->start       = (void*)itItem->first;
+      info->end         = (void*)(itItem->first + itItem->second.size);
+      info->offset      = 0;
+      info->isCommitted = false;
+      return Ok;
+    }
+    return getErr(ErrCode::_EACCES);
+  }
+
+  info->start  = (void*)itMapping->first;
+  info->end    = (void*)(itMapping->first + itMapping->second.size);
+  info->offset = itMapping->second.heapAddr - itMapping->first;
+
+  info->isCommitted = true;
+  return Ok;
+}
+
+int32_t DirectMemory::directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+
+  for (auto& item: m_objects) {
+    auto off = item.second.addr - DIRECTMEM_START;
+    if (offset >= off && offset < off + item.second.size) {
+      info->start = off;
+      info->end   = off + item.second.size;
+
+      info->memoryType = item.second.memoryType;
+
+      LOG_DEBUG(L"Query OK: offset:0x%08llx -> start:0x%08llx end:0x%08llx type:%d", offset, info->start, info->end, info->memoryType);
+      return Ok;
+    }
+  }
+
+  LOG_DEBUG(L"Query Error: offset:0x%08llx", offset);
+
+  return getErr(ErrCode::_EACCES);
 }
