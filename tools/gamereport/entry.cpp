@@ -488,8 +488,8 @@ void GameReport::ShowReportWindow(const Info& info) {
   }
 
   SDL_MessageBoxButtonData btns[2] {
-      {.flags = 0, .buttonid = 1, .text = get_lang_string(lang_id, LangString::BUTTONS_YES)},
       {.flags = 0, .buttonid = 2, .text = get_lang_string(lang_id, LangString::BUTTONS_NO)},
+      {.flags = 0, .buttonid = 1, .text = get_lang_string(lang_id, LangString::BUTTONS_YES)},
   };
 
   SDL_MessageBoxData mbd {
@@ -539,8 +539,8 @@ void GameReport::ShowReportWindow(const Info& info) {
       mbd.message    = get_lang_string(lang_id, LangString::LOGGING_TEXT);
       mbd.flags      = SDL_MESSAGEBOX_WARNING;
       mbd.numbuttons = 2;
-      btns[0].text   = get_lang_string(lang_id, LangString::BUTTONS_OK);
-      btns[1].text   = get_lang_string(lang_id, LangString::BUTTONS_CANCEL);
+      btns[1].text   = get_lang_string(lang_id, LangString::BUTTONS_OK);
+      btns[0].text   = get_lang_string(lang_id, LangString::BUTTONS_CANCEL);
 
       if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
         LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S", SDL_GetError());
