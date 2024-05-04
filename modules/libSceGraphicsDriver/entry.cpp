@@ -155,7 +155,7 @@ int SYSV_ABI sceGnmSetCsShaderWithModifier(uint32_t* cmdOut, uint64_t size, cons
   LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_CS);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], cs_regs, size-2);
+  memcpy(&cmdOut[2], cs_regs, size - 2);
   return Ok;
 }
 
