@@ -3,10 +3,11 @@
 
 namespace Err {
 namespace NpTrophy {
-constexpr int32_t EXCEEDS_MAX      = -2141907422;
-constexpr int32_t ALREADY_EXISTS   = -2141907437;
-constexpr int32_t INVALID_CONTEXT  = -2141907447;
-constexpr int32_t INVALID_ARGUMENT = -2141907452;
+constexpr int32_t EXCEEDS_MAX         = -2141907422;
+constexpr int32_t ALREADY_EXISTS      = -2141907437;
+constexpr int32_t INVALID_CONTEXT     = -2141907447;
+constexpr int32_t INVALID_ARGUMENT    = -2141907452;
+constexpr int32_t SCREENSHOT_DISABLED = -2141907413;
 } // namespace NpTrophy
 } // namespace Err
 

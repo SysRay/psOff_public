@@ -165,7 +165,9 @@ class Trophies: public ITrophies {
         if (((ent.flag >> 24) & 0x03) == 0) {
           ctx->pngim.data.pngsize = ent.len;
           ctx->pngim.data.pngname.assign(ent.name);
-          ctx->pngim.data.pngdata = ::calloc(ent.len, 1); // Developer should free this memory manually
+          if ((ctx->pngim.data.pngdata = ::calloc(ent.len, 1)) == nullptr) { // Developer should free this memory manually
+            return ErrCodes::OUT_OF_MEMORY;
+          }
           trfile.seekg(ent.pos);
           if (trfile.read((char*)ctx->pngim.data.pngdata, ent.len)) {
             ctx->pngim.cancelled = ctx->pngim.func(&ctx->pngim.data);
@@ -428,6 +430,7 @@ class Trophies: public ITrophies {
     switch (ec) {
       case ErrCodes::SUCCESS: return "No errors";
       case ErrCodes::INVALID_CONTEXT: return "Passed context is nullptr";
+      case ErrCodes::OUT_OF_MEMORY: return "Failed to allocate data array";
       case ErrCodes::NO_ITROP: return "Invalid combination: trying to parse extended trophyset info from lightweight file";
       case ErrCodes::NO_KEY_SET: return "Invalid trophy key, decrypting is impossible";
       case ErrCodes::INVALID_MAGIC: return "Invalid trophy file magic, trophy00.trp is likely corruted";
@@ -439,6 +442,7 @@ class Trophies: public ITrophies {
       case ErrCodes::NO_CALLBACKS: return "No callbacks passed to parser";
       case ErrCodes::DECRYPT: return "Trophy file decryption failed";
       case ErrCodes::NO_TROPHIES: return "Trophy file is likely missing or does not contain requested esfm file";
+      case ErrCodes::MAX_TROPHY_REACHED: return "The game hit the hard limit of 128 trophies";
       default: return "Unknown error code!";
     }
   }
@@ -448,6 +452,8 @@ class Trophies: public ITrophies {
   bool destroyContext(int32_t userId) final { return false; }
 
   bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final { return false; }
+
+  uint64_t getUnlockTime(int32_t userId, int32_t trophyId) final { return 0ull; }
 
   bool unlockTrophy(int32_t userId, int32_t trophyId) final { return false; }
 

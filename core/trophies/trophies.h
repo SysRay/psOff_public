@@ -19,6 +19,7 @@ class ITrophies {
   enum class ErrCodes {
     SUCCESS = 0,        // No errors, we're fine
     INVALID_CONTEXT,    // Context is nullptr
+    OUT_OF_MEMORY,      // Failed to allocate data array
     NO_ITROP,           // There are no trophyset info in lightweight file
     CONTINUE,           // Not an actual error code. For internal usage only!
     NO_KEY_SET,         // No root key installed
@@ -97,11 +98,12 @@ class ITrophies {
   virtual ErrCodes    parseTRP(trp_context* context) = 0;
   virtual const char* getError(ErrCodes ec)          = 0;
 
-  virtual bool createContext(int32_t userId, uint32_t label)                      = 0;
-  virtual bool destroyContext(int32_t userId)                                     = 0;
-  virtual bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) = 0;
-  virtual bool unlockTrophy(int32_t userId, int32_t trophyId)                     = 0;
-  virtual bool resetUserInfo(int32_t userId)                                      = 0;
+  virtual bool     createContext(int32_t userId, uint32_t label)                      = 0;
+  virtual bool     destroyContext(int32_t userId)                                     = 0;
+  virtual bool     getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) = 0;
+  virtual uint64_t getUnlockTime(int32_t userId, int32_t trophyId)                    = 0;
+  virtual bool     unlockTrophy(int32_t userId, int32_t trophyId)                     = 0;
+  virtual bool     resetUserInfo(int32_t userId)                                      = 0;
 };
 
 #if defined(__APICALL_EXTERN)

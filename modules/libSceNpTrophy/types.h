@@ -7,10 +7,10 @@ typedef int32_t SceNpTrophyId;
 typedef int32_t SceNpTrophyGroupId;
 
 enum class SceNpTrophyGrade : unsigned int {
-  GRADE_PLATINUM = 1, // PLATINUM
-  GRADE_GOLD     = 2, // GOLD
-  GRADE_SILVER   = 3, // SILVER
-  GRADE_BRONZE   = 4, // BRONZE
+  PLATINUM = 1, // PLATINUM
+  GOLD     = 2, // GOLD
+  SILVER   = 3, // SILVER
+  BRONZE   = 4, // BRONZE
 
 };
 
