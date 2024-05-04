@@ -68,19 +68,19 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
                 switch (data->type) {
                   case 'b': // Bronze trophy
                     if (details) ++details->numBronze;
-                    if (gdata) ++gdata->unlockedBronze;
+                    if (unlocked && gdata) ++gdata->unlockedBronze;
                     break;
                   case 's': // Silver trophy
                     if (details) ++details->numSilver;
-                    if (gdata) ++gdata->unlockedSilver;
+                    if (unlocked && gdata) ++gdata->unlockedSilver;
                     break;
                   case 'g': // Gold trophy
                     if (details) ++details->numGold;
-                    if (gdata) ++gdata->unlockedGold;
+                    if (unlocked && gdata) ++gdata->unlockedGold;
                     break;
                   case 'p': // Platinum trophy
                     if (details) ++details->numPlatinum;
-                    if (gdata) ++gdata->unlockedPlatinum;
+                    if (unlocked && gdata) ++gdata->unlockedPlatinum;
                     break;
                 }
 
