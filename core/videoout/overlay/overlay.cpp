@@ -161,5 +161,5 @@ void OverlayHandler::submit(ImageData const& imageData) {
 }
 
 void OverlayHandler::draw() {
-  ImGui::ShowDemoWindow();
+  // ImGui::ShowDemoWindow();
 }
