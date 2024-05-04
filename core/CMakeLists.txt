@@ -52,6 +52,7 @@ target_link_libraries(core PRIVATE
   Ws2_32.lib
   libcrypto.lib
   libssl.lib
+  pugixml.lib
   ntdll.dll
   VulkanMemoryAllocator
   ${Vulkan_LIBRARIES}

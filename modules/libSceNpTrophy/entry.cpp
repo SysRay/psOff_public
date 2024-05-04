@@ -33,11 +33,21 @@ EXPORT SYSV_ABI int sceNpTrophyAbortHandle(SceNpTrophyHandle) {
 //- Unused handles API
 
 EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_t userId, SceNpServiceLabel serviceLabel, uint64_t options) {
-  return accessTrophies().createContext(userId, (uint32_t)serviceLabel) ? Ok : Err::NpTrophy::ALREADY_EXISTS;
+  accessTrophies().addTrophyUnlockCallback([](const void* data) {
+    const auto* unlock = (ITrophies::trp_unlock_data*)data;
+
+    printf("Trophy \"%s\" unlocked!\n", unlock->name.c_str());
+    if (unlock->platGained) {
+      printf("========== PLATINUM TROPHY \"%s\" UNLOCKED ==========\n", unlock->pname.c_str());
+    }
+  });
+
+  *context = userId;
+  return accessTrophies().createContext(userId, (uint32_t)serviceLabel) ? Ok : Err::NpTrophy::UNKNOWN;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyDestroyContext(SceNpTrophyContext context) {
-  return accessTrophies().destroyContext(context) ? Ok : Err::NpTrophy::INVALID_ARGUMENT;
+  return accessTrophies().destroyContext(context) ? Ok : Err::NpTrophy::UNKNOWN;
 }
 
 // We don't need any registration
@@ -46,8 +56,7 @@ EXPORT SYSV_ABI int sceNpTrophyRegisterContext(SceNpTrophyContext context, SceNp
 }
 
 EXPORT SYSV_ABI int sceNpTrophyUnlockTrophy(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyId trophyId, SceNpTrophyId* platinumId) {
-  *platinumId = NpTrophy::INVALID_TROPHY_ID;
-  return Ok;
+  return accessTrophies().unlockTrophy(context, trophyId, platinumId);
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyUnlockState(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyFlagArray* flags, uint32_t* count) {
@@ -257,10 +266,12 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyInfo(SceNpTrophyContext context, SceNpTr
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrophyHandle, void* buffer, size_t* size) {
+  int32_t errcode = Ok;
+
   ITrophies::trp_context ctx = {
       .pngim =
           {
-              .func = [buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+              .func = [&errcode, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
                 if (data->pngname == "ICON0.PNG") {
                   if (data->pngsize <= *size) {
                     ::memcpy(buffer, data->pngdata, data->pngsize);
@@ -268,7 +279,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrop
                   } else {
                     LOG_USE_MODULE(libSceNpTrophy);
                     LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    *size = 0;
+                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
+                    *size   = 0;
                   }
                   ::free(data->pngdata);
                   return true;
@@ -279,16 +291,19 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrop
           },
   };
 
-  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
+  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
+  return errcode;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyGroupId groupId, void* buffer, size_t* size) {
   auto name = std::format("GR{:3}.PNG", groupId);
 
+  int32_t errcode = Ok;
+
   ITrophies::trp_context ctx = {
       .pngim =
           {
-              .func = [name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+              .func = [&errcode, name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
                 if (data->pngname == name) {
                   if (data->pngsize <= *size) {
                     ::memcpy(buffer, data->pngdata, data->pngsize);
@@ -296,7 +311,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTro
                   } else {
                     LOG_USE_MODULE(libSceNpTrophy);
                     LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    *size = 0;
+                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
+                    *size   = 0;
                   }
                   ::free(data->pngdata);
                   return true;
@@ -307,16 +323,19 @@ EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTro
           },
   };
 
-  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
+  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
+  return errcode;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyId trophyId, void* buffer, size_t* size) {
   auto name = std::format("TROP{:3}.PNG", trophyId);
 
+  int32_t errcode = Ok;
+
   ITrophies::trp_context ctx = {
       .pngim =
           {
-              .func = [name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+              .func = [&errcode, name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
                 if (data->pngname == name) {
                   if (data->pngsize <= *size) {
                     ::memcpy(buffer, data->pngdata, data->pngsize);
@@ -324,7 +343,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTr
                   } else {
                     LOG_USE_MODULE(libSceNpTrophy);
                     LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    *size = 0;
+                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
+                    *size   = 0;
                   }
                   ::free(data->pngdata);
                   return true;
@@ -335,7 +355,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTr
           },
   };
 
-  return accessTrophies().parseTRP(&ctx) == ITrophies::ErrCodes::SUCCESS;
+  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
+  return errcode;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyShowTrophyList(SceNpTrophyContext context, SceNpTrophyHandle) {

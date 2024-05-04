@@ -3,13 +3,14 @@
 #undef __APICALL_EXTERN
 
 #include "core/fileManager/fileManager.h"
+#include "modules/libSceNpTrophy/types.h"
 #include "modules_include/system_param.h"
 #include "tools/config_emu/config_emu.h"
 
 #include <boost/scoped_ptr.hpp>
 #include <fstream>
 #include <openssl/evp.h>
-#include <xml3all.h>
+#include <pugixml.hpp>
 
 #define TR_AES_BLOCK_SIZE 16
 #undef min // We don't need it there
@@ -28,14 +29,16 @@ class Trophies: public ITrophies {
   bool                  m_bKeySet                  = false;
   bool                  m_bIgnoreMissingLocale     = false;
   uint8_t               m_trkey[TR_AES_BLOCK_SIZE] = {};
-  std::string           m_localizedTrophyFile      = {};
-  std::vector<callback> m_callbacks                = {};
+  std::string           m_localizedTrophyFile;
+  std::filesystem::path m_trophyInfoPath;
+  std::filesystem::path m_npidCachePath;
+  std::vector<callback> m_callbacks = {};
   std::mutex            m_mutexParse;
 
   private:
   struct usr_context {
     struct trophy {
-      uint32_t id;
+      int32_t  id;
       uint32_t re; // reserved
       uint64_t ts;
     };
@@ -69,104 +72,62 @@ class Trophies: public ITrophies {
   static bool caseequal(char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
 
   static ErrCodes XML_parse(const char* mem, trp_context* ctx) {
-    XML3::XML xml(mem, strlen(mem));
+    pugi::xml_document doc;
 
-    { // xml parser
-      auto& rootel = xml.GetRootElement();
-      if (rootel.GetElementName() == "trophyconf") {
-        // Prepare trophyset info structure to save some data
-        if (!ctx->itrop.cancelled) {
-          ctx->itrop.data.title_name.clear();
-          ctx->itrop.data.title_detail.clear();
-          ctx->itrop.data.trophyset_version.clear();
-          ctx->itrop.data.trophy_count = 0;
-          ctx->itrop.data.group_count  = 0;
-        }
+    auto res = doc.load_buffer(mem, strlen(mem));
+    if (res.status != pugi::xml_parse_status::status_ok) return ErrCodes::INVALID_XML;
 
-        for (auto& chel: rootel.GetChildren()) {
-          auto& cheln = chel->GetElementName();
+    if (auto tc = doc.child("trophyconf")) {
+      if (!ctx->itrop.cancelled) {
+        ctx->itrop.data.trophyset_version.assign(tc.child("trophyset-version").first_child().value());
+        ctx->itrop.data.title_name.assign(tc.child("title-name").first_child().value());
+        ctx->itrop.data.title_detail.assign(tc.child("title-detail").first_child().value());
+        ctx->itrop.data.trophy_count = ctx->itrop.data.group_count = 0;
+      }
 
-          if (cheln == "trophyset-version") {
-            ctx->itrop.data.trophyset_version.assign(chel->GetContent());
-          } else if (cheln == "title-name") {
-            ctx->itrop.data.title_name.assign(chel->GetContent());
-          } else if (cheln == "title-detail") {
-            ctx->itrop.data.title_detail.assign(chel->GetContent());
-          } else if (cheln == "trophy") {
-            ++ctx->itrop.data.trophy_count;
-          } else if (cheln == "group") {
-            ++ctx->itrop.data.group_count;
+      for (auto node = tc.child("trophy"); node; node = node.next_sibling("trophy")) {
+        if (!ctx->entry.cancelled) {
+          ctx->entry.data.id       = node.attribute("id").as_int(-1);
+          ctx->entry.data.group    = node.attribute("gid").as_int(-1);
+          ctx->entry.data.platinum = node.attribute("pid").as_int(-1);
+          ctx->entry.data.hidden   = node.attribute("hidden").as_bool(false);
+          ctx->entry.data.grade    = std::tolower(*(node.attribute("ttype").as_string()));
+
+          if (!ctx->lightweight) {
+            ctx->entry.data.name.assign(node.child("name").first_child().value());
+            ctx->entry.data.detail.assign(node.child("detail").first_child().value());
           }
 
-          if (!ctx->entry.cancelled && cheln == "trophy") {
-            ctx->entry.data.id    = -1;
-            ctx->entry.data.group = -1;
-            ctx->entry.data.grade = 0xFF;
-            ctx->entry.data.name.clear();
-            ctx->entry.data.detail.clear();
-
-            for (auto& chvar: chel->GetVariables()) {
-              auto& vname = chvar->GetName();
-              if (vname == "id") {
-                if ((ctx->entry.data.id = chvar->GetValueInt(-1)) > 128) return ErrCodes::MAX_TROPHY_REACHED;
-              } else if (vname == "hidden") {
-                ctx->entry.data.hidden = chvar->GetValue() == "yes";
-              } else if (vname == "ttype") {
-                ctx->entry.data.grade = std::tolower(chvar->GetValue().at(0));
-              } else if (vname == "gid") {
-                ctx->entry.data.group = chvar->GetValueInt(-1);
-              }
-            }
-
-            // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-            if (ctx->lightweight) continue;
-
-            for (auto& chch: chel->GetChildren()) {
-              auto& cname = chch->GetElementName();
-              if (cname == "name") {
-                ctx->entry.data.name.assign(chch->GetContent());
-              } else if (cname == "detail") {
-                ctx->entry.data.detail.assign(chch->GetContent());
-              }
-            }
-
-            ctx->entry.cancelled = ctx->entry.func(&ctx->entry.data);
-          } else if (!ctx->group.cancelled && cheln == "group") {
-            for (auto& chvar: chel->GetVariables()) {
-              if (ctx->group.cancelled) break;
-              auto& vname = chvar->GetName();
-              if (vname == "id") {
-                ctx->group.data.id = chvar->GetValueInt(-1);
-              }
-
-              // There is no `name` and `detail` fields if we read TROPCONF.ESFM
-              if (ctx->lightweight) continue;
-
-              for (auto& chch: chel->GetChildren()) {
-                auto& cname = chch->GetElementName();
-                if (cname == "name") {
-                  ctx->group.data.name.assign(chch->GetContent());
-                } else if (cname == "detail") {
-                  ctx->group.data.detail.assign(chch->GetContent());
-                }
-              }
-
-              ctx->group.cancelled = ctx->group.func(&ctx->group.data);
-            }
-          }
+          ctx->entry.cancelled = ctx->entry.func(&ctx->entry.data);
         }
 
-        // Pass the final trophyset info to itrop callback
-        if (!ctx->itrop.cancelled) ctx->itrop.func(&ctx->itrop.data);
+        if (!ctx->itrop.cancelled) ++ctx->itrop.data.trophy_count;
+      }
 
-        // We already parsed trophy info, we don't need more of it
-        ctx->entry.cancelled = true;
-        ctx->group.cancelled = true;
-        ctx->itrop.cancelled = true;
-      } // element: trophyconf
-    }   // xml parser
+      for (auto node = tc.child("group"); node; node = node.next_sibling("group")) {
+        if (!ctx->group.cancelled) {
+          ctx->group.data.id = node.attribute("id").as_int(-1);
 
-    return ErrCodes::CONTINUE; // todo: check xml errors
+          if (!ctx->lightweight) {
+            ctx->group.data.name.assign(node.child("name").first_child().value());
+            ctx->group.data.detail.assign(node.child("detail").first_child().value());
+          }
+
+          ctx->group.cancelled = ctx->group.func(&ctx->group.data);
+        }
+
+        if (!ctx->itrop.cancelled) ++ctx->itrop.data.group_count;
+      }
+
+      if (!ctx->itrop.cancelled) ctx->itrop.func(&ctx->itrop.data);
+
+      ctx->entry.cancelled = true;
+      ctx->group.cancelled = true;
+      ctx->itrop.cancelled = true;
+      return ErrCodes::CONTINUE;
+    }
+
+    return ErrCodes::NO_TROPHIES;
   }
 
   ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx) {
@@ -269,6 +230,9 @@ class Trophies: public ITrophies {
               EVP_CIPHER_CTX_free(data_ctx);
               return false;
             }
+
+            EVP_CIPHER_CTX_set_padding(data_ctx, 0);
+
             if (!EVP_DecryptUpdate(data_ctx, outbuffer, &outlen, enc_xmlh, ENC_SCE_SIGN_SIZE)) {
               EVP_CIPHER_CTX_free(data_ctx);
               return false;
@@ -300,6 +264,11 @@ class Trophies: public ITrophies {
               mem_off += outlen;
             }
 
+            if (!EVP_DecryptFinal(data_ctx, (uint8_t*)mem_off, &outlen)) {
+              EVP_CIPHER_CTX_free(data_ctx);
+              return false;
+            }
+
             EVP_CIPHER_CTX_free(data_ctx);
             *mem_off = '\0'; // Finally
           }
@@ -309,12 +278,12 @@ class Trophies: public ITrophies {
         }; // lambda: trydecrypt
 
         int  npid;
-        bool success   = false;
-        auto npid_path = accessFileManager().getGameFilesDir() / ".npcommid";
+        bool success = false;
 
         {
           // Trying to obtain cached NPID for this title and use it for trophies decrypting
-          std::ifstream npid_f(npid_path);
+          std::ifstream npid_f(m_npidCachePath);
+
           if (npid_f.is_open()) {
             npid_f >> npid;
             success = trydecrypt(npid);
@@ -331,7 +300,8 @@ class Trophies: public ITrophies {
           }
 
           if (success) { // NPID found, saving it to cache file
-            std::ofstream npid_f(npid_path, std::ios::out);
+            std::ofstream npid_f(m_npidCachePath, std::ios::out);
+
             if (npid_f.is_open()) {
               npid_f << npid;
             }
@@ -373,6 +343,11 @@ class Trophies: public ITrophies {
 
       if (systemlang != SystemParamLang::EnglishUS) m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
     }
+
+    auto gfd = accessFileManager().getGameFilesDir();
+
+    m_trophyInfoPath = gfd / "tropinfo";
+    m_npidCachePath  = gfd / ".npcommid";
   }
 
   //  Callbacks
@@ -390,7 +365,6 @@ class Trophies: public ITrophies {
     ctx->pngim.cancelled = (ctx->pngim.func == nullptr);
     ctx->itrop.cancelled = (ctx->itrop.func == nullptr);
     if (ctx->cancelled()) return ErrCodes::NO_CALLBACKS;
-    if (ctx->lightweight && !ctx->itrop.cancelled) return ErrCodes::NO_ITROP;
 
     std::unique_lock lock(m_mutexParse);
     m_bIgnoreMissingLocale = false;
@@ -449,12 +423,12 @@ class Trophies: public ITrophies {
       case ErrCodes::SUCCESS: return "No errors";
       case ErrCodes::INVALID_CONTEXT: return "Passed context is nullptr";
       case ErrCodes::OUT_OF_MEMORY: return "Failed to allocate data array";
-      case ErrCodes::NO_ITROP: return "Invalid combination: trying to parse extended trophyset info from lightweight file";
       case ErrCodes::NO_KEY_SET: return "Invalid trophy key, decrypting is impossible";
       case ErrCodes::INVALID_MAGIC: return "Invalid trophy file magic, trophy00.trp is likely corruted";
       case ErrCodes::INVALID_VERSION: return "Unsupported trophy file version";
       case ErrCodes::INVALID_ENTSIZE: return "Invalid trophy file entry size, trophy00.trp is likely corruted";
       case ErrCodes::INVALID_AES: return "Trophy file contains unaligned AES blocks";
+      case ErrCodes::INVALID_XML: return "TPR file contains invalid XML data, can't parse it";
       case ErrCodes::NOT_IMPLEMENTED: return "This feature is not implemented yet";
       case ErrCodes::IO_FAIL: return "Your operating system reported IO failure";
       case ErrCodes::NO_CALLBACKS: return "No callbacks passed to parser";
@@ -470,7 +444,21 @@ class Trophies: public ITrophies {
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return false;
 
-    return true; // todo: Actually load the trophy data
+    std::ifstream file(m_trophyInfoPath, std::ios::in | std::ios::binary);
+
+    if (file.is_open()) {
+      uint32_t tc = 0;
+
+      if (!file.read((char*)&tc, 4)) return false;
+      for (uint32_t i = 0; i < tc; i++) {
+        usr_context::trophy t;
+        if (!file.read((char*)&t.id, 4)) return false;
+        if (!file.read((char*)&t.ts, 8)) return false;
+        ctx.trophies.push_back(t);
+      }
+    }
+
+    return true;
   }
 
   bool saveTrophyData(int32_t userId) {
@@ -478,7 +466,21 @@ class Trophies: public ITrophies {
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return false;
 
-    return true; // todo: Actually save the trophy data
+    std::ofstream file(m_trophyInfoPath, std::ios::out | std::ios::binary);
+
+    if (file.is_open()) {
+      uint32_t num = ctx.trophies.size();
+      file.write((char*)&num, 4);
+
+      for (auto& trop: ctx.trophies) {
+        file.write((char*)&trop.id, 4);
+        file.write((char*)&trop.ts, 8);
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   bool createContext(int32_t userId, uint32_t label) final {
@@ -500,11 +502,155 @@ class Trophies: public ITrophies {
     return true;
   }
 
-  bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final { return false; }
+  bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final {
+    if (userId < 1 || userId > 4) return false;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created) return false;
 
-  uint64_t getUnlockTime(int32_t userId, int32_t trophyId) final { return 0ull; }
+    if (count != nullptr) {
+      trp_context ctx = {
+          .lightweight = true,
+          .itrop =
+              {
+                  .func = [count](trp_inf_cb::data_t* data) -> bool {
+                    *count = data->trophy_count;
+                    return true;
+                  },
+              },
+      };
 
-  bool unlockTrophy(int32_t userId, int32_t trophyId) final { return false; }
+      if (parseTRP(&ctx) != ErrCodes::SUCCESS) return false;
+    }
+
+    SCE_NP_TROPHY_FLAG_ZERO((SceNpTrophyFlagArray*)progress);
+    for (auto& trop: ctx.trophies) {
+      SCE_NP_TROPHY_FLAG_SET(trop.id, (SceNpTrophyFlagArray*)progress);
+    }
+
+    return true;
+  }
+
+  uint64_t getUnlockTime(int32_t userId, int32_t trophyId) final {
+    if (userId < 1 || userId > 4) return 0ull;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created) return false;
+
+    for (auto& trop: ctx.trophies) {
+      if (trop.id == trophyId) return trop.ts;
+    }
+
+    return 0ull;
+  }
+
+  int32_t getPlatinumIdFor(int32_t trophyId) {
+    if (trophyId < 0 || trophyId > 128) return -3;
+    int32_t platId = -1;
+
+    trp_context ctx = {
+        .lightweight = true,
+        .entry =
+            {
+                .func = [&platId, trophyId](trp_ent_cb::data_t* data) -> bool {
+                  if (data->id == trophyId) {
+                    platId = (data->grade == 'p') ? -2 : data->platinum;
+                    return true;
+                  }
+
+                  return false;
+                },
+            },
+    };
+
+    if (parseTRP(&ctx) != ErrCodes::SUCCESS) platId = -3;
+    return platId;
+  }
+
+  int32_t unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) final {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    if (getUnlockTime(userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
+    int32_t platId = getPlatinumIdFor(trophyId);
+    if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
+    if (platId == -3) return Err::NpTrophy::UNKNOWN;
+
+    auto pngname = std::format("TROP{:3}.PNG", trophyId);
+
+    int32_t ret         = Ok;
+    bool    platinumMet = (platId >= 0);
+
+    trp_unlock_data cbdata = {0};
+
+    trp_context tctx = {
+        .entry =
+            {
+                .func = [this, userId, platId, &platinumMet, &ret, &cbdata, trophyId](trp_ent_cb::data_t* data) -> bool {
+                  if (ret != 0) return true;
+
+                  if (data->id == trophyId) {
+                    cbdata.id    = trophyId;
+                    cbdata.grade = data->grade;
+                    cbdata.name.assign(data->name);
+                    cbdata.descr.assign(data->detail);
+                  } else if (platinumMet && data->grade != 'p' && data->platinum == platId) {
+                    platinumMet = getUnlockTime(userId, data->id) > 0;
+                  }
+
+                  if (data->grade == 'p' && data->id == platId) {
+                    cbdata.pname.assign(data->name);
+                    cbdata.descr.assign(data->detail);
+                  }
+
+                  return false;
+                },
+            },
+        .pngim =
+            {
+                .func = [ret, &cbdata, pngname](trp_png_cb::data_t* data) -> bool {
+                  if (data->pngname == pngname) {
+                    cbdata.image.pngdata = data->pngdata;
+                    cbdata.image.pngsize = data->pngsize;
+                    return true;
+                  }
+
+                  return false;
+                },
+            },
+    };
+
+    ErrCodes ec;
+    if ((ec = parseTRP(&tctx)) != ErrCodes::SUCCESS) {
+      ret = Err::NpTrophy::UNKNOWN;
+    }
+
+    if (ret != Ok) {
+      if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
+      return ret;
+    }
+
+    uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
+
+    ctx.trophies.push_back({trophyId, 0, uTime});
+
+    if (platinumMet) {
+      cbdata.platGained = true;
+      *platinumId = cbdata.platId = platId;
+      ctx.trophies.push_back({platId, 0, uTime});
+    } else {
+      cbdata.platGained = false;
+      cbdata.platId     = platId;
+      *platinumId       = -1;
+    }
+
+    for (auto& cb: m_callbacks) {
+      cb.func(&cbdata);
+    }
+
+    if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
+    saveTrophyData(userId);
+
+    return Ok;
+  }
 
   bool resetUserInfo(int32_t userId) final { return false; }
 };

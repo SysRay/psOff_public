@@ -6,7 +6,7 @@
 #include <functional>
 #include <string>
 
-typedef std::function<void(void*)> vvpfunc;
+typedef std::function<void(const void*)> vvpfunc;
 
 class ITrophies {
   CLASS_NO_COPY(ITrophies);
@@ -22,13 +22,13 @@ class ITrophies {
     SUCCESS = 0,        // No errors, we're fine
     INVALID_CONTEXT,    // Context is nullptr
     OUT_OF_MEMORY,      // Failed to allocate data array
-    NO_ITROP,           // There are no trophyset info in lightweight file
     CONTINUE,           // Not an actual error code. For internal usage only!
     NO_KEY_SET,         // No root key installed
     INVALID_MAGIC,      // TRP file has invalid magic in its header
     INVALID_VERSION,    // TRP file version is not valid
     INVALID_ENTSIZE,    // TRP file has bigger entries
     INVALID_AES,        // TRP file contains unaligned AES blocks
+    INVALID_XML,        // TPR file contains invalid XML data, can't parse it
     NOT_IMPLEMENTED,    // This feature is not implemented yet
     IO_FAIL,            // Failed to read TRP file
     NO_CALLBACKS,       // Parser called with no callbacks, it's pointless
@@ -52,6 +52,7 @@ class ITrophies {
     struct data_t {
       int32_t     id;
       int32_t     group;
+      int32_t     platinum;
       bool        hidden;
       uint8_t     grade;
       std::string name;
@@ -97,6 +98,23 @@ class ITrophies {
     inline bool cancelled() { return entry.cancelled && group.cancelled && pngim.cancelled && itrop.cancelled; }
   };
 
+  struct trp_unlock_data {
+    struct image {
+      void*  pngdata;
+      size_t pngsize;
+    } image;
+
+    int32_t id;
+    int32_t platId;
+    bool    platGained;
+    uint8_t grade;
+
+    std::string name;
+    std::string descr;
+    std::string pname;
+    std::string pdescr;
+  };
+
   virtual ErrCodes    parseTRP(trp_context* context) = 0;
   virtual const char* getError(ErrCodes ec)          = 0;
 
@@ -106,12 +124,12 @@ class ITrophies {
 
   //- Callbacks
 
-  virtual bool     createContext(int32_t userId, uint32_t label)                      = 0;
-  virtual bool     destroyContext(int32_t userId)                                     = 0;
-  virtual bool     getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) = 0;
-  virtual uint64_t getUnlockTime(int32_t userId, int32_t trophyId)                    = 0;
-  virtual bool     unlockTrophy(int32_t userId, int32_t trophyId)                     = 0;
-  virtual bool     resetUserInfo(int32_t userId)                                      = 0;
+  virtual bool     createContext(int32_t userId, uint32_t label)                       = 0;
+  virtual bool     destroyContext(int32_t userId)                                      = 0;
+  virtual bool     getProgress(int32_t userId, uint32_t progress[4], uint32_t* count)  = 0;
+  virtual uint64_t getUnlockTime(int32_t userId, int32_t trophyId)                     = 0;
+  virtual int32_t  unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) = 0;
+  virtual bool     resetUserInfo(int32_t userId)                                       = 0;
 };
 
 #if defined(__APICALL_EXTERN)
