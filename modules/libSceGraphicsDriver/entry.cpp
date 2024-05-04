@@ -332,6 +332,14 @@ uint32_t SYSV_ABI sceGnmDrawInitDefaultHardwareState350(uint32_t* cmdOut, uint64
   return 2;
 }
 
+uint32_t SYSV_ABI sceGnmDrawInitToDefaultContextState400(uint32_t* cmdOut, uint64_t size) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_DEBUG(L"%S", __FUNCTION__);
+
+  cmdOut[0] = Pm4::create(2, Pm4::Custom::R_DRAW_RESET);
+  return 2;
+}
+
 uint32_t SYSV_ABI sceGnmDispatchInitDefaultHardwareState(uint32_t* cmdOut, uint64_t size) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_DEBUG(L"%S", __FUNCTION__);

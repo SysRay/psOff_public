@@ -3,4 +3,4 @@
 
 namespace Err {} // namespace Err
 
-constexpr uint64_t SCE_AJM_FLAG_SIDEBAND_STREAM = (1ULL << 47);
+constexpr uint32_t SCE_NP_ONLINEID_MAX_LENGTH = 16;

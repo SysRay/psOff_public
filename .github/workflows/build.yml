@@ -119,4 +119,4 @@ jobs:
                 _build/_Install/*
                 !_build/_Install/debug/*
                 !_build/_Install/vulkan-1.dll
-                !_build/_Install/semaphore_test.exe
+                !_build/_Install/*_test.exe

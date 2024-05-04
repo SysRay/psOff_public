@@ -27,6 +27,8 @@ constexpr int32_t INVALID_PARAM       = -2144993258;
 } // namespace AudioOut
 } // namespace Err
 
-constexpr int PORT_OUT_MAX         = 6;
-constexpr int PORT_IN_MAX          = 8;
-constexpr int SCE_AUDIO_VOLUME_0DB = (1 << 15);
+namespace AudioOut {
+constexpr int PORT_OUT_MAX        = 22;
+constexpr int VOLUME_0DB          = (1 << 15);
+constexpr int MIXLEVEL_PADSPK_0DB = (1 << 15);
+}; // namespace AudioOut
