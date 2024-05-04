@@ -33,7 +33,7 @@ EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_
 }
 
 EXPORT SYSV_ABI int sceNpTrophyDestroyContext(SceNpTrophyContext context) {
-  return Ok;
+  return accessTrophies().destroyContext(context) ? Ok : Err::NpTrophy::INVALID_ARGUMENT;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyRegisterContext(SceNpTrophyContext context, SceNpTrophyHandle handle, uint64_t options) {
@@ -46,37 +46,68 @@ EXPORT SYSV_ABI int sceNpTrophyUnlockTrophy(SceNpTrophyContext context, SceNpTro
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyUnlockState(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyFlagArray* flags, uint32_t* count) {
-  if (flags != nullptr) {
-    flags->flagBits[0] = 0;
-    flags->flagBits[1] = 0;
-    flags->flagBits[2] = 0;
-    flags->flagBits[3] = 0;
-  }
-  *count = 2;
-
-  return Ok;
+  return accessTrophies().getProgress(context, flags->flagBits, count);
 }
 
-EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyGameDetails* details, SceNpTrophyGameData* data) {
-  if (details != nullptr) {
-    details->numGroups   = 0;
-    details->numTrophies = 1;
-    details->numPlatinum = 0;
-    details->numGold     = 0;
-    details->numSilver   = 0;
-    details->numBronze   = 1;
-    strcpy_s(details->title, "gameName");
-    strcpy_s(details->description, "gameDesc");
+EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrophyHandle handle, SceNpTrophyGameDetails* details, SceNpTrophyGameData* gdata) {
+  LOG_USE_MODULE(libSceNpTrophy);
+  SceNpTrophyFlagArray unlock_progr = {0};
+  uint32_t             unlock_count = 0;
+  uint32_t             trophy_count = 0;
+
+  if (!accessTrophies().getProgress(context, unlock_progr.flagBits, &unlock_count)) return Err::NpTrophy::INVALID_CONTEXT;
+
+  ITrophies::trp_context ctx = {
+      .lightweight = false,
+
+      .entry =
+          {
+              .func = [details, gdata, unlock_progr](ITrophies::trp_ent_cb::data_t* data) -> bool {
+                bool unlocked = SCE_NP_TROPHY_FLAG_ISSET(data->id, (&unlock_progr));
+
+                switch (data->type) {
+                  case 'b': // Bronze trophy
+                    if (details) ++details->numBronze;
+                    if (gdata) ++gdata->unlockedBronze;
+                    break;
+                  case 's': // Silver trophy
+                    if (details) ++details->numSilver;
+                    if (gdata) ++gdata->unlockedSilver;
+                    break;
+                  case 'g': // Gold trophy
+                    if (details) ++details->numGold;
+                    if (gdata) ++gdata->unlockedGold;
+                    break;
+                  case 'p': // Platinum trophy
+                    if (details) ++details->numPlatinum;
+                    if (gdata) ++gdata->unlockedPlatinum;
+                    break;
+                }
+
+                return false;
+              },
+          },
+      .itrop =
+          {
+              .func = [details](ITrophies::trp_inf_cb::data_t* data) -> bool {
+                if (details) data->title_name.copy(details->title, sizeof(details->title));
+                if (details) data->title_detail.copy(details->description, sizeof(details->description));
+                if (details) details->numTrophies = data->trophy_count;
+                if (details) details->numGroups = data->group_count;
+                return true;
+              },
+          },
+  };
+
+  ITrophies::ErrCodes ec;
+
+  if ((ec = accessTrophies().parseTRP(&ctx)) != ITrophies::ErrCodes::SUCCESS) {
+    LOG_ERR(L"Failed to parse trophy data: %S", accessTrophies().getError(ec));
+    return ec == ITrophies::ErrCodes::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : Err::NpTrophy::INVALID_ARGUMENT;
   }
 
-  if (data != nullptr) {
-    data->unlockedTrophies   = 0;
-    data->unlockedPlatinum   = 0;
-    data->unlockedGold       = 0;
-    data->unlockedSilver     = 0;
-    data->unlockedBronze     = 0;
-    data->progressPercentage = 0;
-  }
+  if (gdata) gdata->progressPercentage = (unlock_count / (float)trophy_count) * 100;
+
   return Ok;
 }
 
@@ -136,7 +167,7 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrop
                     ::memcpy(buffer, data->pngdata, data->pngsize);
                     *size = data->pngsize;
                   }
-                  delete data->pngdata;
+                  ::free(data->pngdata);
                   return true;
                 }
 
@@ -167,7 +198,7 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTr
                     ::memcpy(buffer, data->pngdata, data->pngsize);
                     *size = data->pngsize;
                   }
-                  delete data->pngdata;
+                  ::free(data->pngdata);
                   return true;
                 }
 

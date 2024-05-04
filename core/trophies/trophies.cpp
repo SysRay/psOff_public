@@ -67,10 +67,25 @@ class Trophies: public ITrophies {
           ctx->itrop.data.title_name.clear();
           ctx->itrop.data.title_detail.clear();
           ctx->itrop.data.trophyset_version.clear();
+          ctx->itrop.data.trophy_count = 0;
+          ctx->itrop.data.group_count  = 0;
         }
 
         for (auto& chel: rootel.GetChildren()) {
           auto& cheln = chel->GetElementName();
+
+          if (cheln == "trophyset-version") {
+            ctx->itrop.data.trophyset_version.assign(chel->GetContent());
+          } else if (cheln == "title-name") {
+            ctx->itrop.data.title_name.assign(chel->GetContent());
+          } else if (cheln == "title-detail") {
+            ctx->itrop.data.title_detail.assign(chel->GetContent());
+          } else if (cheln == "trophy") {
+            ++ctx->itrop.data.trophy_count;
+          } else if (cheln == "group") {
+            ++ctx->itrop.data.group_count;
+          }
+
           if (!ctx->entry.cancelled && cheln == "trophy") {
             ctx->entry.data.id    = -1;
             ctx->entry.data.group = -1;
@@ -81,11 +96,11 @@ class Trophies: public ITrophies {
             for (auto& chvar: chel->GetVariables()) {
               auto& vname = chvar->GetName();
               if (vname == "id") {
-                ctx->entry.data.id = chvar->GetValueInt(-1);
+                if ((ctx->entry.data.id = chvar->GetValueInt(-1)) > 128) return ErrCodes::MAX_TROPHY_REACHED;
               } else if (vname == "hidden") {
                 ctx->entry.data.hidden = chvar->GetValue() == "yes";
               } else if (vname == "ttype") {
-                ctx->entry.data.type = chvar->GetValue().at(0);
+                ctx->entry.data.type = std::tolower(chvar->GetValue().at(0));
               } else if (vname == "gid") {
                 ctx->entry.data.group = chvar->GetValueInt(-1);
               }
@@ -127,17 +142,6 @@ class Trophies: public ITrophies {
               ctx->group.cancelled = ctx->group.func(&ctx->group.data);
             }
           }
-          if (!ctx->itrop.cancelled) {
-            if (cheln == "trophyset-version") {
-              ctx->itrop.data.trophyset_version.assign(chel->GetContent());
-            } else if (cheln == "title-name") {
-              ctx->itrop.data.title_name.assign(chel->GetContent());
-            } else if (cheln == "title-detail") {
-              ctx->itrop.data.title_detail.assign(chel->GetContent());
-            } else if (cheln == "trophy") {
-              ++ctx->itrop.data.trophy_count;
-            }
-          }
         }
 
         // Pass the final trophyset info to itrop callback
@@ -161,7 +165,7 @@ class Trophies: public ITrophies {
         if (((ent.flag >> 24) & 0x03) == 0) {
           ctx->pngim.data.pngsize = ent.len;
           ctx->pngim.data.pngname.assign(ent.name);
-          ctx->pngim.data.pngdata = new char[ent.len]; // Developer should free this memory manually
+          ctx->pngim.data.pngdata = ::calloc(ent.len, 1); // Developer should free this memory manually
           trfile.seekg(ent.pos);
           if (trfile.read((char*)ctx->pngim.data.pngdata, ent.len)) {
             ctx->pngim.cancelled = ctx->pngim.func(&ctx->pngim.data);
@@ -418,15 +422,36 @@ class Trophies: public ITrophies {
     } // trfile.is_open()
 
     return ErrCodes::NO_TROPHIES;
-  } // parseTRP()
+  }
 
-  bool createContext(int32_t userId, uint32_t label) final {}
+  const char* getError(ErrCodes ec) final {
+    switch (ec) {
+      case ErrCodes::SUCCESS: return "No errors";
+      case ErrCodes::INVALID_CONTEXT: return "Passed context is nullptr";
+      case ErrCodes::NO_ITROP: return "Invalid combination: trying to parse extended trophyset info from lightweight file";
+      case ErrCodes::NO_KEY_SET: return "Invalid trophy key, decrypting is impossible";
+      case ErrCodes::INVALID_MAGIC: return "Invalid trophy file magic, trophy00.trp is likely corruted";
+      case ErrCodes::INVALID_VERSION: return "Unsupported trophy file version";
+      case ErrCodes::INVALID_ENTSIZE: return "Invalid trophy file entry size, trophy00.trp is likely corruted";
+      case ErrCodes::INVALID_AES: return "Trophy file contains unaligned AES blocks";
+      case ErrCodes::NOT_IMPLEMENTED: return "This feature is not implemented yet";
+      case ErrCodes::IO_FAIL: return "Your operating system reported IO failure";
+      case ErrCodes::NO_CALLBACKS: return "No callbacks passed to parser";
+      case ErrCodes::DECRYPT: return "Trophy file decryption failed";
+      case ErrCodes::NO_TROPHIES: return "Trophy file is likely missing or does not contain requested esfm file";
+      default: return "Unknown error code!";
+    }
+  }
 
-  bool getProgress(int32_t userId, uint32_t progress[4]) final {}
+  bool createContext(int32_t userId, uint32_t label) final { return false; }
 
-  bool unlockTrophy(int32_t userId, int32_t trophyId) final {}
+  bool destroyContext(int32_t userId) final { return false; }
 
-  bool resetUserInfo(int32_t userId) final {}
+  bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final { return false; }
+
+  bool unlockTrophy(int32_t userId, int32_t trophyId) final { return false; }
+
+  bool resetUserInfo(int32_t userId) final { return false; }
 };
 
 ITrophies& accessTrophies() {

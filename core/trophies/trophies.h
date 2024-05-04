@@ -17,20 +17,21 @@ class ITrophies {
   ~ITrophies() = default;
 
   enum class ErrCodes {
-    SUCCESS = 0,     // No errors, we're fine
-    INVALID_CONTEXT, // Context is nullptr
-    NO_ITROP,        // There are no trophyset info in lightweight file
-    CONTINUE,        // Not an actual error code. For internal usage only!
-    NO_KEY_SET,      // No root key installed
-    INVALID_MAGIC,   // TRP file has invalid magic in its header
-    INVALID_VERSION, // TRP file version is not valid
-    INVALID_ENTSIZE, // TRP file has bigger entries
-    INVALID_AES,     // TRP file contains unaligned AES blocks
-    NOT_IMPLEMENTED, // This feature is not implemented yet
-    IO_FAIL,         // Failed to read TRP file
-    NO_CALLBACKS,    // Parser called with no callbacks, it's pointless
-    DECRYPT,         // TRP file decryption failed
-    NO_TROPHIES,     // Failed to open TRP file or the said file does not contain any esfm file
+    SUCCESS = 0,        // No errors, we're fine
+    INVALID_CONTEXT,    // Context is nullptr
+    NO_ITROP,           // There are no trophyset info in lightweight file
+    CONTINUE,           // Not an actual error code. For internal usage only!
+    NO_KEY_SET,         // No root key installed
+    INVALID_MAGIC,      // TRP file has invalid magic in its header
+    INVALID_VERSION,    // TRP file version is not valid
+    INVALID_ENTSIZE,    // TRP file has bigger entries
+    INVALID_AES,        // TRP file contains unaligned AES blocks
+    NOT_IMPLEMENTED,    // This feature is not implemented yet
+    IO_FAIL,            // Failed to read TRP file
+    NO_CALLBACKS,       // Parser called with no callbacks, it's pointless
+    DECRYPT,            // TRP file decryption failed
+    NO_TROPHIES,        // Failed to open TRP file or the said file does not contain any esfm file
+    MAX_TROPHY_REACHED, // The game hit the hard limit of 128 trophies
   };
 
   struct trp_grp_cb {
@@ -75,6 +76,7 @@ class ITrophies {
       std::string title_detail;
       std::string trophyset_version;
       uint32_t    trophy_count;
+      uint32_t    group_count;
     } data;
 
     bool                         cancelled;
@@ -92,12 +94,14 @@ class ITrophies {
     inline bool cancelled() { return entry.cancelled && group.cancelled && pngim.cancelled && itrop.cancelled; }
   };
 
-  virtual ErrCodes parseTRP(trp_context* context) = 0;
+  virtual ErrCodes    parseTRP(trp_context* context) = 0;
+  virtual const char* getError(ErrCodes ec)          = 0;
 
-  virtual bool createContext(int32_t userId, uint32_t label)     = 0;
-  virtual bool getProgress(int32_t userId, uint32_t progress[4]) = 0;
-  virtual bool unlockTrophy(int32_t userId, int32_t trophyId)    = 0;
-  virtual bool resetUserInfo(int32_t userId)                     = 0;
+  virtual bool createContext(int32_t userId, uint32_t label)                      = 0;
+  virtual bool destroyContext(int32_t userId)                                     = 0;
+  virtual bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) = 0;
+  virtual bool unlockTrophy(int32_t userId, int32_t trophyId)                     = 0;
+  virtual bool resetUserInfo(int32_t userId)                                      = 0;
 };
 
 #if defined(__APICALL_EXTERN)
