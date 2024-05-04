@@ -15,6 +15,24 @@
 #undef min // We don't need it there
 
 class Trophies: public ITrophies {
+  enum class cbtype {
+    UNKNOWN,
+    TROPHY_UNLOCK,
+  };
+
+  struct callback {
+    cbtype  type;
+    vvpfunc func;
+  };
+
+  bool                  m_bKeySet                  = false;
+  bool                  m_bIgnoreMissingLocale     = false;
+  uint8_t               m_trkey[TR_AES_BLOCK_SIZE] = {};
+  std::string           m_localizedTrophyFile      = {};
+  std::vector<callback> m_callbacks                = {};
+  std::mutex            m_mutexParse;
+
+  private:
   struct usr_context {
     struct trophy {
       uint32_t id;
@@ -49,12 +67,6 @@ class Trophies: public ITrophies {
   };
 
   static bool caseequal(char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
-
-  bool        m_bKeySet                  = false;
-  bool        m_bIgnoreMissingLocale     = false;
-  uint8_t     m_trkey[TR_AES_BLOCK_SIZE] = {};
-  std::string m_localizedTrophyFile      = {};
-  std::mutex  m_mutexParse;
 
   static ErrCodes XML_parse(const char* mem, trp_context* ctx) {
     XML3::XML xml(mem, strlen(mem));
@@ -363,6 +375,12 @@ class Trophies: public ITrophies {
     }
   }
 
+  //  Callbacks
+
+  void addTrophyUnlockCallback(vvpfunc func) final { m_callbacks.push_back({cbtype::TROPHY_UNLOCK, func}); }
+
+  //- Callbacks
+
   ErrCodes parseTRP(trp_context* ctx) final {
     if (!m_bKeySet) return ErrCodes::NO_KEY_SET;
     if (ctx == nullptr) return ErrCodes::INVALID_CONTEXT;
@@ -447,9 +465,40 @@ class Trophies: public ITrophies {
     }
   }
 
-  bool createContext(int32_t userId, uint32_t label) final { return false; }
+  bool loadTrophyData(int32_t userId) {
+    if (userId < 1 || userId > 4) return false;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created) return false;
 
-  bool destroyContext(int32_t userId) final { return false; }
+    return true; // todo: Actually load the trophy data
+  }
+
+  bool saveTrophyData(int32_t userId) {
+    if (userId < 1 || userId > 4) return false;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created) return false;
+
+    return true; // todo: Actually save the trophy data
+  }
+
+  bool createContext(int32_t userId, uint32_t label) final {
+    if (userId < 1 || userId > 4) return false;
+    auto& ctx = m_ctx[userId];
+    if (ctx.created) return false;
+
+    ctx.created = true;
+    ctx.label   = label;
+    return loadTrophyData(userId);
+  }
+
+  bool destroyContext(int32_t userId) final {
+    if (userId < 1 || userId > 4) return false;
+    auto& ctx = m_ctx[userId];
+    if (!ctx.created || !saveTrophyData(userId)) return false;
+    ctx.created = false;
+    ctx.label   = 0;
+    return true;
+  }
 
   bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final { return false; }
 

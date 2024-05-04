@@ -6,6 +6,8 @@
 #include <functional>
 #include <string>
 
+typedef std::function<void(void*)> vvpfunc;
+
 class ITrophies {
   CLASS_NO_COPY(ITrophies);
   CLASS_NO_MOVE(ITrophies);
@@ -97,6 +99,12 @@ class ITrophies {
 
   virtual ErrCodes    parseTRP(trp_context* context) = 0;
   virtual const char* getError(ErrCodes ec)          = 0;
+
+  //  Callbacks
+
+  virtual void addTrophyUnlockCallback(vvpfunc func) = 0;
+
+  //- Callbacks
 
   virtual bool     createContext(int32_t userId, uint32_t label)                      = 0;
   virtual bool     destroyContext(int32_t userId)                                     = 0;
