@@ -1,7 +1,7 @@
 #include "overlay.h"
 
-#include "../imageHandler.h"
 #include "logging.h"
+#include "overtrophy/overtrophy.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl2.h>
@@ -12,6 +12,7 @@ LOG_DEFINE_MODULE(Overlay);
 
 class OverlayHandler: public IOverlayHandler {
   std::shared_ptr<vulkan::DeviceInfo> m_deviceInfo;
+  std::shared_ptr<IImageHandler>      m_imageHandler;
 
   VkDescriptorPool m_descriptorPool;
 
@@ -21,8 +22,9 @@ class OverlayHandler: public IOverlayHandler {
   void draw();
 
   public:
-  OverlayHandler(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, SDL_Window* window, vulkan::QueueInfo* queue, VkFormat displayFormat)
-      : m_deviceInfo(deviceInfo) {
+  OverlayHandler(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, std::shared_ptr<IImageHandler>& imagehandler, SDL_Window* window, vulkan::QueueInfo* queue,
+                 VkFormat displayFormat)
+      : m_deviceInfo(deviceInfo), m_imageHandler(imagehandler) {
     init(window, queue, displayFormat);
   }
 
@@ -38,15 +40,15 @@ class OverlayHandler: public IOverlayHandler {
   void submit(ImageData const& imageData) final;
 
   void processEvent(SDL_Event const* event) final {
-    [[unlikely]] if (!m_isInit || !m_isStop)
+    [[unlikely]] if (!m_isInit || m_isStop)
       return;
     ImGui_ImplSDL2_ProcessEvent(event);
   }
 };
 
-std::unique_ptr<IOverlayHandler> createOverlay(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, SDL_Window* window, vulkan::QueueInfo* queue,
-                                               VkFormat displayFormat) {
-  return std::make_unique<OverlayHandler>(deviceInfo, window, queue, displayFormat);
+std::unique_ptr<IOverlayHandler> createOverlay(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, std::shared_ptr<IImageHandler>& imagehandler,
+                                               SDL_Window* window, vulkan::QueueInfo* queue, VkFormat displayFormat) {
+  return std::make_unique<OverlayHandler>(deviceInfo, imagehandler, window, queue, displayFormat);
 }
 
 void OverlayHandler::init(SDL_Window* window, vulkan::QueueInfo* queue, VkFormat displayFormat) {
@@ -85,6 +87,8 @@ void OverlayHandler::init(SDL_Window* window, vulkan::QueueInfo* queue, VkFormat
 
   ImGuiIO& io = ImGui::GetIO();
 
+  io.IniFilename = nullptr;
+  io.LogFilename = nullptr;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
 
@@ -120,6 +124,7 @@ void OverlayHandler::init(SDL_Window* window, vulkan::QueueInfo* queue, VkFormat
   };
 
   ImGui_ImplVulkan_Init(&initInfo);
+  (void)accessTrophyOverlay(); // Should be called there to avoid initialization inside NewFrame()
 
   m_isInit = true;
 }
@@ -131,7 +136,8 @@ void OverlayHandler::submit(ImageData const& imageData) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL2_NewFrame();
   ImGui::NewFrame();
-
+  draw();
+  ImGui::EndFrame();
   ImGui::Render();
   ImDrawData* drawData = ImGui::GetDrawData();
 
@@ -162,4 +168,5 @@ void OverlayHandler::submit(ImageData const& imageData) {
 
 void OverlayHandler::draw() {
   // ImGui::ShowDemoWindow();
+  accessTrophyOverlay().draw(m_imageHandler->getFPS());
 }

@@ -10,6 +10,7 @@
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
+#include "utility/progloc.h"
 
 #include <chrono>
 #include <filesystem>
@@ -113,11 +114,12 @@ int main(int argc, char** argv) {
                                            // -
 
   std::filesystem::path const dirSaveFiles = [&] {
+    auto root  = util::getProgramLoc();
     auto value = systemContent.getString("TITLE_ID");
     if (!value) {
-      return std::filesystem::path("GAMEFILES") / dirRoot;
+      return root / std::filesystem::path("GAMEFILES") / dirRoot;
     }
-    return std::filesystem::path("GAMEFILES") / *value;
+    return root / std::filesystem::path("GAMEFILES") / *value;
   }();
 
   fileManager.setGameFilesDir(dirSaveFiles);

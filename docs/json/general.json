@@ -63,6 +63,12 @@
       "description": "Index of the user who launched the game, should be less than \"onlineUsers\" or equal.",
       "minimum": 1,
       "maximum": 4
+    },
+    "trophyKey": {
+      "type": "string",
+      "description": "ERK trophy key in hex format. You should dump it from your console, otherwise trophies will not work.",
+      "pattern": "^(0x)?[0-9A-Fa-f]*$",
+      "maximum": 32
     }
   },
   "required": [
@@ -70,6 +76,7 @@
     "netMAC",
     "profiles",
     "systemlang",
-    "userIndex"
+    "userIndex",
+    "trophyKey"
   ]
 }

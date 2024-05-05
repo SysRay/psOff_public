@@ -73,6 +73,7 @@ You can change the layout now in _controls.json_, if you want to.
   "systemlang": 0, // System langauge, see the list below to get these indexes
   "netEnabled": false, // Wether enable networking features or not. Better to keep it disabled, not ready for the actual use.
   "netMAC": "00:00:00:00:00:00", // Your ethernet adapter's MAC address. Zero-MAC means "first usable device".
+  "trophyKey": "", // ERK trophy key in hex format. You should dump it from your console, otherwise trophies will not work.
   "onlineUsers": 1, // Number of authorized users, 1..4
   "userIndex": 1, // Id of the user that started the game
   "profiles": [ // User profiles, you can change your name there

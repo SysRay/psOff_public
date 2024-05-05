@@ -220,7 +220,7 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
 
   std::unique_ptr<IGraphics> m_graphics;
 
-  std::unique_ptr<IImageHandler>   m_imageHandler;
+  std::shared_ptr<IImageHandler>   m_imageHandler;
   std::unique_ptr<IOverlayHandler> m_overlayHandler;
 
   std::thread             m_threadSDL2;
@@ -992,7 +992,7 @@ std::thread VideoOut::createSDLThread() {
             m_imageHandler->init(m_vulkanObj, window.surface);
 
             auto [format, _] = vulkan::getDisplayFormat(m_vulkanObj);
-            m_overlayHandler = createOverlay(m_vulkanObj->deviceInfo, window.window, queue, format);
+            m_overlayHandler = createOverlay(m_vulkanObj->deviceInfo, m_imageHandler, window.window, queue, format);
 
             *item.result = 0;
           } else {
@@ -1019,18 +1019,12 @@ std::thread VideoOut::createSDLThread() {
             lock.lock();
           }
           m_graphics->submitDone();
-
-          auto&      timer      = accessTimer();
-          auto const curTime    = (uint64_t)(1e6 * timer.getTimeS());
-          auto const procTime   = timer.queryPerformance();
-          auto       elapsed_us = curTime - flipStatus.processTime;
+          m_imageHandler->calc_fps(flipStatus.processTime);
 
           doFlip(window, 1 + handleIndex);
 
-          double const fps   = (window.config.fps * 5.0 + (1e6 / (double)elapsed_us)) / 6.0;
-          auto         title = getTitle(1 + handleIndex, flipStatus.count, round(fps), window.fliprate);
-
-          window.config.fps = fps;
+          window.config.fps = m_imageHandler->getFPS();
+          auto title        = getTitle(1 + handleIndex, flipStatus.count, round(window.config.fps), window.fliprate);
 
           SDL_SetWindowTitle(window.window, title.c_str());
           func_pollSDL(window.window);
