@@ -332,7 +332,6 @@ class Trophies: public ITrophies {
 
   int32_t _unlockTrophyEx(usr_context* ctx, int32_t trophyId, int32_t* platinumId) {
     if (!m_bKeySet) return -1;
-    if (getUnlockTime(ctx->userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
     int32_t platId = getPlatinumIdFor(trophyId);
     if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
     if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
@@ -661,6 +660,7 @@ class Trophies: public ITrophies {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    if (getUnlockTime(ctx.userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
     *platinumId = -1;
     int32_t errcode;
 
