@@ -16,7 +16,7 @@ class ITrophies {
   ITrophies() = default;
 
   public:
-  ~ITrophies() = default;
+  virtual ~ITrophies() = default;
 
   enum class ErrCodes {
     SUCCESS = 0,        // No errors, we're fine
