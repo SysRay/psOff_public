@@ -52,6 +52,8 @@ class IImageHandler {
 
   ImageHandlerCB* m_callback;
 
+  double m_fps;
+
   public:
   virtual ~IImageHandler() = default;
 
@@ -61,6 +63,8 @@ class IImageHandler {
 
   auto getQueue() const { return m_queue; }
 
+  auto getFPS() const { return m_fps; }
+
   virtual void init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) = 0;
 
   virtual void deinit() = 0;
@@ -68,6 +72,7 @@ class IImageHandler {
 
   virtual std::optional<ImageData> getImage_blocking()           = 0;
   virtual void                     notify_done(ImageData const&) = 0;
+  virtual void                     calc_fps(uint64_t proctime)   = 0;
 
   virtual VkSwapchainKHR getSwapchain() const = 0;
 };

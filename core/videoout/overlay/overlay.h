@@ -1,4 +1,5 @@
 #pragma once
+#include "../imageHandler.h"
 #include "../vulkan/vulkanSetup.h"
 #include "core/videoout/vulkan/vulkanTypes.h"
 #include "utility/utility.h"
@@ -24,5 +25,5 @@ class IOverlayHandler {
   virtual void processEvent(SDL_Event const* event) = 0;
 };
 
-std::unique_ptr<IOverlayHandler> createOverlay(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, SDL_Window* window, vulkan::QueueInfo* queue,
-                                               VkFormat displayFormat);
+std::unique_ptr<IOverlayHandler> createOverlay(std::shared_ptr<vulkan::DeviceInfo>& deviceInfo, std::shared_ptr<IImageHandler>& imageHandler,
+                                               SDL_Window* window, vulkan::QueueInfo* queue, VkFormat displayFormat);

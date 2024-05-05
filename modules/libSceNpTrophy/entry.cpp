@@ -64,15 +64,6 @@ EXPORT SYSV_ABI int sceNpTrophyAbortHandle(SceNpTrophyHandle) {
 //- Unused handles API
 
 EXPORT SYSV_ABI int sceNpTrophyCreateContext(SceNpTrophyContext* context, int32_t userId, SceNpServiceLabel serviceLabel, uint64_t options) {
-  accessTrophies().addTrophyUnlockCallback([](const void* data) {
-    const auto* unlock = (ITrophies::trp_unlock_data*)data;
-
-    printf("Trophy \"%s\" unlocked!\n", unlock->name.c_str());
-    if (unlock->platGained) {
-      printf("========== PLATINUM TROPHY \"%s\" UNLOCKED ==========\n", unlock->pname.c_str());
-    }
-  });
-
   *context = userId;
   return accessTrophies().createContext(userId, (uint32_t)serviceLabel);
 }
