@@ -101,6 +101,11 @@ class OverTrophy: public IOverTrophy {
           title = "Platinum trophy unlocked!";
           ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(191, 191, 191, 255));
         } break;
+
+        default: {
+          title = "New trophy unlocked!";
+          ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(199, 124, 48, 255));
+        } break;
       }
 
       ImGui::PushFont(m_defaultFont);

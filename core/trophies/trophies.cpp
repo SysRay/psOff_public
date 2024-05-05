@@ -45,6 +45,7 @@ class Trophies: public ITrophies {
 
     bool     created;
     uint32_t label;
+    int32_t  userId;
 
     std::vector<struct trophy> trophies;
   } m_ctx[4];
@@ -317,6 +318,95 @@ class Trophies: public ITrophies {
     return ErrCodes::CONTINUE;
   }
 
+  void callUnlockCallback(trp_unlock_data* cbdata) {
+    for (auto& cb: m_callbacks) {
+      if (cb.type == cbtype::TROPHY_UNLOCK) cb.func(cbdata);
+    }
+
+    if (cbdata->image.pngdata) {
+      ::free(cbdata->image.pngdata);
+      cbdata->image.pngdata = nullptr;
+      cbdata->image.pngsize = 0ull;
+    }
+  }
+
+  int32_t _unlockTrophyEx(usr_context* ctx, int32_t trophyId, int32_t* platinumId) {
+    if (!m_bKeySet) return -1;
+    if (getUnlockTime(ctx->userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
+    int32_t platId = getPlatinumIdFor(trophyId);
+    if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
+    if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
+
+    auto pngname = std::format("TROP{:3}.PNG", trophyId);
+
+    int32_t ret         = Ok;
+    bool    platinumMet = (platId >= 0);
+
+    trp_unlock_data cbdata = {0};
+
+    trp_context tctx = {
+        .entry =
+            {
+                .func = [this, ctx, platId, &platinumMet, &ret, &cbdata, trophyId](trp_ent_cb::data_t* data) -> bool {
+                  if (ret != 0) return true;
+
+                  if (data->id == trophyId) {
+                    cbdata.id    = trophyId;
+                    cbdata.grade = data->grade;
+                    cbdata.name.assign(data->name);
+                    cbdata.descr.assign(data->detail);
+                  } else if (platinumMet && data->grade != 'p' && data->platinum == platId) {
+                    platinumMet = getUnlockTime(ctx->userId, data->id) > 0;
+                  }
+
+                  if (data->grade == 'p' && data->id == platId) {
+                    cbdata.pname.assign(data->name);
+                    cbdata.descr.assign(data->detail);
+                  }
+
+                  return false;
+                },
+            },
+        .pngim =
+            {
+                .func = [ret, &cbdata, pngname](trp_png_cb::data_t* data) -> bool {
+                  if (data->pngname == pngname) {
+                    cbdata.image.pngdata = data->pngdata;
+                    cbdata.image.pngsize = data->pngsize;
+                    return true;
+                  }
+
+                  return false;
+                },
+            },
+    };
+
+    ErrCodes ec;
+    if ((ec = parseTRP(&tctx)) != ErrCodes::SUCCESS) {
+      ret = Err::NpTrophy::BROKEN_DATA;
+    }
+
+    if (ret != Ok) {
+      if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
+      return ret;
+    }
+
+    if (cbdata.id != trophyId) return Err::NpTrophy::INVALID_TROPHY_ID;
+
+    if (platinumMet) {
+      cbdata.platGained = true;
+      *platinumId = cbdata.platId = platId;
+    } else {
+      cbdata.platGained = false;
+      cbdata.platId     = platId;
+      *platinumId       = -1;
+    }
+
+    callUnlockCallback(&cbdata);
+
+    return Ok;
+  }
+
   public:
   Trophies() {
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GENERAL);
@@ -488,6 +578,7 @@ class Trophies: public ITrophies {
     auto& ctx = m_ctx[userId];
     if (ctx.created) return Err::NpTrophy::CONTEXT_ALREADY_EXISTS;
 
+    ctx.userId  = userId;
     ctx.created = true;
     ctx.label   = label;
     return loadTrophyData(userId);
@@ -570,88 +661,28 @@ class Trophies: public ITrophies {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-    if (getUnlockTime(userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
-    int32_t platId = getPlatinumIdFor(trophyId);
-    if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
-    if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
+    *platinumId = -1;
+    int32_t errcode;
 
-    auto pngname = std::format("TROP{:3}.PNG", trophyId);
+    if ((errcode = _unlockTrophyEx(&ctx, trophyId, platinumId)) != Ok) {
+      if (errcode == -1) { // No trophy decryption key
+        trp_unlock_data cbdata = {
+            .grade = 'b',
+            .name  = "Unknown trophy",
+            .descr = "No trophy key specified, can't decrypt the trophy data",
+        };
 
-    int32_t ret         = Ok;
-    bool    platinumMet = (platId >= 0);
-
-    trp_unlock_data cbdata = {0};
-
-    trp_context tctx = {
-        .entry =
-            {
-                .func = [this, userId, platId, &platinumMet, &ret, &cbdata, trophyId](trp_ent_cb::data_t* data) -> bool {
-                  if (ret != 0) return true;
-
-                  if (data->id == trophyId) {
-                    cbdata.id    = trophyId;
-                    cbdata.grade = data->grade;
-                    cbdata.name.assign(data->name);
-                    cbdata.descr.assign(data->detail);
-                  } else if (platinumMet && data->grade != 'p' && data->platinum == platId) {
-                    platinumMet = getUnlockTime(userId, data->id) > 0;
-                  }
-
-                  if (data->grade == 'p' && data->id == platId) {
-                    cbdata.pname.assign(data->name);
-                    cbdata.descr.assign(data->detail);
-                  }
-
-                  return false;
-                },
-            },
-        .pngim =
-            {
-                .func = [ret, &cbdata, pngname](trp_png_cb::data_t* data) -> bool {
-                  if (data->pngname == pngname) {
-                    cbdata.image.pngdata = data->pngdata;
-                    cbdata.image.pngsize = data->pngsize;
-                    return true;
-                  }
-
-                  return false;
-                },
-            },
-    };
-
-    ErrCodes ec;
-    if ((ec = parseTRP(&tctx)) != ErrCodes::SUCCESS) {
-      ret = Err::NpTrophy::BROKEN_DATA;
+        callUnlockCallback(&cbdata);
+        errcode = Ok;
+      }
     }
-
-    if (ret != Ok) {
-      if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
-      return ret;
-    }
-
-    if (cbdata.id != trophyId) return Err::NpTrophy::INVALID_TROPHY_ID;
 
     uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
 
     ctx.trophies.push_back({trophyId, 0, uTime});
+    if (*platinumId != -1) ctx.trophies.push_back({*platinumId, 0, uTime});
 
-    if (platinumMet) {
-      cbdata.platGained = true;
-      *platinumId = cbdata.platId = platId;
-      ctx.trophies.push_back({platId, 0, uTime});
-    } else {
-      cbdata.platGained = false;
-      cbdata.platId     = platId;
-      *platinumId       = -1;
-    }
-
-    for (auto& cb: m_callbacks) {
-      cb.func(&cbdata);
-    }
-
-    if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
-
-    return saveTrophyData(userId) ? Ok : Err::NpTrophy::INSUFFICIENT_SPACE;
+    return saveTrophyData(userId) ? errcode : Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
   bool resetUserInfo(int32_t userId) final { return false; }
