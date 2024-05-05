@@ -79,7 +79,8 @@ class Avplayer: public IAvplayer {
   std::array<int, 4>   m_videoStride;
   std::array<void*, 4> m_videoPlane;
 
-  int64_t m_startTime = 0;
+  int64_t  m_startTime       = 0;
+  uint64_t m_latestTimestamp = 0;
 
   // Avplayer Data
   AVFormatContext* m_pFmtCtx = nullptr;
@@ -171,6 +172,8 @@ class Avplayer: public IAvplayer {
     LOG_TRACE(L"isPlaying:%u", m_isVideoActive | m_isAudioActive);
     return m_isVideoActive || m_isAudioActive;
   }
+
+  uint64_t getCurrentTime() const final { return m_latestTimestamp; }
 
   void stop() final {
     LOG_USE_MODULE(AvPlayer);
@@ -317,6 +320,8 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
     return false;
   }
 
+  m_latestTimestamp = timestamp;
+
   LOG_DEBUG(L"Received video frame, timestamp:%lld", m_video.frame->pts);
   m_video.getNewFrame = true;
 
@@ -415,6 +420,7 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   }
 
   auto const timestamp = (int64_t)(1000.0 * av_q2d(m_audio.stream->time_base) * m_audio.frame->best_effort_timestamp); // timestamp[seconds] to [ms]
+  m_latestTimestamp    = timestamp;
 
   //  Convert and copy
   int const outNumSamples = swr_get_out_samples(m_swrCtx, m_audio.frame->nb_samples);

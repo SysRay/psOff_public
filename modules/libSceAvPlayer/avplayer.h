@@ -20,6 +20,13 @@ class IAvplayer {
   virtual bool isPlaying() = 0;
   virtual void stop()      = 0;
 
+  /**
+   * @brief Get the latest timestamp
+   *
+   * @return uint64_t [ms]
+   */
+  virtual uint64_t getCurrentTime() const = 0;
+
   virtual ~IAvplayer() = default;
 };
 

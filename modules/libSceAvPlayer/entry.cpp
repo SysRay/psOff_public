@@ -103,9 +103,7 @@ EXPORT SYSV_ABI bool sceAvPlayerGetVideoData(IAvplayer* avPlayer, SceAvPlayerFra
 }
 
 EXPORT SYSV_ABI uint64_t sceAvPlayerCurrentTime(IAvplayer* avPlayer) {
-  LOG_USE_MODULE(libSceAvPlayer);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
+  return avPlayer->getCurrentTime();
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerJumpToTime(IAvplayer* avPlayer, uint64_t argJumpTimeMsec) {
