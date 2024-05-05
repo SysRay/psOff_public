@@ -37,7 +37,7 @@ static int32_t searchForPng(SceNpTrophyContext context, const char* name, void* 
           },
   };
 
-  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
+  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::BROKEN_DATA;
   return errcode;
 }
 } // namespace
@@ -98,10 +98,12 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
   if (details == nullptr && gdata == nullptr) return Err::NpTrophy::INVALID_ARGUMENT;
   LOG_USE_MODULE(libSceNpTrophy);
   SceNpTrophyFlagArray unlock_progr = {0};
-  uint32_t             unlock_count = 0;
-  uint32_t             trophy_count = 0;
+  uint32_t             unlock_count = 0; // Total unlocked trophies count
+  uint32_t             trophy_count = 0; // Total trophies count
 
-  if (!accessTrophies().getProgress(context, unlock_progr.flagBits, &unlock_count)) return Err::NpTrophy::INVALID_CONTEXT;
+  int32_t errcode;
+  if ((errcode = accessTrophies().getProgress(context, unlock_progr.flagBits, nullptr)) != Ok) return errcode;
+  errcode = Err::NpTrophy::INVALID_NP_TITLE_ID;
 
   ITrophies::trp_context ctx = {
       .lightweight = false,
@@ -135,12 +137,13 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
           },
       .itrop =
           {
-              .func = [details, &trophy_count](ITrophies::trp_inf_cb::data_t* data) -> bool {
+              .func = [&errcode, details, &trophy_count](ITrophies::trp_inf_cb::data_t* data) -> bool {
                 if (details) data->title_name.copy(details->title, sizeof(details->title));
                 if (details) data->title_detail.copy(details->description, sizeof(details->description));
                 if (details) details->numTrophies = data->trophy_count;
                 if (details) details->numGroups = data->group_count;
                 trophy_count = data->trophy_count;
+                errcode      = Ok;
                 return true;
               },
           },
@@ -149,12 +152,12 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
   ITrophies::ErrCodes ec;
   if ((ec = accessTrophies().parseTRP(&ctx)) != ITrophies::ErrCodes::SUCCESS) {
     LOG_ERR(L"Failed to parse trophy data: %S", accessTrophies().getError(ec));
-    return ec == ITrophies::ErrCodes::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : Err::NpTrophy::INVALID_ARGUMENT;
+    return ec == ITrophies::ErrCodes::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : errcode;
   }
 
   if (gdata) gdata->progressPercentage = (unlock_count / (float)trophy_count) * 100;
 
-  return Ok;
+  return errcode;
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGroupInfo(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyGroupId groupId, SceNpTrophyGroupDetails* details,
@@ -162,12 +165,12 @@ EXPORT SYSV_ABI int sceNpTrophyGetGroupInfo(SceNpTrophyContext context, SceNpTro
   if (grdata == nullptr && details == nullptr) return Err::NpTrophy::INVALID_ARGUMENT;
   LOG_USE_MODULE(libSceNpTrophy);
   SceNpTrophyFlagArray unlock_progr = {0};
-  uint32_t             unlock_count = 0;
-  uint32_t             trophy_count = 0;
+  uint32_t             unlock_count = 0; // Unlocked trophies in specified group
+  uint32_t             trophy_count = 0; // Trophies in specified group
 
-  if (!accessTrophies().getProgress(context, unlock_progr.flagBits, nullptr)) return Err::NpTrophy::INVALID_CONTEXT;
-
-  int32_t errcode = Err::NpTrophy::INVALID_GROUP_ID;
+  int32_t errcode;
+  if ((errcode = accessTrophies().getProgress(context, unlock_progr.flagBits, nullptr)) != Ok) return errcode;
+  errcode = Err::NpTrophy::INVALID_GROUP_ID;
 
   ITrophies::trp_context ctx = {
       .lightweight = false,
@@ -243,12 +246,10 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyInfo(SceNpTrophyContext context, SceNpTr
                                              SceNpTrophyData* tdata) {
   LOG_USE_MODULE(libSceNpTrophy);
   SceNpTrophyFlagArray unlock_progr = {0};
-  uint32_t             unlock_count = 0;
-  uint32_t             trophy_count = 0;
 
-  if (!accessTrophies().getProgress(context, unlock_progr.flagBits, nullptr)) return Err::NpTrophy::INVALID_CONTEXT;
-
-  int32_t errcode = Err::NpTrophy::INVALID_TROPHY_ID;
+  int32_t errcode;
+  if ((errcode = accessTrophies().getProgress(context, unlock_progr.flagBits, nullptr)) != Ok) return errcode;
+  errcode = Err::NpTrophy::INVALID_TROPHY_ID;
 
   ITrophies::trp_context ctx = {
       .lightweight = false,

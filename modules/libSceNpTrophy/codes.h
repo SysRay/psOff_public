@@ -6,6 +6,7 @@ namespace NpTrophy {
 constexpr int32_t SCREENSHOT_DISABLED    = -2141907413;
 constexpr int32_t INVALID_USER_ID        = -2141907419;
 constexpr int32_t EXCEEDS_MAX            = -2141907422;
+constexpr int32_t INVALID_NP_TITLE_ID    = -2141907424;
 constexpr int32_t ICON_FILE_NOT_FOUND    = -2141907436;
 constexpr int32_t CONTEXT_ALREADY_EXISTS = -2141907437;
 constexpr int32_t INSUFFICIENT_SPACE     = -2141907438;
