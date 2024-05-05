@@ -279,7 +279,9 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
     if (retRecv < 0) {
       if (retRecv == AVERROR(EAGAIN)) {
         if (!m_isStop) {
+          LOG_DEBUG(L"-> wait video frame");
           m_video.m_cond.wait(lock);
+          LOG_DEBUG(L"<- wait video frame");
           continue;
         }
       } else if (retRecv != AVERROR_EOF) {
@@ -310,6 +312,7 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
   auto const timestamp = (int64_t)(1000.0 * av_q2d(m_video.stream->time_base) * m_video.frame->best_effort_timestamp); // timestamp[seconds] to [ms]
 
   auto const curTime = (av_gettime() - m_startTime) / 1000; // [us] to [ms]
+  LOG_DEBUG(L"video frame timestamp:%lld", curTime);
   if (timestamp > curTime) {
     return false;
   }
@@ -385,7 +388,9 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
     if (retRecv < 0) {
       if (retRecv == AVERROR(EAGAIN)) {
         if (!m_isStop) {
+          LOG_DEBUG(L"-> wait audio frame");
           m_audio.m_cond.wait(lock);
+          LOG_DEBUG(L"<- wait audio frame");
           continue;
         }
       } else if (retRecv != AVERROR_EOF) {
@@ -522,7 +527,7 @@ std::unique_ptr<std::thread> Avplayer::threadFunc() {
           LOG_DEBUG(L"Queue Video Packet: numItems:%llu pts:%lld", m_video.decodeQueue.size(), packet->pts);
         } else if (packet->stream_index == m_audio.streamIndex) {
           m_audio.decodeQueue.push(packet);
-          LOG_DEBUG(L"Queue Video Packet: numItems:%llu pts:%lld", m_video.decodeQueue.size(), packet->pts);
+          LOG_DEBUG(L"Queue Audio Packet: numItems:%llu pts:%lld", m_audio.decodeQueue.size(), packet->pts);
         } else
           continue;
       }
