@@ -500,7 +500,7 @@ void RuntimeLinker::loadModules(std::string_view libName) {
       //- filepath
 
       if (std::filesystem::exists(filepath) && !m_libHandles.contains(name)) {
-        LOG_DEBUG(L"  load library %S", filepath.c_str());
+        LOG_DEBUG(L"  load library %s", filepath.c_str());
         auto [handle, symbols] = loadModule(name.data(), filepath.c_str(), 1);
 
         // 2/2 Sepcial case: old->new
@@ -829,7 +829,7 @@ uintptr_t RuntimeLinker::execute() {
   // Get and load additional Modules needed
   {
     for (auto const& prog: m_programList) {
-      LOG_DEBUG(L"Load for %S", prog.first->filename.string().c_str());
+      LOG_DEBUG(L"Load for %s", prog.first->filename.c_str());
       for (auto const& impLib: prog.second->getImportedLibs()) {
         loadModules(impLib.first);
       }
