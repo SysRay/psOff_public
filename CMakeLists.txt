@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
-set(PSOFF_LIB_VERSION v.0.2)
+set(PSOFF_LIB_VERSION v.0.3)
 set(PSOFF_RENDER_VERSION v.0.5-nightly_04.05.24)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
