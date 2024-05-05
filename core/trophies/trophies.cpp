@@ -76,13 +76,14 @@ class Trophies: public ITrophies {
     pugi::xml_document doc;
 
     auto res = doc.load_buffer(mem, strlen(mem));
+
     if (res.status != pugi::xml_parse_status::status_ok) return ErrCodes::INVALID_XML;
 
     if (auto tc = doc.child("trophyconf")) {
       if (!ctx->itrop.cancelled) {
-        ctx->itrop.data.trophyset_version.assign(tc.child("trophyset-version").first_child().value());
-        ctx->itrop.data.title_name.assign(tc.child("title-name").first_child().value());
-        ctx->itrop.data.title_detail.assign(tc.child("title-detail").first_child().value());
+        ctx->itrop.data.trophyset_version.assign(tc.child("trophyset-version").first_child().text().as_string("[nover]"));
+        ctx->itrop.data.title_name.assign(tc.child("title-name").first_child().text().as_string("[unnamed]"));
+        ctx->itrop.data.title_detail.assign(tc.child("title-detail").first_child().text().as_string("[unnamed]"));
         ctx->itrop.data.trophy_count = ctx->itrop.data.group_count = 0;
       }
 
@@ -95,8 +96,8 @@ class Trophies: public ITrophies {
           ctx->entry.data.grade    = std::tolower(*(node.attribute("ttype").as_string()));
 
           if (!ctx->lightweight) {
-            ctx->entry.data.name.assign(node.child("name").first_child().value());
-            ctx->entry.data.detail.assign(node.child("detail").first_child().value());
+            ctx->entry.data.name.assign(node.child("name").first_child().text().as_string("[unnamed]"));
+            ctx->entry.data.detail.assign(node.child("detail").first_child().text().as_string("[unnamed]"));
           }
 
           ctx->entry.cancelled = ctx->entry.func(&ctx->entry.data);
@@ -110,8 +111,8 @@ class Trophies: public ITrophies {
           ctx->group.data.id = node.attribute("id").as_int(-1);
 
           if (!ctx->lightweight) {
-            ctx->group.data.name.assign(node.child("name").first_child().value());
-            ctx->group.data.detail.assign(node.child("detail").first_child().value());
+            ctx->group.data.name.assign(node.child("name").first_child().text().as_string("[unnamed]"));
+            ctx->group.data.detail.assign(node.child("detail").first_child().text().as_string("[unnamed]"));
           }
 
           ctx->group.cancelled = ctx->group.func(&ctx->group.data);
@@ -271,6 +272,14 @@ class Trophies: public ITrophies {
             }
 
             EVP_CIPHER_CTX_free(data_ctx);
+            /**
+             * OpenSSL AES decrypt garbage data workaround.
+             * TODO: Fix it actually... EVP_DecryptUpdate writes
+             * garbage bytes to the buffer after XML file ends for
+             * some reason. I don't figured out yet why.
+             */
+            auto p = std::string_view(mem.get()).find("</trophyconf>");
+            if (p != std::string_view::npos) *(mem.get() + p + 13) = '\0';
             *mem_off = '\0'; // Finally
           }
           //- Data decipher context
@@ -404,6 +413,64 @@ class Trophies: public ITrophies {
     callUnlockCallback(&cbdata);
 
     return Ok;
+  }
+
+  void checkPlatinumTrophies(int32_t userId) {
+    if (!m_bKeySet) return;
+
+    struct platdata {
+      int32_t     id;
+      std::string name;
+      std::string descr;
+    };
+
+    std::vector<platdata> unlocked_plats = {};
+
+    trp_context tctx = {
+        .entry =
+            {
+                .func = [this, userId, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
+                  // Marking all platinum trophies as unlocked to check if they actually unlocked later
+                  if (data->grade == 'p' && getUnlockTime(userId, data->id) == 0ull) {
+                    unlocked_plats.push_back({data->id, data->name, data->detail});
+                  }
+                  return false;
+                },
+            },
+    };
+
+    if (parseTRP(&tctx) != ErrCodes::SUCCESS) return;
+
+    tctx.entry.func = [this, userId, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
+      if (data->grade != 'p' && data->platinum != -1) {
+        // Some trophy is not unlocked yet, removing the platinum trophy from the unlocked list then
+        if (getUnlockTime(userId, data->id) == 0ull) {
+          for (auto it = unlocked_plats.begin(); it != unlocked_plats.end();) {
+            if (it->id == data->platinum) {
+              unlocked_plats.erase(it);
+              break;
+            }
+          }
+        }
+      }
+
+      return false;
+    };
+
+    if (parseTRP(&tctx) != ErrCodes::SUCCESS || unlocked_plats.size() == 0ull) return;
+    uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
+
+    for (auto& plat: unlocked_plats) {
+      trp_unlock_data cbdata = {
+          .grade = 'p',
+          .name  = plat.name,
+          .descr = plat.descr,
+      };
+
+      callUnlockCallback(&cbdata);
+      m_ctx[userId].trophies.push_back({plat.id, 0, uTime});
+      saveTrophyData(userId);
+    }
   }
 
   public:
@@ -580,7 +647,14 @@ class Trophies: public ITrophies {
     ctx.userId  = userId;
     ctx.created = true;
     ctx.label   = label;
-    return loadTrophyData(userId);
+
+    int32_t errcode;
+    if ((errcode = loadTrophyData(userId)) == Ok) {
+      checkPlatinumTrophies(userId);
+      return Ok;
+    }
+
+    return errcode;
   }
 
   int32_t destroyContext(int32_t userId) final {

@@ -33,15 +33,20 @@ class OverTrophy: public IOverTrophy {
     cfg.SizePixels  = px;
     cfg.OversampleH = cfg.OversampleV = 1;
     cfg.PixelSnapH                    = true;
-
-    return io.Fonts->AddFontDefault(&cfg);
+    static const ImWchar ranges[]     = {
+        0x0020, // Range start
+        0xFFFC, // Range end
+        0x0000,
+    };
+    cfg.GlyphRanges = ranges;
+    return io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\tahoma.ttf", px, &cfg);
   }
 
   public:
   OverTrophy() {
-    m_defaultFont = CreateFont(13);
-    m_titleFont   = CreateFont(20);
-    m_textFont    = CreateFont(15);
+    m_defaultFont = CreateFont(15);
+    m_titleFont   = CreateFont(24);
+    m_textFont    = CreateFont(17);
 
     accessTrophies().addTrophyUnlockCallback([this](const void* data) {
       auto unlock = (ITrophies::trp_unlock_data*)data;
