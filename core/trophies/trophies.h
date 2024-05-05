@@ -124,9 +124,9 @@ class ITrophies {
 
   //- Callbacks
 
-  virtual bool     createContext(int32_t userId, uint32_t label)                       = 0;
-  virtual bool     destroyContext(int32_t userId)                                      = 0;
-  virtual bool     getProgress(int32_t userId, uint32_t progress[4], uint32_t* count)  = 0;
+  virtual int32_t  createContext(int32_t userId, uint32_t label)                       = 0;
+  virtual int32_t  destroyContext(int32_t userId)                                      = 0;
+  virtual int32_t  getProgress(int32_t userId, uint32_t progress[4], uint32_t* count)  = 0;
   virtual uint64_t getUnlockTime(int32_t userId, int32_t trophyId)                     = 0;
   virtual int32_t  unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) = 0;
   virtual bool     resetUserInfo(int32_t userId)                                       = 0;

@@ -439,29 +439,29 @@ class Trophies: public ITrophies {
     }
   }
 
-  bool loadTrophyData(int32_t userId) {
-    if (userId < 1 || userId > 4) return false;
+  int32_t loadTrophyData(int32_t userId) {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
-    if (!ctx.created) return false;
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
 
     std::ifstream file(m_trophyInfoPath, std::ios::in | std::ios::binary);
 
     if (file.is_open()) {
       uint32_t tc = 0;
 
-      if (!file.read((char*)&tc, 4)) return false;
+      if (!file.read((char*)&tc, 4)) return Err::NpTrophy::UNKNOWN;
       for (uint32_t i = 0; i < tc; i++) {
         usr_context::trophy t;
-        if (!file.read((char*)&t.id, 4)) return false;
-        if (!file.read((char*)&t.ts, 8)) return false;
+        if (!file.read((char*)&t.id, 4)) return Err::NpTrophy::UNKNOWN;
+        if (!file.read((char*)&t.ts, 8)) return Err::NpTrophy::UNKNOWN;
         ctx.trophies.push_back(t);
       }
     }
 
-    return true;
+    return Ok;
   }
 
-  bool saveTrophyData(int32_t userId) {
+  int32_t saveTrophyData(int32_t userId) {
     if (userId < 1 || userId > 4) return false;
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return false;
@@ -470,11 +470,11 @@ class Trophies: public ITrophies {
 
     if (file.is_open()) {
       uint32_t num = ctx.trophies.size();
-      file.write((char*)&num, 4);
+      if (!file.write((char*)&num, 4)) return Err::NpTrophy::INSUFFICIENT_SPACE;
 
       for (auto& trop: ctx.trophies) {
-        file.write((char*)&trop.id, 4);
-        file.write((char*)&trop.ts, 8);
+        if (!file.write((char*)&trop.id, 4)) return Err::NpTrophy::INSUFFICIENT_SPACE;
+        if (!file.write((char*)&trop.ts, 8)) return Err::NpTrophy::INSUFFICIENT_SPACE;
       }
 
       return true;
@@ -483,29 +483,30 @@ class Trophies: public ITrophies {
     return false;
   }
 
-  bool createContext(int32_t userId, uint32_t label) final {
-    if (userId < 1 || userId > 4) return false;
+  int32_t createContext(int32_t userId, uint32_t label) final {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
     auto& ctx = m_ctx[userId];
-    if (ctx.created) return false;
+    if (ctx.created) return Err::NpTrophy::CONTEXT_ALREADY_EXISTS;
 
     ctx.created = true;
     ctx.label   = label;
     return loadTrophyData(userId);
   }
 
-  bool destroyContext(int32_t userId) final {
-    if (userId < 1 || userId > 4) return false;
+  int32_t destroyContext(int32_t userId) final {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
-    if (!ctx.created || !saveTrophyData(userId)) return false;
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    if (!saveTrophyData(userId)) return Err::NpTrophy::INSUFFICIENT_SPACE;
     ctx.created = false;
     ctx.label   = 0;
-    return true;
+    return Ok;
   }
 
-  bool getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final {
-    if (userId < 1 || userId > 4) return false;
+  int32_t getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
-    if (!ctx.created) return false;
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
 
     if (count != nullptr) {
       trp_context ctx = {
@@ -519,7 +520,7 @@ class Trophies: public ITrophies {
               },
       };
 
-      if (parseTRP(&ctx) != ErrCodes::SUCCESS) return false;
+      if (parseTRP(&ctx) != ErrCodes::SUCCESS) return Err::NpTrophy::BROKEN_DATA;
     }
 
     SCE_NP_TROPHY_FLAG_ZERO((SceNpTrophyFlagArray*)progress);
@@ -572,7 +573,7 @@ class Trophies: public ITrophies {
     if (getUnlockTime(userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
     int32_t platId = getPlatinumIdFor(trophyId);
     if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
-    if (platId == -3) return Err::NpTrophy::UNKNOWN;
+    if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
 
     auto pngname = std::format("TROP{:3}.PNG", trophyId);
 
@@ -620,13 +621,15 @@ class Trophies: public ITrophies {
 
     ErrCodes ec;
     if ((ec = parseTRP(&tctx)) != ErrCodes::SUCCESS) {
-      ret = Err::NpTrophy::UNKNOWN;
+      ret = Err::NpTrophy::BROKEN_DATA;
     }
 
     if (ret != Ok) {
       if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
       return ret;
     }
+
+    if (cbdata.id != trophyId) return Err::NpTrophy::INVALID_TROPHY_ID;
 
     uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
 
@@ -647,9 +650,8 @@ class Trophies: public ITrophies {
     }
 
     if (cbdata.image.pngdata) ::free(cbdata.image.pngdata);
-    saveTrophyData(userId);
 
-    return Ok;
+    return saveTrophyData(userId) ? Ok : Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
   bool resetUserInfo(int32_t userId) final { return false; }
