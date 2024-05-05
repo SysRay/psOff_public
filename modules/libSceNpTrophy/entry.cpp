@@ -9,7 +9,38 @@
 
 LOG_DEFINE_MODULE(libSceNpTrophy);
 
-namespace {} // namespace
+namespace {
+static int32_t searchForPng(SceNpTrophyContext context, const char* name, void* buffer, size_t* size) {
+  int32_t errcode = Err::NpTrophy::ICON_FILE_NOT_FOUND;
+
+  ITrophies::trp_context ctx = {
+      .pngim =
+          {
+              .func = [&errcode, name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
+                if (data->pngname == name) {
+                  if (data->pngsize <= *size) {
+                    ::memcpy(buffer, data->pngdata, data->pngsize);
+                    *size   = data->pngsize;
+                    errcode = Ok;
+                  } else {
+                    LOG_USE_MODULE(libSceNpTrophy);
+                    LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
+                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
+                    *size   = 0;
+                  }
+                  ::free(data->pngdata);
+                  return true;
+                }
+
+                return false;
+              },
+          },
+  };
+
+  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
+  return errcode;
+}
+} // namespace
 
 extern "C" {
 
@@ -275,100 +306,17 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyInfo(SceNpTrophyContext context, SceNpTr
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGameIcon(SceNpTrophyContext context, SceNpTrophyHandle, void* buffer, size_t* size) {
-  int32_t errcode = Err::NpTrophy::ICON_FILE_NOT_FOUND;
-
-  ITrophies::trp_context ctx = {
-      .pngim =
-          {
-              .func = [&errcode, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
-                if (data->pngname == "ICON0.PNG") {
-                  if (data->pngsize <= *size) {
-                    ::memcpy(buffer, data->pngdata, data->pngsize);
-                    *size   = data->pngsize;
-                    errcode = Ok;
-                  } else {
-                    LOG_USE_MODULE(libSceNpTrophy);
-                    LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
-                    *size   = 0;
-                  }
-                  ::free(data->pngdata);
-                  return true;
-                }
-
-                return false;
-              },
-          },
-  };
-
-  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
-  return errcode;
+  return searchForPng(context, "ICON0.PNG", buffer, size);
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetGroupIcon(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyGroupId groupId, void* buffer, size_t* size) {
   auto name = std::format("GR{:3}.PNG", groupId);
-
-  int32_t errcode = Err::NpTrophy::ICON_FILE_NOT_FOUND;
-
-  ITrophies::trp_context ctx = {
-      .pngim =
-          {
-              .func = [&errcode, name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
-                if (data->pngname == name) {
-                  if (data->pngsize <= *size) {
-                    ::memcpy(buffer, data->pngdata, data->pngsize);
-                    *size   = data->pngsize;
-                    errcode = Ok;
-                  } else {
-                    LOG_USE_MODULE(libSceNpTrophy);
-                    LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
-                    *size   = 0;
-                  }
-                  ::free(data->pngdata);
-                  return true;
-                }
-
-                return false;
-              },
-          },
-  };
-
-  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
-  return errcode;
+  return searchForPng(context, name.c_str(), buffer, size);
 }
 
 EXPORT SYSV_ABI int sceNpTrophyGetTrophyIcon(SceNpTrophyContext context, SceNpTrophyHandle, SceNpTrophyId trophyId, void* buffer, size_t* size) {
   auto name = std::format("TROP{:3}.PNG", trophyId);
-
-  int32_t errcode = Err::NpTrophy::ICON_FILE_NOT_FOUND;
-
-  ITrophies::trp_context ctx = {
-      .pngim =
-          {
-              .func = [&errcode, name, buffer, size](ITrophies::trp_png_cb::data_t* data) -> bool {
-                if (data->pngname == name) {
-                  if (data->pngsize <= *size) {
-                    ::memcpy(buffer, data->pngdata, data->pngsize);
-                    *size   = data->pngsize;
-                    errcode = Ok;
-                  } else {
-                    LOG_USE_MODULE(libSceNpTrophy);
-                    LOG_ERR(L"Specified buffer is insufficient to save a PNG image (g: %llu, e: %llu)!", *size, data->pngsize);
-                    errcode = Err::NpTrophy::INSUFFICIENT_BUFFER;
-                    *size   = 0;
-                  }
-                  ::free(data->pngdata);
-                  return true;
-                }
-
-                return false;
-              },
-          },
-  };
-
-  if (accessTrophies().parseTRP(&ctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::UNKNOWN;
-  return errcode;
+  return searchForPng(context, name.c_str(), buffer, size);
 }
 
 EXPORT SYSV_ABI int sceNpTrophyShowTrophyList(SceNpTrophyContext context, SceNpTrophyHandle) {
