@@ -7,10 +7,10 @@ typedef int32_t SceNpTrophyId;
 typedef int32_t SceNpTrophyGroupId;
 
 enum class SceNpTrophyGrade : unsigned int {
-  GRADE_PLATINUM = 1, // PLATINUM
-  GRADE_GOLD     = 2, // GOLD
-  GRADE_SILVER   = 3, // SILVER
-  GRADE_BRONZE   = 4, // BRONZE
+  PLATINUM = 1, // PLATINUM
+  GOLD     = 2, // GOLD
+  SILVER   = 3, // SILVER
+  BRONZE   = 4, // BRONZE
 
 };
 
@@ -54,8 +54,8 @@ struct SceNpTrophyGameDetails {
   uint32_t numGold;
   uint32_t numSilver;
   uint32_t numBronze;
-  char     title[SCE_NP_TROPHY_GAME_TITLE_MAX_SIZE];
-  char     description[SCE_NP_TROPHY_GAME_DESCR_MAX_SIZE];
+  char     title[NpTrophy::GAME_TITLE_MAX_SIZE];
+  char     description[NpTrophy::GAME_DESCR_MAX_SIZE];
 };
 
 struct SceNpTrophyGameData {
@@ -76,8 +76,8 @@ struct SceNpTrophyGroupDetails {
   uint32_t           numGold;
   uint32_t           numSilver;
   uint32_t           numBronze;
-  char               title[SCE_NP_TROPHY_GROUP_TITLE_MAX_SIZE];
-  char               description[SCE_NP_TROPHY_GROUP_DESCR_MAX_SIZE];
+  char               title[NpTrophy::GROUP_TITLE_MAX_SIZE];
+  char               description[NpTrophy::GROUP_DESCR_MAX_SIZE];
 };
 
 struct SceNpTrophyGroupData {
@@ -99,8 +99,8 @@ struct SceNpTrophyDetails {
   SceNpTrophyGroupId groupId;
   bool               hidden;
   uint8_t            reserved[3];
-  char               name[SCE_NP_TROPHY_NAME_MAX_SIZE];
-  char               description[SCE_NP_TROPHY_DESCR_MAX_SIZE];
+  char               name[NpTrophy::NAME_MAX_SIZE];
+  char               description[NpTrophy::DESCR_MAX_SIZE];
 };
 
 struct SceNpTrophyData {

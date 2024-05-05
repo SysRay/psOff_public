@@ -1,6 +1,7 @@
 #include "imageHandler.h"
 
 #include "core/initParams/initParams.h"
+#include "core/timer/timer.h"
 #include "logging.h"
 #include "vulkan/vulkanSetup.h"
 
@@ -65,6 +66,8 @@ class ImageHandler: public IImageHandler {
   std::optional<ImageData> getImage_blocking() final;
 
   void notify_done(ImageData const&) final;
+
+  void calc_fps(uint64_t proctime) final;
 
   VkSwapchainKHR getSwapchain() const final { return m_swapchain; }
 };
@@ -218,6 +221,13 @@ void ImageHandler::notify_done(ImageData const& imageData) {
   lock.unlock();
 
   m_present_condVar.notify_all();
+}
+
+void ImageHandler::calc_fps(uint64_t proctime) {
+  auto&      timer      = accessTimer();
+  auto const curTime    = (uint64_t)(1e6 * timer.getTimeS());
+  auto       elapsed_us = curTime - proctime;
+  m_fps                 = (m_fps * 5.0 + (1e6 / (double)elapsed_us)) / 6.0;
 }
 
 void ImageHandler::init(vulkan::VulkanObj* obj, VkSurfaceKHR surface) {

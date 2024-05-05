@@ -6,6 +6,7 @@ add_library(videoout OBJECT
   vulkan/vulkanHelper.cpp
 
   overlay/overlay.cpp
+  overlay/overtrophy/overtrophy.cpp
 )
 
 add_dependencies(videoout third_party psOff_utility gamereport initParams config_emu psoff_render)

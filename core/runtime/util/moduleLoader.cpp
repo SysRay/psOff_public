@@ -12,10 +12,10 @@
 
 LOG_DEFINE_MODULE(ModuleLoader);
 
-std::pair<void*, std::unique_ptr<Symbols::SymbolExport>> loadModule(const char* libName, const char* filepath, int libVersion) {
+std::pair<void*, std::unique_ptr<Symbols::SymbolExport>> loadModule(const char* libName, const wchar_t* filepath, int libVersion) {
   LOG_USE_MODULE(ModuleLoader);
 
-  HMODULE hModule = LoadLibrary(filepath);
+  HMODULE hModule = LoadLibraryW(filepath);
   if (hModule == NULL) {
     LOG_ERR(L"Couldn't load library %S, err:%d", filepath, GetLastError());
     return {};

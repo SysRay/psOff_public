@@ -117,6 +117,7 @@ add_dependencies(psoff logging core psOff_utility)
 target_link_libraries(psoff PRIVATE
   core.lib
   psOff_utility
+  libboost_filesystem
   $<TARGET_OBJECTS:asmHelper>
 )
 

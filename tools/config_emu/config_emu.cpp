@@ -2,34 +2,36 @@
 #include "config_emu.h"
 #undef __APICALL_EXTERN
 
+#include "utility/progloc.h"
+
 #include <fstream>
 #include <future>
 
 namespace {
 class Item {
   public:
-  std::string_view const _name;
+  std::wstring_view const _name;
 
   bool              _dontfix; // If this flag is set then load function won't try fix the file according to default object
   json              _json;
   boost::mutex      _mutex;
   std::future<void> _future;
 
-  Item(std::string_view name, bool df = false): _name(name), _dontfix(df) {}
+  Item(std::wstring_view name, bool df = false): _name(name), _dontfix(df) {}
 
   std::pair<boost::unique_lock<boost::mutex>, json*> access() {
     _future.wait();
     return std::make_pair(boost::unique_lock(_mutex), &_json);
   }
 
-  bool save() {
-    auto path = std::string("./config/") + _name.data();
+  bool save(const std::wstring& root) {
+    auto path = root + _name.data();
     try {
       std::ofstream json_file(path);
       json_file << std::setw(2) << _json;
       return true;
     } catch (const json::exception& e) {
-      printf("Failed to save %s: %s\n", _name.data(), e.what());
+      printf("Failed to save %ls: %s\n", _name.data(), e.what());
       return false;
     }
   };
@@ -41,13 +43,15 @@ static inline bool isJsonTypesSimilar(json& a, json& b) {
 } // namespace
 
 class Config: public IConfig {
+  friend class Item;
+  std::wstring m_cfgroot;
 
-  Item m_logging  = {"logging.json"};
-  Item m_graphics = {"graphics.json"};
-  Item m_audio    = {"audio.json"};
-  Item m_controls = {"controls.json"};
-  Item m_general  = {"general.json"};
-  Item m_resolve  = {"resolve.json", true /*dontfix flag*/};
+  Item m_logging  = {L"logging.json"};
+  Item m_graphics = {L"graphics.json"};
+  Item m_audio    = {L"audio.json"};
+  Item m_controls = {L"controls.json"};
+  Item m_general  = {L"general.json"};
+  Item m_resolve  = {L"resolve.json", true /*dontfix flag*/};
 
   public:
   Config();
@@ -80,20 +84,23 @@ bool Config::save(uint32_t flags) {
 
   bool result = true;
 
-  if (!std::filesystem::is_directory("./config/")) std::filesystem::create_directory("./config/");
-  if (flags & (uint32_t)ConfigModFlag::LOGGING) result &= m_logging.save();
-  if (flags & (uint32_t)ConfigModFlag::GRAPHICS) result &= m_graphics.save();
-  if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= m_audio.save();
-  if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= m_controls.save();
-  if (flags & (uint32_t)ConfigModFlag::GENERAL) result &= m_general.save();
-  if (flags & (uint32_t)ConfigModFlag::RESOLVE) result &= m_resolve.save();
+  if (!std::filesystem::is_directory(m_cfgroot)) std::filesystem::create_directory(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::LOGGING) result &= m_logging.save(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::GRAPHICS) result &= m_graphics.save(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::AUDIO) result &= m_audio.save(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::CONTROLS) result &= m_controls.save(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::GENERAL) result &= m_general.save(m_cfgroot);
+  if (flags & (uint32_t)ConfigModFlag::RESOLVE) result &= m_resolve.save(m_cfgroot);
 
   return true;
 }
 
 Config::Config() {
+  m_cfgroot = util::getProgramLoc();
+  m_cfgroot += L"/config/";
+
   auto load = [this](Item* item, json defaults = {}, ConfigModFlag dflag = ConfigModFlag::NONE) {
-    auto path          = std::string("./config/") + item->_name.data();
+    auto path          = m_cfgroot + item->_name.data();
     bool should_resave = false, should_backup = false;
 
     try {
@@ -101,13 +108,13 @@ Config::Config() {
       item->_json = json::parse(json_file, nullptr, true, true);
 
       if ((item->_json).type() == defaults.type()) {
-        printf("Config %s loaded successfully\n", item->_name.data());
+        printf("Config %ls loaded successfully\n", item->_name.data());
       } else {
         should_backup = true;
         should_resave = true;
       }
     } catch (const json::exception& e) {
-      if ((std::filesystem::exists(path))) printf("Failed to parse %s: %s\n", item->_name.data(), e.what());
+      if ((std::filesystem::exists(path))) printf("Failed to parse %ls: %s\n", item->_name.data(), e.what());
 
       item->_json   = defaults;
       should_resave = true;
@@ -170,7 +177,7 @@ Config::Config() {
 
     if (!item->_dontfix && fixMissing(item->_json, defaults)) {
       should_resave = true;
-      printf("%s: some missing or invalid parameters has been fixed!\n", item->_name.data());
+      printf("%ls: some missing or invalid parameters has been fixed!\n", item->_name.data());
     }
 
     // Just the same thing as above, but for removing unused keys this time
@@ -198,7 +205,7 @@ Config::Config() {
     if (!item->_dontfix && removeUnused(item->_json, defaults)) {
       should_backup = true;
       should_resave = true;
-      printf("%s: some unused parameters has been removed!\n", item->_name.data());
+      printf("%ls: some unused parameters has been removed!\n", item->_name.data());
     }
 
     if (should_backup == true && std::filesystem::exists(path)) {
@@ -207,7 +214,7 @@ Config::Config() {
         newp.replace_extension(".back");
         std::filesystem::rename(path, newp);
       } catch (const std::filesystem::filesystem_error& e) {
-        printf("%s: failed to create a backup: %s", path.c_str(), e.what());
+        printf("%ls: failed to create a backup: %s", path.c_str(), e.what());
       }
     }
 
@@ -269,6 +276,7 @@ Config::Config() {
                                      {"systemlang", 1u},
                                      {"netEnabled", false},
                                      {"netMAC", "00:00:00:00:00:00"},
+                                     {"trophyKey", ""},
                                      {"userIndex", 1u},
                                      {"onlineUsers", 1u},
                                      {"profiles", defprofiles},
