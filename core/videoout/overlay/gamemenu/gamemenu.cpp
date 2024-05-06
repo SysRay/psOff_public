@@ -96,7 +96,6 @@ void GameMenu::_DrawTrophiesFor(int32_t userId) {
 
     if (it != unlocks.end()) status = it->time.c_str();
 
-    ImGui::PushFont(m_fontSubTitle);
     switch (trophy.grade) {
       case 'b': {
         ImGui::PushStyleColor(ImGuiCol_Text, TR_BRONZE_COLOR);
@@ -134,7 +133,6 @@ void GameMenu::_DrawTrophiesFor(int32_t userId) {
     ImGui::SameLine();
     ImGui::SetCursorPosX(wxp - ImGui::CalcTextSize(status).x);
     ImGui::Text("%s", status);
-    ImGui::PopFont();
 
     ImGui::PushFont(m_fontTitle);
     ImGui::Text("%s", trophy.title.c_str());
@@ -160,6 +158,7 @@ void GameMenu::draw() {
 
   ImGui::SetNextWindowSize(win_size);
   ImGui::SetNextWindowPos(ImVec2(ds.x / 2.0f - 200.0f, ds.y / 2.0f - 160.0f));
+  ImGui::PushFont(m_fontSubTitle);
   ImGui::Begin("ingame_menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
 
   // todo: Put actual user names there?
@@ -203,4 +202,5 @@ void GameMenu::draw() {
   }
 
   ImGui::End();
+  ImGui::PopFont();
 };

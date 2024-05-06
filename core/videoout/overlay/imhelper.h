@@ -14,13 +14,13 @@ static inline ImFont* _ImGuiCreateFont(float px) {
   cfg.MergeMode            = true;
   cfg.FontDataOwnedByAtlas = false;
 
-  static const ImWchar ranges[] = {
-      0x0020, 0x00ff, // Latin
-      0x0400, 0x044f, // Cyrillic
-      0x0000,
-  };
+  ImVector<ImWchar>        ranges;
+  ImFontGlyphRangesBuilder builder;
+  builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+  builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+  builder.BuildRanges(&ranges);
 
-  auto font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", px, nullptr, ranges);
+  auto font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", px, nullptr, ranges.Data);
   io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Msyhl.ttc", px, &cfg, io.Fonts->GetGlyphRangesChineseFull());
   io.Fonts->Build();
 
