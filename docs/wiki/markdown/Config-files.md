@@ -127,7 +127,18 @@ Game language can be changed with systemlang : *, default is EnglishUS. Game mus
 ```jsonc
 {
   "device": "[default]", // Audio device name, [default] means system default output device
-  "volume": 0.05 // Master volume, 0...1
+  "volume": 0.05, // Master volume, 0...1
+  /**
+   * The game will use these audio devices as pad speaker. Starting with psOff v.0.5 you can use
+   * the actual DualSense audio device there, it will play the audio that the game supposed
+   * to play through gamepad speaker. Note that DualShock 4 spaker is NOT supported!
+   */
+  "padspeakers": [
+    "[null]", // Your full audio device name e.g. "DualSense Wireless Controller (DualSense Wireless Controller)"
+    "[null]",
+    "[null]",
+    "[null]"
+  ]
 }
 ```
 
