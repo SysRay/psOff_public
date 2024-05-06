@@ -47,7 +47,7 @@ class SDLController: public IController {
   SceFVector3               m_gyroData      = {0.0f, 0.0f, 0.0f};
 
   public:
-  SDLController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
+  SDLController(uint32_t userid): IController(ControllerType::SDL, userid) {
     init();
     reconnect();
   }
@@ -69,8 +69,8 @@ class SDLController: public IController {
   static void init();
 };
 
-std::unique_ptr<IController> createController_sdl(ControllerConfig* cfg, uint32_t userid) {
-  return std::make_unique<SDLController>(cfg, userid);
+std::unique_ptr<IController> createController_sdl(uint32_t userid) {
+  return std::make_unique<SDLController>(userid);
 }
 
 void SDLController::init() {

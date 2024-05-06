@@ -16,8 +16,8 @@ target_include_directories(gamereport PRIVATE
   ${CMAKE_SOURCE_DIR}
 )
 
-add_dependencies(gamereport third_party logging check_git)
-target_link_libraries(gamereport PUBLIC libboost_url SDL2 libssl libcrypto logging.lib config_emu.lib)
+add_dependencies(gamereport third_party logging check_git core)
+target_link_libraries(gamereport PUBLIC libboost_url SDL2 libssl libcrypto core.lib logging.lib config_emu.lib)
 target_compile_definitions(gamereport PUBLIC BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
 
 set_target_properties(gamereport

@@ -254,21 +254,23 @@ Config::Config() {
       std::async(std::launch::async | std::launch::deferred, load, &m_audio,
                  json({{"$schema", "./.schemas/audio.json"}, {"device", "[default]"}, {"padspeakers", defspeakers}, {"volume", 0.5f}}), ConfigModFlag::AUDIO);
 
-  m_controls._future = std::async(std::launch::async | std::launch::deferred, load, &m_controls,
-                                  json({
-                                      {"$schema", "./.schemas/controls.json"},
-                                      {"pads", defpads},
-                                      {"keybinds",
-                                       {
-                                           {"triangle", "i"}, {"square", "j"},       {"circle", "l"},       {"cross", "k"},
-                                           {"dpad_up", "up"}, {"dpad_down", "down"}, {"dpad_left", "left"}, {"dpad_right", "right"},
-                                           {"options", "f1"}, {"touchpad", "f4"},    {"l1", "f3"},          {"l2", "f5"},
-                                           {"l3", "space"},   {"r1", "f2"},          {"r2", "f6"},          {"r3", "home"},
-                                           {"lx-", "a"},      {"lx+", "d"},          {"ly-", "w"},          {"ly+", "s"},
-                                           {"rx-", "h"},      {"rx+", "f"},          {"ry-", "t"},          {"ry+", "g"},
-                                       }},
-                                  }),
-                                  ConfigModFlag::CONTROLS);
+  m_controls._future =
+      std::async(std::launch::async | std::launch::deferred, load, &m_controls,
+                 json({
+                     {"$schema", "./.schemas/controls.json"},
+                     {"pads", defpads},
+                     {"keybinds",
+                      {
+                          {"controller.triangle", "i"}, {"controller.square", "j"},       {"controller.circle", "l"},       {"controller.cross", "k"},
+                          {"controller.dpad_up", "up"}, {"controller.dpad_down", "down"}, {"controller.dpad_left", "left"}, {"controller.dpad_right", "right"},
+                          {"controller.options", "f1"}, {"controller.touchpad", "f4"},    {"controller.l1", "f3"},          {"controller.l2", "f5"},
+                          {"controller.l3", "space"},   {"controller.r1", "f2"},          {"controller.r2", "f6"},          {"controller.r3", "home"},
+                          {"controller.lx-", "a"},      {"controller.lx+", "d"},          {"controller.ly-", "w"},          {"controller.ly+", "s"},
+                          {"controller.rx-", "f"},      {"controller.rx+", "h"},          {"controller.ry-", "t"},          {"controller.ry+", "g"},
+                          {"gamereport.send", "f11"},
+                      }},
+                 }),
+                 ConfigModFlag::CONTROLS);
 
   m_general._future = std::async(std::launch::async, load, &m_general,
                                  json({

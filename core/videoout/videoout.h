@@ -14,6 +14,7 @@ constexpr int VIDEO_OUT_EVENT_VBLANK = 1;
 
 class IGraphics;
 union SDL_Event;
+struct SDL_Window;
 
 typedef void (*SDLEventFunc)(SDL_Event*, void*);
 
@@ -182,6 +183,13 @@ class IVideoOut {
    * @return int
    */
   virtual bool SDLEventUnreg(SDLEventFunc eventFunc) = 0;
+
+  /**
+   * @brief Returns the main SDL Window handle
+   *
+   * @return SDL_Window*
+   */
+  virtual SDL_Window* SDLWindow() = 0;
 
   /**
    * @brief Notify a gpu visible memory range
