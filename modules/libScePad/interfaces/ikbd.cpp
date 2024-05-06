@@ -69,10 +69,6 @@ uint32_t KBDController::getButtons(IHotkeys& hk) {
   return bits.to_ulong();
 }
 
-#define MAP_ANALOG(_keys, _up, _down) (uint8_t)(resolveBindFor(_keys, _up) ? 0xFF : resolveBindFor(_keys, _down) ? 0x00 : 0x7F)
-
-#define MAP_TRIGGER(_keys, _down) (uint8_t)(resolveBindFor(_keys, _down) ? 0xFF : 0x00)
-
 bool KBDController::readPadData(ScePadData& data) {
   if (m_state == ControllerState::Closed) return false;
 
