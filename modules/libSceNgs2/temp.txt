@@ -1,0 +1,34 @@
+// create
+result = sceNgs2SystemCreateWithAllocator(NULL, &allocator, &m_systemHandle);
+result = sceNgs2RackCreateWithAllocator(m_systemHandle, SCE_NGS2_RACK_ID_MASTERING, NULL, &allocator, &m_masteringRackHandle);
+result = sceNgs2RackCreateWithAllocator(m_systemHandle, SCE_NGS2_RACK_ID_SAMPLER, NULL, &allocator, &m_samplerRackHandle);
+
+// Voice : Audio source
+sceNgs2RackGetVoiceHandle(m_samplerRackHandle, 0, &m_samplerVoiceHandle);
+sceNgs2SamplerVoiceSetup(m_samplerVoiceHandle, &m_waveformInfo.format, 0);
+sceNgs2SamplerVoiceAddWaveformBlocks(m_samplerVoiceHandle, m_waveformData, m_waveformInfo.aBlock, m_waveformInfo.numBlocks, 0);
+sceNgs2VoicePatch(m_samplerVoiceHandle, 0, m_masteringVoiceHandle, 0);
+
+result = sceNgs2VoiceKickEvent(m_samplerVoiceHandle, SCE_NGS2_VOICE_EVENT_PLAY); // sceNgs2VoiceControl
+
+
+
+// ### Read Wave
+result = fileLoad(WAVEFORM_PATH, &m_waveformData, &m_waveformDataSize);
+if (result < SCE_OK) {
+  goto failed;
+}
+
+result = sceNgs2ParseWaveformData(m_waveformData, m_waveformDataSize, &m_waveformInfo);
+if (result < 0) {
+  goto failed;
+}
+// ---
+
+sceNgs2RackGetVoiceHandle(m_samplerRackHandle, 0, &m_samplerVoiceHandle);
+sceNgs2SamplerVoiceSetup(m_samplerVoiceHandle, &m_waveformInfo.format, 0);
+sceNgs2SamplerVoiceAddWaveformBlocks(m_samplerVoiceHandle, m_waveformData, m_waveformInfo.aBlock, m_waveformInfo.numBlocks, 0);
+sceNgs2VoicePatch(m_samplerVoiceHandle, 0, m_masteringVoiceHandle, 0);
+
+
+sceNgs2SystemRender() // takes data
