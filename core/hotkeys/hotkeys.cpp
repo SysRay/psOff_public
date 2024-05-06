@@ -94,7 +94,20 @@ class Hotkeys: public IHotkeys {
       sdlkeys.get_to(temp);
 
       auto& bind = m_binds[(uint32_t)it->second];
-      if (!readBind(temp, &bind)) bind = {0, 0};
+      if (!readBind(temp, &bind)) {
+        bind = {0, 0};
+        continue;
+      }
+
+      for (uint32_t c = uint32_t(HkCommand::UNKNOWN); c < uint32_t(HkCommand::COMMANDS_MAX); ++c) {
+        auto& tbind = m_binds[(uint32_t)c];
+        if (bind.kc == SDL_SCANCODE_UNKNOWN || tbind.kc == SDL_SCANCODE_UNKNOWN) continue;
+        if (tbind.kc == bind.kc && tbind.mod == bind.mod && (uint32_t)it->second != c) {
+          printf("Key conflict found! Please rebind your \"%s\" key.\n", bname.c_str());
+          bind = {0, 0};
+          continue;
+        }
+      }
     }
   }
 
