@@ -267,7 +267,7 @@ Config::Config() {
                           {"controller.l3", "space"},   {"controller.r1", "f2"},          {"controller.r2", "f6"},          {"controller.r3", "home"},
                           {"controller.lx-", "a"},      {"controller.lx+", "d"},          {"controller.ly-", "w"},          {"controller.ly+", "s"},
                           {"controller.rx-", "f"},      {"controller.rx+", "h"},          {"controller.ry-", "t"},          {"controller.ry+", "g"},
-                          {"gamereport.send", "f11"},
+                          {"gamereport.send", "f11"},   {"overlay.open", "tab"},
                       }},
                  }),
                  ConfigModFlag::CONTROLS);

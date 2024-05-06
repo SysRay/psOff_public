@@ -30,7 +30,6 @@ class Trophies: public ITrophies {
   bool                  m_bIgnoreMissingLocale     = false;
   uint8_t               m_trkey[TR_AES_BLOCK_SIZE] = {};
   std::string           m_localizedTrophyFile;
-  std::filesystem::path m_trophyInfoPath;
   std::filesystem::path m_npidCachePath;
   std::vector<callback> m_callbacks = {};
   std::mutex            m_mutexParse;
@@ -48,7 +47,7 @@ class Trophies: public ITrophies {
     int32_t  userId;
 
     std::vector<struct trophy> trophies;
-  } m_ctx[4];
+  } m_ctx[4] = {0};
 
   struct trp_header {
     uint32_t magic; // should be 0xDCA24D00
@@ -501,10 +500,7 @@ class Trophies: public ITrophies {
       if (systemlang != SystemParamLang::EnglishUS) m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
     }
 
-    auto gfd = accessFileManager().getGameFilesDir();
-
-    m_trophyInfoPath = gfd / "tropinfo";
-    m_npidCachePath  = gfd / ".npcommid";
+    m_npidCachePath = accessFileManager().getGameFilesDir() / ".npcommid";
   }
 
   //  Callbacks
@@ -600,8 +596,9 @@ class Trophies: public ITrophies {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
 
-    std::ifstream file(m_trophyInfoPath, std::ios::in | std::ios::binary);
+    std::ifstream file(path, std::ios::in | std::ios::binary);
 
     if (file.is_open()) {
       uint32_t tc = 0;
@@ -619,11 +616,12 @@ class Trophies: public ITrophies {
   }
 
   int32_t saveTrophyData(int32_t userId) {
-    if (userId < 1 || userId > 4) return false;
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
     auto& ctx = m_ctx[userId];
-    if (!ctx.created) return false;
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
 
-    std::ofstream file(m_trophyInfoPath, std::ios::out | std::ios::binary);
+    std::ofstream file(path, std::ios::out | std::ios::binary);
 
     if (file.is_open()) {
       uint32_t num = ctx.trophies.size();
@@ -634,16 +632,16 @@ class Trophies: public ITrophies {
         if (!file.write((char*)&trop.ts, 8)) return Err::NpTrophy::INSUFFICIENT_SPACE;
       }
 
-      return true;
+      return Ok;
     }
 
-    return false;
+    return Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
   int32_t createContext(int32_t userId, uint32_t label) final {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
     auto& ctx = m_ctx[userId];
-    if (ctx.created) return Err::NpTrophy::CONTEXT_ALREADY_EXISTS;
+    if (ctx.created) return Ok;
 
     ctx.userId  = userId;
     ctx.created = true;

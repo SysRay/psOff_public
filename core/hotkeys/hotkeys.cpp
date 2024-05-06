@@ -35,6 +35,8 @@ class Hotkeys: public IHotkeys {
   Hotkeys() {
     static std::unordered_map<std::string, HkCommand> map = {
         {"gamereport.send", HkCommand::GAMEREPORT_SEND_REPORT},
+        {"overlay.open", HkCommand::OVERLAY_MENU},
+
         {"controller.l3", HkCommand::CONTROLLER_L3},
         {"controller.r3", HkCommand::CONTROLLER_R3},
         {"controller.options", HkCommand::CONTROLLER_OPTIONS},

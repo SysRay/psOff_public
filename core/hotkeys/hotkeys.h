@@ -10,6 +10,7 @@ enum class HkCommand {
 
   // System commands
   GAMEREPORT_SEND_REPORT,
+  OVERLAY_MENU,
 
   // Gamepad emulation
   CONTROLLER_L3,
