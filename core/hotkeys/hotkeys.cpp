@@ -87,8 +87,8 @@ class Hotkeys: public IHotkeys {
     };
 
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::CONTROLS);
-    for (auto& [bind, sdlkeys]: (*jData)["keybinds"].items()) {
-      auto it = map.find(bind.c_str());
+    for (auto& [bname, sdlkeys]: (*jData)["keybinds"].items()) {
+      auto it = map.find(bname.c_str());
       if (it == map.end()) continue;
       std::string temp;
       sdlkeys.get_to(temp);
