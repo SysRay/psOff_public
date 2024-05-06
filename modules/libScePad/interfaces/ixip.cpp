@@ -27,7 +27,7 @@ class XIPController: public IController {
   bool  m_xRumblePossible = false;
 
   public:
-  XIPController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
+  XIPController(uint32_t userid): IController(ControllerType::SDL, userid) {
     init();
     reconnect();
   }
@@ -48,8 +48,8 @@ class XIPController: public IController {
   void     init();
 };
 
-std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint32_t userid) {
-  return std::make_unique<XIPController>(cfg, userid);
+std::unique_ptr<IController> createController_xinput(uint32_t userid) {
+  return std::make_unique<XIPController>(userid);
 }
 
 void XIPController::init() {

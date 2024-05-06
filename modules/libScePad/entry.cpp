@@ -1,11 +1,13 @@
-#include "cconfig.h"
 #include "common.h"
+#include "config_emu.h"
 #include "core/timer/timer.h"
 #include "interfaces/ikbd.h"
 #include "interfaces/isdl.h"
 #include "interfaces/ixip.h"
 #include "logging.h"
 #include "types.h"
+
+#include <mutex>
 
 LOG_DEFINE_MODULE(libScePad);
 
@@ -20,11 +22,10 @@ struct Controller {
 };
 
 struct Pimpl {
-  Pimpl(): cfg() {}
+  Pimpl() = default;
 
   std::mutex m_mutexInt;
 
-  ControllerConfig                              cfg;
   std::array<Controller, MAX_CONTROLLERS_COUNT> controller;
 };
 
@@ -32,6 +33,27 @@ static auto* getData() {
   static Pimpl obj;
   return &obj;
 }
+
+static ControllerType _getPadType(int32_t userId) {
+  LOG_USE_MODULE(libScePad);
+
+  auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::CONTROLS);
+
+  auto type = (*jData)["pads"][userId - 1]["type"];
+
+  if (type == "keyboard") {
+    return ControllerType::Keyboard;
+  } else if (type == "sdl") {
+    return ControllerType::SDL;
+  } else if (type == "xinput") {
+    return ControllerType::Xinput;
+  }
+
+  std::string temp;
+  type.get_to(temp);
+  LOG_ERR(L"Unknown controller backend \"%S\" falling back to \"SDL\"", temp.c_str());
+  return ControllerType::SDL;
+};
 
 static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
   if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
@@ -56,12 +78,12 @@ static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void*
     pData->controller[n].prePadData = ScePadData();
     pData->controller[n].userId     = userId;
 
-    switch (pData->cfg.GetPadType(userId)) {
-      case ControllerType::SDL: padBackend = createController_sdl(&pData->cfg, userId); break;
+    switch (_getPadType(userId)) {
+      case ControllerType::SDL: padBackend = createController_sdl(userId); break;
 
-      case ControllerType::Xinput: padBackend = createController_xinput(&pData->cfg, userId); break;
+      case ControllerType::Xinput: padBackend = createController_xinput(userId); break;
 
-      case ControllerType::Keyboard: padBackend = createController_keyboard(&pData->cfg, userId); break;
+      case ControllerType::Keyboard: padBackend = createController_keyboard(userId); break;
 
       default: LOG_CRIT(L"Unimplemented controller type!"); return Err::Pad::FATAL;
     }

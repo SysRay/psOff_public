@@ -228,7 +228,7 @@ class Trophies: public ITrophies {
           //  Data decipher context
           EVP_CIPHER_CTX* data_ctx = EVP_CIPHER_CTX_new();
           {
-            if (!EVP_DecryptInit(data_ctx, EVP_aes_128_cbc(), outbuffer, d_iv)) {
+            if (!EVP_DecryptInit(data_ctx, EVP_aes_128_cbc(), outbuffer /* the buffer holds the decryption key now */, d_iv)) {
               EVP_CIPHER_CTX_free(data_ctx);
               return false;
             }
@@ -250,8 +250,8 @@ class Trophies: public ITrophies {
             // Seeking to unread encrypted data position (skip Init Vector + Signature Comkment Part)
             trfile.seekg(ent.pos + TR_AES_BLOCK_SIZE + ENC_SCE_SIGN_SIZE);
 
-            size_t copied;
-            while ((copied = size_t(mem_off - mem.get())) < ent.len) {
+            size_t copied = ENC_SCE_SIGN_SIZE;
+            while (copied < ent.len) {
               size_t len = std::min(ent.len - copied, sizeof(inbuffer));
               // Reading the rest of AES data block by block
               if (!trfile.read((char*)inbuffer, len)) {
@@ -264,6 +264,7 @@ class Trophies: public ITrophies {
               }
 
               mem_off += outlen;
+              copied += len;
             }
 
             if (!EVP_DecryptFinal(data_ctx, (uint8_t*)mem_off, &outlen)) {
@@ -280,7 +281,7 @@ class Trophies: public ITrophies {
              */
             auto p = std::string_view(mem.get()).find("</trophyconf>");
             if (p != std::string_view::npos) *(mem.get() + p + 13) = '\0';
-            *mem_off = '\0'; // Finally
+            *(mem_off + outlen) = '\0'; // Finally
           }
           //- Data decipher context
 

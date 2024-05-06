@@ -3,11 +3,15 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
+#include "core/hotkeys/hotkeys.h"
+#include "core/systemContent/systemContent.h"
+#include "core/videoout/videoout.h"
 #include "git_ver.h"
 #include "logging.h"
 #include "modules_include/system_param.h"
 #include "nlohmann/json.hpp"
 
+#include <SDL2/SDL.h>
 #include <Windows.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -460,6 +464,25 @@ GameReport::GameReport() {
   // for (int i = 0; i < LANG_STR_MAX; i++) {
   //   printf("%s\n = \n%s\n*************************\n", strings[Langs::ENGLISH][i], strings[Langs::RUSSIAN][i]);
   // }
+
+  accessHotkeys().registerCallback(HkCommand::GAMEREPORT_SEND_REPORT, [this](HkCommand) {
+    auto title    = accessSystemContent().getString("TITLE");
+    auto title_id = accessSystemContent().getString("TITLE_ID");
+    auto app_ver  = accessSystemContent().getString("APP_VER");
+
+    ShowReportWindow({
+        .title    = title ? title.value().data() : "Your PS4 Game Name",
+        .title_id = title_id ? title_id.value().data() : "CUSA00000",
+        .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+        .emu_ver  = PSOFF_RENDER_VERSION,
+
+        .type = IGameReport::Type::USER,
+        .add =
+            {
+                .ex = nullptr,
+            },
+    });
+  });
 }
 
 void GameReport::ShowReportWindow(const Info& info) {
@@ -494,7 +517,7 @@ void GameReport::ShowReportWindow(const Info& info) {
 
   SDL_MessageBoxData mbd {
       .flags      = SDL_MESSAGEBOX_INFORMATION,
-      .window     = info.wnd,
+      .window     = accessVideoOut().SDLWindow(),
       .title      = get_lang_string(lang_id, LangString::MAIN_TITLE),
       .message    = message,
       .numbuttons = 2,

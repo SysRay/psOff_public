@@ -112,10 +112,11 @@ add_executable(psoff
   main.cpp
 )
 
-add_dependencies(psoff logging core psOff_utility)
+add_dependencies(psoff logging core psOff_utility gamereport)
 
 target_link_libraries(psoff PRIVATE
   core.lib
+  gamereport.lib
   psOff_utility
   libboost_filesystem
   $<TARGET_OBJECTS:asmHelper>
