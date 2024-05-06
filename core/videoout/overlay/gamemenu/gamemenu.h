@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <imgui/imgui.h>
 #include <string>
 
 class GameMenu {
@@ -16,6 +17,8 @@ class GameMenu {
 
   struct Trophy {
     int32_t     id;
+    uint8_t     grade;
+    bool        hidden;
     std::string title;
     std::string subtitle;
   };
@@ -25,6 +28,9 @@ class GameMenu {
   std::vector<MenuButton> m_buttons    = {};
   std::vector<Trophy>     m_trophyList = {};
 
+  ImFont* m_fontTitle    = nullptr;
+  ImFont* m_fontSubTitle = nullptr;
+
   void _DrawTrophiesFor(int32_t userId);
 
   public:
@@ -32,9 +38,9 @@ class GameMenu {
 
   virtual ~GameMenu() = default;
 
-  void toggle() { m_bShown = !m_bShown; };
+  void toggle();
 
-  void _PushTrophy(int32_t trophyId, std::string& name, std::string& detail);
+  void _PushTrophy(int32_t trophyId, uint8_t grade, bool hidden, std::string& name, std::string& detail);
 
   void init();
   void draw();

@@ -1,30 +1,16 @@
 #include "overtrophy.h"
 
+#include "../imhelper.h"
 #include "core/trophies/trophies.h"
-
-ImFont* OverTrophy::CreateFont(float px) {
-  ImGuiIO&     io = ImGui::GetIO();
-  ImFontConfig cfg;
-  cfg.SizePixels  = px;
-  cfg.OversampleH = cfg.OversampleV = 1;
-  cfg.PixelSnapH                    = true;
-  static const ImWchar ranges[]     = {
-      0x0020, // Range start
-      0xFFFC, // Range end
-      0x0000,
-  };
-  cfg.GlyphRanges = ranges;
-  return io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\tahoma.ttf", px, &cfg);
-}
 
 void OverTrophy::addNotify(uint8_t grade, std::string title, std::string details) {
   m_notifications.emplace_back(0.0f, 5.0f, false, grade, std::move(title), std::move(details), nullptr, 0ull);
 }
 
 void OverTrophy::init() {
-  m_defaultFont = CreateFont(15);
-  m_titleFont   = CreateFont(24);
-  m_textFont    = CreateFont(17);
+  m_defaultFont = _ImGuiCreateFont(15);
+  m_titleFont   = _ImGuiCreateFont(24);
+  m_textFont    = _ImGuiCreateFont(17);
 
   accessTrophies().addTrophyUnlockCallback([this](const void* data) {
     auto unlock = (ITrophies::trp_unlock_data*)data;
@@ -67,24 +53,24 @@ void OverTrophy::draw(double fps) {
     switch (notify.grade) {
       case 'b': {
         title = "Bronze trophy unlocked!";
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(199, 124, 48, 255));
+        ImGui::PushStyleColor(ImGuiCol_Text, TR_BRONZE_COLOR);
       } break;
       case 's': {
         title = "Silver trophy unlocked!";
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(150, 164, 182, 255));
+        ImGui::PushStyleColor(ImGuiCol_Text, TR_SILVER_COLOR);
       } break;
       case 'g': {
         title = "Gold trophy unlocked!";
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(228, 194, 78, 255));
+        ImGui::PushStyleColor(ImGuiCol_Text, TR_GOLD_COLOR);
       } break;
       case 'p': {
         title = "Platinum trophy unlocked!";
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(191, 191, 191, 255));
+        ImGui::PushStyleColor(ImGuiCol_Text, TR_PLATINUM_COLOR);
       } break;
 
       default: {
         title = "New trophy unlocked!";
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(199, 124, 48, 255));
+        ImGui::PushStyleColor(ImGuiCol_Text, TR_UNKNOWN_COLOR);
       } break;
     }
 
