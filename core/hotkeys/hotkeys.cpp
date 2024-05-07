@@ -64,6 +64,7 @@ class Hotkeys: public IHotkeys {
     };
 
     auto readBind = [](std::string& str, KBind* kb) -> bool {
+      if (str.length() == 0) return false;
       auto delim = str.find_last_of("||");
       if (delim != std::string::npos) {
         auto mod = str.substr(0, delim - 1);
@@ -83,9 +84,12 @@ class Hotkeys: public IHotkeys {
         }
       }
 
-      kb->kc  = SDL_GetScancodeFromName(str.c_str());
-      kb->mod = 0x0000;
-      return true;
+      if ((kb->kc = SDL_GetScancodeFromName(str.c_str())) != SDL_SCANCODE_UNKNOWN) {
+        kb->mod = 0x0000;
+        return true;
+      }
+
+      return false;
     };
 
     auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::CONTROLS);
@@ -97,6 +101,7 @@ class Hotkeys: public IHotkeys {
 
       auto& bind = m_binds[(uint32_t)it->second];
       if (!readBind(temp, &bind)) {
+        printf("Missing key binding for \"%s\"!\n", bname.c_str());
         bind = {0, 0};
         continue;
       }
