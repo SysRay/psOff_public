@@ -276,6 +276,22 @@ EXPORT SYSV_ABI double __NID(exp2)(double val) {
   return std::exp2(val);
 }
 
+EXPORT SYSV_ABI float __NID(log)(float val) {
+  return std::logf(val);
+}
+
+EXPORT SYSV_ABI double __NID(log)(double val) {
+  return std::log(val);
+}
+
+EXPORT SYSV_ABI float __NID(log10f)(float val) {
+  return std::log10f(val);
+}
+
+EXPORT SYSV_ABI double __NID(log10)(double val) {
+  return std::log10(val);
+}
+
 EXPORT SYSV_ABI int __NID(setjmp)(unwinding_jmp_buf* jb) {
   return 0;
 }
