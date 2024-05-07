@@ -1,5 +1,8 @@
 #pragma once
 
+struct SceNgs2Handle_voice;
+struct SceNgs2SamplerVoiceWaveformBlocksParam;
+
 class Reader {
   void* m_pimpl;
   bool  m_isInit = false;
@@ -8,7 +11,7 @@ class Reader {
   Reader();
   ~Reader();
 
-  bool init(void const* data, size_t size);
+  bool init(SceNgs2SamplerVoiceWaveformBlocksParam const* param);
 
-  bool getAudio(void* buffer, size_t bufferSize);
+  bool getAudio(SceNgs2Handle_voice* handle, void* buffer, size_t bufferSize);
 };

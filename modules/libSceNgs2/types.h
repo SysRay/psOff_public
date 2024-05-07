@@ -9,16 +9,16 @@ union SceNgs2VoiceStateFlags {
   uint32_t data;
 
   struct {
-    bool Inuse   : 1;
-    bool Playing : 1;
-    bool Paused  : 1;
-    bool Stopped : 1;
-    bool Error   : 1;
-    bool Empty   : 1;
+    bool Inuse   : 1 = false;
+    bool Playing : 1 = false;
+    bool Paused  : 1 = false;
+    bool Stopped : 1 = false;
+    bool Error   : 1 = false;
+    bool Empty   : 1 = true;
   } bits;
 };
 
-enum class SceNgs2VoiceEvent {
+enum class SceNgs2VoiceEvent : uint32_t {
   Play,
   Stop,
   Stop_imm,
@@ -113,6 +113,17 @@ enum class SceNgs2SubmixerParam : uint16_t {
   SET_FILTER,
 };
 
+#pragma pack(push, 1)
+
+struct SceNgs2WaveformInfo {
+  SceNgs2WaveFormType  type;
+  SceNgs2ChannelsCount channelsCount;
+  uint32_t             sampleRate;
+  uint32_t             configData;
+  uint32_t             frameOffset;
+  uint32_t             frameMargin;
+};
+
 class Reader;
 
 struct SceNgs2VoiceHandle {
@@ -183,15 +194,12 @@ struct SceNgs2RackOption {
 
   char     name[SCE_NGS2_RACK_NAME_LENGTH] = "\0";
   uint32_t flags;
-  uint32_t maxGrainSamples = 1;
-  uint32_t maxVoices       = 1;
-  ;
+  uint32_t maxGrainSamples     = 1;
+  uint32_t maxVoices           = 1;
   uint32_t maxInputDelayBlocks = 1;
-  ;
-  uint32_t maxMatrices = 1;
-  ;
-  uint32_t maxPorts = 1;
-  ;
+  uint32_t maxMatrices         = 1;
+  uint32_t maxPorts            = 1;
+
   uint32_t aReserved[20];
 };
 
@@ -205,6 +213,7 @@ struct SceNgs2Handle_rack;
 
 struct SceNgs2Handle {
   SceNgs2HandleType const type;
+  SceNgs2WaveformInfo     info;
 
   SceNgs2Handle(SceNgs2HandleType type): type(type) {}
 
@@ -218,6 +227,8 @@ struct SceNgs2Handle_system: public SceNgs2Handle {
   SceNgs2Handle_rack* mastering = nullptr;
   SceNgs2Handle_rack* sampler   = nullptr;
   SceNgs2Handle_rack* submixer  = nullptr;
+  SceNgs2Handle_rack* reverb    = nullptr;
+  SceNgs2Handle_rack* equalizer = nullptr;
 
   // -
 
@@ -230,13 +241,16 @@ struct SceNgs2Handle_system: public SceNgs2Handle {
 
 struct SceNgs2Handle_voice: public SceNgs2Handle {
   SceNgs2Handle_rack* parent;
-  SceNgs2VoiceState   state {};
+
+  SceNgs2VoiceStateFlags state {};
 
   Reader* reader = nullptr; // optional, depends on racktype
 
   SceNgs2Handle_voice(SceNgs2Handle_rack* parent): SceNgs2Handle(SceNgs2HandleType::Voice), parent(parent) {}
 
   virtual ~SceNgs2Handle_voice();
+
+  void ev_KickEvent(SceNgs2VoiceEvent id);
 };
 
 struct SceNgs2Handle_rack: public SceNgs2Handle {
@@ -249,7 +263,7 @@ struct SceNgs2Handle_rack: public SceNgs2Handle {
 
   SceNgs2Handle_rack(SceNgs2Handle_system* parent, SceNgs2RackOption const* options_, uint32_t rackId)
       : SceNgs2Handle(SceNgs2HandleType::Rack), rackId(rackId), parent(parent) {
-    if (options_ != nullptr) memcpy(&options, &options_, sizeof(SceNgs2RackOption));
+    if (options_ != nullptr) memcpy(&options, options_, sizeof(SceNgs2RackOption));
   }
 
   virtual ~SceNgs2Handle_rack() = default;
@@ -262,21 +276,12 @@ struct SceNgs2RenderBufferInfo {
   SceNgs2ChannelsCount channelsCount;
 };
 
-struct SceNgs2WaveformInfo {
-  SceNgs2WaveFormType  type;
-  SceNgs2ChannelsCount channelsCount;
-  uint32_t             sampleRate;
-  uint32_t             configData;
-  uint32_t             frameOffset;
-  uint32_t             frameMargin;
-};
-
 struct SceNgs2WaveformBlock {
   uint32_t offset;
   uint32_t size;
-  uint32_t : 32;
-  uint32_t : 32;
-  uint32_t : 32;
+  uint32_t numRepeat;
+  uint32_t skipSamples;
+  uint32_t numSamples;
   uint32_t : 32;
   uintptr_t userData;
 };
@@ -290,10 +295,11 @@ struct SceNgs2WaveformFormat {
   uint32_t            samplesCount;
   uint32_t : 32;
   uint32_t : 32;
-  uint32_t : 32;
-  uint32_t : 32;
-  uint32_t : 32;
-  uint32_t : 32;
+  uint32_t dataPerFrame;
+  uint32_t frameSize;
+  uint32_t numframeSamples;
+  uint32_t samplesDelay;
+
   uint32_t             numBlocks;
   SceNgs2WaveformBlock block[4];
 };
@@ -376,6 +382,13 @@ struct SceNgs2SamplerVoiceWaveformBlocksParam {
   const SceNgs2WaveformBlock* aBlock;
 };
 
+struct SceNgs2SamplerVoiceSetupParam {
+  SceNgs2VoiceParamHead header;
+  SceNgs2WaveformInfo   format;
+  uint32_t              flags;
+  uint32_t              reserved;
+};
+
 struct SceNgs2VoiceCallbackInfo {
   uintptr_t      callbackData;
   SceNgs2Handle* voiceHandle;
@@ -440,3 +453,5 @@ struct SceNgs2PanParam {
   float fbwLevel;
   float lfeLevel;
 };
+
+#pragma pack(pop)

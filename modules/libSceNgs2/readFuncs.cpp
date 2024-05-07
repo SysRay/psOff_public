@@ -4,10 +4,12 @@
 #include "core/kernel/filesystem.h"
 #include "logging.h"
 extern "C" {
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
 #include <functional>
 #include <list>
+
 LOG_DEFINE_MODULE(libSceNgs2);
 
 namespace {
@@ -50,9 +52,10 @@ int readFunc_linearBuffer(void* userData_, uint8_t* buf, int size) {
   if (readSize > 0) {
     userData->curOffset += readSize;
     ::memcpy(buf, userData->ptr, readSize);
+    return readSize;
   }
 
-  return readSize;
+  return -1;
 }
 
 int64_t seekFunc_linearBuffer(void* userData_, int64_t offset, int whence) {
@@ -137,24 +140,31 @@ int32_t parseWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData
     astream = fmtctx->streams[stream_idx];
   }
 
+  auto const totalSize = fmtctx->duration / (fmtctx->bit_rate / 8);
+
   // Fill data
   wf->info.type          = convWaveType(astream->codecpar->codec_id);
   wf->info.sampleRate    = astream->codecpar->sample_rate;
   wf->info.channelsCount = convChanCount(astream->codecpar->ch_layout.nb_channels);
 
   // These are unknown for now
-  wf->loopBeginPos = wf->loopEndPos = 0;
+  wf->loopBeginPos = 0;
+  wf->loopEndPos   = totalSize;
 
-  wf->samplesCount = astream->nb_frames;
-
-  auto const totalSize = seekFunc(userData, 0, (int)SceWhence::end);
+  wf->samplesCount = (uint64_t)((fmtctx->duration / (float)AV_TIME_BASE) * (float)wf->info.sampleRate * (float)wf->info.channelsCount);
 
   wf->offset = 0;
   wf->size   = totalSize;
+
+  wf->frameSize       = astream->codecpar->frame_size;
+  wf->numframeSamples = astream->nb_frames;
+  wf->samplesDelay    = 0; // todo
 
   auto& block   = wf->block[0];
   block.offset  = 0;
   block.size    = totalSize;
   wf->numBlocks = 1;
+
+  LOG_DEBUG(L"parse size:0x%08llx", totalSize);
   return Ok;
 }
