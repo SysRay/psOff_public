@@ -276,7 +276,7 @@ EXPORT SYSV_ABI double __NID(exp2)(double val) {
   return std::exp2(val);
 }
 
-EXPORT SYSV_ABI float __NID(log)(float val) {
+EXPORT SYSV_ABI float __NID(logf)(float val) {
   return std::logf(val);
 }
 
