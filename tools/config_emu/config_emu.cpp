@@ -184,19 +184,21 @@ Config::Config() {
     removeUnused = [&getVal, &removeUnused](json& obj, json& def) -> bool {
       bool unused = false;
 
-      for (auto& [ckey, cval]: obj.items()) {
-        if (ckey.starts_with("_")) { // Temporary (probably) workaround to stop removing underscore objects
-          continue;
-        }
-        json& dval = getVal(def, ckey);
+      for (auto it = obj.begin(); it != obj.end();) {
+        auto& ckey = it.key();
+        if (!ckey.starts_with("_")) { // Temporary (probably) workaround to stop removing underscore objects
+          json& dval = getVal(def, ckey);
 
-        if (dval.is_null()) {
-          obj.erase(ckey);
-          unused = true;
-        } else if (dval.is_structured()) {
-          unused |= removeUnused(cval, dval);
-          continue;
+          if (dval.is_null()) {
+            it     = obj.erase(it);
+            unused = true;
+            continue;
+          } else if (dval.is_structured()) {
+            unused |= removeUnused(*it, dval);
+          }
         }
+
+        ++it;
       }
 
       return unused;
