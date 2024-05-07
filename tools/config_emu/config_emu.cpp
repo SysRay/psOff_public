@@ -184,7 +184,7 @@ Config::Config() {
     removeUnused = [&getVal, &removeUnused](json& obj, json& def) -> bool {
       if (obj.is_array()) {
         if (obj.size() > def.size()) {
-          obj.erase(obj.begin() + std::distance(def.begin(), def.end()), obj.end());
+          obj.erase(obj.begin() + def.size(), obj.end());
           return true;
         }
 
