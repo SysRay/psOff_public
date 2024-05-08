@@ -49,6 +49,7 @@ target_link_libraries(core PRIVATE
   config_emu.lib
   onecore.lib
   IPHLPAPI.lib
+  Dbghelp.lib
   wepoll.lib
   Ws2_32.lib
   libcrypto.lib

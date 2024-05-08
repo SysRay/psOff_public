@@ -4,14 +4,16 @@
 #include "core/memory/memory.h"
 #include "core/runtime/util/virtualmemory.h"
 #include "logging.h"
+#include "utility/progloc.h"
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/stacktrace.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <mutex>
-
 // clang-format off
 #include <windows.h>
 #include <psapi.h>
+#include <DbgHelp.h>
 // clang-format on
 
 LOG_DEFINE_MODULE(ExceptionHandler);
@@ -74,6 +76,42 @@ std::optional<std::pair<uint64_t, std::string>> findModule(uint64_t address) {
   return std::nullopt;
 }
 
+bool tryGetSymName(const void* addr, std::string& name) {
+  auto proc = GetCurrentProcess();
+
+  static std::once_flag init;
+  std::call_once(init, [proc]() {
+    LOG_USE_MODULE(ExceptionHandler);
+    auto dir = std::filesystem::path(util::getProgramLoc()) / "debug";
+    if (!SymInitializeW(proc, dir.c_str(), true)) {
+      LOG_ERR(L"Failed to initialize the debug information");
+    }
+  });
+
+  boost::scoped_ptr symp(new char[sizeof(SYMBOL_INFO) + 1024]);
+
+  PSYMBOL_INFO sym  = (PSYMBOL_INFO)symp.get();
+  sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+  sym->MaxNameLen   = 1024;
+
+  DWORD disp = 0;
+
+  IMAGEHLP_LINE64 line = {
+      .SizeOfStruct = sizeof(IMAGEHLP_LINE64),
+  };
+
+  if (SymFromAddr(proc, (uint64_t)addr, nullptr, sym)) {
+    name.assign(sym->Name);
+    if (SymGetLineFromAddr64(proc, sym->Address, &disp, &line)) {
+      name += std::format(" ({}:{}:{})", line.FileName, line.LineNumber, disp);
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 void stackTrace(uint64_t addr) {
   LOG_USE_MODULE(ExceptionHandler);
 
@@ -96,8 +134,11 @@ void stackTrace(uint64_t addr) {
     }
 
     std::string fileName;
-    int         lineNumber   = 0;
-    DWORD       displacement = 0;
+
+    if (!tryGetSymName(trace.address(), fileName)) {
+      // Failed to get the source file name, clearing the string
+      fileName.clear();
+    }
 
     auto optModuleInfo = findModule((uint64_t)trace.address());
 
@@ -111,9 +152,9 @@ void stackTrace(uint64_t addr) {
       }
     } else {
       if (optModuleInfo) {
-        LOG_ERR(L"0x%08llx\t %S at %llu base:0x%08llx %S", trace.address(), fileName.c_str(), lineNumber, optModuleInfo->first, optModuleInfo->second.c_str());
+        LOG_ERR(L"0x%08llx base:0x%08llx %S\n\t%S", trace.address(), optModuleInfo->first, optModuleInfo->second.c_str(), fileName.c_str());
       } else {
-        LOG_ERR(L"0x%08llx\t %S at %llu", trace.address(), fileName.c_str(), lineNumber);
+        LOG_ERR(L"0x%08llx\n\t %S", trace.address(), fileName.c_str());
       }
     }
   }

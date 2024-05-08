@@ -174,7 +174,10 @@ class EventSDL {
   std::vector<SDLEvent> m_events = {};
 
   public:
-  void addListener(uint32_t type, SDLEventFunc func, void* userData) { m_events.push_back({type, func, userData}); }
+  void addListener(uint32_t type, SDLEventFunc func, void* userData) {
+    throw 0x0;
+    m_events.push_back({type, func, userData});
+  }
 
   bool removeListener(uint32_t type, SDLEventFunc func) {
     for (auto it = m_events.begin(); it != m_events.end(); ++it) {
