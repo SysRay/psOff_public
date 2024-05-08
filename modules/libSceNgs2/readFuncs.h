@@ -23,4 +23,4 @@ int64_t seekFunc_file(void* userData_, int64_t offset, int whence);
 int     readFunc_user(void* userData_, uint8_t* buf, int size);
 int64_t seekFunc_user(void* userData_, int64_t offset, int whence);
 
-int32_t parseWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData, SceNgs2WaveformFormat* wf);
+int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData, SceNgs2WaveformFormat* wf);

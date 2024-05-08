@@ -3,12 +3,14 @@
 #include "core/fileManager/ifile.h"
 #include "core/kernel/filesystem.h"
 #include "logging.h"
+#include "riffTypes.h"
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
 #include <functional>
 #include <list>
+#include <sstream>
 
 LOG_DEFINE_MODULE(libSceNgs2);
 
@@ -46,30 +48,37 @@ static SceNgs2WaveFormType convWaveType(AVCodecID codec) {
 int readFunc_linearBuffer(void* userData_, uint8_t* buf, int size) {
   auto userData = (userData_inerBuffer*)userData_;
 
-  int const dataLeft = userData->size - userData->curOffset;
-  auto      readSize = std::min(dataLeft, size);
+  int64_t const dataLeft = (int64_t)userData->size - (int64_t)userData->curOffset;
+
+  auto readSize = std::min(dataLeft, (int64_t)size);
 
   if (readSize > 0) {
+    ::memcpy(buf, (uint8_t*)userData->ptr + userData->curOffset, readSize);
     userData->curOffset += readSize;
-    ::memcpy(buf, userData->ptr, readSize);
     return readSize;
   }
 
+  userData->curOffset = 0; // reset it
   return -1;
 }
 
 int64_t seekFunc_linearBuffer(void* userData_, int64_t offset, int whence) {
   auto userData = (userData_inerBuffer*)userData_;
 
-  switch ((SceWhence)whence) {
-    case SceWhence::beg: userData->curOffset = offset; break;
-    case SceWhence::cur:
+  if ((whence & AVSEEK_SIZE) > 0) {
+    // return size (0 on not avail)
+    return userData->size;
+  }
+
+  switch ((std::ios_base::seekdir)(whence & 0xff)) {
+    case std::ios_base::beg: userData->curOffset = offset; break;
+    case std::ios_base::cur:
       if (userData->curOffset < offset)
         userData->curOffset = 0;
       else
         userData->curOffset += offset;
       break;
-    case SceWhence::end: userData->curOffset = std::min(userData->size, userData->size + offset); break;
+    case std::ios_base::end: userData->curOffset = std::min(userData->size, userData->size + offset); break;
   }
 
   return userData->curOffset;
@@ -99,72 +108,88 @@ int64_t seekFunc_user(void* userData_, int64_t offset, int whence) {
   return 0; // undefined
 }
 
-int32_t parseWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData, SceNgs2WaveformFormat* wf) {
+int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData, SceNgs2WaveformFormat* wf) {
   LOG_USE_MODULE(libSceNgs2);
 
-  std::list<std::function<void(void)>> cleanup;
+  // Load headers and check magic
 
-  // Setup
-  auto aBufferIo = (uint8_t*)av_malloc(4096 + AV_INPUT_BUFFER_PADDING_SIZE);
-
-  AVIOContext* avioctx = avio_alloc_context(aBufferIo, 4096, 0, userData, readFunc, nullptr, seekFunc);
-
-  cleanup.emplace_back([&] { av_free(avioctx); });
-  cleanup.emplace_back([&] { av_free(aBufferIo); });
-
-  // Open the input
-  AVFormatContext* fmtctx = avformat_alloc_context();
-  cleanup.emplace_back([&] { avformat_free_context(fmtctx); });
-
-  fmtctx->pb = avioctx;
-  fmtctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-
-  int ret = avformat_open_input(&fmtctx, "nullptr", nullptr, nullptr);
-  if (ret != 0) {
-    LOG_ERR(L"ParseRIFF: ffmpeg failed to read passed data: %d", ret);
+  // Check if correct file
+  RiffWaveHeader riffHeader;
+  readFunc(userData, (uint8_t*)&riffHeader, sizeof(RiffWaveHeader));
+  if (memcmp(riffHeader.chunkID, "RIFF", 4) != 0 || memcmp(riffHeader.riffType, "WAVE", 4) != 0) {
+    LOG_ERR(L"wrong riff 0x%lx 0x%lx", riffHeader.chunkID, riffHeader.riffType);
     return Err::Ngs2::FAIL;
   }
-  cleanup.emplace_back([&] { avformat_close_input(&fmtctx); });
+  // -
 
-  AVStream*      astream = nullptr;
-  AVCodec const* codec   = nullptr;
+  // Format header
+  RiffFormatHeader formatHeader;
+  readFunc(userData, (uint8_t*)&formatHeader, sizeof(RiffFormatHeader));
 
-  {
-    auto stream_idx = av_find_best_stream(fmtctx, AVMEDIA_TYPE_AUDIO, -1, -1, &codec, 0);
-
-    if (stream_idx < 0) {
-      LOG_ERR(L"ParseRIFF: no audio stream");
-      return Err::Ngs2::FAIL;
-    }
-
-    astream = fmtctx->streams[stream_idx];
+  if (memcmp(formatHeader.chunkID, "fmt ", 4) != 0) {
+    return Err::Ngs2::FAIL;
   }
 
-  auto const totalSize = fmtctx->duration / (fmtctx->bit_rate / 8);
+  if ((8 + formatHeader.chunkSize) > sizeof(RiffFormatHeader)) {
+    std::vector<uint8_t> extraFmt(8 + formatHeader.chunkSize - sizeof(RiffFormatHeader));
+    readFunc(userData, extraFmt.data(), extraFmt.size());
+  }
+  // -
+
+  // parse rest
+  uint32_t offset = sizeof(RiffWaveHeader) + 8 + formatHeader.chunkSize;
+
+  uint32_t dataSize     = 0;
+  uint32_t numOfSamples = 1;
+
+  // Data header
+  while (offset < riffHeader.chunkSize) {
+    RiffHeader header;
+    readFunc(userData, (uint8_t*)&header, sizeof(RiffHeader));
+
+    auto readBytes = sizeof(RiffHeader);
+    if (memcmp(header.chunkID, "fact", 4) == 0) {
+      readFunc(userData, (uint8_t*)&numOfSamples, 4);
+      readBytes += 4;
+    } else if (memcmp(header.chunkID, "data", 4) == 0) {
+      dataSize = header.chunkSize;
+      break;
+    } // Dump read data
+
+    if ((8 + header.chunkSize) > readBytes) {
+      std::vector<uint8_t> extra(8 + header.chunkSize - readBytes);
+      readFunc(userData, extra.data(), extra.size());
+    }
+    // -
+
+    offset += 8 + header.chunkSize;
+  }
+  if (dataSize == 0) return Err::Ngs2::FAIL;
 
   // Fill data
-  wf->info.type          = convWaveType(astream->codecpar->codec_id);
-  wf->info.sampleRate    = astream->codecpar->sample_rate;
-  wf->info.channelsCount = convChanCount(astream->codecpar->ch_layout.nb_channels);
+  wf->info.type          = (SceNgs2WaveFormType)formatHeader.audioFormat;
+  wf->info.channelsCount = (SceNgs2ChannelsCount)formatHeader.numChannels;
+  wf->info.sampleRate    = formatHeader.sampleRate;
+  wf->info.frameOffset   = formatHeader.frameSize;
+  wf->info.frameMargin   = 0; // todo
 
-  // These are unknown for now
-  wf->loopBeginPos = 0;
-  wf->loopEndPos   = totalSize;
+  wf->offset          = offset;
+  wf->size            = dataSize;
+  wf->loopBeginPos    = 0;                      // todo
+  wf->loopEndPos      = 0;                      // todo
+  wf->samplesCount    = 1;                      // todo
+  wf->dataPerFrame    = 1;                      // todo
+  wf->frameSize       = formatHeader.frameSize; // todo
+  wf->numframeSamples = 1;                      // todo
+  wf->samplesDelay    = 0;                      // todo
 
-  wf->samplesCount = (uint64_t)((fmtctx->duration / (float)AV_TIME_BASE) * (float)wf->info.sampleRate * (float)wf->info.channelsCount);
+  auto& block       = wf->block[0];
+  block.offset      = wf->offset;
+  block.size        = dataSize;
+  block.numRepeat   = 1;
+  block.skipSamples = 1;
+  block.numSamples  = numOfSamples;
+  wf->numBlocks     = 1;
 
-  wf->offset = 0;
-  wf->size   = totalSize;
-
-  wf->frameSize       = astream->codecpar->frame_size;
-  wf->numframeSamples = astream->nb_frames;
-  wf->samplesDelay    = 0; // todo
-
-  auto& block   = wf->block[0];
-  block.offset  = 0;
-  block.size    = totalSize;
-  wf->numBlocks = 1;
-
-  LOG_DEBUG(L"parse size:0x%08llx", totalSize);
   return Ok;
 }

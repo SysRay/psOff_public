@@ -20,7 +20,7 @@ struct PortOut {
   SceAudioOutPortType    type           = SceAudioOutPortType::MAIN;
   uint8_t                sampleSize     = 0;
   uint32_t               samplesNum     = 0;
-  uint32_t               freq           = 0;
+  uint32_t               sampleRate     = 0;
   uint32_t               queued         = 0;
   SceAudioOutParamFormat format         = SceAudioOutParamFormat::FLOAT_MONO;
   uint64_t               lastOutputTime = 0;
@@ -71,7 +71,7 @@ class PortsOut {
       if (port.deviceName.compare(0, std::string::npos, devName, 0, port.deviceName.length()) != 0) continue;
 
       SDL_AudioSpec fmt {
-          .freq     = static_cast<int>(port.freq),
+          .freq     = static_cast<int>(port.sampleRate),
           .format   = port.sdlFormat,
           .channels = static_cast<uint8_t>(port.channelsNum),
           .samples  = static_cast<uint16_t>(port.samplesNum),
@@ -167,7 +167,7 @@ void syncPort(PortOut* port) {
   const uint32_t bytesize     = bytesize_1ch * port->channelsNum;
 
   if (port->device == 0) {
-    float duration = bytesize_1ch / float(port->freq * port->sampleSize);
+    float duration = bytesize_1ch / float(port->sampleRate * port->sampleSize);
     SDL_Delay(int(duration * 1000)); // Pretending that we playing something
     return;
   }
@@ -237,7 +237,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   return Err::AudioOut::OUT_OF_MEMORY;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, uint32_t param) {
+EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t numSamples, uint32_t sampleRate, uint32_t param) {
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
@@ -259,8 +259,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   int handle;
   if (auto port = pimpl->portsOut.AcquirePort(type, &handle)) {
     port->userId     = userId;
-    port->samplesNum = len;
-    port->freq       = freq;
+    port->samplesNum = numSamples;
+    port->sampleRate = sampleRate;
     port->format     = SceAudioOutParamFormat(param & 0x0000007F);
 
     if ((param & 0x000F0000) != 0) {
@@ -375,7 +375,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
     }
 
     SDL_AudioSpec fmt {
-        .freq     = static_cast<int>(freq),
+        .freq     = static_cast<int>(sampleRate),
         .format   = port->sdlFormat,
         .channels = static_cast<uint8_t>(port->channelsNum),
         .samples  = static_cast<uint16_t>(port->samplesNum),

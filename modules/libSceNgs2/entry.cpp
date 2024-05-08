@@ -27,23 +27,26 @@ int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoice
   LOG_USE_MODULE(libSceNgs2);
 
   LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
-  LOG_TRACE(L"waveptr: %llx\n", svwfbp->data);
+  LOG_DEBUG(L"waveptr: %llx\n", svwfbp->data);
 
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
   auto voice = (SceNgs2Handle_voice*)voh;
 
-  voice->reader = std::make_unique<Reader>().release();
+  if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
+
+  // svwfbp->data can be nullptr!
   if (!voice->reader->init(svwfbp)) {
     return Err::Ngs2::INVALID_WAVEFORM_DATA;
   }
-
-  voice->state.bits.Empty = false;
 
   LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
   return Ok;
 }
 
 int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_INFO(L"voiceControl_voice id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
   auto voice = (SceNgs2Handle_voice*)voh;
 
@@ -51,12 +54,15 @@ int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phea
     case SceNgs2VoiceParam::SET_MATRIX_LEVELS: {
     } break;
     case SceNgs2VoiceParam::SET_PORT_VOLUME: {
+      // todo
     } break;
     case SceNgs2VoiceParam::SET_PORT_MATRIX: {
     } break;
     case SceNgs2VoiceParam::SET_PORT_DELAY: {
     } break;
     case SceNgs2VoiceParam::PATCH: {
+      auto item = (SceNgs2VoicePatchParam*)phead;
+      // todo
     } break;
     case SceNgs2VoiceParam::KICK_EVENT: {
       auto item = (SceNgs2VoiceEventParam*)phead;
@@ -69,6 +75,9 @@ int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phea
 }
 
 int32_t voiceControl_mastering(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_INFO(L"voiceControl_mastering id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
   switch ((SceNgs2MasteringParam)(phead->id & 0xFFFF)) {
     case SceNgs2MasteringParam::SETUP: {
     } break;
@@ -131,6 +140,7 @@ int32_t voiceControl_sampler(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* ph
     case SceNgs2SamplerParam::SET_FILTER: {
     } break;
   }
+
   return Ok;
 }
 
@@ -198,7 +208,7 @@ EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs
   if (ro != nullptr && ro->size < sizeof(SceNgs2RackOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
 
   auto const numVoices = ro != nullptr ? ro->maxVoices : SceNgs2RackOption().maxVoices;
-  cbi->hostBufferSize  = sizeof(SceNgs2Handle_rack) + (numVoices * sizeof(SceNgs2Handle_voice));
+  cbi->hostBufferSize  = sizeof(SceNgs2Handle_rack);
   return Ok;
 }
 
@@ -266,18 +276,6 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, 
 
   auto rack = (SceNgs2Handle_rack*)(*outh);
 
-  // Init voices
-  {
-    auto addrVoices = (uint64_t)rack + sizeof(SceNgs2Handle_rack); // At end of rack struct
-
-    rack->voices = (SceNgs2Handle_voice*)addrVoices;
-
-    for (uint16_t n = 0; n < rack->options.maxVoices; ++n, addrVoices += sizeof(SceNgs2Handle_voice)) {
-      auto pVoice = new ((void*)addrVoices) SceNgs2Handle_voice(rack);
-    }
-  }
-  // -
-
   // Add to system
   if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING) {
     system->mastering = rack;
@@ -307,11 +305,9 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
 
   auto system = (SceNgs2Handle_system*)sysh;
 
-  auto const numVoices = ro != nullptr ? ro->maxVoices : SceNgs2RackOption().maxVoices;
-
   SceNgs2ContextBufferInfo cbi = {
       .hostBuffer     = nullptr,
-      .hostBufferSize = sizeof(SceNgs2Handle_rack) + (numVoices * sizeof(SceNgs2Handle_voice)),
+      .hostBufferSize = sizeof(SceNgs2Handle_rack),
       .userData       = alloc->userData,
   };
 
@@ -324,17 +320,6 @@ EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint
   getPimpl()->handles.emplace(*outh);
 
   auto rack = (SceNgs2Handle_rack*)(*outh);
-  // Init voices
-  {
-    auto addrVoices = (uint64_t)rack + sizeof(SceNgs2Handle_rack); // At end of rack struct
-
-    rack->voices = (SceNgs2Handle_voice*)addrVoices;
-
-    for (uint16_t n = 0; n < numVoices; ++n, addrVoices += sizeof(SceNgs2Handle_voice)) {
-      auto pVoice = new ((void*)addrVoices) SceNgs2Handle_voice(rack);
-    }
-  }
-  // -
 
   // Add to system
   if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING) {
@@ -399,7 +384,7 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, S
   boost::unique_lock lock(MUTEX_INT);
 
   userData_inerBuffer userData {ptr, size, 0};
-  return parseWave(readFunc_linearBuffer, seekFunc_linearBuffer, &userData, wf);
+  return parseRiffWave(readFunc_linearBuffer, seekFunc_linearBuffer, &userData, wf);
 }
 
 /**
@@ -422,7 +407,7 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, 
   if (fileHandle < 0) return Err::Ngs2::INVALID_WAVEFORM_DATA;
 
   if (offset != 0) filesystem::lseek(fileHandle, offset, (int)SceWhence::beg);
-  return parseWave(readFunc_file, seekFunc_file, reinterpret_cast<void*>(fileHandle), wf);
+  return parseRiffWave(readFunc_file, seekFunc_file, reinterpret_cast<void*>(fileHandle), wf);
 }
 
 /**
@@ -441,7 +426,7 @@ EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc func, uintp
   boost::unique_lock lock(MUTEX_INT);
 
   userData_user userData {func, userData_, 0};
-  return parseWave(readFunc_user, seekFunc_user, (void*)&userData, wf);
+  return parseRiffWave(readFunc_user, seekFunc_user, (void*)&userData, wf);
 }
 
 // - wave parsing
@@ -501,9 +486,9 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t vo
   auto rack = (SceNgs2Handle_rack*)rh;
   if (voiceId > rack->options.maxVoices) return Err::Ngs2::INVALID_VOICE_INDEX;
 
-  *outh = (SceNgs2Handle*)((uint64_t)rack->voices + voiceId * sizeof(SceNgs2Handle_voice));
-  getPimpl()->handles.emplace(*outh);
+  *outh = &rack->voices.emplace(std::make_pair(voiceId, rack)).first->second;
 
+  getPimpl()->handles.emplace(*outh);
   LOG_DEBUG(L"-> GetVoiceHandle: rack:0x%08llx id:%u @0x%08llx", (uint64_t)rh, voiceId, (uint64_t)*outh);
   return Ok;
 }
@@ -562,10 +547,8 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemUnlock(SceNgs2Handle* sysh) {
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-
-  auto system = (SceNgs2Handle_system*)sysh;
+  boost::unique_lock lock(MUTEX_INT);
+  auto               system = (SceNgs2Handle_system*)sysh;
   if (system == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
   if (rbi->bufferPtr == nullptr) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
   if (rbi->bufferSize == 0) return Err::Ngs2::INVALID_BUFFER_SIZE;
@@ -583,11 +566,11 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
   } else {
     for (int32_t i = 0; i < count; i++) {
       if (rbi[i].bufferPtr != nullptr) {
-        auto& samplerVoice = system->sampler->voices[0];
-        if (samplerVoice.reader != nullptr) {
-          samplerVoice.reader->getAudio(&samplerVoice, rbi[i].bufferPtr, rbi[i].bufferSize);
-        } else {
-          std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
+        std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
+        for (auto& voice: system->sampler->voices) {
+          if (voice.second.reader != nullptr) {
+            voice.second.reader->getAudio(rbi[i].bufferPtr, rbi[i].bufferSize);
+          }
         }
       }
     }
@@ -672,9 +655,9 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* voh, SceNgs2VoiceSta
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
 
   auto voice        = (SceNgs2Handle_voice*)voh;
-  state->stateFlags = 0x20; // voice->state.data;
+  state->stateFlags = voice->state.data;
 
-  LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, state->stateFlags);
+  // LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, state->stateFlags);
   return Ok;
 }
 
@@ -689,9 +672,9 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags(SceNgs2Handle* voh, uint32_t* 
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
 
   auto voice = (SceNgs2Handle_voice*)voh;
-  *flags     = 0x20; // voice->state.data;
+  *flags     = voice->state.data;
 
-  LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, *flags);
+  // LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, *flags);
   return Ok;
 }
 
@@ -729,16 +712,15 @@ EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBuff
 
   int32_t ret = Ok;
 
-  for (size_t n = 0; n < rack->options.maxVoices; ++n) {
-    getPimpl()->handles.erase(&rack->voices[n]);
-    rack->voices[n].~SceNgs2Handle_voice();
+  for (auto voice: rack->voices) {
+    getPimpl()->handles.erase(&voice.second);
   }
 
   getPimpl()->handles.erase(rh);
   if (freeHandler != nullptr) {
     SceNgs2ContextBufferInfo cbi = {
         .hostBuffer     = rack,
-        .hostBufferSize = sizeof(SceNgs2Handle_rack) + (rack->options.maxVoices * sizeof(SceNgs2Handle_voice)),
+        .hostBufferSize = sizeof(SceNgs2Handle_rack),
     };
     rack->~SceNgs2Handle_rack();
     ret = freeHandler(&cbi);

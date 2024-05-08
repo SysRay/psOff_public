@@ -3,6 +3,7 @@
 #include "codes.h"
 #include "utility/utility.h"
 
+#include <map>
 #include <memory>
 
 union SceNgs2VoiceStateFlags {
@@ -258,8 +259,9 @@ struct SceNgs2Handle_rack: public SceNgs2Handle {
 
   SceNgs2Handle_system* parent;
 
-  SceNgs2RackOption    options;
-  SceNgs2Handle_voice* voices;
+  SceNgs2RackOption options;
+
+  std::map<int, SceNgs2Handle_voice> voices; // address of SceNgs2Handle_voice must be valid !
 
   SceNgs2Handle_rack(SceNgs2Handle_system* parent, SceNgs2RackOption const* options_, uint32_t rackId)
       : SceNgs2Handle(SceNgs2HandleType::Rack), rackId(rackId), parent(parent) {
