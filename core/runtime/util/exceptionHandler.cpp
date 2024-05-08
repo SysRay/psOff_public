@@ -6,7 +6,6 @@
 #include "logging.h"
 #include "utility/progloc.h"
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/stacktrace.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <mutex>
@@ -76,7 +75,7 @@ std::optional<std::pair<uint64_t, std::string>> findModule(uint64_t address) {
   return std::nullopt;
 }
 
-bool tryGetSymName(const void* addr, std::string& name) {
+bool tryGetSymName(PSYMBOL_INFO sym, const void* addr, std::string& name) {
   auto proc = GetCurrentProcess();
 
   static std::once_flag init;
@@ -88,9 +87,8 @@ bool tryGetSymName(const void* addr, std::string& name) {
     }
   });
 
-  boost::scoped_ptr symp(new char[sizeof(SYMBOL_INFO) + 1024]);
-
-  PSYMBOL_INFO sym  = (PSYMBOL_INFO)symp.get();
+  // Just to be sure that the previous call won't break anything
+  ::memset(sym, 0, sizeof(SYMBOL_INFO));
   sym->SizeOfStruct = sizeof(SYMBOL_INFO);
   sym->MaxNameLen   = 1024;
 
@@ -118,6 +116,9 @@ void stackTrace(uint64_t addr) {
   bool   foundStart  = false;
   size_t countTraces = 0;
 
+  std::vector<char> sym;
+  sym.resize(1024 + sizeof(SYMBOL_INFO));
+
   // Stack trace
   for (auto& trace: boost::stacktrace::basic_stacktrace()) {
     if (!foundStart) {
@@ -135,7 +136,7 @@ void stackTrace(uint64_t addr) {
 
     std::string fileName;
 
-    if (!tryGetSymName(trace.address(), fileName)) {
+    if (!tryGetSymName((PSYMBOL_INFO)sym.data(), trace.address(), fileName)) {
       // Failed to get the source file name, clearing the string
       fileName.clear();
     }
