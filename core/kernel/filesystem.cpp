@@ -235,7 +235,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  if (std::string_view(path).starts_with("/dev")) {
+  if (std::string_view(path).starts_with("/dev/")) {
     return open_dev(path, flags, kernelMode);
   }
 

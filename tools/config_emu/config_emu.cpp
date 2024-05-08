@@ -182,6 +182,15 @@ Config::Config() {
 
     // Just the same thing as above, but for removing unused keys this time
     removeUnused = [&getVal, &removeUnused](json& obj, json& def) -> bool {
+      if (obj.is_array()) {
+        if (obj.size() > def.size()) {
+          obj.erase(obj.begin() + def.size(), obj.end());
+          return true;
+        }
+
+        return false;
+      }
+
       bool unused = false;
 
       for (auto it = obj.begin(); it != obj.end();) {
