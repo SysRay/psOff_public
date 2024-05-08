@@ -117,6 +117,5 @@ jobs:
           name: psOff-emu
           path: | 
                 _build/_Install/*
-                !_build/_Install/debug/*
                 !_build/_Install/vulkan-1.dll
                 !_build/_Install/*_test.exe

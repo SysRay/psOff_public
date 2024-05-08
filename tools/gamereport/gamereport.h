@@ -1,10 +1,8 @@
 #pragma once
 
-#include "SDL2/SDL.h"
 #include "utility/utility.h"
 
-#define GAMEREPORT_USER_SEND_SCANCODE SDL_SCANCODE_F11
-#define GAMEREPORT_REPO_NAME          "SysRay/psOff_compatibility"
+#define GAMEREPORT_REPO_NAME "SysRay/psOff_compatibility"
 
 class IGameReport {
   CLASS_NO_COPY(IGameReport);
@@ -35,7 +33,6 @@ class IGameReport {
     const char* title_id;
     const char* app_ver;
     const char* emu_ver;
-    SDL_Window* wnd;
 
     Type           type;
     AdditionalData add;

@@ -3,11 +3,11 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
+#include "core/hotkeys/hotkeys.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "gamereport.h"
 #include "imageHandler.h"
 #include "logging.h"
 #include "modules/libSceVideoOut/codes.h"
@@ -241,6 +241,8 @@ class VideoOut: public IVideoOut, private IEventsGraphics {
   bool SDLEventUnreg(uint32_t type, SDLEventFunc func) { return m_sdlEvents.removeListener(type, func); }
 
   bool SDLEventUnreg(SDLEventFunc func) { return m_sdlEvents.removeListener(func); }
+
+  SDL_Window* SDLWindow() { return m_windows[0].window; }
 
   void vblankEnd(int handle, uint64_t curTime, uint64_t curProcTime);
 
@@ -794,7 +796,7 @@ void cbWindow_moveresize(SDL_Window* window) {
   (*jData)["xpos"] = x, (*jData)["ypos"] = y;
 }
 
-void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
+void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) { // todo: Move these to hotkey handler too?
   switch (event->key.keysym.scancode) {
     case SDL_SCANCODE_ESCAPE: return cbWindow_close(window);
     case SDL_SCANCODE_RETURN: {
@@ -807,25 +809,6 @@ void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) {
           SDL_SetWindowResizable(window, SDL_FALSE);
         }
       }
-    } break;
-    case GAMEREPORT_USER_SEND_SCANCODE: {
-      auto title    = accessSystemContent().getString("TITLE");
-      auto title_id = accessSystemContent().getString("TITLE_ID");
-      auto app_ver  = accessSystemContent().getString("APP_VER");
-
-      accessGameReport().ShowReportWindow({
-          .title    = title ? title.value().data() : "Your PS4 Game Name",
-          .title_id = title_id ? title_id.value().data() : "CUSA00000",
-          .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
-          .emu_ver  = PSOFF_RENDER_VERSION,
-          .wnd      = window,
-
-          .type = IGameReport::Type::USER,
-          .add =
-              {
-                  .ex = nullptr,
-              },
-      });
     } break;
 
     default: break;
@@ -847,6 +830,7 @@ std::thread VideoOut::createSDLThread() {
       SDL_Event event;
       while (SDL_PollEvent(&event)) {
         m_overlayHandler->processEvent(&event);
+        if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN) accessHotkeys().update(&event.key);
 
         switch (event.type) {
           case SDL_WINDOWEVENT:

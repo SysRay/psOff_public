@@ -10,6 +10,7 @@ add_subdirectory(initParams)
 add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(networking)
+add_subdirectory(hotkeys)
 add_subdirectory(trophies)
 add_subdirectory(fileManager)
 add_subdirectory(memory)
@@ -24,6 +25,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:timer>
   $<TARGET_OBJECTS:systemContent>
   $<TARGET_OBJECTS:networking>
+  $<TARGET_OBJECTS:hotkeys>
   $<TARGET_OBJECTS:trophies>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
@@ -33,7 +35,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:runtime>
 )
 
-add_dependencies(core logging third_party config_emu gamereport psoff_render)
+add_dependencies(core logging third_party config_emu psoff_render)
 target_link_libraries(core PRIVATE
   libboost_url
   libboost_thread
@@ -42,12 +44,12 @@ target_link_libraries(core PRIVATE
   libboost_filesystem
   sdl2
   psoff_render.lib
-  gamereport.lib
   OptickCore
   psOff_utility
   config_emu.lib
   onecore.lib
   IPHLPAPI.lib
+  Dbghelp.lib
   wepoll.lib
   Ws2_32.lib
   libcrypto.lib

@@ -9,6 +9,7 @@
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
+#include "gamereport.h"
 #include "logging.h"
 #include "utility/progloc.h"
 
@@ -78,6 +79,12 @@ int main(int argc, char** argv) {
   LOG_USE_MODULE(MAIN);
 
   printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
+
+  /**
+   * Initialize GameReport before anything else gets loaded.
+   * TODO: Catch exceptions and pass them to it if possible.
+   */
+  (void)accessGameReport();
 
   auto initParams = accessInitParams();
 

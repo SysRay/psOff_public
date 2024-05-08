@@ -16,30 +16,32 @@ You can change the layout now in _controls.json_, if you want to.
   // These binds will be used to emulate gamepad actions for the pad with `type` set to "keyboard"
   // Key names can be obtained here: https://wiki.libsdl.org/SDL2/SDL_Scancode
   "keybinds": {
-    "circle": "l",
-    "cross": "k",
-    "dpad_down": "down",
-    "dpad_left": "left",
-    "dpad_right": "right",
-    "dpad_up": "up",
-    "l1": "f3",
-    "l2": "f5",
-    "l3": "space",
-    "lx+": "d",
-    "lx-": "a",
-    "ly+": "s",
-    "ly-": "w",
-    "options": "f1",
-    "r1": "f2",
-    "r2": "f6",
-    "r3": "home",
-    "rx+": "f",
-    "rx-": "h",
-    "ry+": "g",
-    "ry-": "t",
-    "square": "j",
-    "touchpad": "f4",
-    "triangle": "i"
+    "gamereport.send": "f11",
+    "overlay.open": "tab",
+    "controller.circle": "l",
+    "controller.cross": "k",
+    "controller.dpad_down": "down",
+    "controller.dpad_left": "left",
+    "controller.dpad_right": "right",
+    "controller.dpad_up": "up",
+    "controller.l1": "f3",
+    "controller.l2": "f5",
+    "controller.l3": "space",
+    "controller.lx+": "d",
+    "controller.lx-": "a",
+    "controller.ly+": "s",
+    "controller.ly-": "w",
+    "controller.options": "f1",
+    "controller.r1": "f2",
+    "controller.r2": "f6",
+    "controller.r3": "home",
+    "controller.rx+": "f",
+    "controller.rx-": "h",
+    "controller.ry+": "g",
+    "controller.ry-": "t",
+    "controller.square": "j",
+    "controller.touchpad": "f4",
+    "controller.triangle": "i"
   },
   // This array contains 4 objects with the similar structure.
   // These objects describes the parameters for each pad
@@ -125,7 +127,18 @@ Game language can be changed with systemlang : *, default is EnglishUS. Game mus
 ```jsonc
 {
   "device": "[default]", // Audio device name, [default] means system default output device
-  "volume": 0.05 // Master volume, 0...1
+  "volume": 0.05, // Master volume, 0...1
+  /**
+   * The game will use these audio devices as pad speaker. Starting with psOff v.0.5 you can use
+   * the actual DualSense audio device there, it will play the audio that the game supposed
+   * to play through gamepad speaker. Note that DualShock 4 spaker is NOT supported!
+   */
+  "padspeakers": [
+    "[null]", // Your full audio device name e.g. "DualSense Wireless Controller (DualSense Wireless Controller)"
+    "[null]",
+    "[null]",
+    "[null]"
+  ]
 }
 ```
 

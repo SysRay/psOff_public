@@ -1,5 +1,6 @@
 #include "overlay.h"
 
+#include "gamemenu/gamemenu.h"
 #include "logging.h"
 #include "overtrophy/overtrophy.h"
 
@@ -13,6 +14,9 @@ LOG_DEFINE_MODULE(Overlay);
 class OverlayHandler: public IOverlayHandler {
   std::shared_ptr<vulkan::DeviceInfo> m_deviceInfo;
   std::shared_ptr<IImageHandler>      m_imageHandler;
+
+  OverTrophy m_overTrophy;
+  GameMenu   m_gameMenu;
 
   VkDescriptorPool m_descriptorPool;
 
@@ -124,7 +128,8 @@ void OverlayHandler::init(SDL_Window* window, vulkan::QueueInfo* queue, VkFormat
   };
 
   ImGui_ImplVulkan_Init(&initInfo);
-  (void)accessTrophyOverlay(); // Should be called there to avoid initialization inside NewFrame()
+  m_overTrophy.init();
+  m_gameMenu.init();
 
   m_isInit = true;
 }
@@ -168,5 +173,7 @@ void OverlayHandler::submit(ImageData const& imageData) {
 
 void OverlayHandler::draw() {
   // ImGui::ShowDemoWindow();
-  accessTrophyOverlay().draw(m_imageHandler->getFPS());
+  auto const fps = m_imageHandler->getFPS();
+  m_overTrophy.draw(fps);
+  m_gameMenu.draw();
 }

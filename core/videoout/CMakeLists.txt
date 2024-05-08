@@ -7,9 +7,10 @@ add_library(videoout OBJECT
 
   overlay/overlay.cpp
   overlay/overtrophy/overtrophy.cpp
+  overlay/gamemenu/gamemenu.cpp
 )
 
-add_dependencies(videoout third_party psOff_utility gamereport initParams config_emu psoff_render)
+add_dependencies(videoout third_party psOff_utility initParams config_emu psoff_render)
 
 target_include_directories(videoout PRIVATE
   ${Vulkan_INCLUDE_DIRS}
