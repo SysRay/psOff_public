@@ -39,6 +39,9 @@
         "gamereport.send": {
           "$ref": "#/definitions/button"
         },
+        "overlay.open": {
+          "$ref": "#/definitions/button"
+        },
         "controller.circle": {
           "$ref": "#/definitions/button"
         },

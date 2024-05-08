@@ -30,7 +30,6 @@ class Trophies: public ITrophies {
   bool                  m_bIgnoreMissingLocale     = false;
   uint8_t               m_trkey[TR_AES_BLOCK_SIZE] = {};
   std::string           m_localizedTrophyFile;
-  std::filesystem::path m_trophyInfoPath;
   std::filesystem::path m_npidCachePath;
   std::vector<callback> m_callbacks = {};
   std::mutex            m_mutexParse;
@@ -38,17 +37,19 @@ class Trophies: public ITrophies {
   private:
   struct usr_context {
     struct trophy {
-      int32_t  id;
-      uint32_t re; // reserved
-      uint64_t ts;
+      int32_t  id = -1;
+      uint32_t re = 0; // reserved
+      uint64_t ts = 0;
     };
 
-    bool     created;
-    uint32_t label;
-    int32_t  userId;
+    bool     created = false;
+    uint32_t label   = 0;
+    int32_t  userId  = -1;
 
-    std::vector<struct trophy> trophies;
-  } m_ctx[4];
+    std::vector<trophy> trophies = {};
+  };
+
+  std::array<usr_context, 4> m_ctx {};
 
   struct trp_header {
     uint32_t magic; // should be 0xDCA24D00
@@ -469,7 +470,7 @@ class Trophies: public ITrophies {
       };
 
       callUnlockCallback(&cbdata);
-      m_ctx[userId].trophies.push_back({plat.id, 0, uTime});
+      m_ctx[userId - 1].trophies.push_back({plat.id, 0, uTime});
       saveTrophyData(userId);
     }
   }
@@ -501,10 +502,7 @@ class Trophies: public ITrophies {
       if (systemlang != SystemParamLang::EnglishUS) m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
     }
 
-    auto gfd = accessFileManager().getGameFilesDir();
-
-    m_trophyInfoPath = gfd / "tropinfo";
-    m_npidCachePath  = gfd / ".npcommid";
+    m_npidCachePath = accessFileManager().getGameFilesDir() / ".npcommid";
   }
 
   //  Callbacks
@@ -598,10 +596,11 @@ class Trophies: public ITrophies {
 
   int32_t loadTrophyData(int32_t userId) {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId];
+    auto& ctx = m_ctx[userId - 1];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
 
-    std::ifstream file(m_trophyInfoPath, std::ios::in | std::ios::binary);
+    std::ifstream file(path, std::ios::in | std::ios::binary);
 
     if (file.is_open()) {
       uint32_t tc = 0;
@@ -619,11 +618,12 @@ class Trophies: public ITrophies {
   }
 
   int32_t saveTrophyData(int32_t userId) {
-    if (userId < 1 || userId > 4) return false;
-    auto& ctx = m_ctx[userId];
-    if (!ctx.created) return false;
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
+    auto& ctx = m_ctx[userId - 1];
+    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
 
-    std::ofstream file(m_trophyInfoPath, std::ios::out | std::ios::binary);
+    std::ofstream file(path, std::ios::out | std::ios::binary);
 
     if (file.is_open()) {
       uint32_t num = ctx.trophies.size();
@@ -634,16 +634,16 @@ class Trophies: public ITrophies {
         if (!file.write((char*)&trop.ts, 8)) return Err::NpTrophy::INSUFFICIENT_SPACE;
       }
 
-      return true;
+      return Ok;
     }
 
-    return false;
+    return Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
   int32_t createContext(int32_t userId, uint32_t label) final {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
-    auto& ctx = m_ctx[userId];
-    if (ctx.created) return Err::NpTrophy::CONTEXT_ALREADY_EXISTS;
+    auto& ctx = m_ctx[userId - 1];
+    if (ctx.created) return Ok;
 
     ctx.userId  = userId;
     ctx.created = true;
@@ -660,7 +660,7 @@ class Trophies: public ITrophies {
 
   int32_t destroyContext(int32_t userId) final {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId];
+    auto& ctx = m_ctx[userId - 1];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
     if (!saveTrophyData(userId)) return Err::NpTrophy::INSUFFICIENT_SPACE;
     ctx.created = false;
@@ -670,7 +670,7 @@ class Trophies: public ITrophies {
 
   int32_t getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId];
+    auto& ctx = m_ctx[userId - 1];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
 
     if (count != nullptr) {
@@ -698,7 +698,7 @@ class Trophies: public ITrophies {
 
   uint64_t getUnlockTime(int32_t userId, int32_t trophyId) final {
     if (userId < 1 || userId > 4) return 0ull;
-    auto& ctx = m_ctx[userId];
+    auto& ctx = m_ctx[userId - 1];
     if (!ctx.created) return false;
 
     for (auto& trop: ctx.trophies) {
@@ -733,7 +733,7 @@ class Trophies: public ITrophies {
 
   int32_t unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) final {
     if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId];
+    auto& ctx = m_ctx[userId - 1];
     if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
     if (getUnlockTime(ctx.userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
     *platinumId = -1;
