@@ -117,9 +117,9 @@ enum class SceNgs2SubmixerParam : uint16_t {
 #pragma pack(push, 1)
 
 struct SceNgs2WaveformInfo {
-  SceNgs2WaveFormType  type;
-  SceNgs2ChannelsCount channelsCount;
-  uint32_t             sampleRate;
+  SceNgs2WaveFormType  type          = SceNgs2WaveFormType::NONE;
+  SceNgs2ChannelsCount channelsCount = SceNgs2ChannelsCount::INVALID;
+  uint32_t             sampleRate    = 0;
   uint32_t             configData;
   uint32_t             frameOffset;
   uint32_t             frameMargin;
@@ -214,7 +214,6 @@ struct SceNgs2Handle_rack;
 
 struct SceNgs2Handle {
   SceNgs2HandleType const type;
-  SceNgs2WaveformInfo     info;
 
   SceNgs2Handle(SceNgs2HandleType type): type(type) {}
 
@@ -244,6 +243,7 @@ struct SceNgs2Handle_voice: public SceNgs2Handle {
   SceNgs2Handle_rack* parent;
 
   SceNgs2VoiceStateFlags state {};
+  SceNgs2WaveformInfo    info;
 
   Reader* reader = nullptr; // optional, depends on racktype
 

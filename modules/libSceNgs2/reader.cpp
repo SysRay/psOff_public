@@ -17,6 +17,27 @@ extern "C" {
 LOG_DEFINE_MODULE(libSceNgs2);
 
 namespace {
+
+AVSampleFormat convFormat(SceNgs2WaveFormType type) {
+  switch (type) {
+    case SceNgs2WaveFormType::PCM_U8: return AVSampleFormat::AV_SAMPLE_FMT_U8;
+    case SceNgs2WaveFormType::PCM_I16LITTLE: return AVSampleFormat::AV_SAMPLE_FMT_S16;
+    case SceNgs2WaveFormType::PCM_I16BIG: return AVSampleFormat::AV_SAMPLE_FMT_S16;
+    case SceNgs2WaveFormType::PCM_I24LITTLE: return AVSampleFormat::AV_SAMPLE_FMT_NONE;
+    case SceNgs2WaveFormType::PCM_I24BIG: return AVSampleFormat::AV_SAMPLE_FMT_NONE;
+    case SceNgs2WaveFormType::PCM_I32LITTLE: return AVSampleFormat::AV_SAMPLE_FMT_S32;
+    case SceNgs2WaveFormType::PCM_I32BIG: return AVSampleFormat::AV_SAMPLE_FMT_S32;
+    case SceNgs2WaveFormType::PCM_F32LITTLE: return AVSampleFormat::AV_SAMPLE_FMT_FLT;
+    case SceNgs2WaveFormType::PCM_F32BIG: return AVSampleFormat::AV_SAMPLE_FMT_FLT;
+    case SceNgs2WaveFormType::PCM_F64LITTLE: return AVSampleFormat::AV_SAMPLE_FMT_DBL;
+    case SceNgs2WaveFormType::PCM_F64BIG: return AVSampleFormat::AV_SAMPLE_FMT_DBL;
+    case SceNgs2WaveFormType::VAG: return AVSampleFormat::AV_SAMPLE_FMT_FLT;    // todo
+    case SceNgs2WaveFormType::ATRAC9: return AVSampleFormat::AV_SAMPLE_FMT_FLT; // todo
+    default: break;
+  }
+  return AVSampleFormat::AV_SAMPLE_FMT_NONE;
+}
+
 struct PImpl {
   std::list<std::function<void(void)>> cleanup;
 
@@ -41,7 +62,7 @@ struct PImpl {
 };
 } // namespace
 
-Reader::Reader(SceNgs2Handle_voice* parent): parent(parent) {
+Reader::Reader(SceNgs2Handle_voice* voice): voice(voice) {
   m_pimpl = std::make_unique<PImpl>().release();
 }
 
@@ -51,17 +72,19 @@ Reader::~Reader() {
 
 bool Reader::init(SceNgs2SamplerVoiceWaveformBlocksParam const* param) {
   LOG_USE_MODULE(libSceNgs2);
+  if (m_isInit) return true; // todo
 
   auto pimpl = (PImpl*)m_pimpl;
 
   if (param->data == nullptr) {
     // Reset
-    parent->state.bits.Empty = true;
+    voice->state.bits.Empty = true;
 
     delete pimpl;
     m_pimpl = std::make_unique<PImpl>().release();
     return true;
   }
+  m_isInit = false;
 
   pimpl->data      = (uint8_t const*)param->data;
   pimpl->block     = param->aBlock[0];
@@ -100,11 +123,12 @@ bool Reader::init(SceNgs2SamplerVoiceWaveformBlocksParam const* param) {
   pimpl->fmtctx->pb = avioctx;
   pimpl->fmtctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-  int ret = avformat_open_input(&pimpl->fmtctx, "nullptr", nullptr, nullptr);
+  int ret = avformat_open_input(&pimpl->fmtctx, nullptr, nullptr, nullptr);
   if (ret != 0) {
     LOG_ERR(L"Reader: ffmpeg failed to read passed data: %d", ret);
     return false;
   }
+
   cleanup->emplace_back([&] { avformat_close_input(&pimpl->fmtctx); });
 
   if (int res = avformat_find_stream_info(pimpl->fmtctx, NULL) < 0; res < 0) {
@@ -112,9 +136,8 @@ bool Reader::init(SceNgs2SamplerVoiceWaveformBlocksParam const* param) {
     return false;
   }
 
-  pimpl->astream = pimpl->fmtctx->streams[pimpl->stream_idx];
-
-  pimpl->codec = avcodec_find_decoder(pimpl->astream->codecpar->codec_id);
+  pimpl->stream_idx = av_find_best_stream(pimpl->fmtctx, AVMEDIA_TYPE_AUDIO, -1, -1, &pimpl->codec, 0);
+  pimpl->astream    = pimpl->fmtctx->streams[pimpl->stream_idx];
 
   pimpl->codecContext = avcodec_alloc_context3(pimpl->codec);
   if (auto err = avcodec_parameters_to_context(pimpl->codecContext, pimpl->astream->codecpar); err != 0) {
@@ -137,28 +160,18 @@ bool Reader::init(SceNgs2SamplerVoiceWaveformBlocksParam const* param) {
     return false;
   }
 
-  AVChannelLayout dstChLayout = AV_CHANNEL_LAYOUT_7POINT1;
-  if (swr_alloc_set_opts2(&pimpl->swrCtx, &dstChLayout, AVSampleFormat::AV_SAMPLE_FMT_FLT, parent->info.sampleRate, &pimpl->codecContext->ch_layout,
-                          pimpl->codecContext->sample_fmt, pimpl->codecContext->sample_rate, 0, NULL)) {
-    LOG_ERR(L"Reader:Couldn't alloc swr");
-    return false;
-  }
-
-  swr_init(pimpl->swrCtx);
-  cleanup->emplace_back([&] { swr_free(&pimpl->swrCtx); });
-
   pimpl->frame = av_frame_alloc();
   cleanup->emplace_back([&] { av_frame_free(&pimpl->frame); });
 
   pimpl->packet = av_packet_alloc();
   cleanup->emplace_back([&] { av_packet_free(&pimpl->packet); });
 
-  m_isInit                 = true;
-  parent->state.bits.Empty = false;
+  m_isInit                = true;
+  voice->state.bits.Empty = false;
   return true;
 }
 
-bool Reader::getAudioUncompressed(void* buffer, size_t bufferSize) {
+bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi) {
   auto pimpl = (PImpl*)m_pimpl;
 
   // Check repeat
@@ -167,45 +180,68 @@ bool Reader::getAudioUncompressed(void* buffer, size_t bufferSize) {
       pimpl->curOffset = 0;
       --pimpl->block.numRepeat;
     } else {
-      parent->state.bits.Empty = true;
+      voice->state.bits.Empty = true;
       return false;
     }
   }
   // -
 
-  uint32_t const readSize = std::min(bufferSize, (size_t)pimpl->block.size - pimpl->curOffset);
+  uint32_t const readSize = std::min(rbi->bufferSize, (size_t)pimpl->block.size - pimpl->curOffset);
 
-  std::memcpy(buffer, pimpl->data + pimpl->curOffset, readSize);
+  std::memcpy(rbi->bufferPtr, pimpl->data + pimpl->curOffset, readSize);
   pimpl->curOffset += readSize;
 
   return true;
 }
 
-bool Reader::getAudioCompressed(void* buffer, size_t bufferSize) {
+bool Reader::getAudioCompressed(SceNgs2RenderBufferInfo* rbi) {
   LOG_USE_MODULE(libSceNgs2);
 
   auto pimpl = (PImpl*)m_pimpl;
 
+  if (pimpl->swrCtx == nullptr) {
+    auto optDstChLayout = convChannelLayout(rbi->channelsCount);
+    if (!optDstChLayout) {
+      return false;
+    }
+    auto format = convFormat(rbi->waveType);
+    if (format == AVSampleFormat::AV_SAMPLE_FMT_NONE) return false;
+
+    if (swr_alloc_set_opts2(&pimpl->swrCtx, &(*optDstChLayout), format, voice->info.sampleRate, &pimpl->codecContext->ch_layout,
+                            pimpl->codecContext->sample_fmt, pimpl->codecContext->sample_rate, 0, NULL)) {
+      LOG_ERR(L"Reader:Couldn't alloc swr");
+      return false;
+    }
+
+    swr_init(pimpl->swrCtx);
+    pimpl->cleanup.emplace_back([&] { swr_free(&pimpl->swrCtx); });
+  }
+
   size_t offset = 0;
 
-  while (offset < bufferSize) {
+  while (offset < rbi->bufferSize) {
     // Get a new packet
     if (pimpl->newPacket) {
       pimpl->packet->dts = AV_NOPTS_VALUE;
       pimpl->packet->pts = AV_NOPTS_VALUE;
 
       int state = av_read_frame(pimpl->fmtctx, pimpl->packet);
-
-      pimpl->newPacket = false;
       if (state < 0) {
         if (state != AVERROR_EOF) {
           LOG_ERR(L"av_read_frame error %d", state);
         } else {
-          parent->state.bits.Empty   = true;
-          parent->state.bits.Playing = false;
+          voice->state.bits.Empty   = true;
+          voice->state.bits.Playing = false;
         }
         return false;
       }
+
+      // Skip if not a audio packet
+      if (pimpl->packet->stream_index != pimpl->stream_idx) {
+        continue;
+      }
+
+      pimpl->newPacket = false;
     }
     // -
 
@@ -216,11 +252,11 @@ bool Reader::getAudioCompressed(void* buffer, size_t bufferSize) {
         pimpl->newPacket = true;
         continue; // Get new frame
       } else if (ret == AVERROR_EOF) {
-        parent->state.bits.Empty = true;
+        voice->state.bits.Empty = true;
       } else {
-        parent->state.bits.Error = true;
+        voice->state.bits.Error = true;
       }
-      parent->state.bits.Playing = false;
+      voice->state.bits.Playing = false;
 
       return false;
     }
@@ -234,8 +270,9 @@ bool Reader::getAudioCompressed(void* buffer, size_t bufferSize) {
     int outNumSamples = swr_get_out_samples(pimpl->swrCtx, pimpl->frame->nb_samples);
 
     // todo get sample size, nb_channels is zero (fix)
-    uint8_t* audioBuffers[1] = {&((uint8_t*)buffer)[offset]};
-    if (outNumSamples = swr_convert(pimpl->swrCtx, audioBuffers, outNumSamples, (uint8_t const**)pimpl->frame->extended_data, pimpl->frame->nb_samples);
+    uint8_t* audioBuffers[1] = {&((uint8_t*)rbi->bufferPtr)[offset]};
+
+    if (outNumSamples = swr_convert(pimpl->swrCtx, audioBuffers, outNumSamples, (uint8_t const**)pimpl->frame->data, pimpl->frame->nb_samples);
         outNumSamples < 0) {
       LOG_WARN(L"swr_convert");
     }
@@ -243,21 +280,27 @@ bool Reader::getAudioCompressed(void* buffer, size_t bufferSize) {
     av_frame_unref(pimpl->frame);
     // -
 
-    auto const bufferSize_ = pimpl->codecContext->ch_layout.nb_channels * outNumSamples * av_get_bytes_per_sample(pimpl->codecContext->sample_fmt);
+    auto const bufferSize_ = (uint32_t)rbi->channelsCount * outNumSamples * av_get_bytes_per_sample(convFormat(rbi->waveType));
+
+    // float* samples = (float*)(&((uint8_t*)rbi->bufferPtr)[offset]);
+    // for (int i = 0; i < outNumSamples * (int)rbi->channelsCount; i++) {
+    //   samples[i] *= 100000.0;
+    // }
+
     offset += bufferSize_;
   }
   return true;
 }
 
-bool Reader::getAudio(void* buffer, size_t bufferSize) {
-  if (m_isInit == false || !parent->state.bits.Playing || (parent->state.bits.Playing && parent->state.bits.Paused)) {
+bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi) {
+  if (m_isInit == false || !voice->state.bits.Playing || (voice->state.bits.Playing && voice->state.bits.Paused)) {
     return true;
   }
 
   if (m_isCompressed) {
-    return getAudioCompressed(buffer, bufferSize);
+    return getAudioCompressed(rbi);
   } else {
-    return getAudioUncompressed(buffer, bufferSize);
+    return getAudioUncompressed(rbi);
   }
   return true;
 }

@@ -193,3 +193,45 @@ int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* user
 
   return Ok;
 }
+
+std::optional<AVChannelLayout> convChannelLayout(SceNgs2ChannelsCount count) {
+  LOG_USE_MODULE(libSceNgs2);
+  switch (count) {
+    case SceNgs2ChannelsCount::CH_1_0: {
+      return {AV_CHANNEL_LAYOUT_MONO};
+    } break;
+    case SceNgs2ChannelsCount::CH_2_0: {
+      return {AV_CHANNEL_LAYOUT_STEREO};
+    } break;
+    case SceNgs2ChannelsCount::CH_5_1: {
+      return {AV_CHANNEL_LAYOUT_5POINT1};
+    } break;
+    case SceNgs2ChannelsCount::CH_7_1: {
+      return {AV_CHANNEL_LAYOUT_CUBE};
+    } break;
+    default: {
+      LOG_ERR(L"channel layout not set");
+    } break;
+  }
+  return std::nullopt;
+}
+
+uint32_t getSampleBytes(SceNgs2WaveFormType type) {
+  switch (type) {
+    case SceNgs2WaveFormType::PCM_U8: return 1;
+    case SceNgs2WaveFormType::PCM_I16LITTLE: return 2;
+    case SceNgs2WaveFormType::PCM_I16BIG: return 2;
+    case SceNgs2WaveFormType::PCM_I24LITTLE: return 3;
+    case SceNgs2WaveFormType::PCM_I24BIG: return 3;
+    case SceNgs2WaveFormType::PCM_I32LITTLE: return 4;
+    case SceNgs2WaveFormType::PCM_I32BIG: return 4;
+    case SceNgs2WaveFormType::PCM_F32LITTLE: return 4;
+    case SceNgs2WaveFormType::PCM_F32BIG: return 4;
+    case SceNgs2WaveFormType::PCM_F64LITTLE: return 8;
+    case SceNgs2WaveFormType::PCM_F64BIG: return 8;
+    case SceNgs2WaveFormType::VAG: return 4;
+    case SceNgs2WaveFormType::ATRAC9: return 4;
+    default: break;
+  }
+  return 2;
+}

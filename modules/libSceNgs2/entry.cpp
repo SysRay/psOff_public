@@ -555,6 +555,8 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
   if (rbi->waveType >= SceNgs2WaveFormType::MAX_TYPES) return Err::Ngs2::INVALID_WAVEFORM_TYPE;
   if (rbi->channelsCount > SceNgs2ChannelsCount::CH_7_1) return Err::Ngs2::INVALID_NUM_CHANNELS;
 
+  // uint32_t const numSamples = rbi->bufferSize / ((uint32_t)rbi->channelsCount * getSampleBytes(rbi->waveType));
+
   if (system->sampler == nullptr) {
     //
     for (int32_t i = 0; i < count; i++) {
@@ -569,7 +571,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
         std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
         for (auto& voice: system->sampler->voices) {
           if (voice.second.reader != nullptr) {
-            voice.second.reader->getAudio(rbi[i].bufferPtr, rbi[i].bufferSize);
+            voice.second.reader->getAudio(&rbi[i]);
           }
         }
       }
