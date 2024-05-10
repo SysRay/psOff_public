@@ -112,6 +112,7 @@ int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* user
   LOG_USE_MODULE(libSceNgs2);
 
   // Load headers and check magic
+  // todo use ffmeg, get the correct type (pcm, at9...)
 
   // Check if correct file
   RiffWaveHeader riffHeader;

@@ -27,25 +27,25 @@ int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoice
   LOG_USE_MODULE(libSceNgs2);
 
   LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
-  LOG_DEBUG(L"waveptr: %llx\n", svwfbp->data);
+  LOG_TRACE(L"waveptr: %llx\n", svwfbp->data);
 
-  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
-  auto voice = (SceNgs2Handle_voice*)voh;
+  // if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  // auto voice = (SceNgs2Handle_voice*)voh;
 
-  if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
+  // if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
 
-  // svwfbp->data can be nullptr!
-  if (!voice->reader->init(svwfbp)) {
-    return Err::Ngs2::INVALID_WAVEFORM_DATA;
-  }
+  // // svwfbp->data can be nullptr!
+  // if (!voice->reader->init(svwfbp)) {
+  //   return Err::Ngs2::INVALID_WAVEFORM_DATA;
+  // }
 
-  LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
+  // LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
   return Ok;
 }
 
 int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_INFO(L"voiceControl_voice id:%u type:%u", phead->id & 0xFFFF, voh->type);
+  LOG_DEBUG(L"voiceControl_voice id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
   auto voice = (SceNgs2Handle_voice*)voh;
@@ -76,7 +76,7 @@ int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phea
 
 int32_t voiceControl_mastering(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_INFO(L"voiceControl_mastering id:%u type:%u", phead->id & 0xFFFF, voh->type);
+  LOG_DEBUG(L"voiceControl_mastering id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
   switch ((SceNgs2MasteringParam)(phead->id & 0xFFFF)) {
     case SceNgs2MasteringParam::SETUP: {
@@ -98,16 +98,21 @@ int32_t voiceControl_mastering(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* 
 }
 
 int32_t voiceControl_reverb(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_reverbid:%u type:%u", phead->id & 0xFFFF, voh->type);
   return Ok;
 }
 
 int32_t voiceControl_equalizer(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_equalizer id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
   return Ok;
 }
 
 int32_t voiceControl_sampler(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_INFO(L"voice_sampler id:%u type:%u", phead->id & 0xFFFF, voh->type);
+  LOG_DEBUG(L"voice_sampler id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
 
@@ -145,6 +150,9 @@ int32_t voiceControl_sampler(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* ph
 }
 
 int32_t voiceControl_submixer(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_submixer id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
   switch ((SceNgs2SubmixerParam)(phead->id & 0xFFFF)) {
     case SceNgs2SubmixerParam::SETUP: {
     } break;
@@ -569,11 +577,11 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
     for (int32_t i = 0; i < count; i++) {
       if (rbi[i].bufferPtr != nullptr) {
         std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
-        for (auto& voice: system->sampler->voices) {
-          if (voice.second.reader != nullptr) {
-            voice.second.reader->getAudio(&rbi[i]);
-          }
-        }
+        // for (auto& voice: system->sampler->voices) {
+        //   if (voice.second.reader != nullptr) {
+        //     voice.second.reader->getAudio(&rbi[i]);
+        //   }
+        // }
       }
     }
   }
