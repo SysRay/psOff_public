@@ -255,7 +255,7 @@ int DirectMemory::free(off_t start, size_t len) {
     return Ok;
   }
 
-  if (itHeap->first != addr || itHeap->second.size != len) {
+  if (len != 0 && (itHeap->first != addr || itHeap->second.size != len)) {
     LOG_ERR(L"free Error| start:0x%08llx len:0x%08llx != start:0x%08llx len:0x%08llx", addr, len, itHeap->first, itHeap->second.size);
   }
 
@@ -313,8 +313,9 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   MemoryInfo* info = nullptr;
   if (flags & (int)filesystem::SceMapMode::FIXED) {
     for (auto& item: m_objects) {
-      if (item.second.state == MemoryState::Reserved && item.first <= vaddr && (item.first + item.second.size) > (vaddr + len)) {
-        info = &item.second;
+      if (item.second.state == MemoryState::Reserved && item.first <= vaddr && item.second.size >= len) {
+        info     = &item.second;
+        desVaddr = info->addr;
       }
     }
   }
@@ -324,7 +325,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   // -
 
   // Check if Commit needed
-  if (info->state == MemoryState::Free) {
+  if (info->state == MemoryState::Free || info->state == MemoryState::Reserved) {
     MEM_ADDRESS_REQUIREMENTS addressReqs    = {0};
     MEM_EXTENDED_PARAMETER   extendedParams = {0};
 
@@ -335,8 +336,11 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
     extendedParams.Type    = MemExtendedParameterAddressRequirements;
     extendedParams.Pointer = &addressReqs;
 
-    void* ptr = VirtualAlloc2(NULL, (void*)desVaddr, info->size, MEM_RESERVE | MEM_COMMIT | MEM_WRITE_WATCH, convProtection(prot),
-                              desVaddr != 0 ? 0 : &extendedParams, desVaddr != 0 ? 0 : 1);
+    uint32_t flags = MEM_COMMIT;
+    if (info->state != MemoryState::Reserved) {
+      flags |= MEM_RESERVE | MEM_WRITE_WATCH;
+    }
+    void* ptr = VirtualAlloc2(NULL, (void*)desVaddr, info->size, flags, convProtection(prot), desVaddr != 0 ? 0 : &extendedParams, desVaddr != 0 ? 0 : 1);
     if (ptr == 0) {
       auto const err = GetLastError();
       LOG_ERR(L"Commit Error| addr:0x%08llx len:0x%08llx err:%d", info->addr, info->size, GetLastError());
@@ -432,10 +436,32 @@ uint64_t DirectMemory::size() const {
 
 int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const {
   LOG_USE_MODULE(DirectMemory);
-  LOG_DEBUG(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
+  LOG_DEBUG(L"availableSize: start:0x%lx end:0x%lx alignment:0x%08llx", start, end, alignment);
 
-  *startOut = m_usedSize;
-  *sizeOut  = SCE_KERNEL_MAIN_DMEM_SIZE - m_usedSize;
+  auto itItem = m_objects.lower_bound(DIRECTMEM_START + start);
+  if (m_objects.empty() || itItem == m_objects.end()) {
+    *startOut = start;
+    *sizeOut  = std::min(SCE_KERNEL_MAIN_DMEM_SIZE, (uint64_t)end - start);
+    return Ok;
+  }
+
+  *startOut = start;
+  *sizeOut  = (itItem->second.addr - DIRECTMEM_START) - start;
+  // if (itItem->second.addr + itItem->second.size >= DIRECTMEM_START + end) {
+  //   *startOut = end;
+  //   *sizeOut  = 0;
+  //   return Ok;
+  // }
+
+  // *startOut = start;
+  // *sizeOut  = 0;
+
+  // auto itEnd = m_objects.lower_bound(DIRECTMEM_START + end);
+  // for (; itItem != itEnd; ++itItem) {
+  //   *startOut = (itItem->second.addr + itItem->second.size) - DIRECTMEM_START;
+  // }
+
+  // if (*startOut > end) *sizeOut = end - *startOut;
 
   return Ok;
 }
