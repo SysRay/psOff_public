@@ -29,17 +29,17 @@ int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoice
   LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
   LOG_TRACE(L"waveptr: %llx\n", svwfbp->data);
 
-  // if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
-  // auto voice = (SceNgs2Handle_voice*)voh;
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  auto voice = (SceNgs2Handle_voice*)voh;
 
-  // if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
+  if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
 
-  // // svwfbp->data can be nullptr!
-  // if (!voice->reader->init(svwfbp)) {
-  //   return Err::Ngs2::INVALID_WAVEFORM_DATA;
-  // }
+  // svwfbp->data can be nullptr!
+  if (!voice->reader->init(svwfbp)) {
+    return Err::Ngs2::INVALID_WAVEFORM_DATA;
+  }
 
-  // LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
+  LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
   return Ok;
 }
 
@@ -125,8 +125,10 @@ int32_t voiceControl_sampler(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* ph
     } break;
     case SceNgs2SamplerParam::ADD_WAVEFORM_BLOCKS: {
       return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
-    } break;
+    }
     case SceNgs2SamplerParam::REPLACE_WAVEFORM_ADDRESS: {
+      auto item = (SceNgs2CustomSamplerVoiceWaveformAddressParam*)phead;
+      if (voice->reader != nullptr) voice->reader->setNewData(item->pDataStart, item->pDataEnd);
     } break;
     case SceNgs2SamplerParam::SET_WAVEFORM_FRAME_OFFSET: {
     } break;
@@ -563,7 +565,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
   if (rbi->waveType >= SceNgs2WaveFormType::MAX_TYPES) return Err::Ngs2::INVALID_WAVEFORM_TYPE;
   if (rbi->channelsCount > SceNgs2ChannelsCount::CH_7_1) return Err::Ngs2::INVALID_NUM_CHANNELS;
 
-  // uint32_t const numSamples = rbi->bufferSize / ((uint32_t)rbi->channelsCount * getSampleBytes(rbi->waveType));
+  uint32_t const numSamples = rbi->bufferSize / ((uint32_t)rbi->channelsCount * getSampleBytes(rbi->waveType));
 
   if (system->sampler == nullptr) {
     //
@@ -577,11 +579,11 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
     for (int32_t i = 0; i < count; i++) {
       if (rbi[i].bufferPtr != nullptr) {
         std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
-        // for (auto& voice: system->sampler->voices) {
-        //   if (voice.second.reader != nullptr) {
-        //     voice.second.reader->getAudio(&rbi[i]);
-        //   }
-        // }
+        for (auto& voice: system->sampler->voices) {
+          if (voice.second.reader != nullptr) {
+            // voice.second.reader->getAudio(&rbi[i], numSamples);
+          }
+        }
       }
     }
   }
@@ -664,7 +666,14 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* voh, SceNgs2VoiceSta
   if (auto it = pimpl->handles.find(voh); it == pimpl->handles.end()) return Err::Ngs2::INVALID_VOICE_HANDLE;
   if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
 
-  auto voice        = (SceNgs2Handle_voice*)voh;
+  auto voice = (SceNgs2Handle_voice*)voh;
+  if (voice->reader != nullptr) {
+    if (size != sizeof(SceNgs2SamplerVoiceState)) return getErr(ErrCode::_EINVAL);
+
+    voice->reader->getState((SceNgs2SamplerVoiceState*)state);
+    return Ok;
+  }
+
   state->stateFlags = voice->state.data;
 
   // LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, state->stateFlags);

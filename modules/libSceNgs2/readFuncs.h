@@ -1,8 +1,6 @@
 #pragma once
 #include "types.h"
 
-#include <optional>
-
 using funcReadBuf_t = int (*)(void*, uint8_t*, int);
 using funcSeekBuf_t = int64_t (*)(void*, int64_t, int);
 
@@ -27,6 +25,6 @@ int64_t seekFunc_user(void* userData_, int64_t offset, int whence);
 
 int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* userData, SceNgs2WaveformFormat* wf);
 
-std::optional<struct AVChannelLayout> convChannelLayout(SceNgs2ChannelsCount);
-
-uint32_t getSampleBytes(SceNgs2WaveFormType);
+struct AVChannelLayout;
+AVChannelLayout convChannelLayout(SceNgs2ChannelsCount);
+uint32_t        getSampleBytes(SceNgs2WaveFormType);

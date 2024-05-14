@@ -46,42 +46,29 @@ static SceNgs2WaveFormType convWaveType(AVCodecID codec) {
 } // namespace
 
 int readFunc_linearBuffer(void* userData_, uint8_t* buf, int size) {
-  auto userData = (userData_inerBuffer*)userData_;
+  auto rb = (userData_inerBuffer*)userData_;
 
-  int64_t const dataLeft = (int64_t)userData->size - (int64_t)userData->curOffset;
-
-  auto readSize = std::min(dataLeft, (int64_t)size);
-
-  if (readSize > 0) {
-    ::memcpy(buf, (uint8_t*)userData->ptr + userData->curOffset, readSize);
-    userData->curOffset += readSize;
-    return readSize;
-  }
-
-  userData->curOffset = 0; // reset it
-  return -1;
+  auto len = std::min(int(rb->size - rb->curOffset), size);
+  if (len == 0) return AVERROR_EOF;
+  ::memcpy(buf, (uint8_t*)rb->ptr + rb->curOffset, len);
+  rb->curOffset += len;
+  return len;
 }
 
-int64_t seekFunc_linearBuffer(void* userData_, int64_t offset, int whence) {
-  auto userData = (userData_inerBuffer*)userData_;
+int64_t seekFunc_linearBuffer(void* userData_, int64_t pos, int whence) {
+  auto rb = (userData_inerBuffer*)userData_;
 
-  if ((whence & AVSEEK_SIZE) > 0) {
-    // return size (0 on not avail)
-    return userData->size;
+  if (whence == AVSEEK_SIZE) return rb->size;
+
+  if (whence == SEEK_SET) {
+    rb->curOffset = pos;
+  } else if (whence == SEEK_CUR) {
+    rb->curOffset += pos;
+  } else if (whence == SEEK_END) {
+    rb->curOffset = rb->size - pos;
   }
 
-  switch ((std::ios_base::seekdir)(whence & 0xff)) {
-    case std::ios_base::beg: userData->curOffset = offset; break;
-    case std::ios_base::cur:
-      if (userData->curOffset < offset)
-        userData->curOffset = 0;
-      else
-        userData->curOffset += offset;
-      break;
-    case std::ios_base::end: userData->curOffset = std::min(userData->size, userData->size + offset); break;
-  }
-
-  return userData->curOffset;
+  return rb->curOffset;
 }
 
 int readFunc_file(void* userData_, uint8_t* buf, int size) {
@@ -195,26 +182,26 @@ int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* user
   return Ok;
 }
 
-std::optional<AVChannelLayout> convChannelLayout(SceNgs2ChannelsCount count) {
+AVChannelLayout convChannelLayout(SceNgs2ChannelsCount count) {
   LOG_USE_MODULE(libSceNgs2);
   switch (count) {
     case SceNgs2ChannelsCount::CH_1_0: {
-      return {AV_CHANNEL_LAYOUT_MONO};
+      return AV_CHANNEL_LAYOUT_MONO;
     } break;
     case SceNgs2ChannelsCount::CH_2_0: {
-      return {AV_CHANNEL_LAYOUT_STEREO};
+      return AV_CHANNEL_LAYOUT_STEREO;
     } break;
     case SceNgs2ChannelsCount::CH_5_1: {
-      return {AV_CHANNEL_LAYOUT_5POINT1};
+      return AV_CHANNEL_LAYOUT_5POINT1;
     } break;
     case SceNgs2ChannelsCount::CH_7_1: {
-      return {AV_CHANNEL_LAYOUT_CUBE};
+      return AV_CHANNEL_LAYOUT_CUBE;
     } break;
     default: {
       LOG_ERR(L"channel layout not set");
     } break;
   }
-  return std::nullopt;
+  return AV_CHANNEL_LAYOUT_MASK(1, AV_CHANNEL_ORDER_UNSPEC);
 }
 
 uint32_t getSampleBytes(SceNgs2WaveFormType type) {

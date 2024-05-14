@@ -384,11 +384,31 @@ struct SceNgs2SamplerVoiceWaveformBlocksParam {
   const SceNgs2WaveformBlock* aBlock;
 };
 
+struct SceNgs2CustomSamplerVoiceWaveformAddressParam {
+  SceNgs2VoiceParamHead header;
+  const void*           pDataStart;
+  const void*           pDataEnd;
+};
+
 struct SceNgs2SamplerVoiceSetupParam {
   SceNgs2VoiceParamHead header;
   SceNgs2WaveformInfo   format;
   uint32_t              flags;
   uint32_t              reserved;
+};
+
+struct SceNgs2SamplerVoiceState {
+  SceNgs2VoiceStateFlags voiceState = {0};
+
+  float       envelopeHeight = 0;
+  float       peakHeight     = 0;
+  uint32_t    reserved;
+  uint64_t    numDecodedSamples = 0;
+  uint64_t    decodedDataSize   = 0;
+  uint64_t    userData          = 0;
+  const void* waveformData      = 0;
+
+  SceNgs2SamplerVoiceState() = default;
 };
 
 struct SceNgs2VoiceCallbackInfo {
