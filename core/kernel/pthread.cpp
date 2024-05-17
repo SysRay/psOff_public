@@ -400,11 +400,13 @@ int join(ScePthread_obj obj, void** value) {
   auto thread = getPthread(obj);
   thread->p.join();
 
-  LOG_USE_MODULE(pthread);
-  LOG_DEBUG(L"Delete thread:%d", thread->unique_id);
-  // Cleanup thread
-  thread->~PthreadPrivate();
-  delete[] obj;
+  if (!thread->detached) {
+    LOG_USE_MODULE(pthread);
+    LOG_DEBUG(L"Delete thread:%d", thread->unique_id);
+    // Cleanup thread
+    thread->~PthreadPrivate();
+    delete[] obj;
+  }
   // -
   return Ok;
 }
@@ -803,7 +805,6 @@ int cancel(ScePthread_obj obj) {
   // todo cancel
   // int  result = ::pthread_cancel(thread->p);
   thread->p.interrupt();
-  join(obj, nullptr);
 
   return Ok;
 }
