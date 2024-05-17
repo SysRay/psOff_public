@@ -243,14 +243,14 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
       return false;
     }
 
-    auto const [formatOut, bytesOut] = convFormatPlanar(rbi->waveType);
+    auto const [formatOut, bytesOut] = convFormat(rbi->waveType);
     if (formatOut == AVSampleFormat::AV_SAMPLE_FMT_NONE) return false;
 
-    auto const [formatIn, bytesIn] = convFormatPlanar(voice->info.type);
+    auto const [formatIn, bytesIn] = convFormat(voice->info.type);
     if (formatIn == AVSampleFormat::AV_SAMPLE_FMT_NONE) return false;
 
-    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, 48000, &pimpl->curChannelLayoutIn, formatIn, voice->info.sampleRate, 0,
-                            NULL)) {
+    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, voice->info.sampleRate, &pimpl->curChannelLayoutIn, formatIn,
+                            voice->info.sampleRate, 0, NULL)) {
       LOG_ERR(L"Reader:Couldn't alloc swr");
       return false;
     }
@@ -275,30 +275,29 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
 
   uint32_t const readSize = std::min(rbi->bufferSize, (size_t)pimpl->block.size - pimpl->curOffset);
 
-  auto const [formatIn, bytesIn]   = convFormatPlanar(voice->info.type);
-  auto const [formatOut, bytesOut] = convFormatPlanar(rbi->waveType);
+  auto const [formatIn, bytesIn]   = convFormat(voice->info.type);
+  auto const [formatOut, bytesOut] = convFormat(rbi->waveType);
 
   std::vector<uint8_t*> audioBuffers(((int)rbi->channelsCount));
 
-  auto const channelSizeOut = numOutSamples * bytesOut;
+  auto const channelSizeOut = (uint32_t)rbi->channelsCount * bytesOut;
   for (uint8_t n = 0; n < audioBuffers.size(); ++n) {
-    audioBuffers[n] = &((uint8_t*)rbi->bufferPtr)[n * channelSizeOut];
+    audioBuffers[n] = &((uint8_t*)rbi->bufferPtr)[0];
   }
 
   if (pimpl->block.numSamples > 0) {
     std::vector<uint8_t const*> audioBuffersIn(((int)voice->info.channelsCount));
 
+    auto const channelSizeIn = (uint32_t)voice->info.channelsCount * bytesOut;
     for (uint8_t n = 0; n < audioBuffersIn.size(); ++n) {
-      audioBuffersIn[n] = &((uint8_t*)pimpl->data)[pimpl->curOffset + n * pimpl->block.numSamples];
+      audioBuffersIn[n] = &((uint8_t*)pimpl->data)[0];
     }
 
-    auto numSamples         = swr_convert(pimpl->swrCtx, audioBuffers.data(), numOutSamples, audioBuffersIn.data(), pimpl->block.numSamples);
+    auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, &pimpl->data, pimpl->block.numSamples);
+
     pimpl->block.numSamples = 0;
   } else {
-    std::vector<uint8_t const*> audioBuffersIn(((int)voice->info.channelsCount));
-    audioBuffersIn[0] = &((uint8_t*)pimpl->data)[pimpl->curOffset];
-
-    auto numSamples = swr_convert(pimpl->swrCtx, audioBuffers.data(), numOutSamples, nullptr, 0);
+    auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, nullptr, 0);
     if (numSamples == 0) {
       m_state.numDecodedSamples += pimpl->block.numSamples;
       m_state.decodedDataSize += pimpl->block.size;

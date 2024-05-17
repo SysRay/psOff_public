@@ -581,7 +581,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBu
         std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
         for (auto& voice: system->sampler->voices) {
           if (voice.second.reader != nullptr) {
-            // voice.second.reader->getAudio(&rbi[i], numSamples);
+            //voice.second.reader->getAudio(&rbi[i], numSamples);
           }
         }
       }
