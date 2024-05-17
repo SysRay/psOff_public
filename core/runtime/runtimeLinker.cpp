@@ -691,13 +691,13 @@ void RuntimeLinker::destroyTLSKeys(uint8_t* obj) {
 
   std::unique_lock const lock(m_mutex_int);
 
-  m_threadList.erase(pthread::getThreadId(obj));
-
   for (uint64_t n = m_countcreatePrograms; n < m_dtvKeys.size(); ++n, ++pDtvKey) {
     if (m_dtvKeys[n].destructor != nullptr) {
-      m_dtvKeys[n].destructor((void*)pDtvKey[n]);
+      if (pDtvKey[n] != 0) m_dtvKeys[n].destructor((void*)pDtvKey[n]);
     }
   }
+
+  m_threadList.erase(pthread::getThreadId(obj));
 }
 
 void RuntimeLinker::stopModules() {

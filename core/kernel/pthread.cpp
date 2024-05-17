@@ -802,10 +802,8 @@ int cancel(ScePthread_obj obj) {
   auto thread = getPthread(obj);
   // todo cancel
   // int  result = ::pthread_cancel(thread->p);
-
-  LOG_USE_MODULE(pthread);
-  LOG_ERR(L" todo cancel| %S id:%d", thread->name.data(), thread->unique_id);
-  // LOG_TRACE(L"thread cancel| threadId:%d name:%S result:%d", thread->unique_id, thread->name.c_str(), result);
+  thread->p.interrupt();
+  join(obj, nullptr);
 
   return Ok;
 }
@@ -1219,14 +1217,13 @@ void cleanup_thread() {
     func(arg);
     thread->cleanupFuncs.pop_back();
   }
+  accessRuntimeLinker().destroyTLSKeys(getSelf());
 
   auto thread_dtors = *getThreadDtors();
 
   if (thread_dtors != nullptr) {
     thread_dtors();
   }
-
-  accessRuntimeLinker().destroyTLSKeys(getSelf());
 
   accessMemoryManager()->unregisterStack((uint64_t)thread->attr.getStackAddr());
 
