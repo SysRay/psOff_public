@@ -334,4 +334,10 @@ EXPORT SYSV_ABI int sceNpNotifyPlusFeature(const SceNpNotifyPlusFeatureParameter
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+EXPORT SYSV_ABI int sceNpInGameMessageInitialize(size_t poolSize, void* option) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }

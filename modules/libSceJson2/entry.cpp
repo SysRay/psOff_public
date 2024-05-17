@@ -114,6 +114,16 @@ EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueC1Ev)(sce::Json::Value* _this) {
 }
 
 /**
+ * @brief sce::Json::Value::Value()
+ *
+ */
+EXPORT SYSV_ABI void __NID(_ZN3sce4Json5ValueC1ENS0_9ValueTypeE)(sce::Json::Value* _this, sce::Json::ValueType type) {
+  LOG_USE_MODULE(libSceJson2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  ::memset((void*)_this, 0, sizeof(sce::Json::Value));
+}
+
+/**
  * @brief sce::Json::Value::set(bool)
  *
  */

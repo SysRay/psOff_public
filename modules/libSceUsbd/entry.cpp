@@ -26,9 +26,15 @@ EXPORT SYSV_ABI void sceUsbdFreeDeviceList(SceUsbdDevice** list, int unrefDevice
   LOG_ERR(L"todo %S", __FUNCTION__);
 }
 
+EXPORT SYSV_ABI int32_t sceUsbdHandleEvents() {
+  LOG_USE_MODULE(libSceUsbd);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceUsbdHandleEventsTimeout(struct timeval* tv) {
   LOG_USE_MODULE(libSceUsbd);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
