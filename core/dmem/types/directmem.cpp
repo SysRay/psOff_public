@@ -27,7 +27,7 @@ enum class MemoryState {
   Commited,
 };
 
-struct MemoryMapping {
+struct MemoryMappingDirect {
   uint64_t addr = 0;
 
   uint64_t heapAddr = 0; // addr for MemoryInfo
@@ -83,8 +83,8 @@ class DirectMemory: public IMemoryType {
 
   IMemoryManager* m_parent;
 
-  std::map<uint64_t, MemoryInfo>    m_objects;
-  std::map<uint64_t, MemoryMapping> m_mappings;
+  std::map<uint64_t, MemoryInfo>          m_objects;
+  std::map<uint64_t, MemoryMappingDirect> m_mappings;
 
   uint64_t m_allocSize = 0;
   uint64_t m_usedSize  = 0;
@@ -355,7 +355,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
 
   *outAddr = (uint64_t)info->allocAddr + fakeAddrOffset;
   m_mappings.emplace(
-      std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
+      std::make_pair(*outAddr, MemoryMappingDirect {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
 
   m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   m_usedSize += len;
@@ -499,7 +499,7 @@ int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* inf
   auto itMapping = m_mappings.lower_bound(addr);
   if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != addr)) --itMapping; // Get the correct item
 
-  if (!(itMapping->first <= addr && (itMapping->first + itMapping->second.size >= addr))) {
+  if (!(itMapping->first <= addr && (itMapping->first + itMapping->second.size > addr))) {
     if (itItem->second.state == MemoryState::Reserved) {
       info->start       = (void*)itItem->first;
       info->end         = (void*)(itItem->first + itItem->second.size);
