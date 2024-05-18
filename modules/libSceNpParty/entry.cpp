@@ -17,7 +17,7 @@ EXPORT SYSV_ABI int32_t sceNpPartyInitialize() {
 
 EXPORT SYSV_ABI int32_t sceNpPartyCheckCallback() {
   LOG_USE_MODULE(libSceNpParty);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 

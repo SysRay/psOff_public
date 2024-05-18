@@ -1,177 +1,357 @@
-#include "codes.h"
-#include "common.h"
-extern "C" {
-#include "libavformat/avformat.h"
-}
+#include "core/fileManager/ifile.h"
 #include "core/kernel/filesystem.h"
 #include "core/kernel/pthread.h"
 #include "logging.h"
+#include "readFuncs.h"
+#include "reader.h"
 #include "types.h"
+
+#include <boost/thread.hpp>
+#include <set>
 
 LOG_DEFINE_MODULE(libSceNgs2);
 
 namespace {
-enum WaveformInfoType {
-  WAVEFORM_FILE,
-  WAVEFORM_DATA,
-  WAVEFORM_USER,
+static boost::mutex MUTEX_INT;
+
+struct Impl {
+  std::set<SceNgs2Handle*> handles;
 };
 
-struct WaveformInfo {
-  WaveformInfoType type;
-  char             pad[4];
+Impl* getPimpl() {
+  static Impl pimpl;
+  return &pimpl;
+}
 
-  union WaveformPtr {
-    int                  fileHandle;
-    SceWaveformUserFunc* userFunc;
-    const void*          dataPtr;
-  } ud;
-
-  size_t size;
-  long   offset;
-};
-
-static SceNgs2ChannelsCount ParseChanCount(int num) {
+int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoiceWaveformBlocksParam* svwfbp) {
   LOG_USE_MODULE(libSceNgs2);
 
-  switch (num) {
-    case 1: return SceNgs2ChannelsCount::CH_1_0;
+  LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
+  LOG_TRACE(L"waveptr: %llx\n", svwfbp->data);
 
-    case 2: return SceNgs2ChannelsCount::CH_2_0;
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  auto voice = (SceNgs2Handle_voice*)voh;
 
-    case 6: return SceNgs2ChannelsCount::CH_5_1;
+  if (voice->reader == nullptr) voice->reader = std::make_unique<Reader>(voice).release();
 
-    case 8: return SceNgs2ChannelsCount::CH_7_1;
+  // svwfbp->data can be nullptr!
+  if (!voice->reader->init(svwfbp)) {
+    return Err::Ngs2::INVALID_WAVEFORM_DATA;
   }
 
-  LOG_CRIT(L"Invalid channels count sent to ParseChanCount!");
-  return SceNgs2ChannelsCount::INVALID;
+  LOG_DEBUG(L"waveptr voice:0x%08llx %llx", (uint64_t)voh, svwfbp->data);
+  return Ok;
 }
 
-static SceNgs2WaveFormType ParseWaveType(AVCodecID codec) {
-  switch (codec) {
-    case AVCodecID::AV_CODEC_ID_PCM_S8: return SceNgs2WaveFormType::PCM_I8;
-
-    case AVCodecID::AV_CODEC_ID_PCM_U8: return SceNgs2WaveFormType::PCM_U8;
-
-    case AVCodecID::AV_CODEC_ID_ATRAC9: return SceNgs2WaveFormType::ATRAC9;
-
-    default: return SceNgs2WaveFormType::NONE;
-  }
-}
-
-struct RIFFBuf {
-  const uint8_t* data;
-  size_t         size;
-  uint64_t       offset;
-};
-
-static int readbuf(void* op, uint8_t* buf, int bufsz) {
-  auto rb = (RIFFBuf*)op;
-  if (rb->offset > rb->size) return AVERROR_EOF;
-  int read = std::min(int(rb->size - rb->offset), bufsz);
-  if (read == 0) return AVERROR_EOF;
-  ::memcpy(buf, rb->data + rb->offset, read);
-  return read;
-}
-
-static int64_t seekbuf(void* op, int64_t offset, int whence) {
-  auto rb = (RIFFBuf*)op;
-  if (whence == AVSEEK_SIZE) return rb->size;
-
-  if (rb->data == nullptr || rb->size == 0) return -1;
-  if (whence == SEEK_SET)
-    rb->offset = offset;
-  else if (whence == SEEK_CUR)
-    rb->offset += offset;
-  else if (whence == SEEK_END)
-    rb->offset = rb->size - offset;
-
-  return offset;
-}
-
-static int32_t ParseData(const uint8_t* data, size_t size, SceNgs2WaveformFormat* wf) {
+int32_t voiceControl_voice(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
-  AVFormatContext* fmtctx = avformat_alloc_context();
+  LOG_DEBUG(L"voiceControl_voice id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
-  auto aBufferIo = (uint8_t*)av_malloc(4096 + AV_INPUT_BUFFER_PADDING_SIZE);
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  auto voice = (SceNgs2Handle_voice*)voh;
 
-  RIFFBuf rb {
-      .data   = data,
-      .size   = size,
-      .offset = 0,
-  };
-
-  AVIOContext* avioctx = avio_alloc_context(aBufferIo, 4096, 0, &rb, &readbuf, nullptr, &seekbuf);
-  fmtctx->pb           = avioctx;
-  fmtctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-
-  int ret = avformat_open_input(&fmtctx, "nullptr", nullptr, nullptr);
-  if (ret != 0) {
-    LOG_ERR(L"ParseRIFF: ffmpeg failed to read passed data: %d", ret);
-    return Err::Ngs2::FAIL;
+  switch ((SceNgs2VoiceParam)(phead->id & 0xFFFF)) {
+    case SceNgs2VoiceParam::SET_MATRIX_LEVELS: {
+    } break;
+    case SceNgs2VoiceParam::SET_PORT_VOLUME: {
+      // todo
+    } break;
+    case SceNgs2VoiceParam::SET_PORT_MATRIX: {
+    } break;
+    case SceNgs2VoiceParam::SET_PORT_DELAY: {
+    } break;
+    case SceNgs2VoiceParam::PATCH: {
+      auto item = (SceNgs2VoicePatchParam*)phead;
+      // todo
+    } break;
+    case SceNgs2VoiceParam::KICK_EVENT: {
+      auto item = (SceNgs2VoiceEventParam*)phead;
+      voice->ev_KickEvent((SceNgs2VoiceEvent)item->eventId);
+    } break;
+    case SceNgs2VoiceParam::SET_CALLBACK: {
+    } break;
   }
+  return Ok;
+}
 
-  AVStream* astream = nullptr;
-  for (int i = 0; fmtctx->nb_streams; i++) {
-    if (fmtctx->streams[i]->codecpar->codec_type == AVMediaType::AVMEDIA_TYPE_AUDIO) {
-      astream = fmtctx->streams[i];
-      break;
-    }
+int32_t voiceControl_mastering(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voiceControl_mastering id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
+  switch ((SceNgs2MasteringParam)(phead->id & 0xFFFF)) {
+    case SceNgs2MasteringParam::SETUP: {
+    } break;
+    case SceNgs2MasteringParam::SET_MATRIX: {
+    } break;
+    case SceNgs2MasteringParam::SET_LFE: {
+    } break;
+    case SceNgs2MasteringParam::SET_LIMITER: {
+    } break;
+    case SceNgs2MasteringParam::SET_GAIN: {
+    } break;
+    case SceNgs2MasteringParam::SET_OUTPUT: {
+    } break;
+    case SceNgs2MasteringParam::SET_PEAK_METER: {
+    } break;
   }
+  return Ok;
+}
 
-  if (astream == nullptr) {
-    LOG_ERR(L"ParseRIFF: no audio stream detected!");
-    return Err::Ngs2::FAIL;
-  }
+int32_t voiceControl_reverb(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_reverbid:%u type:%u", phead->id & 0xFFFF, voh->type);
+  return Ok;
+}
 
-  wf->info.type          = ParseWaveType(astream->codecpar->codec_id);
-  wf->info.sampleRate    = astream->codecpar->sample_rate;
-  wf->info.channelsCount = ParseChanCount(astream->codecpar->ch_layout.nb_channels);
-
-  // These are unknown for now
-  wf->loopBeginPos = wf->loopEndPos = 0;
-  wf->samplesCount                  = 0;
-  wf->offset                        = 0;
-  wf->size                          = 0;
-
-  // std::vector<AVPacket>* frames = new std::vector<AVPacket>;
-
-  // AVPacket packet;
-  // while (av_read_frame(fmtctx, &packet) >= 0) {
-  //   if (packet.stream_index == astream->index) {
-  //     frames->insert(frames->end(), packet);
-  //   }
-  //   // av_packet_unref(&packet);
-  // }
-
-  wf->numBlocks         = 0;
-  wf->block[0].userData = 0;
-  // wf->block[0].userData = (uintptr_t)frames;
-
-  av_free(avioctx);
-  avformat_close_input(&fmtctx);
+int32_t voiceControl_equalizer(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_equalizer id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
   return Ok;
 }
 
-static int32_t ProcessWaveData(WaveformInfo* wi, SceNgs2WaveformFormat* wf) {
+int32_t voiceControl_sampler(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_sampler id:%u type:%u", phead->id & 0xFFFF, voh->type);
 
-  switch (wi->type) {
-    case WAVEFORM_DATA: return ParseData((const uint8_t*)wi->ud.dataPtr, wi->size, wf);
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
 
-    default: LOG_ERR(L"Unimplemented waveform reader: %d", wi->type);
+  auto voice = (SceNgs2Handle_voice*)voh;
+
+  switch ((SceNgs2SamplerParam)(phead->id & 0xFFFF)) {
+    case SceNgs2SamplerParam::SETUP: {
+      auto item   = (SceNgs2SamplerVoiceSetupParam*)phead;
+      voice->info = item->format;
+    } break;
+    case SceNgs2SamplerParam::ADD_WAVEFORM_BLOCKS: {
+      return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
+    }
+    case SceNgs2SamplerParam::REPLACE_WAVEFORM_ADDRESS: {
+      auto item = (SceNgs2CustomSamplerVoiceWaveformAddressParam*)phead;
+      if (voice->reader != nullptr) voice->reader->setNewData(item->pDataStart, item->pDataEnd);
+    } break;
+    case SceNgs2SamplerParam::SET_WAVEFORM_FRAME_OFFSET: {
+    } break;
+    case SceNgs2SamplerParam::EXIT_LOOP: {
+    } break;
+    case SceNgs2SamplerParam::SET_PITCH: {
+    } break;
+    case SceNgs2SamplerParam::SET_ENVELOPE: {
+    } break;
+    case SceNgs2SamplerParam::SET_DISTORTION: {
+    } break;
+    case SceNgs2SamplerParam::SET_USER_FX: {
+    } break;
+    case SceNgs2SamplerParam::SET_PEAK_METER: {
+    } break;
+    case SceNgs2SamplerParam::SET_FILTER: {
+    } break;
   }
 
-  /* todo: Deal with WAV/VAG files */
-  return Err::Ngs2::INVALID_WAVEFORM_DATA;
+  return Ok;
+}
+
+int32_t voiceControl_submixer(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"voice_submixer id:%u type:%u", phead->id & 0xFFFF, voh->type);
+
+  switch ((SceNgs2SubmixerParam)(phead->id & 0xFFFF)) {
+    case SceNgs2SubmixerParam::SETUP: {
+    } break;
+    case SceNgs2SubmixerParam::SET_ENVELOPE: {
+    } break;
+    case SceNgs2SubmixerParam::SET_COMPRESSOR: {
+    } break;
+    case SceNgs2SubmixerParam::SET_DISTORTION: {
+    } break;
+    case SceNgs2SubmixerParam::SET_USER_FX: {
+    } break;
+    case SceNgs2SubmixerParam::SET_PEAK_METER: {
+    } break;
+    case SceNgs2SubmixerParam::SET_FILTER: {
+    } break;
+  }
+  return Ok;
 }
 } // namespace
+
+SceNgs2Handle_voice::~SceNgs2Handle_voice() {
+  if (reader != nullptr) delete reader;
+}
+
+void SceNgs2Handle_voice::ev_KickEvent(SceNgs2VoiceEvent id) {
+  state.bits.Inuse = true;
+  switch (id) {
+    case SceNgs2VoiceEvent::Play: {
+      state.bits.Playing = true;
+    } break;
+    case SceNgs2VoiceEvent::Stop: {
+      state.bits.Stopped = true;
+      state.bits.Playing = false;
+    } break;
+    case SceNgs2VoiceEvent::Stop_imm: {
+      state.bits.Stopped = true;
+      state.bits.Playing = false;
+    } break;
+    case SceNgs2VoiceEvent::Kill: {
+      state.bits.Stopped = true;
+      state.bits.Playing = false;
+    } break;
+    case SceNgs2VoiceEvent::Pause: {
+      state.bits.Paused = true;
+    } break;
+    case SceNgs2VoiceEvent::Resume: {
+      state.bits.Paused = false;
+    } break;
+  }
+  LOG_USE_MODULE(libSceNgs2);
+  LOG_DEBUG(L"set state voice:0x%08llx id:%u state:%x", (uint64_t)this, id, state.data);
+}
 
 extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceNgs2";
+
+// ### Create
+EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
+  if (cbi == nullptr) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+  if (ro != nullptr && ro->size < sizeof(SceNgs2RackOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+
+  auto const numVoices = ro != nullptr ? ro->maxVoices : SceNgs2RackOption().maxVoices;
+  cbi->hostBufferSize  = sizeof(SceNgs2Handle_rack);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize(const SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi) {
+  if (cbi == nullptr) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+  cbi->hostBufferSize = sizeof(SceNgs2Handle_system);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+
+  boost::unique_lock lock(MUTEX_INT);
+
+  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
+  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+
+  SceNgs2ContextBufferInfo cbi = {
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle_system),
+      .userData       = alloc->userData,
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2System: Allocation failed!");
+    return ret;
+  }
+
+  *outh = new (cbi.hostBuffer) SceNgs2Handle_system(alloc);
+  getPimpl()->handles.emplace(*outh);
+
+  LOG_DEBUG(L"-> System: 0x%08llx", (uint64_t)*outh);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, const SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+  boost::unique_lock lock(MUTEX_INT);
+
+  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
+  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+
+  *outh = new (cbi->hostBuffer) SceNgs2Handle_system(nullptr);
+  getPimpl()->handles.emplace(*outh);
+
+  LOG_DEBUG(L"-> System: 0x%08llx", (uint64_t)*outh);
+  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ropt, const SceNgs2ContextBufferInfo* cbi,
+                                          SceNgs2Handle** outh) {
+  LOG_USE_MODULE(libSceNgs2);
+  boost::unique_lock lock(MUTEX_INT);
+
+  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
+  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
+  if (ropt != nullptr && ropt->size < sizeof(SceNgs2RackOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
+  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+  auto system = (SceNgs2Handle_system*)sysh;
+
+  *outh = new (cbi->hostBuffer) SceNgs2Handle_rack(system, ropt, rackId);
+  getPimpl()->handles.emplace(*outh);
+
+  auto rack = (SceNgs2Handle_rack*)(*outh);
+
+  // Add to system
+  if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING) {
+    system->mastering = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_SAMPLER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SAMPLER) {
+    system->sampler = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_SUBMIXER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER) {
+    system->submixer = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_REVERB) {
+    system->reverb = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_EQ) {
+    system->equalizer = rack;
+  } else {
+    LOG_ERR(L"-> Rack: undefined rackid %u", rackId);
+    return Err::Ngs2::FAIL;
+  }
+
+  LOG_DEBUG(L"-> Rack: system:0x%08llx rack:0x%08llx id:0x%x", (uint64_t)sysh, (uint64_t)*outh, rackId);
+  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
+}
+
+EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
+                                                       SceNgs2Handle** outh) {
+  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
+  if (alloc == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
+  LOG_USE_MODULE(libSceNgs2);
+  boost::unique_lock lock(MUTEX_INT);
+
+  auto system = (SceNgs2Handle_system*)sysh;
+
+  SceNgs2ContextBufferInfo cbi = {
+      .hostBuffer     = nullptr,
+      .hostBufferSize = sizeof(SceNgs2Handle_rack),
+      .userData       = alloc->userData,
+  };
+
+  if (auto ret = alloc->allocHandler(&cbi)) {
+    LOG_ERR(L"Ngs2Rack: Allocation failed!");
+    return ret;
+  }
+
+  *outh = new (cbi.hostBuffer) SceNgs2Handle_rack(system, ro, rackId);
+  getPimpl()->handles.emplace(*outh);
+
+  auto rack = (SceNgs2Handle_rack*)(*outh);
+
+  // Add to system
+  if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING) {
+    system->mastering = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_SAMPLER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SAMPLER) {
+    system->sampler = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_SUBMIXER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER) {
+    system->submixer = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_REVERB) {
+    system->reverb = rack;
+  } else if (rackId == SCE_NGS2_RACK_ID_EQ) {
+    system->equalizer = rack;
+  } else {
+    LOG_ERR(L"-> Rack: undefined rackid %u", rackId);
+    return Err::Ngs2::FAIL;
+  }
+
+  LOG_DEBUG(L"-> Rack: system:0x%08llx rack:0x%08llx id:0x%x", (uint64_t)sysh, (uint64_t)*outh, rackId);
+  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
+}
+
+// --- create
 
 EXPORT SYSV_ABI int32_t sceNgs2ReportRegisterHandler(uint32_t type, SceNgs2ReportHandler func, uintptr_t userData, SceNgs2Handle** outh) {
   LOG_USE_MODULE(libSceNgs2);
@@ -197,27 +377,77 @@ EXPORT SYSV_ABI int32_t sceNgs2CustomRackGetModuleInfo(SceNgs2Handle* rh, uint32
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceNgs2WaveformFormat* wf) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
+// ### WAVE File parsing
 
+/**
+ * @brief Parse the wave (file) data
+ *
+ * @param ptr Game/Application reads (file) and exposes the data pointer
+ * @param size size of data(file)
+ * @param wf
+ * @return result
+ */
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformData(const void* ptr, size_t size, SceNgs2WaveformFormat* wf) {
   if (ptr == nullptr) {
     return Err::Ngs2::INVALID_BUFFER_ADDRESS;
   }
+  boost::unique_lock lock(MUTEX_INT);
 
-  WaveformInfo wi {
-      .type = WAVEFORM_DATA,
-      .ud   = {.dataPtr = ptr},
-      .size = size,
+  userData_inerBuffer userData {ptr, size, 0};
+  return parseRiffWave(readFunc_linearBuffer, seekFunc_linearBuffer, &userData, wf);
+}
+
+/**
+ * @brief Parse the wave file
+ *
+ * @param ptr Game/Application reads file and exposes the data pointer
+ * @param offset offset of file
+ * @param wf
+ * @return result
+ */
+
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceNgs2WaveformFormat* wf) {
+  boost::unique_lock lock(MUTEX_INT);
+
+  filesystem::SceOpen const fileFlags {
+      .mode = filesystem::SceOpenMode::RDONLY,
   };
 
-  return ProcessWaveData(&wi, wf);
+  auto fileHandle = filesystem::open(path, fileFlags, 0);
+  if (fileHandle < 0) return Err::Ngs2::INVALID_WAVEFORM_DATA;
+
+  if (offset != 0) filesystem::lseek(fileHandle, offset, (int)SceWhence::beg);
+  return parseRiffWave(readFunc_file, seekFunc_file, reinterpret_cast<void*>(fileHandle), wf);
 }
+
+/**
+ * @brief Parse the wave file using the provided function
+ *
+ * @param func Game/Application reads file and exposes the data pointer
+ * @param userData_ offset of file
+ * @param wf
+ * @return result
+ */
+
+EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc func, uintptr_t userData_, SceNgs2WaveformFormat* wf) {
+  if (func == nullptr) {
+    return Err::Ngs2::INVALID_BUFFER_ADDRESS;
+  }
+  boost::unique_lock lock(MUTEX_INT);
+
+  userData_user userData {func, userData_, 0};
+  return parseRiffWave(readFunc_user, seekFunc_user, (void*)&userData, wf);
+}
+
+// - wave parsing
 
 EXPORT SYSV_ABI int32_t sceNgs2GetWaveformFrameInfo(const SceNgs2WaveformInfo* fmt, uint32_t* outFrameSize, uint32_t* outNumFrameSamples,
                                                     uint32_t* outUnitsPerFrame, uint32_t* outNumDelaySamples) {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  boost::unique_lock lock(MUTEX_INT);
+
   if (outFrameSize) *outFrameSize = 1; // Some games crashes with divide by zero exception if we set 0 here
   if (outNumFrameSamples) *outNumFrameSamples = 0;
   if (outUnitsPerFrame) *outUnitsPerFrame = 0;
@@ -236,44 +466,6 @@ EXPORT SYSV_ABI int32_t sceNgs2PanInit() {
   LOG_USE_MODULE(libSceNgs2);
   LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformFile(const char* path, long offset, SceNgs2WaveformFormat* wf) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-
-  filesystem::SceOpen flags {
-      .mode = filesystem::SceOpenMode::RDONLY,
-  };
-
-  WaveformInfo wi {
-      .type   = WAVEFORM_DATA,
-      .ud     = {.fileHandle = filesystem::open(path, flags, {})},
-      .offset = offset,
-  };
-
-  if (wi.ud.fileHandle == 0) {
-    return Err::Ngs2::INVALID_WAVEFORM_DATA;
-  }
-
-  return ProcessWaveData(&wi, wf);
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2ParseWaveformUser(SceWaveformUserFunc* user, size_t size, SceNgs2WaveformFormat* wf) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-
-  if (user == nullptr) {
-    return Err::Ngs2::INVALID_BUFFER_ADDRESS;
-  }
-
-  WaveformInfo wi {
-      .type = WAVEFORM_USER,
-      .ud   = {.userFunc = user},
-      .size = size,
-  };
-
-  return ProcessWaveData(&wi, wf);
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackGetInfo(SceNgs2Handle* rh, SceNgs2RackInfo* outi, size_t infosz) {
@@ -296,12 +488,18 @@ EXPORT SYSV_ABI int32_t sceNgs2RackGetUserData(SceNgs2Handle* rh, uintptr_t* use
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2RackGetVoiceHandle(SceNgs2Handle* rh, uint32_t voiceId, SceNgs2Handle** outh) {
-  if (rh == nullptr) return Err::Ngs2::INVALID_RACK_HANDLE;
-  if (voiceId > rh->un.rack.info.maxVoices) return Err::Ngs2::INVALID_VOICE_INDEX;
   LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-  // todo: write to outh voice handle from rack
-  *outh = &rh->un.rack.voices[voiceId];
+  boost::unique_lock lock(MUTEX_INT);
+
+  if (rh == nullptr || rh->type != SceNgs2HandleType::Rack) return Err::Ngs2::INVALID_RACK_HANDLE;
+
+  auto rack = (SceNgs2Handle_rack*)rh;
+  if (voiceId > rack->options.maxVoices) return Err::Ngs2::INVALID_VOICE_INDEX;
+
+  *outh = &rack->voices.emplace(std::make_pair(voiceId, rack)).first->second;
+
+  getPimpl()->handles.emplace(*outh);
+  LOG_DEBUG(L"-> GetVoiceHandle: rack:0x%08llx id:%u @0x%08llx", (uint64_t)rh, voiceId, (uint64_t)*outh);
   return Ok;
 }
 
@@ -359,22 +557,36 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemUnlock(SceNgs2Handle* sysh) {
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemRender(SceNgs2Handle* sysh, SceNgs2RenderBufferInfo* rbi, int32_t count) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
+  boost::unique_lock lock(MUTEX_INT);
+  auto               system = (SceNgs2Handle_system*)sysh;
+  if (system == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
   if (rbi->bufferPtr == nullptr) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
   if (rbi->bufferSize == 0) return Err::Ngs2::INVALID_BUFFER_SIZE;
   if (rbi->waveType >= SceNgs2WaveFormType::MAX_TYPES) return Err::Ngs2::INVALID_WAVEFORM_TYPE;
   if (rbi->channelsCount > SceNgs2ChannelsCount::CH_7_1) return Err::Ngs2::INVALID_NUM_CHANNELS;
 
-  for (int32_t i = 0; i < count; i++) {
-    if (rbi[i].bufferPtr != nullptr) {
-      std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
+  uint32_t const numSamples = rbi->bufferSize / ((uint32_t)rbi->channelsCount * getSampleBytes(rbi->waveType));
+
+  if (system->sampler == nullptr) {
+    //
+    for (int32_t i = 0; i < count; i++) {
+      if (rbi[i].bufferPtr != nullptr) {
+        std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
+      }
+    }
+
+  } else {
+    for (int32_t i = 0; i < count; i++) {
+      if (rbi[i].bufferPtr != nullptr) {
+        std::memset(rbi[i].bufferPtr, 0, rbi[i].bufferSize);
+        for (auto& voice: system->sampler->voices) {
+          if (voice.second.reader != nullptr) {
+            // voice.second.reader->getAudio(&rbi[i], numSamples);
+          }
+        }
+      }
     }
   }
-
-  // todo: ffmpeg should convert all the wave data to `rbi->waveType`
-
   return Ok;
 }
 
@@ -408,36 +620,80 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceGetPortInfo(SceNgs2Handle** vh, uint32_t por
   return Ok;
 }
 
-static int32_t _voiceControlWaveformBlock(SceNgs2Handle* voh, const SceNgs2SamplerVoiceWaveformBlocksParam* svwfbp) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"waveblock: %d\n", svwfbp->numBlocks);
-  if (svwfbp->aBlock) LOG_TRACE(L"waveptr: %llx\n", svwfbp->aBlock[0].userData);
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2VoiceParamHead* phead) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-  switch (phead->id) {
-    case SCE_NGS2_SAMPLER_VOICE_ADD_WAVEFORM_BLOCKS: return _voiceControlWaveformBlock(voh, (const SceNgs2SamplerVoiceWaveformBlocksParam*)phead);
+  boost::unique_lock lock(MUTEX_INT);
 
-    case (uint32_t)SceNgs2VoiceParam::SET_PORT_VOLUME: break;
+  if (voh == nullptr) return getErr(ErrCode::_EINVAL);
+  uint16_t const rackId_ = phead->id >> 16;
 
-    default: LOG_TRACE(L"Unhandled voice control command: (%p, %08x)", voh, phead->id);
+  auto    curItem = phead;
+  int32_t ret     = Ok;
+  while (true) {
+    uint16_t const rackId = curItem->id >> 16;
+
+    if (rackId == SCE_NGS2_RACK_ID_VOICE)
+      ret = voiceControl_voice(voh, curItem);
+    else if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING)
+      ret = voiceControl_mastering(voh, curItem);
+    else if (rackId == SCE_NGS2_RACK_ID_SAMPLER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SAMPLER)
+      ret = voiceControl_sampler(voh, curItem);
+    else if (rackId == SCE_NGS2_RACK_ID_SUBMIXER || rackId == SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER)
+      ret = voiceControl_submixer(voh, curItem);
+    else if (rackId == SCE_NGS2_RACK_ID_REVERB)
+      ret = voiceControl_reverb(voh, curItem);
+    else if (rackId == SCE_NGS2_RACK_ID_EQ)
+      ret = voiceControl_equalizer(voh, curItem);
+    else
+      LOG_ERR(L"Unhandled rackId: %08x", rackId);
+
+    if (curItem->next == 0 || ret != Ok) break;
+
+    curItem = (SceNgs2VoiceParamHead*)((uint64_t)curItem + curItem->next);
   }
 
-  return Ok;
+  return ret;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2VoiceGetState(SceNgs2Handle* voh, SceNgs2VoiceState* state, size_t size) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  boost::unique_lock lock(MUTEX_INT);
+
+  if (voh == nullptr || state == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto pimpl = getPimpl();
+  if (auto it = pimpl->handles.find(voh); it == pimpl->handles.end()) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+
+  auto voice = (SceNgs2Handle_voice*)voh;
+  if (voice->reader != nullptr) {
+    if (size != sizeof(SceNgs2SamplerVoiceState)) return getErr(ErrCode::_EINVAL);
+
+    voice->reader->getState((SceNgs2SamplerVoiceState*)state);
+    return Ok;
+  }
+
+  state->stateFlags = voice->state.data;
+
+  // LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, state->stateFlags);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2VoiceGetStateFlags(SceNgs2Handle* voh, uint32_t* flags) {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
+
+  boost::unique_lock lock(MUTEX_INT);
+  if (voh == nullptr || flags == nullptr) return getErr(ErrCode::_EINVAL);
+
+  auto pimpl = getPimpl();
+  if (auto it = pimpl->handles.find(voh); it == pimpl->handles.end()) return Err::Ngs2::INVALID_VOICE_HANDLE;
+  if (voh->type != SceNgs2HandleType::Voice) return Err::Ngs2::INVALID_VOICE_HANDLE;
+
+  auto voice = (SceNgs2Handle_voice*)voh;
+  *flags     = voice->state.data;
+
+  // LOG_DEBUG(L"state voice:0x%08llx state:%x", (uint64_t)voh, *flags);
   return Ok;
 }
 
@@ -449,7 +705,7 @@ EXPORT SYSV_ABI int32_t sceNgs2GeomApply() {
 
 EXPORT SYSV_ABI int32_t sceNgs2GeomCalcListener() {
   LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
@@ -465,158 +721,54 @@ EXPORT SYSV_ABI int32_t sceNgs2GeomResetSourceParam(SceNgs2GeomSourceParam* para
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNgs2RackCreate(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ropt, const SceNgs2ContextBufferInfo* cbi,
-                                          SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %d, %p, %p, %p)", __FUNCTION__, sysh, rackId, ropt, cbi, outh);
-  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
-  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
-  if (ropt != nullptr && ropt->size < sizeof(SceNgs2RackOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
-  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
-
-  *outh                       = (SceNgs2Handle*)cbi->hostBuffer;
-  (*outh)->allocSet           = false;
-  (*outh)->alloc.allocHandler = nullptr;
-  (*outh)->alloc.freeHandler  = nullptr;
-  (*outh)->alloc.userData     = nullptr;
-  (*outh)->owner              = sysh;
-
-  if (ropt != nullptr) {
-    (*outh)->un.rack.info.maxPorts        = ropt->maxPorts;
-    (*outh)->un.rack.info.maxMatrices     = ropt->maxMatrices;
-    (*outh)->un.rack.info.maxGrainSamples = ropt->maxGrainSamples;
-    (*outh)->un.rack.info.maxVoices       = ropt->maxVoices;
-  } else {
-    (*outh)->un.rack.info.maxPorts        = 1;
-    (*outh)->un.rack.info.maxMatrices     = 1;
-    (*outh)->un.rack.info.maxGrainSamples = 1;
-    (*outh)->un.rack.info.maxVoices       = 1;
-  }
-
-  auto vo = (*outh)->un.rack.voices = new SceNgs2Handle;
-  vo->allocSet                      = false;
-  vo->alloc.allocHandler            = nullptr;
-  vo->alloc.freeHandler             = nullptr;
-  vo->alloc.userData                = nullptr;
-
-  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2RackCreateWithAllocator(SceNgs2Handle* sysh, uint32_t rackId, const SceNgs2RackOption* ro, const SceNgs2BufferAllocator* alloc,
-                                                       SceNgs2Handle** outh) {
-  if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
-  if (alloc == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_TRACE(L"todo %S", __FUNCTION__);
-
-  SceNgs2ContextBufferInfo cbi = {
-      .hostBuffer     = nullptr,
-      .hostBufferSize = sizeof(SceNgs2Handle),
-      .userData       = alloc->userData,
-  };
-
-  if (auto ret = alloc->allocHandler(&cbi)) {
-    LOG_ERR(L"Ngs2Rack: Allocation failed!");
-    return ret;
-  }
-
-  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
-  (*outh)->owner    = sysh;
-  (*outh)->allocSet = true;
-  (*outh)->alloc    = *alloc;
-  (*outh)->cbi      = cbi;
-
-  cbi.hostBufferSize = sizeof(SceNgs2Handle) * ((ro != nullptr) ? ro->maxVoices : 1);
-
-  if (auto ret = alloc->allocHandler(&cbi)) {
-    LOG_ERR(L"Ngs2Rack: Voice allocation failed");
-    return ret;
-  }
-
-  auto vo = (*outh)->un.rack.voices = (SceNgs2Handle*)cbi.hostBuffer;
-  vo->allocSet                      = true;
-  vo->alloc                         = *alloc;
-
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceNgs2RackDestroy(SceNgs2Handle* rh, SceNgs2ContextBufferInfo* cbi) {
-  if (rh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
-  if (rh->allocSet) {
-    cbi->hostBufferSize = sizeof(SceNgs2Handle);
-    cbi->hostBuffer     = rh->un.rack.voices;
-    if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
-    cbi->hostBuffer = rh;
-    if (auto ret = rh->alloc.freeHandler(cbi)) return ret;
-  } else {
-    if (rh->un.rack.voices != nullptr) delete rh->un.rack.voices;
+  if (rh == nullptr) return Err::Ngs2::INVALID_RACK_HANDLE;
+  boost::unique_lock lock(MUTEX_INT);
+
+  auto rack = (SceNgs2Handle_rack*)rh;
+
+  auto freeHandler = rack->parent->alloc.freeHandler;
+
+  int32_t ret = Ok;
+
+  for (auto voice: rack->voices) {
+    getPimpl()->handles.erase(&voice.second);
   }
 
-  return Ok;
-}
+  getPimpl()->handles.erase(rh);
+  if (freeHandler != nullptr) {
+    SceNgs2ContextBufferInfo cbi = {
+        .hostBuffer     = rack,
+        .hostBufferSize = sizeof(SceNgs2Handle_rack),
+    };
+    rack->~SceNgs2Handle_rack();
+    ret = freeHandler(&cbi);
+  } else
+    rack->~SceNgs2Handle_rack();
 
-EXPORT SYSV_ABI int32_t sceNgs2RackQueryBufferSize(uint32_t rackId, const SceNgs2RackOption* ro, SceNgs2ContextBufferInfo* cbi) {
-  cbi->hostBufferSize = sizeof(SceNgs2Handle);
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOption* sysopt, SceNgs2BufferAllocator* alloc, SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, alloc, outh);
-  if (alloc == nullptr || alloc->allocHandler == nullptr) return Err::Ngs2::INVALID_BUFFER_ALLOCATOR;
-  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
-
-  SceNgs2ContextBufferInfo cbi = {
-      .hostBuffer     = nullptr,
-      .hostBufferSize = sizeof(SceNgs2Handle),
-      .userData       = alloc->userData,
-  };
-
-  if (auto ret = alloc->allocHandler(&cbi)) {
-    LOG_ERR(L"Ngs2System: Allocation failed!");
-    return ret;
-  }
-
-  *outh             = (SceNgs2Handle*)cbi.hostBuffer;
-  (*outh)->owner    = nullptr;
-  (*outh)->allocSet = true;
-  (*outh)->alloc    = *alloc;
-  (*outh)->cbi      = cbi;
-
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, const SceNgs2ContextBufferInfo* cbi, SceNgs2Handle** outh) {
-  LOG_USE_MODULE(libSceNgs2);
-  LOG_ERR(L"todo %S(%p, %p, %p)", __FUNCTION__, sysopt, cbi, outh);
-  if (outh == nullptr) return Err::Ngs2::INVALID_OUT_ADDRESS;
-  if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
-  if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
-
-  *outh             = (SceNgs2Handle*)cbi->hostBuffer;
-  (*outh)->allocSet = false;
-  (*outh)->owner    = nullptr;
-
-  return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;
+  return ret;
 }
 
 EXPORT SYSV_ABI int32_t sceNgs2SystemDestroy(SceNgs2Handle* sysh, SceNgs2ContextBufferInfo* cbi) {
   if (sysh == nullptr) return Err::Ngs2::INVALID_SYSTEM_HANDLE;
-  if (sysh->allocSet) {
-    cbi->hostBuffer     = sysh;
-    cbi->hostBufferSize = sizeof(SceNgs2Handle);
-    if (auto ret = sysh->alloc.freeHandler(cbi)) return ret;
-  } else {
-    delete sysh;
-  }
+  boost::unique_lock lock(MUTEX_INT);
 
-  return Ok;
-}
+  auto system = (SceNgs2Handle_system*)sysh;
+  getPimpl()->handles.erase(system);
 
-EXPORT SYSV_ABI int32_t sceNgs2SystemQueryBufferSize(const SceNgs2SystemOption* sysopt, SceNgs2ContextBufferInfo* cbi) {
-  if (cbi == nullptr) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
-  cbi->hostBufferSize = sizeof(SceNgs2Handle);
-  return Ok;
+  auto freeHandler = system->alloc.freeHandler;
+
+  int32_t ret = Ok;
+  if (freeHandler != nullptr) {
+    SceNgs2ContextBufferInfo cbi = {
+        .hostBuffer     = system,
+        .hostBufferSize = sizeof(SceNgs2Handle_system),
+    };
+    system->~SceNgs2Handle_system();
+    ret = freeHandler(&cbi);
+  } else
+    system->~SceNgs2Handle_system();
+
+  return ret;
 }
 }

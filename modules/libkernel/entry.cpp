@@ -62,7 +62,7 @@ EXPORT SYSV_ABI void __NID(__stack_chk_fail)() {
 
 EXPORT SYSV_ABI void __NID(_exit)(int code) {
   LOG_USE_MODULE(libkernel);
-  LOG_INFO(L"exit code:%d", code);
+  LOG_ERR(L"exit code:%d", code);
 
   ::exit(code);
 }

@@ -87,6 +87,7 @@ EXPORT SYSV_ABI int32_t scePlayGoSetInstallSpeed(ScePlayGoHandle handle, ScePlay
 EXPORT SYSV_ABI int32_t scePlayGoGetInstallSpeed(ScePlayGoHandle handle, ScePlayGoInstallSpeed* speed) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *speed = 2;
   return Ok;
 }
 

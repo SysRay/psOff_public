@@ -40,6 +40,14 @@ EXPORT SYSV_ABI int __NID(sem_post)(boost::interprocess::interprocess_semaphore*
   return Ok;
 }
 
+EXPORT SYSV_ABI int __NID(sem_getvalue)(boost::interprocess::interprocess_semaphore** sem) {
+  if (sem == nullptr || *sem == nullptr) {
+    return POSIX_SET(ErrCode::_ESRCH);
+  }
+  return (*sem)->get_count();
+  return Ok;
+}
+
 EXPORT SYSV_ABI int __NID(sem_reltimedwait_np)(boost::interprocess::interprocess_semaphore** sem, SceKernelTimespec* reltime) {
   auto now     = boost::posix_time::microsec_clock::universal_time();
   auto timeout = boost::posix_time::seconds(reltime->tv_sec) + boost::posix_time::microsec(reltime->tv_nsec / 1000);

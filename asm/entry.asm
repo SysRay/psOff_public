@@ -15,7 +15,9 @@ jmpEntry PROC
   AND RSP, -10h
 
   ; copy entry param to stack
-  ADD RSP, 24
+  ADD RSP, 40
+  push [RSI+24]
+  push [RSI+16]
   push [RSI+8]
   push [RSI]
   ; -

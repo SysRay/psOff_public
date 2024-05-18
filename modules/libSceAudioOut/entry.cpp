@@ -19,8 +19,8 @@ struct PortOut {
   int                    userId         = 0;
   SceAudioOutPortType    type           = SceAudioOutPortType::MAIN;
   uint8_t                sampleSize     = 0;
+  uint32_t               sampleRate     = 0;
   uint32_t               samplesNum     = 0;
-  uint32_t               freq           = 0;
   uint32_t               queued         = 0;
   SceAudioOutParamFormat format         = SceAudioOutParamFormat::FLOAT_MONO;
   uint64_t               lastOutputTime = 0;
@@ -31,6 +31,8 @@ struct PortOut {
   float                  volumeModifier = 0.5f;
   std::vector<uint8_t>   mixedAudio;
   std::string            deviceName;
+
+  SDL_AudioSpec audioSpec;
 };
 
 class PortsOut {
@@ -70,16 +72,7 @@ class PortsOut {
        */
       if (port.deviceName.compare(0, std::string::npos, devName, 0, port.deviceName.length()) != 0) continue;
 
-      SDL_AudioSpec fmt {
-          .freq     = static_cast<int>(port.freq),
-          .format   = port.sdlFormat,
-          .channels = static_cast<uint8_t>(port.channelsNum),
-          .samples  = static_cast<uint16_t>(port.samplesNum),
-          .callback = nullptr,
-          .userdata = nullptr,
-      };
-
-      if ((port.device = SDL_OpenAudioDevice(devName, 0, &fmt, NULL, 0)) == 0) {
+      if ((port.device = SDL_OpenAudioDevice(devName, 0, &port.audioSpec, NULL, 0)) == 0) {
         LOG_ERR(L"Failed to reopen %S audio device: %S", devName, SDL_GetError());
         return;
       }
@@ -167,7 +160,7 @@ void syncPort(PortOut* port) {
   const uint32_t bytesize     = bytesize_1ch * port->channelsNum;
 
   if (port->device == 0) {
-    float duration = bytesize_1ch / float(port->freq * port->sampleSize);
+    float duration = bytesize_1ch / float(port->sampleRate * port->sampleSize);
     SDL_Delay(int(duration * 1000)); // Pretending that we playing something
     return;
   }
@@ -200,12 +193,11 @@ int writeOut(PortOut* port, const void* ptr, bool sync = true) {
     return port->samplesNum;
   }
 
-  const uint32_t bytesize  = bytesize_1ch * port->channelsNum;
-  const int      maxVolume = SDL_MIX_MAXVOLUME * port->volumeModifier;
-  auto&          mixed     = port->mixedAudio;
+  const int maxVolume = SDL_MIX_MAXVOLUME * port->volumeModifier;
+  auto&     mixed     = port->mixedAudio;
   std::fill(mixed.begin(), mixed.end(), 0);
 
-  for (int i = 0; i < port->channelsNum; i++) {
+  for (int i = 0; i < port->audioSpec.channels; i++) {
     auto ch_offset = i * bytesize_1ch;
     SDL_MixAudioFormat(mixed.data() + ch_offset, ((const uint8_t*)ptr) + ch_offset, port->sdlFormat, bytesize_1ch,
                        maxVolume * ((float)port->volume[i] / AudioOut::VOLUME_0DB));
@@ -213,7 +205,7 @@ int writeOut(PortOut* port, const void* ptr, bool sync = true) {
 
   if (SDL_GetAudioDeviceStatus(port->device) != SDL_AUDIO_PLAYING) SDL_PauseAudioDevice(port->device, 0);
 
-  int ret = SDL_QueueAudio(port->device, mixed.data(), bytesize);
+  int ret = SDL_QueueAudio(port->device, mixed.data(), port->audioSpec.size);
   if (ret == 0) port->queued = SDL_GetQueuedAudioSize(port->device);
   if (sync) syncPort(port);
 
@@ -237,7 +229,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   return Err::AudioOut::OUT_OF_MEMORY;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, uint32_t param) {
+EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t numSamples, uint32_t sampleRate, uint32_t param) {
   if (!audioInited) return Err::AudioOut::NOT_INIT;
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
@@ -260,8 +252,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
   int handle;
   if (auto port = pimpl->portsOut.AcquirePort(type, &handle)) {
     port->userId     = userId;
-    port->samplesNum = len;
-    port->freq       = freq;
+    port->samplesNum = numSamples;
+    port->sampleRate = sampleRate;
     port->format     = SceAudioOutParamFormat(param & 0x0000007F);
 
     if ((param & 0x000F0000) != 0) {
@@ -322,6 +314,15 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       port->volumeModifier = 0.5f;
     }
 
+    SDL_AudioSpec audioSpec = {
+        .freq     = static_cast<int>(sampleRate),
+        .format   = port->sdlFormat,
+        .channels = static_cast<uint8_t>(port->channelsNum),
+        .samples  = static_cast<uint16_t>(port->samplesNum),
+        .callback = nullptr,
+        .userdata = nullptr,
+    };
+
     if (type == SceAudioOutPortType::PADSPK) {
       auto& devn = (*jData)["padspeakers"][userId - 1];
 
@@ -344,9 +345,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         port->volume[i] = AudioOut::MIXLEVEL_PADSPK_0DB;
       }
     } else {
-      SDL_AudioSpec fmt_curr;
       if ((*jData)["device"] == "[default]") {
-        if (SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0) != 0) {
+        if (SDL_GetDefaultAudioInfo((char**)&dname, &port->audioSpec, 0) != 0) {
           LOG_ERR(L"Failed to get the default audio device, port #%d is nulled! (%S)", handle, SDL_GetError());
           port->device = 0;
           return handle;
@@ -362,7 +362,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
         } catch (const json::exception& e) {
           LOG_ERR(L"Invalid audio device name: %S, falling back to default", e.what());
           dname = NULL;
-          if (SDL_GetDefaultAudioInfo((char**)&dname, &fmt_curr, 0) != 0) {
+          if (SDL_GetDefaultAudioInfo((char**)&dname, &port->audioSpec, 0) != 0) {
             LOG_ERR(L"Falling back to default device failed, port #%d is nulled! (%S)", handle, SDL_GetError());
             port->device = 0;
             return handle;
@@ -375,16 +375,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       }
     }
 
-    SDL_AudioSpec fmt {
-        .freq     = static_cast<int>(freq),
-        .format   = port->sdlFormat,
-        .channels = static_cast<uint8_t>(port->channelsNum),
-        .samples  = static_cast<uint16_t>(port->samplesNum),
-        .callback = nullptr,
-        .userdata = nullptr,
-    };
-
-    if ((port->device = SDL_OpenAudioDevice(dname, 0, &fmt, NULL, 0)) == 0) {
+    if ((port->device = SDL_OpenAudioDevice(dname, 0, &audioSpec, &port->audioSpec, 0)) == 0) {
       LOG_ERR(L"Failed to open %S audio device: %S", getDevName(type), SDL_GetError());
       // Since audio connect/disconnect event is implemented now, we can fall through there.
       // The audio device will be opened automatically when available.
@@ -392,7 +383,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
       LOG_INFO(L"%S audio device %S opened for user #%d", getDevName(type), dname, userId);
     }
 
-    port->mixedAudio.resize(port->sampleSize * port->samplesNum * port->channelsNum);
+    port->mixedAudio.resize(port->audioSpec.size);
     port->deviceName.assign(dname);
     return handle;
   }
