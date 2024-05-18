@@ -229,7 +229,8 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   return Err::AudioOut::OUT_OF_MEMORY;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t numSamples, uint32_t sampleRate, uint32_t param) {
+EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, uint32_t param) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
@@ -391,6 +392,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
   auto pimpl = getData();
@@ -400,6 +402,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutClose(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   auto pimpl = getData();
 
   // boost::unique_lock const lock(pimpl->mutexInt);
@@ -407,6 +410,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutput(int32_t handle, const void* ptr) {
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32_t* vol) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   LOG_USE_MODULE(libSceAudioOut);
   auto pimpl = getData();
 
@@ -437,6 +441,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetVolume(int32_t handle, int32_t flag, int32
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32_t num) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   if (param == nullptr) return Err::AudioOut::INVALID_POINTER;
   if (num == 0) return Err::AudioOut::PORT_FULL;
   auto pimpl = getData();
@@ -468,6 +473,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutOutputs(SceAudioOutOutputParam* param, uint32
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* outputTime) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   auto pimpl = getData();
 
   boost::unique_lock const lock(pimpl->mutexInt);
@@ -481,6 +487,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetLastOutputTime(int32_t handle, uint64_t* o
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mixLevel) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   auto pimpl = getData();
 
   boost::unique_lock const lock(pimpl->mutexInt);
@@ -495,6 +502,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutSetMixLevelPadSpk(int32_t handle, int32_t mix
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortState* state) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   auto pimpl = getData();
 
   boost::unique_lock const lock(pimpl->mutexInt);
@@ -510,16 +518,19 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetPortState(int32_t handle, SceAudioOutPortS
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   state->loudness = -70.0f;
 
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetSystemDebugState(SceAudioOutSystemDebugStateElement elem, SceAudioOutSystemDebugStateParam* param) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutMasteringTerm() {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
   return Ok;
 }
 }
