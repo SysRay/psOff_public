@@ -229,7 +229,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutInit(void) {
   return Err::AudioOut::OUT_OF_MEMORY;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t len, uint32_t freq, uint32_t param) {
+EXPORT SYSV_ABI int32_t sceAudioOutOpen(int32_t userId, SceAudioOutPortType type, int32_t index, uint32_t numSamples, uint32_t sampleRate, uint32_t param) {
   if (!audioInited) return Err::AudioOut::NOT_INIT;
   LOG_USE_MODULE(libSceAudioOut);
   LOG_TRACE(L"%S", __FUNCTION__);
