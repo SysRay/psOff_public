@@ -11,6 +11,7 @@ add_subdirectory(timer)
 add_subdirectory(systemContent)
 add_subdirectory(networking)
 add_subdirectory(hotkeys)
+add_subdirectory(ipc)
 add_subdirectory(trophies)
 add_subdirectory(fileManager)
 add_subdirectory(memory)
@@ -26,6 +27,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:systemContent>
   $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:hotkeys>
+  $<TARGET_OBJECTS:ipc>
   $<TARGET_OBJECTS:trophies>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>

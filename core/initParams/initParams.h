@@ -22,6 +22,7 @@ class InitParams {
   std::string getApplicationPath();
   std::string getApplicationRoot();
   std::string getUpdateRoot();
+  std::string getPipeName();
 
   bool enableValidation();
   bool enableBrightness();

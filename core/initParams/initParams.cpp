@@ -33,6 +33,7 @@ bool InitParams::init(int argc, char** argv) {
   ("file", po::value<std::string>(), "fullpath to applications binary")
   ("root", po::value<std::string>(), "Applications root")
   ("update", po::value<std::string>(), "update files folder")
+  ("pipe", po::value<std::string>(), "Communication pipe name")
       // clang-format on
       ;
 
@@ -75,6 +76,10 @@ std::string InitParams::getApplicationRoot() {
 
 std::string InitParams::getUpdateRoot() {
   return _pImpl->m_vm.count("update") ? _pImpl->m_vm["update"].as<std::string>() : std::string();
+}
+
+std::string InitParams::getPipeName() {
+  return _pImpl->m_vm.count("pipe") ? _pImpl->m_vm["pipe"].as<std::string>() : std::string();
 }
 
 bool InitParams::enableValidation() {

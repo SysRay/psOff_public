@@ -2,6 +2,7 @@
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
+#include "core/ipc/ipc.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
@@ -103,6 +104,23 @@ int main(int argc, char** argv) {
     }
   }
   // -
+
+  // Connect to specified pipe
+  {
+    auto pipe = initParams->getPipeName();
+    if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
+      std::thread ipc_reader([]() { // todo: run loop in main thread and execute all the stuff below in some ipc message
+        LOG_USE_MODULE(MAIN);
+        ICommunication::HandshakePacket hp = {};
+        accessIPC().write((ICommunication::UPackets*)&hp);
+        accessIPC().runReadLoop();
+        LOG_ERR(L"IPC ReadLoop is closed!");
+      });
+      ipc_reader.detach();
+    } else {
+      LOG_ERR(L"Pipe conection failed!");
+    }
+  } // -
 
   LOG_INFO(L"Started");
   // --- preinit
