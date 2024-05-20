@@ -58,6 +58,11 @@ struct SceUltQueue {
   char                            _unknown[336];
 };
 
+struct SceUltUlthreadOptParam {
+  uint32_t attr;
+  char     _unknown[127-4];
+};
+
 struct SceUltMutexOptParam {
   char _unknown[128];
 };

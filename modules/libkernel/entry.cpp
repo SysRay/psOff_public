@@ -261,6 +261,16 @@ EXPORT SYSV_ABI int sceKernelMprotect(uint64_t addr, size_t len, int prot) {
   return memory::protect(addr, len, prot, nullptr) ? Ok : getErr(ErrCode::_EACCES);
 }
 
+EXPORT SYSV_ABI int sceKernelMlock(void* addr, size_t len) {
+  LOG_USE_MODULE(libkernel);
+  return memory::check_mmaped(addr, len) ? Ok : getErr(ErrCode::_EACCES);
+}
+
+EXPORT SYSV_ABI int sceKernelMunlock(void* addr, size_t len) {
+  LOG_USE_MODULE(libkernel);
+  return memory::check_mmaped(addr, len) ? Ok : getErr(ErrCode::_EACCES);
+}
+
 EXPORT SYSV_ABI int sceKernelMsync(void* addr, size_t len, int flags) {
   LOG_USE_MODULE(libkernel);
   LOG_ERR(L"todo %S", __FUNCTION__);

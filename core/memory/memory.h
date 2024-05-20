@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <stdint.h>
+#include <mutex>
 
 constexpr int SceProtRead    = 1;
 constexpr int SceProtWrite   = 2;
@@ -25,6 +26,20 @@ struct _t_hook {
   std::array<uint8_t, 14 + 8> data; // Should be enough for inserting the hook (min 14 max 14+8)
 };
 
+class VirtualLock {
+public:
+  int check_mmaped(void* addr, size_t len);
+  static VirtualLock& instance();
+  void lock();
+  void unlock();
+
+private:
+  std::mutex MMLock;
+};
+
+void MLOCK(VirtualLock& vLock);
+void MUNLOCK(VirtualLock& vLock);
+
 __APICALL int       getpagesize(void);
 __APICALL uint64_t  getTotalSystemMemory();
 __APICALL uintptr_t reserve(uint64_t start, uint64_t size, uint64_t alignment, bool isGpu);
@@ -37,6 +52,7 @@ __APICALL bool      allocFixed(uint64_t address, uint64_t size, int prot);
 __APICALL bool      free(uint64_t address);
 __APICALL bool      protect(uint64_t address, uint64_t size, int prot, int* oldMode = nullptr);
 __APICALL int       getProtection(uint64_t address);
+__APICALL int       check_mmaped(void* addr, size_t len);
 
 __APICALL void installHook_long(uintptr_t dst, uintptr_t src, _t_hook& pGateway, size_t lenOpCodes);
 } // namespace memory

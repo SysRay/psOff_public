@@ -27,3 +27,4 @@ constexpr uint32_t SCE_NP_COUNTRY_CODE_LENGTH                      = (2);
 constexpr uint32_t SCE_NP_NO_AGE_RESTRICTION                       = (0);
 constexpr uint32_t SCE_NP_PLUS_FEATURE_REALTIME_MULTIPLAY          = (0x1);
 constexpr uint32_t SCE_NP_PLUS_EVENT_RECHECK_NEEDED                = (0x1);
+constexpr uint32_t SCE_NP_IN_GAME_MESSAGE_DATA_SIZE_MAX            = (512);

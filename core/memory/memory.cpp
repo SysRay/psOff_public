@@ -6,6 +6,7 @@
 #include "utility/utility.h"
 
 #include <windows.h>
+#include <mutex>
 
 LOG_DEFINE_MODULE(memory);
 
@@ -298,5 +299,41 @@ void installHook_long(uintptr_t dst, uintptr_t src, _t_hook& pGateway, size_t le
   memcpy(pGateway.data.data() + lenOpCodes, (uint8_t*)codeGateway.data(), codeGateway.size()); // cpy to gateway
 
   protect((uintptr_t)pGateway.data.data(), pGateway.data.size(), SceProtExecute | SceProtRead, nullptr);
+}
+
+int VirtualLock::check_mmaped(void* addr, size_t len) {
+  return 0;
+}
+
+VirtualLock& VirtualLock::instance() {
+  static VirtualLock instance;
+  return instance;
+}
+
+void VirtualLock::lock() {
+  MMLock.lock();
+}
+
+void VirtualLock::unlock() {
+  MMLock.unlock();
+}
+
+void MLOCK(VirtualLock& vLock) {
+  vLock.lock();
+}
+
+void MUNLOCK(VirtualLock& vLock) {
+  vLock.unlock();
+}
+
+int check_mmaped(void* addr, size_t len) {
+  LOG_USE_MODULE(memory);
+  VirtualLock& vLock = VirtualLock::instance();
+  MLOCK(vLock);
+
+  int result = vLock.check_mmaped(addr, len);
+
+  MUNLOCK(vLock);
+  return result;
 }
 } // namespace memory
