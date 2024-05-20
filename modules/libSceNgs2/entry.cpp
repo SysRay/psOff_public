@@ -248,7 +248,7 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreateWithAllocator(const SceNgs2SystemOpti
     return ret;
   }
 
-  *outh = new (cbi.hostBuffer) SceNgs2Handle_system(alloc);
+  *outh = new (cbi.hostBuffer) SceNgs2Handle_system(alloc, sysopt ? sysopt->sampleRate : 48000);
   getPimpl()->handles.emplace(*outh);
 
   LOG_DEBUG(L"-> System: 0x%08llx", (uint64_t)*outh);
@@ -263,8 +263,9 @@ EXPORT SYSV_ABI int32_t sceNgs2SystemCreate(const SceNgs2SystemOption* sysopt, c
   if (sysopt != nullptr && sysopt->size < sizeof(SceNgs2SystemOption)) return Err::Ngs2::INVALID_OPTION_SIZE;
   if (cbi == nullptr || cbi->hostBuffer == nullptr || cbi->hostBufferSize < sizeof(SceNgs2Handle)) return Err::Ngs2::INVALID_BUFFER_ADDRESS;
 
-  *outh = new (cbi->hostBuffer) SceNgs2Handle_system(nullptr);
-  getPimpl()->handles.emplace(*outh);
+  *outh = new (cbi->hostBuffer) SceNgs2Handle_system(nullptr, sysopt ? sysopt->sampleRate : 48000);
+
+  if (sysopt) getPimpl()->handles.emplace(*outh);
 
   LOG_DEBUG(L"-> System: 0x%08llx", (uint64_t)*outh);
   return (*outh) != nullptr ? Ok : Err::Ngs2::FAIL;

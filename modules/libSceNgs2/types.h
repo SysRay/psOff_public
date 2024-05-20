@@ -232,8 +232,14 @@ struct SceNgs2Handle_system: public SceNgs2Handle {
 
   // -
 
-  SceNgs2Handle_system(SceNgs2BufferAllocator const* alloc_): SceNgs2Handle(SceNgs2HandleType::System) {
+  // Options
+  uint32_t outSampleRate;
+
+  // -
+
+  SceNgs2Handle_system(SceNgs2BufferAllocator const* alloc_, uint32_t outrate): SceNgs2Handle(SceNgs2HandleType::System) {
     if (alloc_ != nullptr) alloc = *alloc_;
+    outSampleRate = outrate;
   }
 
   virtual ~SceNgs2Handle_system() = default;
