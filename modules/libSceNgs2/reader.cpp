@@ -229,7 +229,7 @@ void Reader::setNewData(void const* start, void const* end) {
   voice->state.bits.Empty = false;
 }
 
-bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
+bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples, uint32_t outRate) {
   LOG_USE_MODULE(libSceNgs2);
   auto pimpl = (PImpl*)m_pimpl;
 
@@ -249,8 +249,8 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
     auto const [formatIn, bytesIn] = convFormat(voice->info.type);
     if (formatIn == AVSampleFormat::AV_SAMPLE_FMT_NONE) return false;
 
-    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, voice->info.sampleRate, &pimpl->curChannelLayoutIn, formatIn,
-                            voice->info.sampleRate, 0, NULL)) {
+    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, outRate, &pimpl->curChannelLayoutIn, formatIn, voice->info.sampleRate, 0,
+                            NULL)) {
       LOG_ERR(L"Reader:Couldn't alloc swr");
       return false;
     }
@@ -423,7 +423,7 @@ bool Reader::getAudioCompressed(SceNgs2RenderBufferInfo* rbi) {
   return true;
 }
 
-bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
+bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples, uint32_t outRate) {
   if (m_isInit == false || voice->state.bits.Empty || !voice->state.bits.Playing || (voice->state.bits.Playing && voice->state.bits.Paused)) {
     return true;
   }
@@ -431,7 +431,7 @@ bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
   if (m_isCompressed) {
     return false; // getAudioCompressed(rbi);
   } else {
-    return getAudioUncompressed(rbi, numOutSamples);
+    return getAudioUncompressed(rbi, numOutSamples, outRate);
   }
   return true;
 }

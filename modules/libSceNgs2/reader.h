@@ -11,7 +11,7 @@ class Reader {
 
   SceNgs2SamplerVoiceState m_state;
 
-  bool getAudioUncompressed(SceNgs2RenderBufferInfo*, uint32_t numOutSamples);
+  bool getAudioUncompressed(SceNgs2RenderBufferInfo*, uint32_t numOutSamples, uint32_t outRate);
   bool getAudioCompressed(SceNgs2RenderBufferInfo*);
 
   public:
@@ -20,7 +20,7 @@ class Reader {
 
   bool init(SceNgs2SamplerVoiceWaveformBlocksParam const* param);
 
-  bool getAudio(SceNgs2RenderBufferInfo*, uint32_t numOutSamples);
+  bool getAudio(SceNgs2RenderBufferInfo*, uint32_t numOutSamples, uint32_t outRate);
 
   void setNewData(void const* start, void const* end);
 
