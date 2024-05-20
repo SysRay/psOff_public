@@ -373,13 +373,15 @@ EXPORT SYSV_ABI int32_t sceNpInGameMessagePrepareA(int32_t libCtxId, int32_t han
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNpInGameMessageSendData(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom, const SceNpInGameMessageData* pMessage) {
+EXPORT SYSV_ABI int32_t sceNpInGameMessageSendData(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom,
+                                                   const SceNpInGameMessageData* pMessage) {
   LOG_USE_MODULE(libSceNpManager);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceNpInGameMessageSendDataA(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom, const SceNpInGameMessageData* pMessage) {
+EXPORT SYSV_ABI int32_t sceNpInGameMessageSendDataA(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom,
+                                                    const SceNpInGameMessageData* pMessage) {
   LOG_USE_MODULE(libSceNpManager);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

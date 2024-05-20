@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
-#include <stdint.h>
 #include <mutex>
+#include <stdint.h>
 
 constexpr int SceProtRead    = 1;
 constexpr int SceProtWrite   = 2;
@@ -27,13 +27,13 @@ struct _t_hook {
 };
 
 class VirtualLock {
-public:
-  int check_mmaped(void* addr, size_t len);
+  public:
+  int                 check_mmaped(void* addr, size_t len);
   static VirtualLock& instance();
-  void lock();
-  void unlock();
+  void                lock();
+  void                unlock();
 
-private:
+  private:
   std::mutex MMLock;
 };
 

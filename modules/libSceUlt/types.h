@@ -60,7 +60,7 @@ struct SceUltQueue {
 
 struct SceUltUlthreadOptParam {
   uint32_t attr;
-  char     _unknown[127-4];
+  char     _unknown[127 - 4];
 };
 
 struct SceUltMutexOptParam {

@@ -5,8 +5,8 @@
 #include "logging.h"
 #include "utility/utility.h"
 
-#include <windows.h>
 #include <mutex>
+#include <windows.h>
 
 LOG_DEFINE_MODULE(memory);
 

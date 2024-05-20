@@ -155,14 +155,15 @@ struct SceNpCreateAsyncRequestParameter {
 
 struct SceNpInGameMessageData {
   char   data[SCE_NP_IN_GAME_MESSAGE_DATA_SIZE_MAX];
-	size_t dataSize;
+  size_t dataSize;
 };
 
-typedef void* SceNpInGameMessageEventCallbackA(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpOnlineId* pToOnlineId, const SceNpPeerAddressA* pFrom, const SceNpOnlineId* pFromOnlineId, const SceNpInGameMessageData* pMessage, void* pUserArg);
+typedef void* SceNpInGameMessageEventCallbackA(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpOnlineId* pToOnlineId, const SceNpPeerAddressA* pFrom,
+                                               const SceNpOnlineId* pFromOnlineId, const SceNpInGameMessageData* pMessage, void* pUserArg);
 
 struct SceNpInGameMessageMemoryPoolStatistics {
   size_t  poolSize;
-	size_t  maxInuseSize;
-	size_t  currentInuseSize;
-	int32_t reserved;
+  size_t  maxInuseSize;
+  size_t  currentInuseSize;
+  int32_t reserved;
 };
