@@ -37,6 +37,16 @@ EXPORT SYSV_ABI int32_t _sceUltWaitingQueueResourcePoolCreate(SceUltWaitingQueue
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t _sceUltUlthreadRuntimeOptParamInitialize(SceUltUlthreadOptParam* optParam) {
+  LOG_USE_MODULE(libSceUlt);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceUltUlthreadRuntimeGetWorkAreaSize(uint32_t maxUlThread, uint32_t maxWorkerThread) {
+  LOG_USE_MODULE(libSceUlt);
+  return 8;
+}
+
 EXPORT SYSV_ABI int32_t _sceUltQueueDataResourcePoolCreate(SceUltQueueDataResourcePool* pool, const char* name, uint32_t numData, size_t dataSize,
                                                            uint32_t numQueueObjs, SceUltWaitingQueueResourcePool* waitingQueue, void* workArea,
                                                            SceUltQueueDataResourcePoolOptParam* param) {

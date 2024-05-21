@@ -97,6 +97,12 @@ EXPORT SYSV_ABI int32_t sceGameLiveStreamingClearSocialFeedbackMessages(const Sc
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceGameLiveStreamingSetStandbyScreenResource(const char* resource) {
+  LOG_USE_MODULE(libSceGameLiveStreaming);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceGameLiveStreamingTerminate() {
   LOG_USE_MODULE(libSceGameLiveStreaming);
   LOG_ERR(L"todo %S", __FUNCTION__);
