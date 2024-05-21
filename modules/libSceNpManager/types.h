@@ -1,6 +1,7 @@
 #pragma once
 #include "codes.h"
 #include "onlineId.h"
+
 #include <utility/utility.h>
 
 typedef uint64_t SceNpGameCustomDataId;
@@ -159,8 +160,9 @@ struct SceNpInGameMessageData {
   size_t dataSize;
 };
 
-typedef void* SYSV_ABI (*SceNpInGameMessageEventCallbackA)(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpOnlineId* pToOnlineId, const SceNpPeerAddressA* pFrom,
-                                                           const SceNpOnlineId* pFromOnlineId, const SceNpInGameMessageData* pMessage, void* pUserArg);
+typedef void* SYSV_ABI (*SceNpInGameMessageEventCallbackA)(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpOnlineId* pToOnlineId,
+                                                           const SceNpPeerAddressA* pFrom, const SceNpOnlineId* pFromOnlineId,
+                                                           const SceNpInGameMessageData* pMessage, void* pUserArg);
 
 struct SceNpInGameMessageMemoryPoolStatistics {
   size_t  poolSize;
