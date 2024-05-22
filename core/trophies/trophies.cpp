@@ -168,15 +168,11 @@ class Trophies: public ITrophies {
         if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) return ErrCodes::CONTINUE;
       } else if (!m_bIgnoreMissingLocale) {
         static std::string_view dfile("trop.esfm");
-        if (m_localizedTrophyFile.length() == 0) {
-          // No localized trophy needed, using the English one
-          if (!std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) return ErrCodes::CONTINUE;
-        } else {
-          // Trying to find localized trophy
-          if (!std::equal(name.begin(), name.end(), m_localizedTrophyFile.begin(), m_localizedTrophyFile.end(), caseequal)) {
-            if (std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) dent = ent;
-            return ErrCodes::CONTINUE;
-          }
+        // Trying to find localized trophy
+        if (!std::equal(name.begin(), name.end(), m_localizedTrophyFile.begin(), m_localizedTrophyFile.end(), caseequal)) {
+          // Save the default one to `dent` variable. It will be used if no localized trophy configuration file found
+          if (std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) dent = ent;
+          return ErrCodes::CONTINUE;
         }
       }
 
@@ -499,7 +495,7 @@ class Trophies: public ITrophies {
         systemlang = SystemParamLang::EnglishUS;
       }
 
-      if (systemlang != SystemParamLang::EnglishUS) m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
+      m_localizedTrophyFile = std::format("TROP_{:02}.ESFM", (uint32_t)systemlang);
     }
 
     m_npidCachePath = accessFileManager().getGameFilesDir() / ".npcommid";
