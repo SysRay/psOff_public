@@ -457,4 +457,36 @@ EXPORT SYSV_ABI newhandler_func __NID(_ZSt15get_new_handlerv)() {
   LOG_ERR(L"Unimplemented std::get_new_handler()");
   return nullptr;
 }
+
+/**
+ * @brief malloc
+ *
+ */
+EXPORT SYSV_ABI void* __NID(malloc)(size_t size) {
+  return ::malloc(size);
+}
+
+/**
+ * @brief free
+ *
+ */
+EXPORT SYSV_ABI void __NID(free)(void* ptr) {
+  return ::free(ptr);
+}
+
+/**
+ * @brief fopen
+ *
+ */
+EXPORT SYSV_ABI FILE* __NID(fopen)(const char* name, const char* mode) {
+  return ::fopen(name, mode);
+}
+
+/**
+ * @brief fclose
+ *
+ */
+EXPORT SYSV_ABI int __NID(fclose)(FILE* file) {
+  return ::fclose(file);
+}
 }

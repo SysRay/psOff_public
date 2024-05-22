@@ -273,31 +273,16 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
   }
   // -
 
-  uint32_t const readSize = std::min(rbi->bufferSize, (size_t)pimpl->block.size - pimpl->curOffset);
-
   auto const [formatIn, bytesIn]   = convFormat(voice->info.type);
   auto const [formatOut, bytesOut] = convFormat(rbi->waveType);
 
-  std::vector<uint8_t*> audioBuffers(((int)rbi->channelsCount));
-
-  auto const channelSizeOut = (uint32_t)rbi->channelsCount * bytesOut;
-  for (uint8_t n = 0; n < audioBuffers.size(); ++n) {
-    audioBuffers[n] = &((uint8_t*)rbi->bufferPtr)[0];
-  }
-
   if (pimpl->block.numSamples > 0) {
-    std::vector<uint8_t const*> audioBuffersIn(((int)voice->info.channelsCount));
-
-    auto const channelSizeIn = (uint32_t)voice->info.channelsCount * bytesOut;
-    for (uint8_t n = 0; n < audioBuffersIn.size(); ++n) {
-      audioBuffersIn[n] = &((uint8_t*)pimpl->data)[0];
-    }
-
-    auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, &pimpl->data, pimpl->block.numSamples);
+    swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, &pimpl->data, pimpl->block.numSamples);
 
     pimpl->block.numSamples = 0;
   } else {
     auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, nullptr, 0);
+
     if (numSamples == 0) {
       m_state.numDecodedSamples += pimpl->block.numSamples;
       m_state.decodedDataSize += pimpl->block.size;
