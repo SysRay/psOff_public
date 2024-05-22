@@ -220,6 +220,16 @@ struct SceNgs2Handle {
   virtual ~SceNgs2Handle() = default;
 };
 
+struct SceNgs2SystemOption {
+  size_t   size;
+  char     name[16];
+  uint32_t flags;
+  uint32_t maxGrainSamples;
+  uint32_t numGrainSamples;
+  uint32_t sampleRate;
+  int8_t   pad[24];
+};
+
 struct SceNgs2Handle_system: public SceNgs2Handle {
   SceNgs2BufferAllocator alloc;
 
@@ -234,12 +244,14 @@ struct SceNgs2Handle_system: public SceNgs2Handle {
 
   // Options
   uint32_t outSampleRate;
+  uint32_t outNumSamples;
 
   // -
 
-  SceNgs2Handle_system(SceNgs2BufferAllocator const* alloc_, uint32_t outrate): SceNgs2Handle(SceNgs2HandleType::System) {
+  SceNgs2Handle_system(SceNgs2BufferAllocator const* alloc_, const SceNgs2SystemOption* sysopt): SceNgs2Handle(SceNgs2HandleType::System) {
     if (alloc_ != nullptr) alloc = *alloc_;
-    outSampleRate = outrate;
+    outSampleRate = sysopt ? sysopt->sampleRate : 48000;
+    outNumSamples = sysopt ? sysopt->numGrainSamples : 256;
   }
 
   virtual ~SceNgs2Handle_system() = default;
@@ -310,16 +322,6 @@ struct SceNgs2WaveformFormat {
 
   uint32_t             numBlocks;
   SceNgs2WaveformBlock block[4];
-};
-
-struct SceNgs2SystemOption {
-  size_t   size;
-  char     name[16];
-  uint32_t flags;
-  uint32_t : 32;
-  uint32_t : 32;
-  uint32_t sampleRate;
-  int8_t   pad[24];
 };
 
 struct SceNgs2GeomListenerWork;
