@@ -302,7 +302,7 @@ class RuntimeLinker: public IRuntimeLinker {
 
   ModulInfo mainModuleInfo() const final {
     auto prog = accessMainProg();
-    return {prog->baseVaddr, prog->baseSize, prog->procParamVaddr};
+    return {prog->moduleInfoEx.segments[0].address, prog->moduleInfoEx.segments[0].size, prog->procParamVaddr};
   }
 
   SceKernelModuleInfoEx const* getModuleInfoEx(uint64_t vaddr) const final {
