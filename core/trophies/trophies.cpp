@@ -35,21 +35,7 @@ class Trophies: public ITrophies {
   std::mutex            m_mutexParse;
 
   private:
-  struct usr_context {
-    struct trophy {
-      int32_t  id = -1;
-      uint32_t re = 0; // reserved
-      uint64_t ts = 0;
-    };
-
-    bool     created = false;
-    uint32_t label   = 0;
-    int32_t  userId  = -1;
-
-    std::vector<trophy> trophies = {};
-  };
-
-  std::array<usr_context, 4> m_ctx {};
+  std::vector<usr_context> m_ctx {};
 
   struct trp_header {
     uint32_t magic; // should be 0xDCA24D00
@@ -133,7 +119,7 @@ class Trophies: public ITrophies {
     return ErrCodes::NO_TROPHIES;
   }
 
-  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx) {
+  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx, uint32_t label) {
     if (!ctx->pngim.cancelled) {
       static std::string_view ext(".png");
       std::string_view        name(ent.name);
@@ -288,9 +274,11 @@ class Trophies: public ITrophies {
         int  npid;
         bool success = false;
 
+        auto npidcpath = m_npidCachePath / std::format(".{}", label);
+
         {
           // Trying to obtain cached NPID for this title and use it for trophies decrypting
-          std::ifstream npid_f(m_npidCachePath);
+          std::ifstream npid_f(npidcpath);
 
           if (npid_f.is_open()) {
             npid_f >> npid;
@@ -308,7 +296,7 @@ class Trophies: public ITrophies {
           }
 
           if (success) { // NPID found, saving it to cache file
-            std::ofstream npid_f(m_npidCachePath, std::ios::out);
+            std::ofstream npid_f(npidcpath, std::ios::out);
 
             if (npid_f.is_open()) {
               npid_f << npid;
@@ -339,7 +327,7 @@ class Trophies: public ITrophies {
 
   int32_t _unlockTrophyEx(usr_context* ctx, int32_t trophyId, int32_t* platinumId) {
     if (!m_bKeySet) return -1;
-    int32_t platId = getPlatinumIdFor(trophyId);
+    int32_t platId = getPlatinumIdFor(ctx, trophyId);
     if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
     if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
 
@@ -348,7 +336,7 @@ class Trophies: public ITrophies {
     int32_t ret         = Ok;
     bool    platinumMet = (platId >= 0);
 
-    trp_unlock_data cbdata = {0};
+    trp_unlock_data cbdata = {.userId = ctx->userId, .label = ctx->label};
 
     trp_context tctx = {
         .entry =
@@ -362,7 +350,7 @@ class Trophies: public ITrophies {
                     cbdata.name.assign(data->name);
                     cbdata.descr.assign(data->detail);
                   } else if (platinumMet && data->grade != 'p' && data->platinum == platId) {
-                    platinumMet = getUnlockTime(ctx->userId, data->id) > 0;
+                    platinumMet = getUnlockTime(ctx, data->id) > 0;
                   }
 
                   if (data->grade == 'p' && data->id == platId) {
@@ -388,7 +376,7 @@ class Trophies: public ITrophies {
     };
 
     ErrCodes ec;
-    if ((ec = parseTRP(&tctx)) != ErrCodes::SUCCESS) {
+    if ((ec = parseTRP(ctx->label, &tctx)) != ErrCodes::SUCCESS) {
       ret = Err::NpTrophy::BROKEN_DATA;
     }
 
@@ -413,7 +401,8 @@ class Trophies: public ITrophies {
     return Ok;
   }
 
-  void checkPlatinumTrophies(int32_t userId) {
+  void checkPlatinumTrophies(usr_context* ctx) {
+
     if (!m_bKeySet) return;
 
     struct platdata {
@@ -427,9 +416,9 @@ class Trophies: public ITrophies {
     trp_context tctx = {
         .entry =
             {
-                .func = [this, userId, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
+                .func = [this, ctx, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
                   // Marking all platinum trophies as unlocked to check if they actually unlocked later
-                  if (data->grade == 'p' && getUnlockTime(userId, data->id) == 0ull) {
+                  if (data->grade == 'p' && getUnlockTime(ctx, data->id) == 0ull) {
                     unlocked_plats.push_back({data->id, data->name, data->detail});
                   }
                   return false;
@@ -437,12 +426,12 @@ class Trophies: public ITrophies {
             },
     };
 
-    if (parseTRP(&tctx) != ErrCodes::SUCCESS) return;
+    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) return;
 
-    tctx.entry.func = [this, userId, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
+    tctx.entry.func = [this, ctx, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
       if (data->grade != 'p' && data->platinum != -1) {
         // Some trophy is not unlocked yet, removing the platinum trophy from the unlocked list then
-        if (getUnlockTime(userId, data->id) == 0ull) {
+        if (getUnlockTime(ctx, data->id) == 0ull) {
           for (auto it = unlocked_plats.begin(); it != unlocked_plats.end();) {
             if (it->id == data->platinum) {
               unlocked_plats.erase(it);
@@ -455,7 +444,7 @@ class Trophies: public ITrophies {
       return false;
     };
 
-    if (parseTRP(&tctx) != ErrCodes::SUCCESS || unlocked_plats.size() == 0ull) return;
+    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS || unlocked_plats.size() == 0ull) return;
     uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
 
     for (auto& plat: unlocked_plats) {
@@ -466,8 +455,8 @@ class Trophies: public ITrophies {
       };
 
       callUnlockCallback(&cbdata);
-      m_ctx[userId - 1].trophies.push_back({plat.id, 0, uTime});
-      saveTrophyData(userId);
+      ctx->trophies.push_back({plat.id, 0, uTime});
+      saveTrophyData(ctx);
     }
   }
 
@@ -507,7 +496,7 @@ class Trophies: public ITrophies {
 
   //- Callbacks
 
-  ErrCodes parseTRP(trp_context* ctx) final {
+  ErrCodes parseTRP(uint32_t label, trp_context* ctx) final {
     if (!m_bKeySet) return ErrCodes::NO_KEY_SET;
     if (ctx == nullptr) return ErrCodes::INVALID_CONTEXT;
     // We don't want every callback to be cancelled before we even begin
@@ -520,7 +509,7 @@ class Trophies: public ITrophies {
     std::unique_lock lock(m_mutexParse);
     m_bIgnoreMissingLocale = false;
 
-    auto mpath = accessFileManager().getMappedPath("/app0/sce_sys/trophy/trophy00.trp");
+    auto mpath = accessFileManager().getMappedPath(std::format("/app0/sce_sys/trophy/trophy{:02}.trp", label));
     if (!mpath.has_value()) return ErrCodes::NO_TROPHIES;
 
     std::ifstream trfile(mpath->c_str(), std::ios::in | std::ios::binary);
@@ -550,7 +539,7 @@ class Trophies: public ITrophies {
         ent.pos = _byteswap_uint64(ent.pos);
         ent.len = _byteswap_uint64(ent.len);
 
-        auto ret = TRP_readentry(ent, dent, trfile, ctx);
+        auto ret = TRP_readentry(ent, dent, trfile, ctx, label);
         if (ret != ErrCodes::CONTINUE) return ret;
       } // entries loop
 
@@ -558,7 +547,7 @@ class Trophies: public ITrophies {
       if (!ctx->group.cancelled || !ctx->entry.cancelled || !ctx->itrop.cancelled) {
         m_bIgnoreMissingLocale = true;
         if (dent.len != 0) {
-          auto ret = TRP_readentry(dent, dent, trfile, ctx);
+          auto ret = TRP_readentry(dent, dent, trfile, ctx, label);
           if (ret != ErrCodes::CONTINUE) return ret;
         }
       }
@@ -590,11 +579,8 @@ class Trophies: public ITrophies {
     }
   }
 
-  int32_t loadTrophyData(int32_t userId) {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
+  int32_t loadTrophyData(usr_context* ctx) {
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}-{}", ctx->userId, ctx->label);
 
     std::ifstream file(path, std::ios::in | std::ios::binary);
 
@@ -606,26 +592,23 @@ class Trophies: public ITrophies {
         usr_context::trophy t;
         if (!file.read((char*)&t.id, 4)) return Err::NpTrophy::UNKNOWN;
         if (!file.read((char*)&t.ts, 8)) return Err::NpTrophy::UNKNOWN;
-        ctx.trophies.push_back(t);
+        ctx->trophies.push_back(t);
       }
     }
 
     return Ok;
   }
 
-  int32_t saveTrophyData(int32_t userId) {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}", userId);
+  int32_t saveTrophyData(usr_context* ctx) {
+    auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}-{}", ctx->userId, ctx->label);
 
     std::ofstream file(path, std::ios::out | std::ios::binary);
 
     if (file.is_open()) {
-      uint32_t num = ctx.trophies.size();
+      uint32_t num = ctx->trophies.size();
       if (!file.write((char*)&num, 4)) return Err::NpTrophy::INSUFFICIENT_SPACE;
 
-      for (auto& trop: ctx.trophies) {
+      for (auto& trop: ctx->trophies) {
         if (!file.write((char*)&trop.id, 4)) return Err::NpTrophy::INSUFFICIENT_SPACE;
         if (!file.write((char*)&trop.ts, 8)) return Err::NpTrophy::INSUFFICIENT_SPACE;
       }
@@ -636,41 +619,60 @@ class Trophies: public ITrophies {
     return Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
-  int32_t createContext(int32_t userId, uint32_t label) final {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
-    auto& ctx = m_ctx[userId - 1];
-    if (ctx.created) return Ok;
+  usr_context* getContext(int32_t ctxid) final {
+    for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
+      if (it->label == (ctxid & 0xffff) && it->userId == ((ctxid >> 16) & 0xffff)) {
+        return &(*it);
+      }
+    }
 
-    ctx.userId  = userId;
-    ctx.created = true;
-    ctx.label   = label;
+    return nullptr;
+  }
+
+  int32_t createContext(int32_t userId, uint32_t label, int32_t* ctxid) final {
+    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
+
+    for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
+      if (it->label == label && it->userId == userId) {
+        *ctxid = (((it->userId & 0xffff) << 16) | (it->label & 0xffff));
+        return Err::NpTrophy::CONTEXT_ALREADY_EXISTS;
+      }
+    }
+
+    struct usr_context ctx {
+      .label = label, .userId = userId,
+    };
 
     int32_t errcode;
-    if ((errcode = loadTrophyData(userId)) == Ok) {
-      checkPlatinumTrophies(userId);
+    if ((errcode = loadTrophyData(&ctx)) == Ok) {
+      checkPlatinumTrophies(&ctx);
+
+      *ctxid = (((userId & 0xffff) << 16) | (label & 0xffff));
+      m_ctx.push_back(std::move(ctx));
+
       return Ok;
     }
 
     return errcode;
   }
 
-  int32_t destroyContext(int32_t userId) final {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-    if (!saveTrophyData(userId)) return Err::NpTrophy::INSUFFICIENT_SPACE;
-    ctx.created = false;
-    ctx.label   = 0;
-    return Ok;
+  int32_t destroyContext(usr_context* ctx) final {
+    if (!saveTrophyData(ctx)) return Err::NpTrophy::INSUFFICIENT_SPACE;
+
+    for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
+      if (ctx == &(*it)) {
+        ctx->label = -1;
+        m_ctx.erase(it);
+        return Ok;
+      }
+    }
+
+    return Err::NpTrophy::INVALID_CONTEXT;
   }
 
-  int32_t getProgress(int32_t userId, uint32_t progress[4], uint32_t* count) final {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-
+  int32_t getProgress(usr_context* ctx, uint32_t progress[4], uint32_t* count) final {
     if (count != nullptr) {
-      trp_context ctx = {
+      trp_context tctx = {
           .lightweight = true,
           .itrop =
               {
@@ -681,34 +683,30 @@ class Trophies: public ITrophies {
               },
       };
 
-      if (parseTRP(&ctx) != ErrCodes::SUCCESS) return Err::NpTrophy::BROKEN_DATA;
+      if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) return Err::NpTrophy::BROKEN_DATA;
     }
 
     SCE_NP_TROPHY_FLAG_ZERO((SceNpTrophyFlagArray*)progress);
-    for (auto& trop: ctx.trophies) {
+    for (auto& trop: ctx->trophies) {
       SCE_NP_TROPHY_FLAG_SET(trop.id, (SceNpTrophyFlagArray*)progress);
     }
 
     return true;
   }
 
-  uint64_t getUnlockTime(int32_t userId, int32_t trophyId) final {
-    if (userId < 1 || userId > 4) return 0ull;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return false;
-
-    for (auto& trop: ctx.trophies) {
+  uint64_t getUnlockTime(usr_context* ctx, int32_t trophyId) final {
+    for (auto& trop: ctx->trophies) {
       if (trop.id == trophyId) return trop.ts;
     }
 
     return 0ull;
   }
 
-  int32_t getPlatinumIdFor(int32_t trophyId) {
+  int32_t getPlatinumIdFor(usr_context* ctx, int32_t trophyId) {
     if (trophyId < 0 || trophyId > 128) return -3;
     int32_t platId = -1;
 
-    trp_context ctx = {
+    trp_context tctx = {
         .lightweight = true,
         .entry =
             {
@@ -723,19 +721,16 @@ class Trophies: public ITrophies {
             },
     };
 
-    if (parseTRP(&ctx) != ErrCodes::SUCCESS) platId = -3;
+    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) platId = -3;
     return platId;
   }
 
-  int32_t unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) final {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_CONTEXT;
-    auto& ctx = m_ctx[userId - 1];
-    if (!ctx.created) return Err::NpTrophy::INVALID_CONTEXT;
-    if (getUnlockTime(ctx.userId, trophyId) != 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
+  int32_t unlockTrophy(usr_context* ctx, int32_t trophyId, int32_t* platinumId) final {
+    if (getUnlockTime(ctx, trophyId) > 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
     *platinumId = -1;
     int32_t errcode;
 
-    if ((errcode = _unlockTrophyEx(&ctx, trophyId, platinumId)) != Ok) {
+    if ((errcode = _unlockTrophyEx(ctx, trophyId, platinumId)) != Ok) {
       if (errcode == -1) { // No trophy decryption key
         trp_unlock_data cbdata = {
             .grade = 'b',
@@ -750,13 +745,13 @@ class Trophies: public ITrophies {
 
     uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
 
-    ctx.trophies.push_back({trophyId, 0, uTime});
-    if (*platinumId != -1) ctx.trophies.push_back({*platinumId, 0, uTime});
+    ctx->trophies.push_back({trophyId, 0, uTime});
+    if (*platinumId != -1) ctx->trophies.push_back({*platinumId, 0, uTime});
 
-    return saveTrophyData(userId) ? errcode : Err::NpTrophy::INSUFFICIENT_SPACE;
+    return saveTrophyData(ctx) ? errcode : Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
-  bool resetUserInfo(int32_t userId) final { return false; }
+  bool resetUserInfo(usr_context* ctx) final { return false; }
 };
 
 ITrophies& accessTrophies() {

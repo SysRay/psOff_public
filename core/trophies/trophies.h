@@ -37,6 +37,19 @@ class ITrophies {
     MAX_TROPHY_REACHED, // The game hit the hard limit of 128 trophies
   };
 
+  struct usr_context {
+    struct trophy {
+      int32_t  id = -1;
+      uint32_t re = 0; // reserved
+      uint64_t ts = 0;
+    };
+
+    uint32_t label  = 0;
+    int32_t  userId = -1;
+
+    std::vector<trophy> trophies = {};
+  };
+
   struct trp_grp_cb {
     struct data_t {
       int32_t     id;
@@ -99,6 +112,9 @@ class ITrophies {
   };
 
   struct trp_unlock_data {
+    int32_t  userId;
+    uint32_t label;
+
     struct image {
       void*  pngdata;
       size_t pngsize;
@@ -115,8 +131,8 @@ class ITrophies {
     std::string pdescr;
   };
 
-  virtual ErrCodes    parseTRP(trp_context* context) = 0;
-  virtual const char* getError(ErrCodes ec)          = 0;
+  virtual ErrCodes    parseTRP(uint32_t label, trp_context* context) = 0;
+  virtual const char* getError(ErrCodes ec)                          = 0;
 
   //  Callbacks
 
@@ -124,12 +140,13 @@ class ITrophies {
 
   //- Callbacks
 
-  virtual int32_t  createContext(int32_t userId, uint32_t label)                       = 0;
-  virtual int32_t  destroyContext(int32_t userId)                                      = 0;
-  virtual int32_t  getProgress(int32_t userId, uint32_t progress[4], uint32_t* count)  = 0;
-  virtual uint64_t getUnlockTime(int32_t userId, int32_t trophyId)                     = 0;
-  virtual int32_t  unlockTrophy(int32_t userId, int32_t trophyId, int32_t* platinumId) = 0;
-  virtual bool     resetUserInfo(int32_t userId)                                       = 0;
+  virtual int32_t      createContext(int32_t userId, uint32_t label, int32_t* ctxid)         = 0;
+  virtual usr_context* getContext(int32_t ctxid)                                             = 0;
+  virtual int32_t      destroyContext(usr_context* ctx)                                      = 0;
+  virtual int32_t      getProgress(usr_context* ctx, uint32_t progress[4], uint32_t* count)  = 0;
+  virtual uint64_t     getUnlockTime(usr_context* ctx, int32_t trophyId)                     = 0;
+  virtual int32_t      unlockTrophy(usr_context* ctx, int32_t trophyId, int32_t* platinumId) = 0;
+  virtual bool         resetUserInfo(usr_context* ctx)                                       = 0;
 };
 
 #if defined(__APICALL_EXTERN)
