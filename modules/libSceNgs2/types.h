@@ -252,6 +252,10 @@ struct SceNgs2Handle_system: public SceNgs2Handle {
     if (alloc_ != nullptr) alloc = *alloc_;
     outSampleRate = sysopt ? sysopt->sampleRate : 48000;
     outNumSamples = sysopt ? sysopt->numGrainSamples : 256;
+
+    // Handle zero-cases
+    outSampleRate = outSampleRate > 0 ? outSampleRate : 48000;
+    outNumSamples = outNumSamples > 0 ? outNumSamples : 256;
   }
 
   virtual ~SceNgs2Handle_system() = default;
