@@ -222,7 +222,7 @@ int DirectMemory::alloc(size_t len, size_t alignment, int memoryType, uint64_t* 
   m_allocSize += len;
   m_objects.emplace(std::make_pair(
       *outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = memoryType, .vmaAlloc = alloc, .vmaBlock = block}));
-
+  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   LOG_DEBUG(L"-> Allocated: len:0x%08llx alignment:0x%08llx memorytype:%d -> 0x%08llx", len, alignment, memoryType, *outAddr);
 
   return Ok;
@@ -349,6 +349,7 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
 
     info->allocAddr = ptr;
     info->state     = MemoryState::Commited;
+    info->prot      = prot;
     LOG_DEBUG(L"Commit| addr:0x%08llx len:0x%08llx prot:%d ->", info->addr, info->size, prot, ptr);
   }
   // - commit
@@ -357,7 +358,6 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   m_mappings.emplace(
       std::make_pair(*outAddr, MemoryMappingDirect {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
 
-  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
@@ -397,6 +397,7 @@ int DirectMemory::reserve(uint64_t start, size_t len, size_t alignment, int flag
 
   m_objects.emplace(
       std::make_pair(*outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = 0, .state = MemoryState::Reserved}));
+  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   return Ok;
 }
 
@@ -481,13 +482,12 @@ int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* inf
   LOG_USE_MODULE(DirectMemory);
 
   boost::unique_lock lock(m_mutexInt);
+  if (m_objects.empty()) return getErr(ErrCode::_EACCES);
 
   auto itItem = m_objects.lower_bound(addr);
-  if (itItem == m_objects.end() || (itItem != m_objects.begin() && itItem->first != addr)) --itItem; // Get the correct item
+  if (itItem == m_objects.end() && addr > (itItem->first + itItem->second.size)) return getErr(ErrCode::_EACCES); // End reached
 
-  if (!(itItem->first <= addr && (itItem->first + itItem->second.size >= addr))) {
-    return getErr(ErrCode::_EACCES);
-  }
+  if (itItem == m_objects.end() || (itItem != m_objects.begin() && itItem->first != addr)) --itItem; // Get the correct item
 
   info->protection       = itItem->second.prot;
   info->memoryType       = itItem->second.memoryType;
@@ -496,10 +496,10 @@ int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* inf
   info->isPooledMemory   = false;
   // info->isStack   = false; // done by parent
 
-  auto itMapping = m_mappings.lower_bound(addr);
-  if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != addr)) --itMapping; // Get the correct item
+  auto itMapping = m_mappings.lower_bound(itItem->first);
+  if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != itItem->first)) --itMapping; // Get the correct item
 
-  if (!(itMapping->first <= addr && (itMapping->first + itMapping->second.size > addr))) {
+  if (!(itMapping->first <= itItem->first && (itMapping->first + itMapping->second.size > itItem->first))) {
     if (itItem->second.state == MemoryState::Reserved) {
       info->start       = (void*)itItem->first;
       info->end         = (void*)(itItem->first + itItem->second.size);
@@ -512,7 +512,7 @@ int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* inf
 
   info->start  = (void*)itMapping->first;
   info->end    = (void*)(itMapping->first + itMapping->second.size);
-  info->offset = itMapping->second.heapAddr - itMapping->first;
+  info->offset = 0;
 
   info->isCommitted = true;
   return Ok;
@@ -526,8 +526,8 @@ int32_t DirectMemory::directQuery(uint64_t offset, SceKernelDirectMemoryQueryInf
   for (auto& item: m_objects) {
     auto off = item.second.addr - DIRECTMEM_START;
     if (offset >= off && offset < off + item.second.size) {
-      info->start = off;
-      info->end   = off + item.second.size;
+      info->start = item.second.addr;
+      info->end   = item.second.addr + item.second.size;
 
       info->memoryType = item.second.memoryType;
 

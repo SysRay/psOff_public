@@ -173,25 +173,33 @@ EXPORT SYSV_ABI int32_t sceKernelIsStack(void* addr, void** start, void** end) {
 EXPORT SYSV_ABI int32_t sceKernelVirtualQuery(uintptr_t addr, int flags, SceKernelVirtualQueryInfo* info, size_t infoSize) {
   if (info == nullptr || infoSize != sizeof(SceKernelVirtualQueryInfo)) return getErr(ErrCode::_EFAULT);
 
-  if (accessMemoryManager()->virtualQuery((uint64_t)addr, info) == Ok) return Ok;
-
   LOG_USE_MODULE(dmem);
+  constexpr uint64_t DIRECTMEM_START = 0x100000000u;
 
-  uint64_t base = (uint64_t)addr;
+  if (addr >= DIRECTMEM_START) {
+    if (accessMemoryManager()->virtualQuery((uint64_t)addr, info) != Ok) {
+      LOG_TRACE(L"Query Error: addr:0x%08llx -> start:0x%08llx, end:0x%08llx, type:%d", addr, info->start, info->end, info->memoryType);
+      return getErr(ErrCode::_EACCES);
+    }
+  } else {
+    uint64_t base = (uint64_t)addr;
 
-  if ((uint64_t)addr < IMAGE_BASE) {
-    addr = IMAGE_BASE;
+    if ((uint64_t)addr < IMAGE_BASE) {
+      addr = IMAGE_BASE;
+    }
+
+    base = memory::queryAlloc(addr, (uintptr_t*)&info->start, (uintptr_t*)&info->end, &info->protection);
+    if (base <= 0) {
+      if (accessMemoryManager()->virtualQuery((uint64_t)addr, info) != Ok) {
+        LOG_TRACE(L"Query Error: addr:0x%08llx -> start:0x%08llx, end:0x%08llx, type:%d", addr, info->start, info->end, info->memoryType);
+        return getErr(ErrCode::_EACCES);
+      }
+    } else {
+      info->isCommitted      = true;
+      info->isFlexibleMemory = true;
+      info->offset           = 0;
+    }
   }
-
-  base = memory::queryAlloc(addr, (uintptr_t*)&info->start, (uintptr_t*)&info->end, &info->protection);
-  if (base <= 0) {
-    LOG_TRACE(L"Query Error: addr:0x%08llx -> start:0x%08llx, end:0x%08llx, type:%d", addr, info->start, info->end, info->memoryType);
-    return getErr(ErrCode::_EACCES);
-  }
-
-  info->isCommitted      = true;
-  info->isFlexibleMemory = true;
-  info->offset           = (int64_t)addr - (int64_t)info->start;
 
   LOG_TRACE(L"Query OK: addr:0x%08llx -> start:0x%08llx end:0x%08llx prot:%d type:%d", addr, info->start, info->end, info->protection, info->memoryType);
   return Ok;
