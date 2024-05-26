@@ -569,9 +569,13 @@ int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t arg
   // - imports
 
   // relocate
+  auto libName = pProgram->filename.stem().string();
   for (auto& prog: m_programList) {
-    prog.second->relocate(prog.first.get(), m_invalidMemoryAddr);
+    if (prog.second->getImportedLibs().find(libName) == prog.second->getImportedLibs().end()) continue;
+
+    prog.second->relocate(prog.first.get(), m_invalidMemoryAddr, libName);
   }
+  format->relocate(pProgram, m_invalidMemoryAddr, "");
 
   uintptr_t const entryAddr = pProgram->entryOffAddr + pProgram->baseVaddr;
   LOG_INFO(L"-> Starting %s entry:0x%08llx tlsIndex:%u", pProgram->filename.c_str(), entryAddr, tlsIndex);
@@ -840,7 +844,7 @@ uintptr_t RuntimeLinker::execute() {
   // Relocate all (Set Imported Symbols)
   m_invalidMemoryAddr = memory::alloc(INVALID_MEMORY, 4096, 0);
   for (auto& prog: m_programList) {
-    if (prog.first) prog.second->relocate(prog.first.get(), m_invalidMemoryAddr);
+    if (prog.first) prog.second->relocate(prog.first.get(), m_invalidMemoryAddr, "");
   }
 
   setupTlsStaticBlock(); // relocate may init tls -> copy after relocate

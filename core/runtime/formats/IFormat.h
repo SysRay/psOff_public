@@ -49,7 +49,7 @@ class IFormat: public Symbols::IResolve {
 
   virtual Symbols::SymbolInfo getSymbolInfo(uint64_t const relIndex) const = 0;
 
-  virtual void relocate(Program const* prog, uint64_t invalidMemoryAddr) = 0;
+  virtual void relocate(Program const* prog, uint64_t invalidMemoryAddr, std::string_view libName) = 0;
 
   virtual std::unordered_map<uint64_t, std::string_view> getDebugStrings() const                                                               = 0;
   virtual std::string                                    collectDebugInfos(std::unordered_map<uint64_t, std::string_view>& debugStrings) const = 0;
