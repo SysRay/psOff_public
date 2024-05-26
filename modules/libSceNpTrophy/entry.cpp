@@ -38,7 +38,7 @@ static int32_t searchForPng(SceNpTrophyContext context, const char* name, void* 
             },
     };
 
-    if (accessTrophies().parseTRP(ctxp->label, &tctx) != ITrophies::ErrCodes::SUCCESS) errcode = Err::NpTrophy::BROKEN_DATA;
+    if (accessTrophies().parseTRP(ctxp->label, &tctx) != ITrophies::ParserErr::SUCCESS) errcode = Err::NpTrophy::BROKEN_DATA;
     return errcode;
   }
 
@@ -157,10 +157,10 @@ EXPORT SYSV_ABI int sceNpTrophyGetGameInfo(SceNpTrophyContext context, SceNpTrop
             },
     };
 
-    ITrophies::ErrCodes ec;
-    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ErrCodes::SUCCESS) {
+    ITrophies::ParserErr ec;
+    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ParserErr::SUCCESS) {
       LOG_ERR(L"Failed to parse trophy data: %S", accessTrophies().getError(ec));
-      return ec == ITrophies::ErrCodes::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : errcode;
+      return ec == ITrophies::ParserErr::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : errcode;
     }
 
     if (gdata) gdata->progressPercentage = (unlock_count / (float)trophy_count) * 100;
@@ -244,8 +244,8 @@ EXPORT SYSV_ABI int sceNpTrophyGetGroupInfo(SceNpTrophyContext context, SceNpTro
             },
     };
 
-    ITrophies::ErrCodes ec;
-    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ErrCodes::SUCCESS) {
+    ITrophies::ParserErr ec;
+    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ParserErr::SUCCESS) {
       LOG_ERR(L"Failed to parse trophy data: %S", accessTrophies().getError(ec));
       return Err::NpTrophy::BROKEN_DATA;
     }
@@ -315,10 +315,10 @@ EXPORT SYSV_ABI int sceNpTrophyGetTrophyInfo(SceNpTrophyContext context, SceNpTr
             },
     };
 
-    ITrophies::ErrCodes ec;
-    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ErrCodes::SUCCESS) {
+    ITrophies::ParserErr ec;
+    if ((ec = accessTrophies().parseTRP(ctxp->label, &tctx)) != ITrophies::ParserErr::SUCCESS) {
       LOG_ERR(L"Failed to parse trophy data: %S", accessTrophies().getError(ec));
-      return ec == ITrophies::ErrCodes::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : Err::NpTrophy::BROKEN_DATA;
+      return ec == ITrophies::ParserErr::MAX_TROPHY_REACHED ? Err::NpTrophy::EXCEEDS_MAX : Err::NpTrophy::BROKEN_DATA;
     }
 
     return errcode;

@@ -59,12 +59,12 @@ class Trophies: public ITrophies {
 
   static bool caseequal(char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
 
-  static ErrCodes XML_parse(const char* mem, trp_context* ctx) {
+  static ParserErr XML_parse(const char* mem, trp_context* ctx) {
     pugi::xml_document doc;
 
     auto res = doc.load_buffer(mem, strlen(mem));
 
-    if (res.status != pugi::xml_parse_status::status_ok) return ErrCodes::INVALID_XML;
+    if (res.status != pugi::xml_parse_status::status_ok) return ParserErr::INVALID_XML;
 
     if (auto tc = doc.child("trophyconf")) {
       if (!ctx->itrop.cancelled) {
@@ -113,13 +113,13 @@ class Trophies: public ITrophies {
       ctx->entry.cancelled = true;
       ctx->group.cancelled = true;
       ctx->itrop.cancelled = true;
-      return ErrCodes::CONTINUE;
+      return ParserErr::CONTINUE;
     }
 
-    return ErrCodes::NO_TROPHIES;
+    return ParserErr::NO_TROPHIES;
   }
 
-  ErrCodes TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx, uint32_t label) {
+  ParserErr TRP_readentry(const trp_entry& ent, trp_entry& dent, std::ifstream& trfile, trp_context* ctx, uint32_t label) {
     if (!ctx->pngim.cancelled) {
       static std::string_view ext(".png");
       std::string_view        name(ent.name);
@@ -128,18 +128,18 @@ class Trophies: public ITrophies {
           ctx->pngim.data.pngsize = ent.len;
           ctx->pngim.data.pngname.assign(ent.name);
           if ((ctx->pngim.data.pngdata = ::calloc(ent.len, 1)) == nullptr) { // Developer should free this memory manually
-            return ErrCodes::OUT_OF_MEMORY;
+            return ParserErr::OUT_OF_MEMORY;
           }
           trfile.seekg(ent.pos);
           if (trfile.read((char*)ctx->pngim.data.pngdata, ent.len)) {
             ctx->pngim.cancelled = ctx->pngim.func(&ctx->pngim.data);
-            return ErrCodes::CONTINUE;
+            return ParserErr::CONTINUE;
           }
 
-          return ErrCodes::IO_FAIL;
+          return ParserErr::IO_FAIL;
         } else {
           // Is this even possible?
-          return ErrCodes::NOT_IMPLEMENTED;
+          return ParserErr::NOT_IMPLEMENTED;
         }
       }
     }
@@ -147,18 +147,18 @@ class Trophies: public ITrophies {
     if (!ctx->group.cancelled || !ctx->entry.cancelled || !ctx->itrop.cancelled) {
       static std::string_view ext(".esfm");
       std::string_view        name(ent.name);
-      if (!std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) return ErrCodes::CONTINUE;
-      if ((ent.len % 16) != 0) return ErrCodes::INVALID_AES;
+      if (!std::equal(ext.rbegin(), ext.rend(), name.rbegin(), caseequal)) return ParserErr::CONTINUE;
+      if ((ent.len % 16) != 0) return ParserErr::INVALID_AES;
       if (ctx->lightweight) {
         static std::string_view lwfile("tropconf.esfm");
-        if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) return ErrCodes::CONTINUE;
+        if (!std::equal(lwfile.begin(), lwfile.end(), name.begin(), name.end(), caseequal)) return ParserErr::CONTINUE;
       } else if (!m_bIgnoreMissingLocale) {
         static std::string_view dfile("trop.esfm");
         // Trying to find localized trophy
         if (!std::equal(name.begin(), name.end(), m_localizedTrophyFile.begin(), m_localizedTrophyFile.end(), caseequal)) {
           // Save the default one to `dent` variable. It will be used if no localized trophy configuration file found
           if (std::equal(name.begin(), name.end(), dfile.begin(), dfile.end(), caseequal)) dent = ent;
-          return ErrCodes::CONTINUE;
+          return ParserErr::CONTINUE;
         }
       }
 
@@ -166,7 +166,7 @@ class Trophies: public ITrophies {
       trfile.seekg(ent.pos); // Seek to file position
 
       if (((ent.flag >> 24) & 0x03) == 0) {
-        if (!trfile.read(mem.get(), ent.len)) return ErrCodes::IO_FAIL;
+        if (!trfile.read(mem.get(), ent.len)) return ParserErr::IO_FAIL;
       } else {
         static constexpr int32_t IV_SIZE           = TR_AES_BLOCK_SIZE;
         static constexpr int32_t ENC_SCE_SIGN_SIZE = TR_AES_BLOCK_SIZE * 3; // 384 encrypted bits is just enough to find interesting for us string
@@ -176,8 +176,8 @@ class Trophies: public ITrophies {
         uint8_t enc_xmlh[ENC_SCE_SIGN_SIZE];
         ::memset(kg_iv, 0, TR_AES_BLOCK_SIZE);
 
-        if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ErrCodes::IO_FAIL;
-        if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ErrCodes::IO_FAIL;
+        if (!trfile.read((char*)d_iv, TR_AES_BLOCK_SIZE)) return ParserErr::IO_FAIL;
+        if (!trfile.read((char*)enc_xmlh, ENC_SCE_SIGN_SIZE)) return ParserErr::IO_FAIL;
 
         const auto trydecrypt = [this, &mem, &ent, d_iv, kg_iv, enc_xmlh, &trfile](uint32_t npid) -> bool {
           uint8_t outbuffer[512];
@@ -304,13 +304,13 @@ class Trophies: public ITrophies {
           }
         }
 
-        if (!success) return ErrCodes::DECRYPT;
+        if (!success) return ParserErr::DECRYPT;
       }
 
       return XML_parse(mem.get(), ctx);
     } // group & trophy callbacks
 
-    return ErrCodes::CONTINUE;
+    return ParserErr::CONTINUE;
   }
 
   void callUnlockCallback(trp_unlock_data* cbdata) {
@@ -375,8 +375,8 @@ class Trophies: public ITrophies {
             },
     };
 
-    ErrCodes ec;
-    if ((ec = parseTRP(ctx->label, &tctx)) != ErrCodes::SUCCESS) {
+    ParserErr ec;
+    if ((ec = parseTRP(ctx->label, &tctx)) != ParserErr::SUCCESS) {
       ret = Err::NpTrophy::BROKEN_DATA;
     }
 
@@ -426,7 +426,7 @@ class Trophies: public ITrophies {
             },
     };
 
-    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) return;
+    if (parseTRP(ctx->label, &tctx) != ParserErr::SUCCESS) return;
 
     tctx.entry.func = [this, ctx, &unlocked_plats](trp_ent_cb::data_t* data) -> bool {
       if (data->grade != 'p' && data->platinum != -1) {
@@ -444,7 +444,7 @@ class Trophies: public ITrophies {
       return false;
     };
 
-    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS || unlocked_plats.size() == 0ull) return;
+    if (parseTRP(ctx->label, &tctx) != ParserErr::SUCCESS || unlocked_plats.size() == 0ull) return;
     uint64_t uTime = (uint64_t)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::utc_clock::now().time_since_epoch()).count();
 
     for (auto& plat: unlocked_plats) {
@@ -496,30 +496,30 @@ class Trophies: public ITrophies {
 
   //- Callbacks
 
-  ErrCodes parseTRP(uint32_t label, trp_context* ctx) final {
-    if (!m_bKeySet) return ErrCodes::NO_KEY_SET;
-    if (ctx == nullptr) return ErrCodes::INVALID_CONTEXT;
+  ParserErr parseTRP(uint32_t label, trp_context* ctx) final {
+    if (!m_bKeySet) return ParserErr::NO_KEY_SET;
+    if (ctx == nullptr) return ParserErr::INVALID_CONTEXT;
     // We don't want every callback to be cancelled before we even begin
     ctx->group.cancelled = (ctx->group.func == nullptr);
     ctx->entry.cancelled = (ctx->entry.func == nullptr);
     ctx->pngim.cancelled = (ctx->pngim.func == nullptr);
     ctx->itrop.cancelled = (ctx->itrop.func == nullptr);
-    if (ctx->cancelled()) return ErrCodes::NO_CALLBACKS;
+    if (ctx->cancelled()) return ParserErr::NO_CALLBACKS;
 
     std::unique_lock lock(m_mutexParse);
     m_bIgnoreMissingLocale = false;
 
     auto mpath = accessFileManager().getMappedPath(std::format("/app0/sce_sys/trophy/trophy{:02}.trp", label));
-    if (!mpath.has_value()) return ErrCodes::NO_TROPHIES;
+    if (!mpath.has_value()) return ParserErr::NO_TROPHIES;
 
     std::ifstream trfile(mpath->c_str(), std::ios::in | std::ios::binary);
 
     if (trfile.is_open()) {
       trp_header hdr;
 
-      if (!trfile.read((char*)&hdr, sizeof(hdr))) return ErrCodes::IO_FAIL;
-      if (hdr.magic != 0x004DA2DC) return ErrCodes::INVALID_MAGIC;
-      if (hdr.version != 0x03000000) return ErrCodes::INVALID_VERSION;
+      if (!trfile.read((char*)&hdr, sizeof(hdr))) return ParserErr::IO_FAIL;
+      if (hdr.magic != 0x004DA2DC) return ParserErr::INVALID_MAGIC;
+      if (hdr.version != 0x03000000) return ParserErr::INVALID_VERSION;
 
       /**
        * This file's numbers encoded in big-endian for some twisted reason.
@@ -527,20 +527,20 @@ class Trophies: public ITrophies {
        */
       hdr.entry_num  = _byteswap_ulong(hdr.entry_num);
       hdr.entry_size = _byteswap_ulong(hdr.entry_size);
-      if (hdr.entry_size != sizeof(trp_entry)) return ErrCodes::INVALID_ENTSIZE;
+      if (hdr.entry_size != sizeof(trp_entry)) return ParserErr::INVALID_ENTSIZE;
 
       trp_entry ent, dent = {0};
       for (uint32_t i = 0; i < hdr.entry_num; ++i) {
-        if (ctx->cancelled()) return ErrCodes::SUCCESS;
+        if (ctx->cancelled()) return ParserErr::SUCCESS;
 
         trfile.seekg(sizeof(trp_header) + (sizeof(trp_entry) * i));
-        if (!trfile.read((char*)&ent, sizeof(trp_entry))) return ErrCodes::IO_FAIL;
+        if (!trfile.read((char*)&ent, sizeof(trp_entry))) return ParserErr::IO_FAIL;
 
         ent.pos = _byteswap_uint64(ent.pos);
         ent.len = _byteswap_uint64(ent.len);
 
         auto ret = TRP_readentry(ent, dent, trfile, ctx, label);
-        if (ret != ErrCodes::CONTINUE) return ret;
+        if (ret != ParserErr::CONTINUE) return ret;
       } // entries loop
 
       // Group or trophy callback is not cancelled yet, looks like we missed localized esfm file, trying to use the default one
@@ -548,38 +548,40 @@ class Trophies: public ITrophies {
         m_bIgnoreMissingLocale = true;
         if (dent.len != 0) {
           auto ret = TRP_readentry(dent, dent, trfile, ctx, label);
-          if (ret != ErrCodes::CONTINUE) return ret;
+          if (ret != ParserErr::CONTINUE) return ret;
         }
       }
 
-      return ErrCodes::SUCCESS;
+      return ParserErr::SUCCESS;
     } // trfile.is_open()
 
-    return ErrCodes::NO_TROPHIES;
+    return ParserErr::NO_TROPHIES;
   }
 
-  const char* getError(ErrCodes ec) final {
+  const char* getError(ParserErr ec) final {
     switch (ec) {
-      case ErrCodes::SUCCESS: return "No errors";
-      case ErrCodes::INVALID_CONTEXT: return "Passed context is nullptr";
-      case ErrCodes::OUT_OF_MEMORY: return "Failed to allocate data array";
-      case ErrCodes::NO_KEY_SET: return "Invalid trophy key, decrypting is impossible";
-      case ErrCodes::INVALID_MAGIC: return "Invalid trophy file magic, trophy00.trp is likely corruted";
-      case ErrCodes::INVALID_VERSION: return "Unsupported trophy file version";
-      case ErrCodes::INVALID_ENTSIZE: return "Invalid trophy file entry size, trophy00.trp is likely corruted";
-      case ErrCodes::INVALID_AES: return "Trophy file contains unaligned AES blocks";
-      case ErrCodes::INVALID_XML: return "TPR file contains invalid XML data, can't parse it";
-      case ErrCodes::NOT_IMPLEMENTED: return "This feature is not implemented yet";
-      case ErrCodes::IO_FAIL: return "Your operating system reported IO failure";
-      case ErrCodes::NO_CALLBACKS: return "No callbacks passed to parser";
-      case ErrCodes::DECRYPT: return "Trophy file decryption failed";
-      case ErrCodes::NO_TROPHIES: return "Trophy file is likely missing or does not contain requested esfm file";
-      case ErrCodes::MAX_TROPHY_REACHED: return "The game hit the hard limit of 128 trophies";
+      case ParserErr::SUCCESS: return "No errors";
+      case ParserErr::INVALID_CONTEXT: return "Passed context is nullptr";
+      case ParserErr::OUT_OF_MEMORY: return "Failed to allocate data array";
+      case ParserErr::NO_KEY_SET: return "Invalid trophy key, decrypting is impossible";
+      case ParserErr::INVALID_MAGIC: return "Invalid trophy file magic, trophy00.trp is likely corruted";
+      case ParserErr::INVALID_VERSION: return "Unsupported trophy file version";
+      case ParserErr::INVALID_ENTSIZE: return "Invalid trophy file entry size, trophy00.trp is likely corruted";
+      case ParserErr::INVALID_AES: return "Trophy file contains unaligned AES blocks";
+      case ParserErr::INVALID_XML: return "TPR file contains invalid XML data, can't parse it";
+      case ParserErr::NOT_IMPLEMENTED: return "This feature is not implemented yet";
+      case ParserErr::IO_FAIL: return "Your operating system reported IO failure";
+      case ParserErr::NO_CALLBACKS: return "No callbacks passed to parser";
+      case ParserErr::DECRYPT: return "Trophy file decryption failed";
+      case ParserErr::NO_TROPHIES: return "Trophy file is likely missing or does not contain requested esfm file";
+      case ParserErr::MAX_TROPHY_REACHED: return "The game hit the hard limit of 128 trophies";
       default: return "Unknown error code!";
     }
   }
 
   int32_t loadTrophyData(usr_context* ctx) {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+
     auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}-{}", ctx->userId, ctx->label);
 
     std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -600,6 +602,8 @@ class Trophies: public ITrophies {
   }
 
   int32_t saveTrophyData(usr_context* ctx) {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+
     auto path = accessFileManager().getGameFilesDir() / std::format("tropinfo.{}-{}", ctx->userId, ctx->label);
 
     std::ofstream file(path, std::ios::out | std::ios::binary);
@@ -630,7 +634,10 @@ class Trophies: public ITrophies {
   }
 
   int32_t createContext(int32_t userId, uint32_t label, int32_t* ctxid) final {
-    if (userId < 1 || userId > 4) return Err::NpTrophy::INVALID_USER_ID;
+    if (userId < 1 || userId > 4) {
+      *ctxid = -1;
+      return Err::NpTrophy::INVALID_USER_ID;
+    }
 
     for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
       if (it->label == label && it->userId == userId) {
@@ -653,6 +660,7 @@ class Trophies: public ITrophies {
       return Ok;
     }
 
+    *ctxid = -1;
     return errcode;
   }
 
@@ -660,7 +668,7 @@ class Trophies: public ITrophies {
     if (!saveTrophyData(ctx)) return Err::NpTrophy::INSUFFICIENT_SPACE;
 
     for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
-      if (ctx == &(*it)) {
+      if (ctx == it._Ptr) {
         ctx->label = -1;
         m_ctx.erase(it);
         return Ok;
@@ -671,6 +679,8 @@ class Trophies: public ITrophies {
   }
 
   int32_t getProgress(usr_context* ctx, uint32_t progress[4], uint32_t* count) final {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+
     if (count != nullptr) {
       trp_context tctx = {
           .lightweight = true,
@@ -683,7 +693,7 @@ class Trophies: public ITrophies {
               },
       };
 
-      if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) return Err::NpTrophy::BROKEN_DATA;
+      if (parseTRP(ctx->label, &tctx) != ParserErr::SUCCESS) return Err::NpTrophy::BROKEN_DATA;
     }
 
     SCE_NP_TROPHY_FLAG_ZERO((SceNpTrophyFlagArray*)progress);
@@ -695,6 +705,8 @@ class Trophies: public ITrophies {
   }
 
   uint64_t getUnlockTime(usr_context* ctx, int32_t trophyId) final {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+
     for (auto& trop: ctx->trophies) {
       if (trop.id == trophyId) return trop.ts;
     }
@@ -703,7 +715,9 @@ class Trophies: public ITrophies {
   }
 
   int32_t getPlatinumIdFor(usr_context* ctx, int32_t trophyId) {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
     if (trophyId < 0 || trophyId > 128) return -3;
+
     int32_t platId = -1;
 
     trp_context tctx = {
@@ -721,12 +735,14 @@ class Trophies: public ITrophies {
             },
     };
 
-    if (parseTRP(ctx->label, &tctx) != ErrCodes::SUCCESS) platId = -3;
+    if (parseTRP(ctx->label, &tctx) != ParserErr::SUCCESS) platId = -3;
     return platId;
   }
 
   int32_t unlockTrophy(usr_context* ctx, int32_t trophyId, int32_t* platinumId) final {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
     if (getUnlockTime(ctx, trophyId) > 0ull) return Err::NpTrophy::ALREADY_UNLOCKED;
+
     *platinumId = -1;
     int32_t errcode;
 

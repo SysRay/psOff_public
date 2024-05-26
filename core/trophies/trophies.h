@@ -18,7 +18,7 @@ class ITrophies {
   public:
   virtual ~ITrophies() = default;
 
-  enum class ErrCodes {
+  enum class ParserErr {
     SUCCESS = 0,        // No errors, we're fine
     INVALID_CONTEXT,    // Context is nullptr
     OUT_OF_MEMORY,      // Failed to allocate data array
@@ -131,8 +131,8 @@ class ITrophies {
     std::string pdescr;
   };
 
-  virtual ErrCodes    parseTRP(uint32_t label, trp_context* context) = 0;
-  virtual const char* getError(ErrCodes ec)                          = 0;
+  virtual ParserErr   parseTRP(uint32_t label, trp_context* context) = 0;
+  virtual const char* getError(ParserErr ec)                         = 0;
 
   //  Callbacks
 
