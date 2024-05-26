@@ -146,7 +146,7 @@ class ITrophies {
   virtual int32_t      getProgress(usr_context* ctx, uint32_t progress[4], uint32_t* count)  = 0;
   virtual uint64_t     getUnlockTime(usr_context* ctx, int32_t trophyId)                     = 0;
   virtual int32_t      unlockTrophy(usr_context* ctx, int32_t trophyId, int32_t* platinumId) = 0;
-  virtual bool         resetUserInfo(usr_context* ctx)                                       = 0;
+  virtual int32_t      resetUserInfo(usr_context* ctx)                                       = 0;
 };
 
 #if defined(__APICALL_EXTERN)

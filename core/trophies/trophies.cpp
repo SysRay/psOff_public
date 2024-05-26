@@ -330,6 +330,7 @@ class Trophies: public ITrophies {
     int32_t platId = getPlatinumIdFor(ctx, trophyId);
     if (platId == -2) return Err::NpTrophy::PLATINUM_CANNOT_UNLOCK;
     if (platId == -3) return Err::NpTrophy::BROKEN_DATA;
+    if (platId == -4) return Err::NpTrophy::INVALID_CONTEXT;
 
     auto pngname = std::format("TROP{:3}.PNG", trophyId);
 
@@ -626,7 +627,7 @@ class Trophies: public ITrophies {
   usr_context* getContext(int32_t ctxid) final {
     for (auto it = m_ctx.begin(); it != m_ctx.end(); ++it) {
       if (it->label == (ctxid & 0xffff) && it->userId == ((ctxid >> 16) & 0xffff)) {
-        return &(*it);
+        return it._Ptr;
       }
     }
 
@@ -705,7 +706,7 @@ class Trophies: public ITrophies {
   }
 
   uint64_t getUnlockTime(usr_context* ctx, int32_t trophyId) final {
-    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+    if (!ctx) return 0ull;
 
     for (auto& trop: ctx->trophies) {
       if (trop.id == trophyId) return trop.ts;
@@ -715,7 +716,7 @@ class Trophies: public ITrophies {
   }
 
   int32_t getPlatinumIdFor(usr_context* ctx, int32_t trophyId) {
-    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+    if (!ctx) return -4;
     if (trophyId < 0 || trophyId > 128) return -3;
 
     int32_t platId = -1;
@@ -767,7 +768,12 @@ class Trophies: public ITrophies {
     return saveTrophyData(ctx) ? errcode : Err::NpTrophy::INSUFFICIENT_SPACE;
   }
 
-  bool resetUserInfo(usr_context* ctx) final { return false; }
+  int32_t resetUserInfo(usr_context* ctx) final {
+    if (!ctx) return Err::NpTrophy::INVALID_CONTEXT;
+
+    ctx->trophies.clear();
+    return true;
+  }
 };
 
 ITrophies& accessTrophies() {
