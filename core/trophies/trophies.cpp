@@ -635,6 +635,8 @@ class Trophies: public ITrophies {
   }
 
   int32_t createContext(int32_t userId, uint32_t label, int32_t* ctxid) final {
+    if (label > 99) return Err::NpTrophy::INVALID_NP_SERVICE_LABEL;
+
     if (userId < 1 || userId > 4) {
       *ctxid = -1;
       return Err::NpTrophy::INVALID_USER_ID;
