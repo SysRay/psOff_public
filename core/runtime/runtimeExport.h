@@ -21,8 +21,8 @@ struct alignas(32) EntryParams {
 };
 
 struct ModulInfo {
-  uint64_t address;
-  uint64_t size;
+  uint64_t seg0Addr;
+  uint64_t seg0Size;
   uint64_t procParamAddr;
 };
 

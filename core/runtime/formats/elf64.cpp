@@ -500,7 +500,7 @@ class Parser_ELF64: public IFormat {
   Symbols::RelocationInfo getRelocationInfo(IRuntimeLinker const* linker, elf64::Elf64_Rela const* r, Program const* prog,
                                             elf64::SymbolMap const& symbolsMap) const;
 
-  void relocate(Program const* prog, uint64_t invalidMemoryAddr) final;
+  void relocate(Program const* prog, uint64_t invalidMemoryAddr, std::string_view libName) final;
 
   bool isShared() const { return (m_elfHeader->type == elf64::ET_DYNAMIC); }
 
@@ -1420,7 +1420,7 @@ void Parser_ELF64::setupMissingRelocationHandler(Program* prog, void* relocateHa
   }
 }
 
-void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr) {
+void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr, std::string_view libName) {
   LOG_USE_MODULE(ELF64);
   LOG_INFO(L"relocate %s", prog->filename.c_str());
 
@@ -1431,12 +1431,22 @@ void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr) {
     return ret;
   };
 
-  auto relocateAll = [this, prog, invalidMemoryAddr, load](IRuntimeLinker& linker, elf64::Elf64_Rela const* records, uint64_t numBytes,
-                                                           bool const isJmpRelaTable) {
+  auto relocateAll = [&](IRuntimeLinker& linker, elf64::Elf64_Rela const* records, uint64_t numBytes, bool const isJmpRelaTable) {
     uint32_t index = 0;
     for (auto const* r = records; reinterpret_cast<uint8_t const*>(r) < reinterpret_cast<uint8_t const*>(records) + numBytes; r++, index++) {
-      auto const ri      = getRelocationInfo(&linker, r, prog, m_dynamicInfo->symbolsMap);
-      bool       patched = false;
+      auto const ri = getRelocationInfo(&linker, r, prog, m_dynamicInfo->symbolsMap);
+
+      if (!libName.empty()) {
+        auto idData = util::splitString(ri.name, '#');
+
+        if (idData.size() == 3) {
+          auto lib = getLibrary(m_dynamicInfo.get(), idData[1]);
+          if (lib->name != libName) continue;
+        } else
+          continue;
+      }
+
+      bool patched = false;
       if (ri.resolved) {
         patched = patchReplace(ri.vaddr, ri.value);
       } else {

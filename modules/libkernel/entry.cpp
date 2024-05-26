@@ -100,10 +100,17 @@ EXPORT SYSV_ABI void* _sceModuleParam() {
   return reinterpret_cast<void*>(procParamVaddr);
 }
 
-EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info) {
+struct ModuleSegmentInfo {
+  uint64_t addr;
+  uint64_t size;
+};
+
+EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModuleSegmentInfo* info) {
   if (info == nullptr) return getErr(ErrCode::_EFAULT);
 
-  *info = accessRuntimeLinker().mainModuleInfo();
+  auto mainInfo = accessRuntimeLinker().mainModuleInfo();
+  info->addr    = mainInfo.seg0Addr;
+  info->size    = mainInfo.seg0Size;
   return Ok;
 }
 
