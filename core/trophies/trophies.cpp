@@ -649,7 +649,7 @@ class Trophies: public ITrophies {
       }
     }
 
-    if (m_ctx.size() == 8) return Err::NpTrophy::CONTEXT_EXCEEDS_MAX;
+    if (m_ctx.size() >= 8) return Err::NpTrophy::CONTEXT_EXCEEDS_MAX;
 
     struct usr_context ctx {
       .label = label, .userId = userId,
