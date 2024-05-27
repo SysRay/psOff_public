@@ -184,9 +184,10 @@ class InternalLib: public Symbols::IResolve {
 
 class RuntimeLinker: public IRuntimeLinker {
   private:
-  mutable std::mutex m_mutex_int;
+  mutable std::recursive_mutex m_mutex_int;
 
-  uint64_t m_invalidMemoryAddr = 0;
+  uint64_t m_invalidMemoryAddr   = 0;
+  size_t   m_countcreatePrograms = 0;
 
   EntryParams m_entryParams = {
       .argc = 1,
@@ -203,7 +204,7 @@ class RuntimeLinker: public IRuntimeLinker {
   std::unordered_map<std::string_view, Symbols::SymbolIntercept>             m_interceptMap;
   mutable std::unordered_map<uintptr_t, uintptr_t>                           m_interceptOrigVaddrMap;
 
-  std::unordered_map<uint32_t, uint64_t>      mTlsIndexMap;
+  std::unordered_map<uint32_t, Program*>      mTlsIndexMap;
   std::unordered_map<std::string_view, void*> m_libHandles;
 
   std::vector<uint8_t>                    m_tlsStaticInitBlock;
@@ -241,10 +242,9 @@ class RuntimeLinker: public IRuntimeLinker {
   std::unique_ptr<Program> createProgram(std::filesystem::path const filepath, uint64_t const baseSize, uint64_t const baseSizeAligned, uint64_t const alocSize,
                                          bool useStaticTLS) final {
     std::unique_lock const lock(m_mutex_int);
-
+    if (useStaticTLS) ++m_countcreatePrograms;
     auto inst = std::make_unique<Program>(filepath, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
     inst->id  = accessFileManager().addFile(createType_lib(inst), filepath);
-
     return inst;
   }
 
@@ -530,6 +530,16 @@ void RuntimeLinker::loadModules(std::string_view libName) {
 
 int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t argc, const void* argp, int* pRes) {
   LOG_USE_MODULE(RuntimeLinker);
+  std::unique_lock const lock(m_mutex_int);
+
+  // check if already loaded
+  auto fileName = path.filename().string();
+  if (auto it = std::find_if(m_programList.begin(), m_programList.end(),
+                             [&fileName](std::pair<std::unique_ptr<Program>, std::shared_ptr<IFormat>>& rhs) { return rhs.first->filename == fileName; });
+      it != m_programList.end()) {
+    return it->first->id;
+  }
+  // -
 
   auto ifFile = util::openFile(path);
   if (!ifFile) {
@@ -562,7 +572,7 @@ int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t arg
 
   pProgram->moduleInfoEx.tls_index = tlsIndex;
 
-  mTlsIndexMap[tlsIndex] = pProgram->id;
+  mTlsIndexMap[tlsIndex] = pProgram;
 
   // check imports
   LOG_DEBUG(L"Load for %S", pProgram->filename.string().c_str());
@@ -614,24 +624,24 @@ void* RuntimeLinker::getTLSAddr(uint32_t index, uint64_t offset) {
 
   LOG_USE_MODULE(RuntimeLinker);
 
-  auto& tlsAddr = pthread::getDTV(pthread::getSelf())[index];
+  if (index <= m_countcreatePrograms) {
+    auto& tlsAddr = pthread::getDTV(pthread::getSelf())[index];
+    LOG_TRACE(L"[%d] getTlsAddr key:%d addr:0x%08llx offset:0x%08llx", pthread::getThreadId(), index, tlsAddr, offset);
+    return (void*)((uint8_t*)tlsAddr + offset);
+  }
+
+  // Lookup module and get its tls
+  auto const prog    = mTlsIndexMap[index];
+  auto&      tlsAddr = pthread::getDTV(pthread::getSelf())[prog->tls.index];
+
+  if (tlsAddr == 0) {
+    LOG_TRACE(L"[%d] create tls key:%d", pthread::getThreadId(), index);
+    auto obj = std::make_unique<uint8_t[]>(prog->tls.sizeImage).release();
+    memcpy(obj, (void*)prog->tls.vaddrImage, prog->tls.sizeImage);
+    tlsAddr = (uint64_t)obj;
+  }
 
   LOG_TRACE(L"[%d] getTlsAddr key:%d addr:0x%08llx offset:0x%08llx", pthread::getThreadId(), index, tlsAddr, offset);
-
-  // Create new for dynamically loaded module
-  if (tlsAddr == 0) {
-
-    LOG_ERR(L"todo init tls module:%d", index);
-    auto const progIndex = mTlsIndexMap[index];
-    auto&      prog      = m_programList[progIndex];
-
-    uint8_t* tlsData = new uint8_t[prog.first->tls.sizeImage];
-    memcpy(tlsData, (void*)prog.first->tls.vaddrImage, prog.first->tls.sizeImage);
-
-    tlsAddr = (uint64_t)tlsData;
-  }
-  // - create new
-
   return (void*)((uint8_t*)tlsAddr + offset);
 }
 
@@ -664,7 +674,7 @@ uint32_t RuntimeLinker::createTLSKey(void* destructor) {
 
   std::unique_lock const lock(m_mutex_int);
 
-  for (uint64_t n = 0; n < m_dtvKeys.size(); ++n) {
+  for (uint64_t n = m_countcreatePrograms; n < m_dtvKeys.size(); ++n) {
     if (!m_dtvKeys[n].used) {
       m_dtvKeys[n].used       = true;
       m_dtvKeys[n].destructor = (pthread_key_destructor_func_t)destructor;
@@ -698,7 +708,7 @@ void RuntimeLinker::destroyTLSKeys(uint8_t* obj) {
 
   std::unique_lock const lock(m_mutex_int);
 
-  for (uint64_t n = 0; n < m_dtvKeys.size(); ++n, ++pDtvKey) {
+  for (uint64_t n = m_countcreatePrograms; n < m_dtvKeys.size(); ++n, ++pDtvKey) {
     if (m_dtvKeys[n].destructor != nullptr) {
       if (pDtvKey[n] != 0) m_dtvKeys[n].destructor((void*)pDtvKey[n]);
     }
