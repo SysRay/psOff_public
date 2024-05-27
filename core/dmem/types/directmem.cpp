@@ -446,23 +446,26 @@ int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignmen
     return Ok;
   }
 
-  *startOut = start;
-  *sizeOut  = (itItem->second.addr - DIRECTMEM_START) - start;
-  // if (itItem->second.addr + itItem->second.size >= DIRECTMEM_START + end) {
-  //   *startOut = end;
-  //   *sizeOut  = 0;
-  //   return Ok;
-  // }
-
   // *startOut = start;
-  // *sizeOut  = 0;
+  // *sizeOut  = (itItem->second.addr - DIRECTMEM_START) - start;
+  if (itItem->second.addr + itItem->second.size >= DIRECTMEM_START + end) {
+    *startOut = end;
+    *sizeOut  = 0;
+    return Ok;
+  }
 
-  // auto itEnd = m_objects.lower_bound(DIRECTMEM_START + end);
-  // for (; itItem != itEnd; ++itItem) {
-  //   *startOut = (itItem->second.addr + itItem->second.size) - DIRECTMEM_START;
-  // }
+  *startOut = start;
+  *sizeOut  = 0;
 
-  // if (*startOut > end) *sizeOut = end - *startOut;
+  auto itEnd = m_objects.lower_bound(DIRECTMEM_START + end);
+  for (; itItem != itEnd; ++itItem) {
+    *startOut = (itItem->second.addr + itItem->second.size) - DIRECTMEM_START;
+  }
+
+  if (*startOut > end)
+    *sizeOut = *startOut - end;
+  else
+    *sizeOut = end - *startOut;
 
   return Ok;
 }

@@ -2,6 +2,8 @@
 #include "runtimeLinker.h"
 #undef __APICALL_EXTERN
 
+#include "core/fileManager/fileManager.h"
+#include "core/fileManager/types/type_lib.h"
 #include "core/kernel/pthread.h"
 #include "core/kernel/pthread_intern.h"
 #include "core/memory/memory.h"
@@ -25,8 +27,8 @@ LOG_DEFINE_MODULE(RuntimeLinker);
 
 namespace {
 using atexit_func_t = SYSV_ABI void (*)();
-using entry_func_t  = SYSV_ABI void (*)(EntryParams const* params, atexit_func_t atexit_func);
-using module_func_t = SYSV_ABI int (*)(size_t args, const void* argp, atexit_func_t atexit_func);
+using entry_func_t  = SYSV_ABI void  (*)(EntryParams const* params, atexit_func_t atexit_func);
+using module_func_t = SYSV_ABI int  (*)(size_t args, const void* argp, atexit_func_t atexit_func);
 
 struct FrameS {
   FrameS*   next;
@@ -184,8 +186,7 @@ class RuntimeLinker: public IRuntimeLinker {
   private:
   mutable std::mutex m_mutex_int;
 
-  uint64_t m_invalidMemoryAddr   = 0;
-  size_t   m_countcreatePrograms = 0;
+  uint64_t m_invalidMemoryAddr = 0;
 
   EntryParams m_entryParams = {
       .argc = 1,
@@ -240,8 +241,10 @@ class RuntimeLinker: public IRuntimeLinker {
   std::unique_ptr<Program> createProgram(std::filesystem::path const filepath, uint64_t const baseSize, uint64_t const baseSizeAligned, uint64_t const alocSize,
                                          bool useStaticTLS) final {
     std::unique_lock const lock(m_mutex_int);
-    ++m_countcreatePrograms;
-    auto inst = std::make_unique<Program>(filepath, m_countcreatePrograms, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
+
+    auto inst = std::make_unique<Program>(filepath, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
+    inst->id  = accessFileManager().addFile(createType_lib(inst), filepath);
+
     return inst;
   }
 
@@ -661,7 +664,7 @@ uint32_t RuntimeLinker::createTLSKey(void* destructor) {
 
   std::unique_lock const lock(m_mutex_int);
 
-  for (uint64_t n = m_countcreatePrograms; n < m_dtvKeys.size(); ++n) {
+  for (uint64_t n = 0; n < m_dtvKeys.size(); ++n) {
     if (!m_dtvKeys[n].used) {
       m_dtvKeys[n].used       = true;
       m_dtvKeys[n].destructor = (pthread_key_destructor_func_t)destructor;
@@ -695,7 +698,7 @@ void RuntimeLinker::destroyTLSKeys(uint8_t* obj) {
 
   std::unique_lock const lock(m_mutex_int);
 
-  for (uint64_t n = m_countcreatePrograms; n < m_dtvKeys.size(); ++n, ++pDtvKey) {
+  for (uint64_t n = 0; n < m_dtvKeys.size(); ++n, ++pDtvKey) {
     if (m_dtvKeys[n].destructor != nullptr) {
       if (pDtvKey[n] != 0) m_dtvKeys[n].destructor((void*)pDtvKey[n]);
     }

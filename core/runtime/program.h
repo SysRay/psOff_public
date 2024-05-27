@@ -47,7 +47,7 @@ struct Program {
   std::filesystem::path const filename;
   std::filesystem::path const path;
 
-  size_t const   id;
+  int32_t        id;
   uint64_t const baseSize;
   uint64_t const baseSizeAligned;
   uint64_t const desiredBaseAddr;
@@ -59,11 +59,10 @@ struct Program {
 
   std::vector<CxaDestructor> cxa;
 
-  Program(std::filesystem::path path_, size_t uniqueIndex_, uint64_t baseSize_, uint64_t baseSizeAligned_, uint64_t desiredBaseAddr_, uint64_t allocSize_,
-          bool useStaticTLS_)
+  Program(std::filesystem::path path_, uint64_t baseSize_, uint64_t baseSizeAligned_, uint64_t desiredBaseAddr_, uint64_t allocSize_, bool useStaticTLS_)
       : filename(path_.filename()),
         path(path_),
-        id(uniqueIndex_),
+        id(-1),
         baseSize(baseSize_),
         baseSizeAligned(baseSizeAligned_),
         desiredBaseAddr(desiredBaseAddr_),
