@@ -20,8 +20,9 @@ __APICALL void setError_pthread(int);
 static int32_t POSIX_CALL(int32_t result) {
   if (result >= 0) return result;
 
-  setError_pthread(result - (int32_t)0x80020000);
-  return -1;
+  int res = result - (int32_t)0x80020000;
+  setError_pthread(res);
+  return res;
 }
 
 static int32_t POSIX_SET(ErrCode error) {
