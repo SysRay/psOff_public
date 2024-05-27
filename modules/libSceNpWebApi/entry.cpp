@@ -50,6 +50,14 @@ EXPORT SYSV_ABI int32_t sceNpWebApiCreateContextA(int32_t libCtxId, int32_t user
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNpWebApiCreatePushEventFilter() {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiCreateServicePushEventFilter() {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNpWebApiDeleteContext(int32_t titleUserCtxId) {
   return Ok;
 }

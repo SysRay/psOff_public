@@ -397,4 +397,37 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_11UserProf
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::Matching::Room>::~Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_8Matching4RoomEED1Ev)() {
+  LOG_USE_MODULE(libSceNpToolkit2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::RequestBase::getFunctionType() const
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZNK3sce7Toolkit2NP2V24Core11RequestBase15getFunctionTypeEv)() {
+  LOG_USE_MODULE(libSceNpToolkit2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::UserProfile::NpProfiles>::~Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_11UserProfile10NpProfilesEED1Ev)() {
+  LOG_USE_MODULE(libSceNpToolkit2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }
