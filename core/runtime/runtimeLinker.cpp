@@ -184,7 +184,7 @@ class InternalLib: public Symbols::IResolve {
 
 class RuntimeLinker: public IRuntimeLinker {
   private:
-  mutable std::mutex m_mutex_int;
+  mutable std::recursive_mutex m_mutex_int;
 
   uint64_t m_invalidMemoryAddr   = 0;
   size_t   m_countcreatePrograms = 0;
@@ -530,13 +530,13 @@ void RuntimeLinker::loadModules(std::string_view libName) {
 
 int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t argc, const void* argp, int* pRes) {
   LOG_USE_MODULE(RuntimeLinker);
+  std::unique_lock const lock(m_mutex_int);
 
   // check if already loaded
   auto fileName = path.filename().string();
   if (auto it = std::find_if(m_programList.begin(), m_programList.end(),
                              [&fileName](std::pair<std::unique_ptr<Program>, std::shared_ptr<IFormat>>& rhs) { return rhs.first->filename == fileName; });
       it != m_programList.end()) {
-    LOG_ERR(L"Already loaded %s", path.c_str());
     return it->first->id;
   }
   // -
