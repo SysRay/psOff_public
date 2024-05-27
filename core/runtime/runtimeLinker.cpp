@@ -202,7 +202,7 @@ class RuntimeLinker: public IRuntimeLinker {
   std::unordered_map<std::string_view, Symbols::SymbolIntercept>             m_interceptMap;
   mutable std::unordered_map<uintptr_t, uintptr_t>                           m_interceptOrigVaddrMap;
 
-  std::unordered_map<uint32_t, uint64_t>      mTlsIndexMap;
+  std::unordered_map<uint32_t, Program*>      mTlsIndexMap;
   std::unordered_map<std::string_view, void*> m_libHandles;
 
   std::vector<uint8_t>                    m_tlsStaticInitBlock;
@@ -240,7 +240,7 @@ class RuntimeLinker: public IRuntimeLinker {
   std::unique_ptr<Program> createProgram(std::filesystem::path const filepath, uint64_t const baseSize, uint64_t const baseSizeAligned, uint64_t const alocSize,
                                          bool useStaticTLS) final {
     std::unique_lock const lock(m_mutex_int);
-    ++m_countcreatePrograms;
+    if (useStaticTLS) ++m_countcreatePrograms;
     auto inst = std::make_unique<Program>(filepath, m_countcreatePrograms, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
     return inst;
   }
@@ -559,7 +559,7 @@ int RuntimeLinker::loadStartModule(std::filesystem::path const& path, size_t arg
 
   pProgram->moduleInfoEx.tls_index = tlsIndex;
 
-  mTlsIndexMap[tlsIndex] = pProgram->id;
+  mTlsIndexMap[tlsIndex] = pProgram;
 
   // check imports
   LOG_DEBUG(L"Load for %S", pProgram->filename.string().c_str());
@@ -611,24 +611,24 @@ void* RuntimeLinker::getTLSAddr(uint32_t index, uint64_t offset) {
 
   LOG_USE_MODULE(RuntimeLinker);
 
-  auto& tlsAddr = pthread::getDTV(pthread::getSelf())[index];
+  if (index <= m_countcreatePrograms) {
+    auto& tlsAddr = pthread::getDTV(pthread::getSelf())[index];
+    LOG_TRACE(L"[%d] getTlsAddr key:%d addr:0x%08llx offset:0x%08llx", pthread::getThreadId(), index, tlsAddr, offset);
+    return (void*)((uint8_t*)tlsAddr + offset);
+  }
+
+  // Lookup module and get its tls
+  auto const prog    = mTlsIndexMap[index];
+  auto&      tlsAddr = pthread::getDTV(pthread::getSelf())[prog->tls.index];
+
+  if (tlsAddr == 0) {
+    LOG_TRACE(L"[%d] create tls key:%d", pthread::getThreadId(), index);
+    auto obj = std::make_unique<uint8_t[]>(prog->tls.sizeImage).release();
+    memcpy(obj, (void*)prog->tls.vaddrImage, prog->tls.sizeImage);
+    tlsAddr = (uint64_t)obj;
+  }
 
   LOG_TRACE(L"[%d] getTlsAddr key:%d addr:0x%08llx offset:0x%08llx", pthread::getThreadId(), index, tlsAddr, offset);
-
-  // Create new for dynamically loaded module
-  if (tlsAddr == 0) {
-
-    LOG_ERR(L"todo init tls module:%d", index);
-    auto const progIndex = mTlsIndexMap[index];
-    auto&      prog      = m_programList[progIndex];
-
-    uint8_t* tlsData = new uint8_t[prog.first->tls.sizeImage];
-    memcpy(tlsData, (void*)prog.first->tls.vaddrImage, prog.first->tls.sizeImage);
-
-    tlsAddr = (uint64_t)tlsData;
-  }
-  // - create new
-
   return (void*)((uint8_t*)tlsAddr + offset);
 }
 
