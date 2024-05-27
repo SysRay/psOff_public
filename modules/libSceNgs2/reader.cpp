@@ -229,7 +229,7 @@ void Reader::setNewData(void const* start, void const* end) {
   voice->state.bits.Empty = false;
 }
 
-bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
+bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples, uint32_t outRate) {
   LOG_USE_MODULE(libSceNgs2);
   auto pimpl = (PImpl*)m_pimpl;
 
@@ -249,8 +249,8 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
     auto const [formatIn, bytesIn] = convFormat(voice->info.type);
     if (formatIn == AVSampleFormat::AV_SAMPLE_FMT_NONE) return false;
 
-    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, voice->info.sampleRate, &pimpl->curChannelLayoutIn, formatIn,
-                            voice->info.sampleRate, 0, NULL)) {
+    if (swr_alloc_set_opts2(&pimpl->swrCtx, &pimpl->curChannelLayoutOut, formatOut, outRate, &pimpl->curChannelLayoutIn, formatIn, voice->info.sampleRate, 0,
+                            NULL)) {
       LOG_ERR(L"Reader:Couldn't alloc swr");
       return false;
     }
@@ -273,31 +273,16 @@ bool Reader::getAudioUncompressed(SceNgs2RenderBufferInfo* rbi, uint32_t numOutS
   }
   // -
 
-  uint32_t const readSize = std::min(rbi->bufferSize, (size_t)pimpl->block.size - pimpl->curOffset);
-
   auto const [formatIn, bytesIn]   = convFormat(voice->info.type);
   auto const [formatOut, bytesOut] = convFormat(rbi->waveType);
 
-  std::vector<uint8_t*> audioBuffers(((int)rbi->channelsCount));
-
-  auto const channelSizeOut = (uint32_t)rbi->channelsCount * bytesOut;
-  for (uint8_t n = 0; n < audioBuffers.size(); ++n) {
-    audioBuffers[n] = &((uint8_t*)rbi->bufferPtr)[0];
-  }
-
   if (pimpl->block.numSamples > 0) {
-    std::vector<uint8_t const*> audioBuffersIn(((int)voice->info.channelsCount));
-
-    auto const channelSizeIn = (uint32_t)voice->info.channelsCount * bytesOut;
-    for (uint8_t n = 0; n < audioBuffersIn.size(); ++n) {
-      audioBuffersIn[n] = &((uint8_t*)pimpl->data)[0];
-    }
-
-    auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, &pimpl->data, pimpl->block.numSamples);
+    swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, &pimpl->data, pimpl->block.numSamples);
 
     pimpl->block.numSamples = 0;
   } else {
     auto numSamples = swr_convert(pimpl->swrCtx, (uint8_t**)&rbi->bufferPtr, numOutSamples, nullptr, 0);
+
     if (numSamples == 0) {
       m_state.numDecodedSamples += pimpl->block.numSamples;
       m_state.decodedDataSize += pimpl->block.size;
@@ -423,7 +408,7 @@ bool Reader::getAudioCompressed(SceNgs2RenderBufferInfo* rbi) {
   return true;
 }
 
-bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
+bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples, uint32_t outRate) {
   if (m_isInit == false || voice->state.bits.Empty || !voice->state.bits.Playing || (voice->state.bits.Playing && voice->state.bits.Paused)) {
     return true;
   }
@@ -431,7 +416,7 @@ bool Reader::getAudio(SceNgs2RenderBufferInfo* rbi, uint32_t numOutSamples) {
   if (m_isCompressed) {
     return false; // getAudioCompressed(rbi);
   } else {
-    return getAudioUncompressed(rbi, numOutSamples);
+    return getAudioUncompressed(rbi, numOutSamples, outRate);
   }
   return true;
 }

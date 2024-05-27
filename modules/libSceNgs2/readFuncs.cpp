@@ -182,6 +182,7 @@ int32_t parseRiffWave(funcReadBuf_t readFunc, funcSeekBuf_t seekFunc, void* user
   return Ok;
 }
 
+// Output channel layout for everything >2.0 seems to be invalid, we need to rearrange those
 AVChannelLayout convChannelLayout(SceNgs2ChannelsCount count) {
   LOG_USE_MODULE(libSceNgs2);
   switch (count) {

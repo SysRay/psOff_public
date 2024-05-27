@@ -1117,8 +1117,8 @@ bool Parser_ELF64::load2Mem(Program* prog) {
   prog->baseVaddr = memory::alloc(prog->desiredBaseAddr, prog->baseSizeAligned + /*fs_table: */ sizeof(uint64_t) * (1 + fsPatchAddrList.size()),
                                   SceProtExecute | SceProtRead | SceProtWrite);
 
-  printf("[%llu] %S| Image allocation, addr:0x%08llx size:0x%08llx\n", prog->id, m_filename.c_str(), prog->baseVaddr, prog->allocSize);
-  LOG_DEBUG(L"[%llu] %s| Image allocation, addr:0x%08llx(0x%08llx) size:0x%08llx", prog->id, m_filename.c_str(), prog->baseVaddr, prog->desiredBaseAddr,
+  printf("[%d] %S| Image allocation, addr:0x%08llx size:0x%08llx\n", prog->id, m_filename.c_str(), prog->baseVaddr, prog->allocSize);
+  LOG_DEBUG(L"[%d] %s| Image allocation, addr:0x%08llx(0x%08llx) size:0x%08llx", prog->id, m_filename.c_str(), prog->baseVaddr, prog->desiredBaseAddr,
             prog->allocSize);
 
   m_baseVaddr = prog->baseVaddr;

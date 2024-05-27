@@ -2,6 +2,8 @@
 #include "runtimeLinker.h"
 #undef __APICALL_EXTERN
 
+#include "core/fileManager/fileManager.h"
+#include "core/fileManager/types/type_lib.h"
 #include "core/kernel/pthread.h"
 #include "core/kernel/pthread_intern.h"
 #include "core/memory/memory.h"
@@ -241,7 +243,8 @@ class RuntimeLinker: public IRuntimeLinker {
                                          bool useStaticTLS) final {
     std::unique_lock const lock(m_mutex_int);
     if (useStaticTLS) ++m_countcreatePrograms;
-    auto inst = std::make_unique<Program>(filepath, m_countcreatePrograms, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
+    auto inst = std::make_unique<Program>(filepath, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
+    inst->id  = accessFileManager().addFile(createType_lib(inst), filepath);
     return inst;
   }
 

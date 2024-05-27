@@ -48,8 +48,8 @@ void GameMenu::switchTo(MenuState state) {
               },
       };
 
-      ITrophies::ErrCodes ec;
-      if ((ec = accessTrophies().parseTRP(&ctx)) != ITrophies::ErrCodes::SUCCESS) {
+      ITrophies::ParserErr ec;
+      if ((ec = accessTrophies().parseTRP(&ctx)) != ITrophies::ParserErr::SUCCESS) {
         m_trophyList.clear();
         m_trophyList.emplace_back(0, 'e', false, "Failed to load trophies", accessTrophies().getError(ec));
       }
