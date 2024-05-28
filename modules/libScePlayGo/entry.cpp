@@ -63,6 +63,7 @@ EXPORT SYSV_ABI int32_t scePlayGoSetToDoList(ScePlayGoHandle handle, const ScePl
 EXPORT SYSV_ABI int32_t scePlayGoGetToDoList(ScePlayGoHandle handle, ScePlayGoToDo* outTodoList, uint32_t numberOfEntries, uint32_t* outEntries) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *outEntries = 0;
   return Ok;
 }
 
@@ -75,6 +76,7 @@ EXPORT SYSV_ABI int32_t scePlayGoPrefetch(ScePlayGoHandle handle, const ScePlayG
 EXPORT SYSV_ABI int32_t scePlayGoGetEta(ScePlayGoHandle handle, const ScePlayGoChunkId* chunkIds, uint32_t numberOfEntries, ScePlayGoEta* outEta) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *outEta = 0;
   return Ok;
 }
 
