@@ -430,4 +430,26 @@ EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_11UserProf
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::TSS::TssData>::Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_3TSS7TssDataEEC1Ev)() {
+  LOG_USE_MODULE(libSceNpToolkit2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+/**
+ * @brief sce::Toolkit::NP::V2::Core::Response<sce::Toolkit::NP::V2::TSS::TssData>::~Response()
+ *
+ */
+
+EXPORT SYSV_ABI int32_t __NID(_ZN3sce7Toolkit2NP2V24Core8ResponseINS2_3TSS7TssDataEED1Ev)() {
+  LOG_USE_MODULE(libSceNpToolkit2);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
 }
