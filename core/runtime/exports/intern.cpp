@@ -24,10 +24,10 @@ void init() {
 void initIntercepts() {
   /*Usage
   // functions has to be of SYSV_ABI!
-  accessRuntimeExport()->interceptAdd((uintptr_t)int_Malloc, "Y7aJ1uydPMo", "libc", "libc")
+  accessRuntimeLinker().interceptAdd((uintptr_t)int_Malloc, "Y7aJ1uydPMo", "libc", "libc")
 
   // Calling original
-  auto const origFunction = accessRuntimeExport()->interceptGetAddr((uintptr_t)int_Malloc);
+  auto const origFunction = accessRuntimeLinker().interceptGetAddr((uintptr_t)int_Malloc);
   typedef SYSV_ABI void* (*fcnPtr)(void*, size_t);
   void* ret = ((fcnPtr)origFunction)(ptr, size);
   */
