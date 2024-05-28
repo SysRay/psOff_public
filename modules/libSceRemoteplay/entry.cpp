@@ -43,7 +43,7 @@ EXPORT SYSV_ABI int sceRemoteplayProhibitStreaming(SceRemoteplayStreamingProhibi
 EXPORT SYSV_ABI int sceRemoteplayGetConnectionStatus(SceUserServiceUserId userid, SceRemoteplayConnectionStatus* pStatus) {
   *pStatus = SceRemoteplayConnectionStatus::Disconnect;
   LOG_USE_MODULE(libSceRemoteplay);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 }
