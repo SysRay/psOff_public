@@ -4,6 +4,13 @@ include(../setupModule.cmake)
 set(libName libScePlayGo)
 project(${libName})
 
-add_library(${libName} SHARED entry.cpp)
+add_library(${libName} SHARED
+  chunkreader.cpp
+  entry.cpp
+)
+
+add_dependencies(${libName} core)
+
+target_link_libraries(${libName} PRIVATE core.lib)
 
 setupModule(${libName})

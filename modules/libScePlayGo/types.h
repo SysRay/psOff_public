@@ -4,11 +4,14 @@
 enum class ScePlayGoLocusValue : uint32_t {
   NotDownloaded = 0,
   LocalSlow     = 2,
-  LocalFast     = 3
-
+  LocalFast     = 3,
 };
 
-enum class ScePlayGoInstallSpeedValue : uint32_t { Suspended = 0, Trickle = 1, Full = 2 };
+enum class ScePlayGoInstallSpeedValue : uint32_t {
+  Suspended = 0,
+  Trickle   = 1,
+  Full      = 2,
+};
 
 typedef int32_t  ScePlayGoHandle;
 typedef uint16_t ScePlayGoChunkId;
