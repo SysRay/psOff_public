@@ -8,9 +8,16 @@
 #include <cassert>
 #include <chrono>
 #include <mutex>
+#include <unordered_map>
+
+// clang-format off
+
+#include <p7/GTypes.h>
 #include <p7/P7_Telemetry.h>
 #include <p7/P7_Trace.h>
-#include <unordered_map>
+#include <p7/P7_Extensions.h>
+
+// clang-format on
 
 namespace __Log {
 
@@ -124,12 +131,12 @@ void __log(eTrace_Level level, void* hmodule, unsigned short i_wLine, const char
 
   if (static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(level) ==
       static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(eTrace_Level::err)) {
-    printf("Error:");
+    printf("%s| Error:", ((sP7Trace_Module*)hmodule)->pName);
     vwprintf(i_pFormat, args);
     printf("\n");
   } else if (static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(level) ==
              static_cast<typename std::underlying_type<__Log::eTrace_Level>::type>(eTrace_Level::crit)) {
-    printf("Critical Error:");
+    printf("%s| Critical Error:", ((sP7Trace_Module*)hmodule)->pName);
     vwprintf(i_pFormat, args);
     printf("\nExiting\n");
   }

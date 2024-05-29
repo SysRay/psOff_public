@@ -7,10 +7,12 @@
 LOG_DEFINE_MODULE(libSceNpManager);
 
 namespace {
+// clang-format off
 using SceNpStateCallbackA            = SYSV_ABI void (*)(int32_t userId, SceNpState state, void* userdata);
 using SceNpReachabilityStateCallback = SYSV_ABI void (*)(int32_t userId, SceNpReachabilityState state, void* userdata);
 using SceNpGamePresenceCallbackA     = SYSV_ABI void (*)(int32_t userId, SceNpGamePresenceStatus status, void* userdata);
 using SceNpPlusEventCallback         = SYSV_ABI void (*)(int32_t userId, SceNpPlusEventType event, void* userdata);
+// clang-format on
 } // namespace
 
 extern "C" {

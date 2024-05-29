@@ -22,9 +22,13 @@
 namespace {
 LOG_DEFINE_MODULE(ELF64);
 
+// clang-format off
+
 using module_func_t          = SYSV_ABI int (*)(size_t args, const void* argp);
 using module_call_func_t     = SYSV_ABI void (*)();
 using module_ini_fini_func_t = SYSV_ABI int (*)(size_t args, const void* argp, module_func_t func);
+
+// clang-format on
 
 int jmpModule(uint64_t addr, size_t args, const void* argp, module_func_t func) {
   return reinterpret_cast<module_ini_fini_func_t>(addr)(args, argp, func);
