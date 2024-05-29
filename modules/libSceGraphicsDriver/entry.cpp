@@ -34,6 +34,10 @@ static SYSV_ABI void hook_setVsShader(void* buffer) {
   accessVideoOut().getGraphics()->registerCommandBuffer(buffer);
   ((__stdcall void (*)(void const*))_hook_setVsShader.data.data())(buffer);
 }
+
+constexpr uint32_t NUM_VS_REGS = 4 * 7;
+constexpr uint32_t NUM_PS_REGS = 4 * 12;
+constexpr uint32_t NUM_CS_REGS = 4 * 7;
 } // namespace
 
 extern "C" {
@@ -72,7 +76,7 @@ int SYSV_ABI sceGnmSetVsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VS);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], vs_regs, size - 2);
+  memcpy(&cmdOut[2], vs_regs, NUM_VS_REGS);
 
   return Ok;
 }
@@ -83,7 +87,7 @@ int SYSV_ABI sceGnmUpdateVsShader(uint32_t* cmdOut, uint64_t size, const uint32_
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_VS_UPDATE);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], vs_regs, size - 2);
+  memcpy(&cmdOut[2], vs_regs, NUM_VS_REGS);
 
   return Ok;
 }
@@ -96,7 +100,7 @@ int SYSV_ABI sceGnmSetPsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
     cmdOut[1] = 0;
   } else {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS);
-    memcpy(&cmdOut[1], ps_regs, size - 1);
+    memcpy(&cmdOut[1], ps_regs, NUM_PS_REGS);
   }
 
   return Ok;
@@ -110,7 +114,7 @@ int SYSV_ABI sceGnmSetPsShader350(uint32_t* cmdOut, uint64_t size, const uint32_
     cmdOut[1] = 0;
   } else {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS);
-    memcpy(&cmdOut[1], ps_regs, size - 1);
+    memcpy(&cmdOut[1], ps_regs, NUM_PS_REGS);
   }
 
   return Ok;
@@ -121,7 +125,7 @@ int SYSV_ABI sceGnmUpdatePsShader(uint32_t* cmdOut, uint64_t size, const uint32_
   LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
 
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-  memcpy(&cmdOut[1], ps_regs, size - 1);
+  memcpy(&cmdOut[1], ps_regs, NUM_PS_REGS);
 
   return Ok;
 }
@@ -132,7 +136,7 @@ int SYSV_ABI sceGnmUpdatePsShader350(uint32_t* cmdOut, uint64_t size, const uint
   if (cmdOut == nullptr || size < 39) return -1;
   if (ps_regs != nullptr) {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_UPDATE);
-    memcpy(&cmdOut[1], ps_regs, size - 1);
+    memcpy(&cmdOut[1], ps_regs, NUM_PS_REGS);
   } else {
     cmdOut[0] = Pm4::create(size, Pm4::Custom::R_PS_EMBEDDED);
     cmdOut[1] = 0x0;
@@ -146,7 +150,7 @@ int SYSV_ABI sceGnmSetCsShader(uint32_t* cmdOut, uint64_t size, const uint32_t* 
   LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_CS);
   cmdOut[1] = 0;
-  memcpy(&cmdOut[2], cs_regs, size - 2);
+  memcpy(&cmdOut[2], cs_regs, NUM_CS_REGS);
   return Ok;
 }
 
@@ -155,7 +159,7 @@ int SYSV_ABI sceGnmSetCsShaderWithModifier(uint32_t* cmdOut, uint64_t size, cons
   LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
   cmdOut[0] = Pm4::create(size, Pm4::Custom::R_CS);
   cmdOut[1] = shader_modifier;
-  memcpy(&cmdOut[2], cs_regs, size - 2);
+  memcpy(&cmdOut[2], cs_regs, NUM_CS_REGS);
   return Ok;
 }
 
