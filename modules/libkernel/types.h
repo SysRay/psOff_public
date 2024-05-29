@@ -5,8 +5,12 @@
 
 using SceKernelModule = int32_t;
 
+// clang-format off
+
 using get_thread_atexit_count_func_t = SYSV_ABI int (*)(SceKernelModule);
 using thread_atexit_report_func_t    = SYSV_ABI void (*)(SceKernelModule);
+
+// clang-format on
 
 typedef int   SceKernelAioSubmitId;
 typedef void* sigset_t;
