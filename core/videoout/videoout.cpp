@@ -967,7 +967,7 @@ std::thread VideoOut::createSDLThread() {
 
             m_graphics = createGraphics(*this, m_vulkanObj->deviceInfo);
 
-            auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::present)][0].get(); // todo use getQeueu
+            auto queue = m_vulkanObj->queues.items[getIndex(vulkan::QueueType::graphics)][0].get(); // todo use getQeueu
 
             m_useVsync = accessInitParams()->useVSYNC();
 

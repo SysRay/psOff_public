@@ -1,16 +1,17 @@
 #include "type_lib.h"
 
+#include "core/runtime/runtimeLinker.h"
 #include "logging.h"
 
 LOG_DEFINE_MODULE(IODevice_LIB);
 
 class TypeLib: public IFile {
-  std::unique_ptr<Program>& m_prog;
+  Program* m_prog;
 
   public:
-  TypeLib(std::unique_ptr<Program>& prog): IFile(FileType::Library), m_prog(prog) {}
+  TypeLib(Program* prog): IFile(FileType::Library), m_prog(prog) {}
 
-  ~TypeLib() {}
+  ~TypeLib() { accessRuntimeLinker().stopModule(m_prog->id); }
 
   // ### Interface
   size_t  read(void* buf, size_t nbytes) final;
@@ -23,19 +24,19 @@ class TypeLib: public IFile {
   void* getNative() final { return nullptr; }
 };
 
-std::unique_ptr<IFile> createType_lib(std::unique_ptr<Program>& prog) {
+std::unique_ptr<IFile> createType_lib(Program* prog) {
   return std::make_unique<TypeLib>(prog);
 }
 
 size_t TypeLib::read(void* buf, size_t nbytes) {
   LOG_USE_MODULE(IODevice_LIB);
-  LOG_CRIT(L"Program(%p)->read(%p, %llu)", m_prog.get(), buf, nbytes);
+  LOG_CRIT(L"Program(%p)->read(%p, %llu)", m_prog->id, buf, nbytes);
   return 0;
 }
 
 size_t TypeLib::write(void* buf, size_t nbytes) {
   LOG_USE_MODULE(IODevice_LIB);
-  LOG_CRIT(L"Program(%p)->write(%p, %llu)", m_prog.get(), buf, nbytes);
+  LOG_CRIT(L"Program(%p)->write(%p, %llu)", m_prog->id, buf, nbytes);
   return 0;
 }
 

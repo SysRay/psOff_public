@@ -198,11 +198,11 @@ class RuntimeLinker: public IRuntimeLinker {
    * @brief Programlist (<fixed> 0: mainProgram)
    *
    */
-  std::vector<std::pair<std::unique_ptr<Program>, std::shared_ptr<IFormat>>> m_programList;
-  std::unordered_map<std::string_view, std::shared_ptr<InternalLib>>         m_internalLibs;
-  std::unordered_map<std::string_view, std::shared_ptr<Symbols::IResolve>>   m_libsMap;
-  std::unordered_map<std::string_view, Symbols::SymbolIntercept>             m_interceptMap;
-  mutable std::unordered_map<uintptr_t, uintptr_t>                           m_interceptOrigVaddrMap;
+  std::list<std::pair<std::unique_ptr<Program>, std::shared_ptr<IFormat>>> m_programList;
+  std::unordered_map<std::string_view, std::shared_ptr<InternalLib>>       m_internalLibs;
+  std::unordered_map<std::string_view, std::shared_ptr<Symbols::IResolve>> m_libsMap;
+  std::unordered_map<std::string_view, Symbols::SymbolIntercept>           m_interceptMap;
+  mutable std::unordered_map<uintptr_t, uintptr_t>                         m_interceptOrigVaddrMap;
 
   std::unordered_map<uint32_t, Program*>      mTlsIndexMap;
   std::unordered_map<std::string_view, void*> m_libHandles;
@@ -244,7 +244,7 @@ class RuntimeLinker: public IRuntimeLinker {
     std::unique_lock const lock(m_mutex_int);
     if (useStaticTLS) ++m_countcreatePrograms;
     auto inst = std::make_unique<Program>(filepath, baseSize, baseSizeAligned, IMAGE_BASE, alocSize, useStaticTLS);
-    inst->id  = accessFileManager().addFile(createType_lib(inst), filepath);
+    inst->id  = accessFileManager().addFile(createType_lib(inst.get()), filepath);
     return inst;
   }
 
@@ -260,6 +260,7 @@ class RuntimeLinker: public IRuntimeLinker {
   uintptr_t execute() final;
 
   void stopModules() final;
+  void stopModule(int moduleId) final;
 
   Symbols::IResolve const* getIResolve(std::string_view libName) const final {
     auto const it = m_libsMap.find(libName);
@@ -328,8 +329,10 @@ class RuntimeLinker: public IRuntimeLinker {
     std::vector<int> ret(m_programList.size());
 
     Program const* prog = nullptr;
-    for (size_t n = 0; n < m_programList.size(); ++n) {
-      ret[n] = m_programList[n].first->id;
+
+    auto pDst = ret.data();
+    for (auto& prog: m_programList) {
+      *pDst++ = prog.first->id;
     }
     return ret;
   }
@@ -402,18 +405,18 @@ class RuntimeLinker: public IRuntimeLinker {
 
   uint64_t getTLSStaticBlockSize() const final { return m_tlsStaticInitBlock.size(); }
 
-  std::vector<std::pair<uint64_t, uint64_t>> getExecSections() const final { return m_programList[0].second->getExecSections(); }
+  std::vector<std::pair<uint64_t, uint64_t>> getExecSections() const final { return m_programList.begin()->second->getExecSections(); }
 
   EntryParams const* getEntryParams() const final { return &m_entryParams; };
 
   Program* accessMainProg() final {
     std::unique_lock const lock(m_mutex_int);
-    return m_programList[0].first.get();
+    return m_programList.begin()->first.get();
   }
 
   Program const* accessMainProg() const {
     std::unique_lock const lock(m_mutex_int);
-    return m_programList[0].first.get();
+    return m_programList.begin()->first.get();
   }
 };
 
@@ -473,9 +476,9 @@ Program* RuntimeLinker::addProgram(std::unique_ptr<Program>&& prog, std::shared_
     prog->failGlobalUnresolved = false;
     g_tlsMainProgram           = prog.get();
 
-    m_programList[0].first.swap(prog);
-    m_programList[0].second.swap(format);
-    return m_programList[0].first.get();
+    m_programList.begin()->first.swap(prog);
+    m_programList.begin()->second.swap(format);
+    return m_programList.begin()->first.get();
   } else {
     if (util::endsWith(prog->path.parent_path().string(), "_module")) {
       prog->failGlobalUnresolved = false;
@@ -721,9 +724,7 @@ void RuntimeLinker::stopModules() {
   LOG_USE_MODULE(RuntimeLinker);
 
   // Stop Modules
-  for (size_t n = 0; n < m_programList.size(); ++n) {
-    auto const& prog = m_programList[n];
-
+  for (auto& prog: m_programList) {
     LOG_INFO(L"Stopping module %s", prog.first->filename.c_str());
     // prog.second->dtDeinit(prog.first->baseVaddr);
     for (auto& c: prog.first->cxa) {
@@ -738,6 +739,23 @@ void RuntimeLinker::stopModules() {
   // }
 }
 
+void RuntimeLinker::stopModule(int moduleId) {
+  LOG_USE_MODULE(RuntimeLinker);
+
+  for (auto itProg = m_programList.begin(); itProg != m_programList.end(); ++itProg) {
+    if (itProg->first->id == moduleId) {
+      LOG_INFO(L"Stopping module %s", itProg->first->filename.c_str());
+      for (auto& c: itProg->first->cxa) {
+        c.destructor_func(c.destructor_object);
+      }
+      itProg->first->cxa.clear();
+
+      m_programList.erase(itProg);
+      break;
+    }
+  }
+}
+
 void RuntimeLinker::callInitProgramms() {
   LOG_USE_MODULE(RuntimeLinker);
 
@@ -749,14 +767,15 @@ void RuntimeLinker::callInitProgramms() {
     CallGraph(Program* program, IFormat* format): program(program), iFormat(format) {}
   };
 
-  CallGraph callGraph({m_programList[0].first.get(), m_programList[0].second.get()});
+  auto      itMainProg = m_programList.begin();
+  CallGraph callGraph({itMainProg->first.get(), itMainProg->second.get()});
   // Get dependencies
-  for (auto const& impLib: m_programList[0].second->getImportedLibs()) {
-    for (size_t nImp = 1; nImp < m_programList.size(); ++nImp) {
-      auto const& expLib = m_programList[nImp].second->getExportedLibs();
+  for (auto const& impLib: itMainProg->second->getImportedLibs()) {
+    for (auto itImp = std::next(m_programList.begin()); itImp != m_programList.end(); ++itImp) {
+      auto const& expLib = itImp->second->getExportedLibs();
       if (expLib.find(impLib.first) != expLib.end()) {
-        LOG_DEBUG(L"%s needs %S", m_programList[0].first->filename.c_str(), impLib.first.data());
-        callGraph.childs.push_back({m_programList[nImp].first.get(), m_programList[nImp].second.get()});
+        LOG_DEBUG(L"%s needs %S", itMainProg->first->filename.c_str(), impLib.first.data());
+        callGraph.childs.push_back({itImp->first.get(), itImp->second.get()});
         break;
       }
     }
@@ -764,12 +783,11 @@ void RuntimeLinker::callInitProgramms() {
 
   for (auto& parent: callGraph.childs) {
     auto const& impParent = parent.iFormat->getImportedLibs();
-    for (size_t nImp = 1; nImp < m_programList.size(); ++nImp) {
-      auto const& child = m_programList[nImp];
-      for (auto const& expLib: child.second->getExportedLibs()) {
+    for (auto itImp = std::next(m_programList.begin()); itImp != m_programList.end(); ++itImp) {
+      for (auto const& expLib: itImp->second->getExportedLibs()) {
         if (impParent.find(expLib.first) != impParent.end()) {
-          LOG_DEBUG(L"%s needs %s", parent.program->filename.c_str(), child.first->filename.c_str());
-          parent.childs.push_back({child.first.get(), child.second.get()});
+          LOG_DEBUG(L"%s needs %s", parent.program->filename.c_str(), itImp->first->filename.c_str());
+          parent.childs.push_back({itImp->first.get(), itImp->second.get()});
         }
       }
     }
@@ -862,7 +880,7 @@ uintptr_t RuntimeLinker::execute() {
 
   setupTlsStaticBlock(); // relocate may init tls -> copy after relocate
 
-  uintptr_t const entryAddr = m_programList[0].first->entryOffAddr + m_programList[0].first->baseVaddr;
+  uintptr_t const entryAddr = m_programList.begin()->first->entryOffAddr + m_programList.begin()->first->baseVaddr;
   LOG_INFO(L"entry:0x%08llx", entryAddr);
 
   return entryAddr;
