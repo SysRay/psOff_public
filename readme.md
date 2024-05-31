@@ -1,21 +1,17 @@
-<p align='center'>
-    <a href='https://github.com/SysRay/psOff_public/actions/workflows/build.yml'>
-        <img src='https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=main' />
-    </a>
-    <a href='https://github.com/SysRay/psOff_public/actions/workflows/build.yml'>
-        <img src='https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=features' />
-    </a>
-    <a href='https://discord.gg/Jd2AuBN6eW'>
-        <img src="https://img.shields.io/discord/1215784508708749322?color=5865F2&label=ps_off&logo=discord&logoColor=white"/>
-    </a>
-</p>
-
 # psOff - PlayStation 4 Emulation (Windows)
 * Unmatched performance
 * State-of-the-art shader reconstruction
 * Steadily improved
 
+
+| Release | Nightly | Discord |
+|---------|----------|---------|
+| [<img src="https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=main"/>](https://github.com/SysRay/psOff_public/releases) | [<img src="https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=features"/>](https://github.com/SysRay/psOff_public/actions/workflows/build.yml?query=branch%3Afeatures) | [<img src="https://img.shields.io/discord/1215784508708749322?color=5865F2&label=ps_off&logo=discord&logoColor=white"/>](https://discord.gg/Jd2AuBN6eW) |
+
+</div>
+
   ---
+
 
 **In development. Does it run ...?** Check out our [Compatibility List](https://github.com/SysRay/psOff_compatibility/issues) to find out.
 
