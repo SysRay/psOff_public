@@ -6,8 +6,8 @@
 
 ---
 
-|Main Build  |Feature Build  | Join us on Discord  |   |   |
-|---|---|---|---|---|
+|Main Build  |Feature Build  | Join us on Discord  | 
+|---|---|---|
 |![Features](https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=features)   |![Main](https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=main) | <img src="https://img.shields.io/discord/1215784508708749322?color=5865F2&label=ps_off&logo=discord&logoColor=white"/> |
 
 
