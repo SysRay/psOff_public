@@ -52,7 +52,7 @@ class IImageHandler {
 
   ImageHandlerCB* m_callback;
 
-  double m_fps;
+  double m_fps = 0.0;
 
   public:
   virtual ~IImageHandler() = default;
