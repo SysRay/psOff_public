@@ -3,7 +3,8 @@
 * State-of-the-art shader reconstruction
 * Steadily improved
 
-
+<div align="center">
+  
 | Release | Nightly | Discord |
 |---------|----------|---------|
 | [<img src="https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=main"/>](https://github.com/SysRay/psOff_public/releases) | [<img src="https://github.com/SysRay/psOff_public/actions/workflows/build.yml/badge.svg?branch=features"/>](https://github.com/SysRay/psOff_public/actions/workflows/build.yml?query=branch%3Afeatures) | [<img src="https://img.shields.io/discord/1215784508708749322?color=5865F2&label=ps_off&logo=discord&logoColor=white"/>](https://discord.gg/Jd2AuBN6eW) |
