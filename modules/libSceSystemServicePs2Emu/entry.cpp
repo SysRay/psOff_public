@@ -8,7 +8,7 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libSceSystemService";
 
-SYSV_ABI int sceSystemServiceAddLocalProcessForPs2Emu() {
+EXPORT SYSV_ABI int sceSystemServiceAddLocalProcessForPs2Emu() {
   LOG_USE_MODULE(libSceSystemServicePs2Emu);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

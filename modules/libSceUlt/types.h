@@ -1,6 +1,5 @@
 #pragma once
 #include "codes.h"
-#include "core/kernel/semaphore.h"
 
 struct SceUltWaitingQueueResourcePoolOptParam {
   char _unknown[128];
@@ -26,6 +25,8 @@ struct SceUltWaitingQueueResourcePool {
   void*                                  workArea;
   char                                   _unknown[76];
 };
+
+class ISemaphore;
 
 struct SceUltSemaphore {
   SceUltSemaphoreOptParam         param;

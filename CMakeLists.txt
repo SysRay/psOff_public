@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
+
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
 set(PSOFF_LIB_VERSION v.0.3)
 set(PSOFF_RENDER_VERSION v.0.5-nightly_27.05.24)
 
@@ -11,12 +18,15 @@ unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
+if(ISDEBUG)
+  set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -O0 -fno-strict-aliasing")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
+else()
+  set(CMAKE_CXX_FLAGS_RELEASE "/MD /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF,ICF")
+endif()
 
 if(NOT PRJ_SRC_DIR)
   set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -79,11 +89,11 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   )
 endif()
 
-set(TEST_BENCH OFF CACHE BOOL "Enable testing")
+# set(TEST_BENCH OFF CACHE BOOL "Enable testing")
 
-if(TEST_BENCH)
-  add_subdirectory(tests)
-endif()
+# if(TEST_BENCH)
+# add_subdirectory(tests)
+# endif()
 
 # include before link_libraries
 add_subdirectory(tools/logging)
@@ -101,9 +111,12 @@ add_compile_definitions(IMAGE_BASE=${IMAGE_BASE})
 
 # Internal Projects
 add_subdirectory(modules)
-add_subdirectory(core)
 add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
+
+if(BUILD_CORE)
+  add_subdirectory(core)
+endif()
 
 # #- Projects
 
@@ -122,7 +135,7 @@ target_link_libraries(psoff PRIVATE
   $<TARGET_OBJECTS:asmHelper>
 )
 
-target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
+target_link_options(psoff PUBLIC /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
 
 set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 

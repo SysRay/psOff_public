@@ -1,8 +1,8 @@
 #include "codes.h"
 #include "common.h"
+#include "core/kernel/semaphore.h"
 #include "logging.h"
 #include "types.h"
-
 LOG_DEFINE_MODULE(libSceUlt);
 
 extern "C" {
