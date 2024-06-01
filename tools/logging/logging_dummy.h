@@ -34,7 +34,7 @@ constexpr uint8_t isIgnored(void* module, eTrace_Level level) {
   return true;
 }
 
-constexpr void flush(){}
+constexpr void flush() {}
 } // namespace __Log
 
 /**
