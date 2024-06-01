@@ -32,15 +32,43 @@ on:
 
 jobs:
   formatting-check:
+    permissions:
+      contents: write
     name: Formatting check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DoozyX/clang-format-lint-action@v0.17
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test formatting
+        uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: ./
           extensions: h,hpp,cpp,c,cc
           clangFormatVersion: 17
+          inplace: true
+
+      - name: Generate patch file
+        run: |
+          git diff > formatting.patch
+          find *.patch -type f -size 0 -delete
+
+      - name: Upload patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-format
+          path: formatting.patch
+
+      - name: Error if fixed
+        run: |
+          if rm formatting.patch; then
+            echo "# Looks like you messed something up!" >> $GITHUB_STEP_SUMMARY
+            echo "1. Download the \`code-format\` artifact above" >> $GITHUB_STEP_SUMMARY
+            echo "2. Unpack the patch file" >> $GITHUB_STEP_SUMMARY
+            echo "3. Use \`git apply formatting.patch\` command to apply it to your repo" >> $GITHUB_STEP_SUMMARY
+            echo "4. Push the applied changes to your Pull Request" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
   build:
     needs: formatting-check
@@ -51,19 +79,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Restore cached deps
-        uses: actions/cache@v4
-        id: cache-thirdparty
-        with:
-          path: third_party
-          key: ${{ runner.os }}-submodules
-
-      - name: Update submodules
-        if: steps.cache-thirdparty.outputs.cache-hit != 'true'
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Detect MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -79,7 +94,7 @@ jobs:
       - name: Configure
         run: |
           echo "::add-matcher::tools/matchers/cmake.json"
-          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe
+          cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DTEST_BENCH=ON -DISACTION=1
 
       - name: Build
         run: |
@@ -92,8 +107,15 @@ jobs:
           echo "::add-matcher::tools/matchers/cmake.json"
           cmake.exe --install _build/_Release
 
+      - name: Run some tests
+        shell: bash
+        run: echo "`node misc/testRunner`" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: psOff-libs
-          path: _build/_Install/*
+          name: psOff-emu
+          path: | 
+                _build/_Install/*
+                !_build/_Install/vulkan-1.dll
+                !_build/_Install/*_test.exe

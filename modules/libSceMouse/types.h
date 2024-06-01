@@ -11,7 +11,7 @@ enum class MouseButton : uint32_t {
 
 };
 
-typedef struct SceMouseData {
+struct SceMouseData {
   uint64_t timestamp = 0;     /*E System timestamp of this data(micro seconds). */
   bool     connected = false; /*E Mouse connection status. true:connected  false:removed */
   uint32_t buttons   = 0;     /*E Mouse buttons information */
@@ -20,9 +20,9 @@ typedef struct SceMouseData {
   int32_t  wheel     = 0;     /*E Amount of wheel movement */
   int32_t  tilt      = 0;     /*E Amount of tilt movement (only for a mouse that supports a tilt wheel) */
   uint8_t  reserve[8];        /*E Reserved */
-} SceMouseData;
+};
 
-typedef struct SceMouseOpenParam {
+struct SceMouseOpenParam {
   uint8_t behaviorFlag; /*E Behavior flag */
   uint8_t reserve[7];   /*E Reserved */
-} SceMouseOpenParam;
+};

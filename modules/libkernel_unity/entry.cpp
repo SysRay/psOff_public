@@ -75,17 +75,17 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libkernel";
 
-SYSV_ABI int sceKernelInstallExceptionHandler(int signum, void* exHandler) {
+EXPORT SYSV_ABI int sceKernelInstallExceptionHandler(int signum, void* exHandler) {
   accessSignals()->addExceptionHandler(signum, exHandler);
   return Ok;
 }
 
-SYSV_ABI int sceKernelRemoveExceptionHandler(int signum) {
+EXPORT SYSV_ABI int sceKernelRemoveExceptionHandler(int signum) {
   accessSignals()->removeExceptionHandler(signum);
   return Ok;
 }
 
-SYSV_ABI int sceKernelRaiseException(void* pthread, int signum) {
+EXPORT SYSV_ABI int sceKernelRaiseException(void* pthread, int signum) {
   return accessSignals()->raise(pthread, signum) ? Ok : getErr(ErrCode::_EINVAL);
 }
 }

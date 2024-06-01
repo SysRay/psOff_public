@@ -63,6 +63,7 @@ EXPORT SYSV_ABI int32_t scePlayGoSetToDoList(ScePlayGoHandle handle, const ScePl
 EXPORT SYSV_ABI int32_t scePlayGoGetToDoList(ScePlayGoHandle handle, ScePlayGoToDo* outTodoList, uint32_t numberOfEntries, uint32_t* outEntries) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *outEntries = 0;
   return Ok;
 }
 
@@ -75,6 +76,7 @@ EXPORT SYSV_ABI int32_t scePlayGoPrefetch(ScePlayGoHandle handle, const ScePlayG
 EXPORT SYSV_ABI int32_t scePlayGoGetEta(ScePlayGoHandle handle, const ScePlayGoChunkId* chunkIds, uint32_t numberOfEntries, ScePlayGoEta* outEta) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *outEta = 0;
   return Ok;
 }
 
@@ -87,6 +89,7 @@ EXPORT SYSV_ABI int32_t scePlayGoSetInstallSpeed(ScePlayGoHandle handle, ScePlay
 EXPORT SYSV_ABI int32_t scePlayGoGetInstallSpeed(ScePlayGoHandle handle, ScePlayGoInstallSpeed* speed) {
   LOG_USE_MODULE(libScePlayGo);
   LOG_ERR(L"TODO: %S", __FUNCTION__);
+  *speed = 2;
   return Ok;
 }
 
@@ -105,7 +108,7 @@ EXPORT SYSV_ABI int32_t scePlayGoGetLanguageMask(ScePlayGoHandle handle, ScePlay
 EXPORT SYSV_ABI int32_t scePlayGoGetProgress(ScePlayGoHandle handle, const ScePlayGoChunkId* chunkIds, uint32_t numberOfEntries,
                                              ScePlayGoProgress* outProgress) {
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_TRACE(L"TODO: %S", __FUNCTION__);
   return Ok;
 }
 

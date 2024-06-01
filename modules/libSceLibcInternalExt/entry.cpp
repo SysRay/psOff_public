@@ -17,7 +17,7 @@ struct HeapInfoInfo {
 
 extern "C" {
 
-const char* MODULE_NAME = "libSceLibcInternal";
+EXPORT const char* MODULE_NAME = "libSceLibcInternal";
 
 EXPORT SYSV_ABI void sceLibcHeapGetTraceInfo(HeapInfoInfo* info) {
   static uint64_t g_mspace_atomic_id_mask = 0;

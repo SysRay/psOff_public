@@ -1,0 +1,20 @@
+name: Discord release notify
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notifier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Run things
+        working-directory: misc/discordNotify
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          npm i
+          node .

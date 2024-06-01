@@ -74,7 +74,7 @@ bool                           readFile(std::ifstream* file, wchar_t const* file
  */
 constexpr std::pair<int, int> getMemoryProtection(int prot) {
   int const protCPU = prot & 0x7;
-  int const protGPU = (prot >> 4u) & 0x2;
+  int const protGPU = (prot >> 4u) & 0x3;
   return std::make_pair(protCPU, protGPU);
 }
 
@@ -88,8 +88,15 @@ constexpr std::uint64_t alignDown(uint64_t value, uint64_t alignment) {
   return value & ~(alignment - 1);
 }
 
+constexpr bool isPowerOfTwo(int n) {
+  if (n == 0) return false;
+  return (n & (n - 1)) == 0;
+}
+
 void setThreadName(std::string_view name);
 void setThreadName(std::string_view name, void* nativeHandle);
+
+int getPageSize(void);
 } // namespace util
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

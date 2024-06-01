@@ -3,6 +3,8 @@
 #include "utility/utility.h"
 typedef void* SceAvPlayerHandle;
 
+// clang-format off
+
 using SceAvPlayerLogCallback       = SYSV_ABI int (*)(void* userData, const char* format, va_list args);
 using SceAvPlayerAllocate          = SYSV_ABI void* (*)(void* argP, uint32_t argAlignment, uint32_t argSize);
 using SceAvPlayerDeallocate        = SYSV_ABI void (*)(void* argP, void* argMemory);
@@ -13,6 +15,8 @@ using SceAvPlayerCloseFile         = SYSV_ABI int (*)(void* argP);
 using SceAvPlayerReadOffsetFile    = SYSV_ABI int (*)(void* argP, uint8_t* argBuffer, uint64_t argPosition, uint32_t argLength);
 using SceAvPlayerEventCallback     = SYSV_ABI void (*)(void* p, int32_t argEventId, int32_t argSourceId, void* argEventData);
 using SceAvPlayerSizeFile          = SYSV_ABI uint64_t (*)(void* argP);
+
+// clang-format on
 
 enum class SceAvPlayerVideoDecoderType { DEFAULT = 0, RESERVED1, RESERVED2, SOFTWARE2 };
 

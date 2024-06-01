@@ -6,8 +6,4 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-target_link_directories(${libName} PRIVATE
-  ${CMAKE_BINARY_DIR}/third_party/install/lib
-)
-
 setupModule(${libName})

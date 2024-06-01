@@ -1,0 +1,82 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "netEnabled": {
+      "type": "boolean",
+      "description": "Network subsystem state, it is not recomended to enable network, it may cause your emulator to crash."
+    },
+    "netMAC": {
+      "type": "string",
+      "description": "You should specify your host adapter MAC address here. This adapter will be used for network connection to game's servers. This option is ignored if \"netEnabled\" set to `false`.\n\n00:00:00:00:00:00 means \"first available adapter with IPv4 address\".",
+      "pattern": "(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+    },
+    "onlineUsers": {
+      "type": "integer",
+      "description": "This option specifies the number of logged in users. The maximum number of users is 4. Every user must have their own configured gamepad (see controls.json).",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "profiles": {
+      "type": "array",
+      "description": "This array contains information about all the console users. The specified name and lightbar color will be sent to the game on request.",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "type": "string",
+            "description": "The user color, probably unused.",
+            "enum": [
+              "blue",
+              "red",
+              "green",
+              "pink"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The displayed user name, the game may draw it somewhere.",
+            "minLength": 3,
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "color",
+          "name"
+        ]
+      }
+    },
+    "systemlang": {
+      "type": "integer",
+      "description": "The game language, defaults to EnglishUS. Game must support it.\n Languages list: <https://github.com/SysRay/psOff_public/wiki/Config-files#generaljson>.",
+      "minimum": 0,
+      "maximum": 29
+    },
+    "userIndex": {
+      "type": "number",
+      "description": "Index of the user who launched the game, should be less than \"onlineUsers\" or equal.",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "trophyKey": {
+      "type": "string",
+      "description": "ERK trophy key in hex format. You should dump it from your console, otherwise trophies will not work.",
+      "pattern": "^(0x)?[0-9A-Fa-f]*$",
+      "maximum": 32
+    }
+  },
+  "required": [
+    "netEnabled",
+    "netMAC",
+    "profiles",
+    "systemlang",
+    "userIndex",
+    "trophyKey"
+  ]
+}

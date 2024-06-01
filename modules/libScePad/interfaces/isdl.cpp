@@ -4,11 +4,40 @@
 #include "core/videoout/videoout.h"
 #include "logging.h"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <bitset>
 #include <math.h>
 
 LOG_DEFINE_MODULE(libScePad_sdl);
+
+class SDLPadManager {
+  std::vector<SDL_GameController*> m_openedPads;
+
+  public:
+  SDL_GameController* openNew() {
+    for (int n = 0; n < SDL_NumJoysticks(); n++) {
+      if (!SDL_IsGameController(n)) continue;
+      auto pad = SDL_GameControllerOpen(n);
+      if (std::find(m_openedPads.begin(), m_openedPads.end(), pad) != m_openedPads.end()) continue;
+      m_openedPads.push_back(pad);
+      return pad;
+    }
+
+    return nullptr;
+  }
+
+  void close(SDL_GameController* pad) {
+    auto it = std::find(m_openedPads.begin(), m_openedPads.end(), pad);
+    if (it == m_openedPads.end()) return;
+    SDL_GameControllerClose(pad);
+    m_openedPads.erase(it);
+  }
+};
+
+static SDLPadManager& getPadManager() {
+  static SDLPadManager im;
+  return im;
+}
 
 class SDLController: public IController {
   static constexpr uint32_t m_initflags     = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_SENSOR;
@@ -18,7 +47,7 @@ class SDLController: public IController {
   SceFVector3               m_gyroData      = {0.0f, 0.0f, 0.0f};
 
   public:
-  SDLController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
+  SDLController(uint32_t userid): IController(ControllerType::SDL, userid) {
     init();
     reconnect();
   }
@@ -40,8 +69,8 @@ class SDLController: public IController {
   static void init();
 };
 
-std::unique_ptr<IController> createController_sdl(ControllerConfig* cfg, uint32_t userid) {
-  return std::make_unique<SDLController>(cfg, userid);
+std::unique_ptr<IController> createController_sdl(uint32_t userid) {
+  return std::make_unique<SDLController>(userid);
 }
 
 void SDLController::init() {
@@ -50,8 +79,7 @@ void SDLController::init() {
   std::call_once(init, [] {
     LOG_USE_MODULE(libScePad_sdl);
 
-    if (SDL_InitSubSystem(m_initflags) != 0) {
-      LOG_ERR(L"Failed to initialize SDL subsystem: %S", SDL_GetError());
+    if (accessVideoOut().SDLInit(m_initflags) != 0) {
       return;
     }
 
@@ -60,6 +88,8 @@ void SDLController::init() {
     }
 
     SDL_JoystickEventState(SDL_ENABLE);
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4, "1");
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
   });
@@ -67,7 +97,7 @@ void SDLController::init() {
 
 void SDLController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  if (m_padPtr != nullptr) SDL_GameControllerClose(m_padPtr);
+  if (m_padPtr != nullptr) getPadManager().close(m_padPtr);
   m_state  = ControllerState::Closed;
   m_padPtr = nullptr;
 }
@@ -75,21 +105,18 @@ void SDLController::close() {
 bool SDLController::reconnect() {
   close();
 
-  for (int n = 0; n < SDL_NumJoysticks(); n++) {
-    m_padPtr = SDL_GameControllerOpen(n);
-    if (m_padPtr == nullptr) continue;
+  m_padPtr = getPadManager().openNew();
+  if (m_padPtr == nullptr) return false;
 
-    ++m_connectCount;
-    m_state = ControllerState::Connected;
-    ::strcpy_s(m_name, SDL_GameControllerName(m_padPtr));
-    SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
-    SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
-    setLED(&m_lastColor); // restore last known LED color
-    setMotion(m_motionEnabled);
-    return true;
-  }
+  ++m_connectCount;
+  m_state = ControllerState::Connected;
+  ::strcpy_s(m_name, SDL_GameControllerName(m_padPtr));
+  SDL_GameControllerSetPlayerIndex(m_padPtr, m_userId - 1);
+  SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
+  setLED(&m_lastColor); // restore last known LED color
+  setMotion(m_motionEnabled);
 
-  return false;
+  return true;
 }
 
 uint32_t SDLController::getButtons() {
@@ -117,7 +144,6 @@ uint32_t SDLController::getButtons() {
 }
 
 bool SDLController::readPadData(ScePadData& data) {
-  auto lockSDL2 = accessVideoOut().getSDLLock();
 
   if (m_state == ControllerState::Closed) return false;
 
@@ -168,20 +194,23 @@ bool SDLController::readPadData(ScePadData& data) {
       .touchData =
           {
               .touchNum = 0,
-              .touch    = {{
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 1,
-                        },
-                           {
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 2,
-                        }},
+              .touch =
+                  {
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 1,
+                      },
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 2,
+                      },
+                  },
 
           },
 
-      .connected           = m_state == ControllerState::Connected,
+      .connected           = IController::isConnected(),
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,

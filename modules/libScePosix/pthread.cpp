@@ -6,8 +6,6 @@
 #include "logging.h"
 #include "types.h"
 
-#include <stdarg.h>
-
 LOG_DEFINE_MODULE(pthread);
 
 extern "C" {
@@ -297,6 +295,14 @@ EXPORT SYSV_ABI int __NID(pthread_mutexattr_getprotocol)(ScePthreadMutexattr* at
 
 EXPORT SYSV_ABI int __NID(pthread_mutexattr_setprotocol)(ScePthreadMutexattr* attr, int protocol) {
   return POSIX_CALL(pthread::mutexattrSetprotocol(attr, protocol));
+}
+
+EXPORT SYSV_ABI int __NID(pthread_mutexattr_getpshared)(ScePthreadMutexattr* attr, int* pshared) {
+  return POSIX_CALL(pthread::mutexattrGetpshared(attr, pshared));
+}
+
+EXPORT SYSV_ABI int __NID(pthread_mutexattr_setpshared)(ScePthreadMutexattr* attr, int pshared) {
+  return POSIX_CALL(pthread::mutexattrSetpshared(attr, pshared));
 }
 
 EXPORT SYSV_ABI int __NID(pthread_attr_getinheritsched)(const ScePthreadAttr* attr, SceInheritShed* inheritSched) noexcept {

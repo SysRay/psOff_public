@@ -1,5 +1,5 @@
+#include "codes.h"
 #include "common.h"
-#include "errorcodes.h"
 #include "logging.h"
 
 LOG_DEFINE_MODULE(libSceSystemGesture);
@@ -34,19 +34,19 @@ EXPORT SYSV_ABI int sceSystemGestureAppendTouchRecognizer(int32_t handle, void* 
 
 EXPORT SYSV_ABI int sceSystemGestureUpdatePrimitiveTouchRecognizer() {
   LOG_USE_MODULE(libSceSystemGesture);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceSystemGestureUpdateAllTouchRecognizer(int32_t handle) {
   LOG_USE_MODULE(libSceSystemGesture);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceSystemGestureGetTouchEventsCount(int32_t handle, void* param) {
   LOG_USE_MODULE(libSceSystemGesture);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_TRACE(L"todo %S", __FUNCTION__);
   return Ok;
 }
 

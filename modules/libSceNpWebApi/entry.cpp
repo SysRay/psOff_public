@@ -50,6 +50,14 @@ EXPORT SYSV_ABI int32_t sceNpWebApiCreateContextA(int32_t libCtxId, int32_t user
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceNpWebApiCreatePushEventFilter() {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiCreateServicePushEventFilter() {
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceNpWebApiDeleteContext(int32_t titleUserCtxId) {
   return Ok;
 }
@@ -67,6 +75,10 @@ EXPORT SYSV_ABI int32_t sceNpWebApiCreateMultipartRequest(int32_t titleUserCtxId
 }
 
 EXPORT SYSV_ABI int32_t sceNpWebApiDeleteRequest(int64_t requestId) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiSendRequest(int64_t requestId, const void* pData, size_t dataSize, SceNpWebApiResponseInformationOption* pRespInfoOption) {
   return Ok;
 }
 
@@ -100,6 +112,10 @@ EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpResponseHeaderValueLength(int64_t requ
 }
 
 EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpResponseHeaderValue(int64_t requestId, const char* pFieldName, char* pValue, size_t valueSize) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiGetHttpStatusCode(int64_t requestId, int32_t* pStatusCode) {
   return Ok;
 }
 
@@ -150,6 +166,10 @@ EXPORT SYSV_ABI int32_t sceNpWebApiSetHandleTimeout(int32_t libCtxId, int32_t ha
 EXPORT SYSV_ABI void sceNpWebApiCheckTimeout(void) {}
 
 EXPORT SYSV_ABI int32_t sceNpWebApiUtilityParseNpId(const char* pJsonNpId, SceNpId* pNpId) {
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpWebApiCreateContext(int32_t libCtxId, SceUserServiceUserId userId) {
   return Ok;
 }
 }

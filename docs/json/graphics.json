@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "display": {
+      "type": "number",
+      "description": "The display index where emulator windows will be shown."
+    },
+    "fullscreen": {
+      "type": "boolean",
+      "description": "Wether emulator will run in fullscreen mode or not."
+    },
+    "width": {
+      "type": "number",
+      "description": "The emulator window width, ignored in fullscreen mode.",
+      "minimum": 400
+    },
+    "height": {
+      "type": "number",
+      "description": "The emulator window height, ignored in fullscreen mode.",
+      "minimum": 225
+    },
+    "xpos": {
+      "type": "number",
+      "description": "The emulator window horizontal position."
+    },
+    "ypos": {
+      "type": "number",
+      "description": "The emulator window vertical position."
+    }
+  },
+  "required": [
+    "display",
+    "fullscreen",
+    "width",
+    "height",
+    "xpos",
+    "ypos"
+  ]
+}

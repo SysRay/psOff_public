@@ -2,76 +2,80 @@
 #include "..\libSceCommonDialog\types.h"
 #include "codes.h"
 
-typedef enum SceMsgDialogMode { SCE_MSG_DIALOG_MODE_USER_MSG = 1, SCE_MSG_DIALOG_MODE_PROGRESS_BAR, SCE_MSG_DIALOG_MODE_SYSTEM_MSG } SceMsgDialogMode;
+enum class SceMsgDialogMode {
+  SCE_MSG_DIALOG_MODE_USER_MSG = 1,
+  SCE_MSG_DIALOG_MODE_PROGRESS_BAR,
+  SCE_MSG_DIALOG_MODE_SYSTEM_MSG,
+};
 
-typedef enum SceMsgDialogButton: int32_t {
-  SCE_MSG_DIALOG_BUTTON_ID_INVALID = 0,
-  SCE_MSG_DIALOG_BUTTON_ID_OK      = 1,
-  SCE_MSG_DIALOG_BUTTON_ID_YES     = 1,
-  SCE_MSG_DIALOG_BUTTON_ID_NO      = 2,
-  SCE_MSG_DIALOG_BUTTON_ID_BUTTON1 = 1,
-  SCE_MSG_DIALOG_BUTTON_ID_BUTTON2 = 2,
-} SceMsgDialogButton;
+enum class SceMsgDialogButton : int32_t {
+  ID_INVALID = 0,
+  ID_OK      = 1,
+  ID_YES     = 1,
+  ID_NO      = 2,
+  ID_BUTTON1 = 1,
+  ID_BUTTON2 = 2,
+};
 
-typedef enum SceMsgDialogSystemMessageType {
-  SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_EMPTY_STORE                             = 0,
-  SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_CHAT_RESTRICTION                    = 1,
-  SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_UGC_RESTRICTION                     = 2,
-  SCE_MSG_DIALOG_SYSMSG_TYPE_CAMERA_NOT_CONNECTED                        = 4,
-  SCE_MSG_DIALOG_SYSMSG_TYPE_WARNING_PROFILE_PICTURE_AND_NAME_NOT_SHARED = 5,
-} SceMsgDialogSystemMessageType;
+enum class SceMsgDialogSystemMessageType {
+  TRC_EMPTY_STORE                             = 0,
+  TRC_PSN_CHAT_RESTRICTION                    = 1,
+  TRC_PSN_UGC_RESTRICTION                     = 2,
+  CAMERA_NOT_CONNECTED                        = 4,
+  WARNING_PROFILE_PICTURE_AND_NAME_NOT_SHARED = 5,
+};
 
-typedef struct SceMsgDialogResult {
+struct SceMsgDialogResult {
   SceMsgDialogMode   mode;
   int32_t            result;
   SceMsgDialogButton buttonId;
   char               pad[32];
-} SceMsgDialogResult;
+};
 
-typedef enum SceMsgDialogButtonType {
-  SCE_MSG_DIALOG_BUTTON_TYPE_OK                     = 0,
-  SCE_MSG_DIALOG_BUTTON_TYPE_YESNO                  = 1,
-  SCE_MSG_DIALOG_BUTTON_TYPE_NONE                   = 2,
-  SCE_MSG_DIALOG_BUTTON_TYPE_OK_CANCEL              = 3,
-  SCE_MSG_DIALOG_BUTTON_TYPE_WAIT                   = 5,
-  SCE_MSG_DIALOG_BUTTON_TYPE_WAIT_CANCEL            = 6,
-  SCE_MSG_DIALOG_BUTTON_TYPE_YESNO_FOCUS_NO         = 7,
-  SCE_MSG_DIALOG_BUTTON_TYPE_OK_CANCEL_FOCUS_CANCEL = 8,
-  SCE_MSG_DIALOG_BUTTON_TYPE_2BUTTONS               = 9,
-} SceMsgDialogButtonType;
+enum class SceMsgDialogButtonType {
+  TYPE_OK                     = 0,
+  TYPE_YESNO                  = 1,
+  TYPE_NONE                   = 2,
+  TYPE_OK_CANCEL              = 3,
+  TYPE_WAIT                   = 5,
+  TYPE_WAIT_CANCEL            = 6,
+  TYPE_YESNO_FOCUS_NO         = 7,
+  TYPE_OK_CANCEL_FOCUS_CANCEL = 8,
+  TYPE_2BUTTONS               = 9,
+};
 
-typedef enum SceMsgDialogProgressBarType {
-  SCE_MSG_DIALOG_PROGRESSBAR_TYPE_PERCENTAGE,
-  SCE_MSG_DIALOG_PROGRESSBAR_TYPE_PERCENTAGE_CANCEL,
-} SceMsgDialogProgressBarType;
+enum class SceMsgDialogProgressBarType {
+  PERCENTAGE,
+  PERCENTAGE_CANCEL,
+};
 
-typedef struct SceMsgDialogButtonsParam {
+struct SceMsgDialogButtonsParam {
   const char* msg1;
   const char* msg2;
   char        pad[32];
-} SceMsgDialogButtonsParam;
+};
 
-typedef struct SceMsgDialogUserMessageParam {
+struct SceMsgDialogUserMessageParam {
   SceMsgDialogButtonType buttonType;
   int32_t : 32;
   const char*               msg;
   SceMsgDialogButtonsParam* buttonsParam;
   char                      pad[24];
-} SceMsgDialogUserMessageParam;
+};
 
-typedef struct SceMsgDialogProgressBarParam {
+struct SceMsgDialogProgressBarParam {
   SceMsgDialogProgressBarType barType;
   int32_t : 32;
   const char* msg;
   char        pad[64];
-} SceMsgDialogProgressBarParam;
+};
 
-typedef struct SceMsgDialogSystemMessageParam {
+struct SceMsgDialogSystemMessageParam {
   SceMsgDialogSystemMessageType sysMsgType;
   char                          pad[32];
-} SceMsgDialogSystemMessageParam;
+};
 
-typedef struct SceMsgDialogParam {
+struct SceMsgDialogParam {
   SceCommonDialogBaseParam baseParam;
   size_t                   size;
   SceMsgDialogMode         mode;
@@ -82,4 +86,4 @@ typedef struct SceMsgDialogParam {
   SceUserServiceUserId            userId;
   char                            pad[40];
   int32_t : 32;
-} SceMsgDialogParam;
+};

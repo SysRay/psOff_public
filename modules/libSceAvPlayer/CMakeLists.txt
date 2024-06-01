@@ -3,19 +3,12 @@ include(../setupModule.cmake)
 
 set(libName libSceAvPlayer)
 project(${libName})
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
 
 add_library(${libName} SHARED
   entry.cpp entryEx.cpp avplayer.cpp
 )
 
-target_link_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/lib
-)
-
 target_include_directories(${libName} PRIVATE
-  ${PRJ_SRC_DIR}/third_party/ffmpeg/include
   ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -27,7 +20,7 @@ set(FFMPEG_LIBS
   swresample
 )
 
-add_dependencies(${libName} core)
-target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS})
+add_dependencies(${libName} core psoff_render)
+target_link_libraries(${libName} PUBLIC core.lib psOff_utility ${FFMPEG_LIBS} psoff_render.lib)
 
 setupModule(${libName})

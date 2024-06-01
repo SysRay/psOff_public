@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
-namespace Ctl {
+namespace NetCtl {
 constexpr int32_t NOT_INITIALIZED  = -2143215359;
 constexpr int32_t CALLBACK_MAX     = -2143215357;
 constexpr int32_t ID_NOT_FOUND     = -2143215356;
@@ -18,7 +18,7 @@ constexpr int32_t INVALID_SIZE     = -2143215343;
 constexpr int32_t ETHERNET_PLUGOUT = -2143215339;
 constexpr int32_t WIFI_DEAUTHED    = -2143215338;
 constexpr int32_t WIFI_BEACON_LOST = -2143215337;
-} // namespace Ctl
+} // namespace NetCtl
 } // namespace Err
 
 constexpr size_t SCE_NET_CTL_SSID_LEN              = 33;

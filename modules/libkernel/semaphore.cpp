@@ -1,5 +1,7 @@
 #include "core/kernel/semaphore.h"
 
+#include "boost/date_time/posix_time/posix_time_types.hpp"
+#include "boost/interprocess/sync/interprocess_semaphore.hpp"
 #include "common.h"
 #include "core/kernel/errors.h"
 #include "logging.h"
@@ -7,8 +9,8 @@
 
 using ScePthreadSem_t = ISemaphore*;
 extern "C" {
-EXPORT SYSV_ABI int scePthreadSemInit(ScePthreadSem_t* sem, int pshared, unsigned int initCount, const char* name) {
-  (*sem) = createSemaphore(name, false, 0, std::numeric_limits<int>::max()).release();
+EXPORT SYSV_ABI int scePthreadSemInit(boost::interprocess::interprocess_semaphore** sem, int pshared, unsigned int initCount, const char* name) {
+  *sem = new boost::interprocess::interprocess_semaphore(initCount);
   return Ok;
 }
 
@@ -21,44 +23,47 @@ EXPORT SYSV_ABI int scePthreadSemDestroy(ScePthreadSem_t* sem) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int scePthreadSemTimedwait(ScePthreadSem_t* sem, SceKernelUseconds usec) {
+EXPORT SYSV_ABI int scePthreadSemTimedwait(boost::interprocess::interprocess_semaphore** sem, SceKernelUseconds usec) {
   if (sem == nullptr || *sem == nullptr) {
     return POSIX_SET(ErrCode::_ESRCH);
   }
 
-  return POSIX_CALL((*sem)->wait(1, &usec));
+  auto deadline = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds(usec);
+  return (*sem)->timed_wait(deadline) ? Ok : POSIX_SET(ErrCode::_ETIMEDOUT);
 }
 
-EXPORT SYSV_ABI int scePthreadSemPost(ScePthreadSem_t* sem) {
+EXPORT SYSV_ABI int scePthreadSemPost(boost::interprocess::interprocess_semaphore** sem) {
   if (sem == nullptr || *sem == nullptr) {
     return POSIX_SET(ErrCode::_ESRCH);
   }
-  return POSIX_CALL((*sem)->signal(1));
+  (*sem)->post();
+  return Ok;
 }
 
-EXPORT SYSV_ABI int scePthreadSemTrywait(ScePthreadSem_t* sem) {
+EXPORT SYSV_ABI int scePthreadSemTrywait(boost::interprocess::interprocess_semaphore** sem) {
   if (sem == nullptr || *sem == nullptr) {
     return POSIX_SET(ErrCode::_ESRCH);
   }
-  return POSIX_CALL((*sem)->try_wait(1, nullptr));
+
+  return (*sem)->try_wait() ? Ok : POSIX_SET(ErrCode::_EBUSY);
 }
 
-EXPORT SYSV_ABI int scePthreadSemWait(ScePthreadSem_t* sem) {
+EXPORT SYSV_ABI int scePthreadSemWait(boost::interprocess::interprocess_semaphore** sem) {
   if (sem == nullptr || *sem == nullptr) {
     return POSIX_SET(ErrCode::_ESRCH);
   }
-  return POSIX_CALL((*sem)->wait(1, nullptr));
+
+  (*sem)->wait();
+  return Ok;
 }
 }
 
 EXPORT SYSV_ABI int sceKernelCreateSema(ScePthreadSem_t* sem, const char* name, uint32_t attr, int init, int max, const void* opt) {
-  if (name == nullptr || init < 0 || init > max) {
+  if (sem == nullptr) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  bool fifo = attr == 1 ? true : false;
-
-  (*sem) = createSemaphore(name, fifo, init, max).release();
+  (*sem) = createSemaphore_fifo(name, init, max).release();
   return Ok;
 }
 

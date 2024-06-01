@@ -8,10 +8,14 @@ typedef uint32_t SceNetSocklen_t;
 
 typedef int SceNetId;
 
+struct SceNetInAddr {
+  SceNetInAddr_t s_addr;
+};
+
 enum class SceStunCheckResult {
-  Unchecked = 0,
-  Failed    = 1,
-  Ok        = 2
+  RUnchecked = 0,
+  RFailed    = 1,
+  ROk        = 2
 
 };
 
@@ -107,6 +111,18 @@ struct SceNetMemoryPoolStats {
   size_t currentInuseSize;
 };
 
-typedef struct SceNetEtherAddr {
+struct SceNetEtherAddr {
   uint8_t data[SCE_NET_ETHER_ADDR_LEN];
-} SceNetEtherAddr;
+};
+
+union SceNetEpollData {
+  void*    ptr;
+  uint32_t u32;
+};
+
+struct SceNetEpollEvent {
+  uint32_t        events;
+  uint32_t        reserved;
+  uint64_t        ident; /* OUT */
+  SceNetEpollData data;
+};

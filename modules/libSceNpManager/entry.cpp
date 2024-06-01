@@ -7,10 +7,12 @@
 LOG_DEFINE_MODULE(libSceNpManager);
 
 namespace {
+// clang-format off
 using SceNpStateCallbackA            = SYSV_ABI void (*)(int32_t userId, SceNpState state, void* userdata);
 using SceNpReachabilityStateCallback = SYSV_ABI void (*)(int32_t userId, SceNpReachabilityState state, void* userdata);
 using SceNpGamePresenceCallbackA     = SYSV_ABI void (*)(int32_t userId, SceNpGamePresenceStatus status, void* userdata);
 using SceNpPlusEventCallback         = SYSV_ABI void (*)(int32_t userId, SceNpPlusEventType event, void* userdata);
+// clang-format on
 } // namespace
 
 extern "C" {
@@ -330,6 +332,70 @@ EXPORT SYSV_ABI int sceNpUnregisterPlusEventCallback(void) {
 }
 
 EXPORT SYSV_ABI int sceNpNotifyPlusFeature(const SceNpNotifyPlusFeatureParameter* param) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceNpInGameMessageInitialize(size_t poolSize, void* option) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageAbortHandle(int32_t libCtxId, int32_t handleId) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageCreateHandle(int32_t libCtxId) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageDeleteHandle(int32_t libCtxId, int32_t handleId) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessagePrepare(int32_t libCtxId, int32_t handleId, const void* pReserved, SceNpInGameMessageEventCallbackA cbFunc,
+                                                  void* pUserArg) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessagePrepareA(int32_t libCtxId, int32_t handleId, const void* pReserved, SceNpInGameMessageEventCallbackA cbFunc,
+                                                   void* pUserArg) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageSendData(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom,
+                                                   const SceNpInGameMessageData* pMessage) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageSendDataA(int32_t libCtxId, const SceNpPeerAddressA* pTo, const SceNpPeerAddressA* pFrom,
+                                                    const SceNpInGameMessageData* pMessage) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageGetMemoryPoolStatistics(int32_t libCtxId, SceNpInGameMessageMemoryPoolStatistics* pMemStats) {
+  LOG_USE_MODULE(libSceNpManager);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceNpInGameMessageTerminate(int32_t libCtxId) {
   LOG_USE_MODULE(libSceNpManager);
   LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;

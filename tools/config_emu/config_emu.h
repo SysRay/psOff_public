@@ -1,18 +1,19 @@
 #pragma once
-#include "third_party/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 #include "utility/utility.h"
 
 #include <boost/thread/mutex.hpp>
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 enum class ConfigModFlag : uint32_t {
   NONE     = 0,
-  LOGGING  = 2 << 0,
-  GRAPHICS = 2 << 1,
-  AUDIO    = 2 << 2,
-  CONTROLS = 2 << 3,
-  GENERAL  = 2 << 4,
+  LOGGING  = 1 << 0,
+  GRAPHICS = 1 << 1,
+  AUDIO    = 1 << 2,
+  CONTROLS = 1 << 3,
+  GENERAL  = 1 << 4,
+  RESOLVE  = 1 << 5,
 };
 
 class IConfig {
@@ -29,6 +30,16 @@ class IConfig {
 
   virtual bool save(uint32_t flags) = 0;
 };
+
+template <typename T>
+bool getJsonParam(json* jData, std::string_view param, T& ret) {
+  try {
+    (*jData)[param.data()].get_to(ret);
+  } catch (...) {
+    return false;
+  }
+  return true;
+}
 
 #ifdef __APICALL_EXTERN
 #define __APICALL __declspec(dllexport)

@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "main": "main.js",
+  "dependencies": {
+    "@octokit/rest": "^20.1.0",
+    "node-fetch": "^3.3.2"
+  }
+}

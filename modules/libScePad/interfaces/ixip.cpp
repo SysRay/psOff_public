@@ -20,13 +20,14 @@ static XInputEnableProc          xip_enableFunc   = nullptr;
 static XInputGetStateProc        xip_getStateFunc = nullptr;
 static XInputSetStateProc        xip_setStateFunc = nullptr;
 static XInputGetCapabilitiesProc xip_getCapsFunc  = nullptr;
+static std::vector<bool>         xip_openedPads   = {false, false, false, false};
 
 class XIPController: public IController {
   DWORD m_xUserId         = -1;
   bool  m_xRumblePossible = false;
 
   public:
-  XIPController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) {
+  XIPController(uint32_t userid): IController(ControllerType::SDL, userid) {
     init();
     reconnect();
   }
@@ -47,8 +48,8 @@ class XIPController: public IController {
   void     init();
 };
 
-std::unique_ptr<IController> createController_xinput(ControllerConfig* cfg, uint32_t userid) {
-  return std::make_unique<XIPController>(cfg, userid);
+std::unique_ptr<IController> createController_xinput(uint32_t userid) {
+  return std::make_unique<XIPController>(userid);
 }
 
 void XIPController::init() {
@@ -75,7 +76,8 @@ void XIPController::init() {
 
 void XIPController::close() {
   if (m_state == ControllerState::Disconnected || m_state == ControllerState::Closed) return;
-  m_state = ControllerState::Closed;
+  m_state                   = ControllerState::Closed;
+  xip_openedPads[m_xUserId] = false;
 }
 
 bool XIPController::reconnect() {
@@ -83,15 +85,19 @@ bool XIPController::reconnect() {
 
   XINPUT_CAPABILITIES caps;
   for (DWORD n = 0; n < XUSER_MAX_COUNT; n++) {
+    if (xip_openedPads[n]) continue;
     if (xip_getCapsFunc(n, XINPUT_FLAG_GAMEPAD, &caps) != ERROR_SUCCESS) continue;
     if (caps.Type != XINPUT_DEVTYPE_GAMEPAD || caps.SubType != XINPUT_DEVSUBTYPE_GAMEPAD) continue;
     ::strcpy_s(m_name, "XInput gamepad");
     ::strcpy_s(m_guid, "1337deadbeef00000000000000000000");
     m_xRumblePossible = caps.Vibration.wLeftMotorSpeed > 0 || caps.Vibration.wRightMotorSpeed > 0;
     if (caps.Flags & XINPUT_CAPS_NO_NAVIGATION) {
-      LOG_WARN(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
+      LOG_ERR(L"Your gamepad lacks menu navigation buttons, you may not be able to reach some parts of game menus!");
     }
-    m_xUserId = n;
+    ++m_connectCount;
+    m_state           = ControllerState::Connected;
+    xip_openedPads[n] = true;
+    m_xUserId         = n;
     return true;
   }
 
@@ -124,15 +130,15 @@ uint32_t XIPController::getButtons(XINPUT_GAMEPAD* xgp) {
 }
 
 bool XIPController::readPadData(ScePadData& data) {
-  auto lockSDL2 = accessVideoOut().getSDLLock();
-
   if (m_state == ControllerState::Closed) return false;
 
   XINPUT_STATE xstate;
   if (xip_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
     m_state = ControllerState::Disconnected;
-    data    = ScePadData {};
-    return false;
+    if (!reconnect()) {
+      data = ScePadData {};
+      return false;
+    }
   }
 
   auto xGamepad = &xstate.Gamepad;
@@ -176,20 +182,23 @@ bool XIPController::readPadData(ScePadData& data) {
       .touchData =
           {
               .touchNum = 0,
-              .touch    = {{
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 1,
-                        },
-                           {
-                               .x  = 0,
-                               .y  = 0,
-                               .id = 2,
-                        }},
+              .touch =
+                  {
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 1,
+                      },
+                      {
+                          .x  = 0,
+                          .y  = 0,
+                          .id = 2,
+                      },
+                  },
 
           },
 
-      .connected           = true,
+      .connected           = IController::isConnected(),
       .timestamp           = accessTimer().getTicks(),
       .connectedCount      = m_connectCount,
       .deviceUniqueDataLen = 0,

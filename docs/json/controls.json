@@ -1,0 +1,194 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "button": {
+      "type": "string",
+      "description": "This gamepad button will be pressed when you press the speified button on the keyboard.\n\"gamepad_key\": \"keyboard_key\"\n\nYou can find keyboard key names there: <https://wiki.libsdl.org/SDL2/SDL_Scancode>."
+    },
+    "deadzone": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.9
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.9
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "keybinds": {
+      "type": "object",
+      "description": "Information about keybinds for gamepad emulation, hover your cursor on any key inside this object to get more info.",
+      "additionalProperties": false,
+      "properties": {
+        "gamereport.send": {
+          "$ref": "#/definitions/button"
+        },
+        "overlay.open": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.circle": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.cross": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.dpad_down": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.dpad_left": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.dpad_right": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.dpad_up": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.l1": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.l2": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.l3": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.lx+": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.lx-": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.ly+": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.ly-": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.options": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.r1": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.r2": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.r3": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.rx+": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.rx-": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.ry+": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.ry-": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.square": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.touchpad": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.triangle": {
+          "$ref": "#/definitions/button"
+        }
+      },
+      "required": [
+        "gamereport.send",
+        "controller.circle",
+        "controller.cross",
+        "controller.dpad_down",
+        "controller.dpad_left",
+        "controller.dpad_right",
+        "controller.dpad_up",
+        "controller.l1",
+        "controller.l2",
+        "controller.l3",
+        "controller.lx+",
+        "controller.lx-",
+        "controller.ly+",
+        "controller.ly-",
+        "controller.options",
+        "controller.r1",
+        "controller.r2",
+        "controller.r3",
+        "controller.rx+",
+        "controller.rx-",
+        "controller.ry+",
+        "controller.ry-",
+        "controller.square",
+        "controller.touchpad",
+        "controller.triangle"
+      ]
+    },
+    "pads": {
+      "type": "array",
+      "description": "This array contains information about connected pads.",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "description": "The pad information itself.",
+        "additionalProperties": false,
+        "properties": {
+          "deadzones": {
+            "type": "object",
+            "description": "Dead zones are WIP, not working for now.",
+            "additionalProperties": false,
+            "properties": {
+              "left_stick": {
+                "$ref": "#/definitions/deadzone"
+              },
+              "right_stick": {
+                "$ref": "#/definitions/deadzone"
+              }
+            },
+            "required": [
+              "left_stick",
+              "right_stick"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Backend for this gamepad. Possible values:\n* SDL (almost any gamepad): sdl\n* All Xbox-compatible gamepads: xinput\n* Gamepad emulation using keyboard: keyboard",
+            "enum": [
+              "sdl",
+              "xinput",
+              "keyboard"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "deadzones"
+        ]
+      }
+    }
+  },
+  "required": [
+    "keybinds",
+    "pads"
+  ]
+}

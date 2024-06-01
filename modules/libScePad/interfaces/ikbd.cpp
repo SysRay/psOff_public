@@ -1,10 +1,11 @@
 #include "ikbd.h"
 
+#include "core/hotkeys/hotkeys.h"
 #include "core/timer/timer.h"
 #include "core/videoout/videoout.h"
 // #include "logging.h"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <bitset>
 #include <math.h>
 
@@ -12,7 +13,7 @@
 
 class KBDController: public IController {
   public:
-  KBDController(ControllerConfig* cfg, uint32_t userid): IController(ControllerType::SDL, cfg, userid) { reconnect(); }
+  KBDController(uint32_t userid): IController(ControllerType::SDL, userid) { reconnect(); }
 
   virtual ~KBDController() = default;
 
@@ -26,12 +27,11 @@ class KBDController: public IController {
   bool setLED(const ScePadColor* pParam) final;
   bool resetLED() final;
 
-  bool     resolveBindFor(const uint8_t* keys, ControllerKey key);
-  uint32_t getButtons(const uint8_t* keys);
+  uint32_t getButtons(IHotkeys& keys);
 };
 
-std::unique_ptr<IController> createController_keyboard(ControllerConfig* cfg, uint32_t userid) {
-  return std::make_unique<KBDController>(cfg, userid);
+std::unique_ptr<IController> createController_keyboard(uint32_t userid) {
+  return std::make_unique<KBDController>(userid);
 }
 
 void KBDController::close() {
@@ -41,64 +41,55 @@ void KBDController::close() {
 
 bool KBDController::reconnect() {
   m_state = ControllerState::Connected;
+  ::strcpy_s(m_name, "Emulated gamepad");
+  ::strcpy_s(m_guid, "1337deadbeefb00b1e50101010101010");
   return true;
 }
 
-bool KBDController::resolveBindFor(const uint8_t* keys, ControllerKey key) {
-  auto bind = m_cfg->GetBind(key);
-  return keys[bind.key] && (bind.mod != 0 ? keys[bind.mod] : 1);
-}
-
-uint32_t KBDController::getButtons(const uint8_t* keys) {
+uint32_t KBDController::getButtons(IHotkeys& hk) {
   std::bitset<32> bits;
 
-  bits[(uint32_t)ScePadButtonDataOffset::L3]        = resolveBindFor(keys, ControllerKey::L3);
-  bits[(uint32_t)ScePadButtonDataOffset::R3]        = resolveBindFor(keys, ControllerKey::R3);
-  bits[(uint32_t)ScePadButtonDataOffset::OPTIONS]   = resolveBindFor(keys, ControllerKey::OPTIONS);
-  bits[(uint32_t)ScePadButtonDataOffset::UP]        = resolveBindFor(keys, ControllerKey::DPAD_UP);
-  bits[(uint32_t)ScePadButtonDataOffset::RIGHT]     = resolveBindFor(keys, ControllerKey::DPAD_RIGHT);
-  bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = resolveBindFor(keys, ControllerKey::DPAD_DOWN);
-  bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = resolveBindFor(keys, ControllerKey::DPAD_LEFT);
-  bits[(uint32_t)ScePadButtonDataOffset::L1]        = resolveBindFor(keys, ControllerKey::L1);
-  bits[(uint32_t)ScePadButtonDataOffset::L2]        = resolveBindFor(keys, ControllerKey::L2);
-  bits[(uint32_t)ScePadButtonDataOffset::R1]        = resolveBindFor(keys, ControllerKey::R1);
-  bits[(uint32_t)ScePadButtonDataOffset::R2]        = resolveBindFor(keys, ControllerKey::R2);
-  bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = resolveBindFor(keys, ControllerKey::TRIANGLE);
-  bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = resolveBindFor(keys, ControllerKey::CIRCLE);
-  bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = resolveBindFor(keys, ControllerKey::CROSS);
-  bits[(uint32_t)ScePadButtonDataOffset::SQUARE]    = resolveBindFor(keys, ControllerKey::SQUARE);
-  bits[(uint32_t)ScePadButtonDataOffset::TOUCH_PAD] = resolveBindFor(keys, ControllerKey::TOUCH_PAD);
+  bits[(uint32_t)ScePadButtonDataOffset::L3]        = hk.isPressed(HkCommand::CONTROLLER_L3);
+  bits[(uint32_t)ScePadButtonDataOffset::R3]        = hk.isPressed(HkCommand::CONTROLLER_R3);
+  bits[(uint32_t)ScePadButtonDataOffset::OPTIONS]   = hk.isPressed(HkCommand::CONTROLLER_OPTIONS);
+  bits[(uint32_t)ScePadButtonDataOffset::UP]        = hk.isPressed(HkCommand::CONTROLLER_DPAD_UP);
+  bits[(uint32_t)ScePadButtonDataOffset::RIGHT]     = hk.isPressed(HkCommand::CONTROLLER_DPAD_RIGHT);
+  bits[(uint32_t)ScePadButtonDataOffset::DOWN]      = hk.isPressed(HkCommand::CONTROLLER_DPAD_DOWN);
+  bits[(uint32_t)ScePadButtonDataOffset::LEFT]      = hk.isPressed(HkCommand::CONTROLLER_DPAD_LEFT);
+  bits[(uint32_t)ScePadButtonDataOffset::L1]        = hk.isPressed(HkCommand::CONTROLLER_L1);
+  bits[(uint32_t)ScePadButtonDataOffset::L2]        = hk.isPressed(HkCommand::CONTROLLER_L2);
+  bits[(uint32_t)ScePadButtonDataOffset::R1]        = hk.isPressed(HkCommand::CONTROLLER_R1);
+  bits[(uint32_t)ScePadButtonDataOffset::R2]        = hk.isPressed(HkCommand::CONTROLLER_R2);
+  bits[(uint32_t)ScePadButtonDataOffset::TRIANGLE]  = hk.isPressed(HkCommand::CONTROLLER_TRIANGLE);
+  bits[(uint32_t)ScePadButtonDataOffset::CIRCLE]    = hk.isPressed(HkCommand::CONTROLLER_CIRCLE);
+  bits[(uint32_t)ScePadButtonDataOffset::CROSS]     = hk.isPressed(HkCommand::CONTROLLER_CROSS);
+  bits[(uint32_t)ScePadButtonDataOffset::SQUARE]    = hk.isPressed(HkCommand::CONTROLLER_SQUARE);
+  bits[(uint32_t)ScePadButtonDataOffset::TOUCH_PAD] = hk.isPressed(HkCommand::CONTROLLER_TOUCH_PAD);
 
   return bits.to_ulong();
 }
 
-#define MAP_ANALOG(_keys, _up, _down) (uint8_t)(resolveBindFor(_keys, _up) ? 0xFF : resolveBindFor(_keys, _down) ? 0x00 : 0x7F)
-
-#define MAP_TRIGGER(_keys, _down) (uint8_t)(resolveBindFor(_keys, _down) ? 0xFF : 0x00)
-
 bool KBDController::readPadData(ScePadData& data) {
-  auto lockSDL2 = accessVideoOut().getSDLLock();
-
   if (m_state == ControllerState::Closed) return false;
 
-  const uint8_t* keys = SDL_GetKeyboardState(nullptr);
+  auto& hk = accessHotkeys();
 
   data = ScePadData {
-      .buttons = getButtons(keys),
+      .buttons = getButtons(hk),
       .leftStick =
           {
-              .x = MAP_ANALOG(keys, ControllerKey::LX_UP, ControllerKey::LX_DOWN),
-              .y = MAP_ANALOG(keys, ControllerKey::LY_UP, ControllerKey::LY_DOWN),
+              .x = uint8_t(hk.isPressedEx(HkCommand::CONTROLLER_LX_UP, HkCommand::CONTROLLER_LX_DOWN, 0xFF, 0x00, 0x7F)),
+              .y = uint8_t(hk.isPressedEx(HkCommand::CONTROLLER_LY_UP, HkCommand::CONTROLLER_LY_DOWN, 0xFF, 0x00, 0x7F)),
           },
       .rightStick =
           {
-              .x = MAP_ANALOG(keys, ControllerKey::RX_UP, ControllerKey::RX_DOWN),
-              .y = MAP_ANALOG(keys, ControllerKey::RY_UP, ControllerKey::RY_DOWN),
+              .x = uint8_t(hk.isPressedEx(HkCommand::CONTROLLER_RX_UP, HkCommand::CONTROLLER_RX_DOWN, 0xFF, 0x00, 0x7F)),
+              .y = uint8_t(hk.isPressedEx(HkCommand::CONTROLLER_RY_UP, HkCommand::CONTROLLER_RY_DOWN, 0xFF, 0x00, 0x7F)),
           },
       .analogButtons =
           {
-              .l2 = MAP_TRIGGER(keys, ControllerKey::L2),
-              .r2 = MAP_TRIGGER(keys, ControllerKey::R2),
+              .l2 = uint8_t(hk.isPressed(HkCommand::CONTROLLER_L2) ? 0xFF : 0x00),
+              .r2 = uint8_t(hk.isPressed(HkCommand::CONTROLLER_R2) ? 0xFF : 0x00),
           },
       .orientation =
           {

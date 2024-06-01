@@ -158,19 +158,19 @@ enum class SceImePanelPriority {
   ACCENT   = 3,
 };
 
-typedef enum SceImeCaretMovementDirection {
-  MOVE_STILL     = 0,
-  MOVE_LEFT      = 1,
-  MOVE_RIGHT     = 2,
-  MOVE_UP        = 3,
-  MOVE_DOWN      = 4,
-  MOVE_HOME      = 5,
-  MOVE_END       = 6,
-  MOVE_PAGE_UP   = 7,
-  MOVE_PAGE_DOWN = 8,
-  MOVE_TOP       = 9,
-  MOVE_BOTTOM    = 10,
-} SceImeCaretMovementDirection;
+enum class SceImeCaretMovementDirection {
+  STILL     = 0,
+  LEFT      = 1,
+  RIGHT     = 2,
+  UP        = 3,
+  DOWN      = 4,
+  HOME      = 5,
+  END       = 6,
+  PAGE_UP   = 7,
+  PAGE_DOWN = 8,
+  TOP       = 9,
+  BOTTOM    = 10,
+};
 
 enum class SceImeTextAreaMode {
   DISABLE = 0,
@@ -391,9 +391,9 @@ struct SceImeEvent {
   SceImeEventParam param;
 };
 
-typedef void (*SceImeEventHandler)(void* arg, const SceImeEvent* e);
-typedef int32_t (*SceImeTextFilter)(wchar_t* outText, uint32_t* outTextLength, const wchar_t* srcText, uint32_t srcTextLength);
-typedef int (*SceImeExtKeyboardFilter)(const SceImeKeycode* srcKeycode, uint16_t* outKeycode, uint32_t* outStatus, void* reserved);
+typedef void    SYSV_ABI (*SceImeEventHandler)(void* arg, const SceImeEvent* e);
+typedef int32_t SYSV_ABI (*SceImeTextFilter)(wchar_t* outText, uint32_t* outTextLength, const wchar_t* srcText, uint32_t srcTextLength);
+typedef int     SYSV_ABI (*SceImeExtKeyboardFilter)(const SceImeKeycode* srcKeycode, uint16_t* outKeycode, uint32_t* outStatus, void* reserved);
 
 struct SceImeParam {
   SceUserServiceUserId      userId;

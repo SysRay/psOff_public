@@ -1,10 +1,9 @@
 #include "common.h"
 #include "core/fileManager/fileManager.h"
-#include "core/imports/exports/procParam.h"
-#include "core/imports/exports/runtimeExport.h"
-#include "core/imports/imports_runtime.h"
 #include "core/kernel/errors.h"
 #include "core/memory/memory.h"
+#include "core/runtime/procParam.h"
+#include "core/runtime/runtimeLinker.h"
 #include "core/timer/timer.h"
 #include "logging.h"
 #include "types.h"
@@ -36,16 +35,16 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libkernel";
 
-SYSV_ABI int* __NID(__error()) {
+EXPORT SYSV_ABI int* __NID(__error()) {
   return getError_pthread(); // todo: or extra for kernel?
 }
 
 EXPORT SYSV_ABI int __NID(getargc)(void) {
-  return accessRuntimeExport()->getEntryParams()->argc;
+  return accessRuntimeLinker().getEntryParams()->argc;
 }
 
 EXPORT SYSV_ABI char const* const* __NID(getargv)(void) {
-  return accessRuntimeExport()->getEntryParams()->argv;
+  return accessRuntimeLinker().getEntryParams()->argv;
 }
 
 EXPORT SYSV_ABI int __NID(getpagesize)(void) {
@@ -53,7 +52,7 @@ EXPORT SYSV_ABI int __NID(getpagesize)(void) {
 }
 
 EXPORT SYSV_ABI void* __NID(__tls_get_addr)(TlsInfo* info) {
-  return accessRuntimeExport()->getTLSAddr(info->index, info->offset);
+  return accessRuntimeLinker().getTLSAddr(info->index, info->offset);
 }
 
 EXPORT SYSV_ABI void __NID(__stack_chk_fail)() {
@@ -63,12 +62,13 @@ EXPORT SYSV_ABI void __NID(__stack_chk_fail)() {
 
 EXPORT SYSV_ABI void __NID(_exit)(int code) {
   LOG_USE_MODULE(libkernel);
-  LOG_INFO(L"exit code:%d", code);
+  LOG_ERR(L"exit code:%d", code);
 
   ::exit(code);
 }
 
 EXPORT SYSV_ABI uint8_t __NID(_is_signal_return)(int64_t* param) {
+  if ((intptr_t)param < 4 * 1024) return 1;
   uint8_t retVal = 0;
 
   if (((*param != 0x48006a40247c8d48) || (param[1] != 0x50f000001a1c0c7)) || (retVal = 1, (param[2] & 0xffffffU) != 0xfdebf4)) {
@@ -96,14 +96,21 @@ EXPORT SYSV_ABI int __NID(sigfillset)(sigset_t* set) {
 EXPORT SYSV_ABI void* _sceModuleParam() {
   LOG_USE_MODULE(libkernel);
   LOG_ERR(L"todo %S", __FUNCTION__); // todo what module?
-  auto const procParamVaddr = accessRuntimeExport()->mainModuleInfo().procParamAddr;
+  auto const procParamVaddr = accessRuntimeLinker().mainModuleInfo().procParamAddr;
   return reinterpret_cast<void*>(procParamVaddr);
 }
 
-EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModulInfo* info) {
+struct ModuleSegmentInfo {
+  uint64_t addr;
+  uint64_t size;
+};
+
+EXPORT SYSV_ABI int sceKernelInternalMemoryGetModuleSegmentInfo(ModuleSegmentInfo* info) {
   if (info == nullptr) return getErr(ErrCode::_EFAULT);
 
-  *info = accessRuntimeExport()->mainModuleInfo();
+  auto mainInfo = accessRuntimeLinker().mainModuleInfo();
+  info->addr    = mainInfo.seg0Addr;
+  info->size    = mainInfo.seg0Size;
   return Ok;
 }
 
@@ -123,7 +130,13 @@ EXPORT SYSV_ABI int sceKernelConvertUtcToLocaltime(time_t time, time_t* local_ti
     *dstsec = sys_inf.save.count() * 60;
   }
 
-  return 0;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int sceKernelConvertLocaltimeToUtc() {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
 }
 
 EXPORT SYSV_ABI unsigned int sceKernelSleep(unsigned int seconds) {
@@ -159,6 +172,10 @@ EXPORT SYSV_ABI int sceKernelClockGettime(SceKernelClockid clockId, SceKernelTim
 
 EXPORT SYSV_ABI int sceKernelGettimeofday(SceKernelTimeval* tp) {
   return accessTimer().getTimeofDay(tp);
+}
+
+EXPORT SYSV_ABI int sceKernelGettimezone(SceKernelTimezone* tz) {
+  return accessTimer().getTimeZone(tz);
 }
 
 EXPORT SYSV_ABI int __NID(clock_getres)(SceKernelClockid clockId, SceKernelTimespec* tp) {
@@ -204,7 +221,7 @@ EXPORT SYSV_ABI SceKernelModule sceKernelLoadStartModule(const char* moduleFileN
     return getErr(ErrCode::_EACCES);
   }
 
-  auto id = accessRuntimeExport()->loadStartModule(*mapped, args, argp, pRes);
+  auto id = accessRuntimeLinker().loadStartModule(*mapped, args, argp, pRes);
   return id != 0 ? id : getErr(ErrCode::_EACCES);
 }
 
@@ -232,6 +249,12 @@ EXPORT SYSV_ABI int sceKernelSetFsstParam(int prio, SceKernelCpumask mask) {
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceKernelSetProcessProperty() {
+  LOG_USE_MODULE(libkernel);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelGetCpumode() {
   return (int)SceKernelCPUMode::CPUMODE_6CPU;
 }
@@ -243,6 +266,16 @@ EXPORT SYSV_ABI int sceKernelIsNeoMode() {
 
 EXPORT SYSV_ABI int sceKernelMprotect(uint64_t addr, size_t len, int prot) {
   return memory::protect(addr, len, prot, nullptr) ? Ok : getErr(ErrCode::_EACCES);
+}
+
+EXPORT SYSV_ABI int sceKernelMlock(void* addr, size_t len) {
+  LOG_USE_MODULE(libkernel);
+  return memory::check_mmaped(addr, len) ? Ok : getErr(ErrCode::_EACCES);
+}
+
+EXPORT SYSV_ABI int sceKernelMunlock(void* addr, size_t len) {
+  LOG_USE_MODULE(libkernel);
+  return memory::check_mmaped(addr, len) ? Ok : getErr(ErrCode::_EACCES);
 }
 
 EXPORT SYSV_ABI int sceKernelMsync(void* addr, size_t len, int flags) {
@@ -302,8 +335,7 @@ EXPORT SYSV_ABI void _sceKernelRtldSetApplicationHeapAPI(void* api[]) {
 }
 
 EXPORT SYSV_ABI void sceKernelDebugRaiseException(int reason, int id) {
-  LOG_USE_MODULE(libkernel);
-  LOG_CRIT(L"Exception: reason:0x%lx id:0x%lx", reason, id);
+  RaiseException(id, reason, 0, 0);
 }
 
 EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint64_t dtor_vaddr) {
@@ -333,14 +365,14 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfo(SceKernelModule handle, SceKernelModu
   if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
   LOG_USE_MODULE(libkernel);
   LOG_ERR(L"todo %S(%d)", __FUNCTION__, handle);
-  // auto info = accessRuntimeExport()->getModuleInfo(handle); // todo
+  // auto info = accessRuntimeLinker().getModuleInfo(handle); // todo
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceKernelGetModuleInfoFromAddr(uint64_t addr, int n, SceKernelModuleInfoEx* r) {
   if (r == nullptr) return getErr(ErrCode::_EFAULT);
   if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
-  auto info = accessRuntimeExport()->getModuleInfoEx(addr);
+  auto info = accessRuntimeLinker().getModuleInfoEx(addr);
   if (info == nullptr) {
     r->id = 0;
     return getErr(ErrCode::_EINVAL);
@@ -354,7 +386,7 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfoForUnwind(uint64_t addr, int n, SceMod
   if (r == nullptr) return getErr(ErrCode::_EFAULT);
   if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
 
-  auto info = accessRuntimeExport()->getModuleInfoEx(addr);
+  auto info = accessRuntimeLinker().getModuleInfoEx(addr);
   if (info == nullptr) {
     return getErr(ErrCode::_EINVAL);
   }
@@ -370,23 +402,28 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfoForUnwind(uint64_t addr, int n, SceMod
 }
 
 EXPORT SYSV_ABI void* sceKernelGetProcParam() {
-  return (void*)accessRuntimeExport()->mainModuleInfo().procParamAddr;
+  return (void*)accessRuntimeLinker().mainModuleInfo().procParamAddr;
 }
 
 EXPORT SYSV_ABI int sceKernelGetModuleList(int* modules, size_t size, size_t* sizeOut) {
-  auto const modules_ = accessRuntimeExport()->getModules();
+  auto const modules_ = accessRuntimeLinker().getModules();
 
-  for (size_t n = 0; n < std::min(size, modules_.size()); ++n) {
-    modules[n] = modules_[n];
+  for (*sizeOut = 0; *sizeOut < std::min(size, modules_.size()); ++(*sizeOut)) {
+    modules[*sizeOut] = modules_[*sizeOut];
   }
-  *sizeOut = modules_.size();
+
   if (modules_.size() > size) return getErr(ErrCode::_ENOMEM);
 
   return Ok;
 }
 
+EXPORT SYSV_ABI int sceKernelGetCompiledSdkVersion(int* ver) {
+  *ver = 0x7FFFF;
+  return Ok;
+}
+
 EXPORT SYSV_ABI int sceKernelDlsym(int moduleId, const char* symbol, uint64_t* pAddr) {
-  *pAddr = (uint64_t)accessRuntimeExport()->getSymbol(moduleId, symbol, false);
+  *pAddr = (uint64_t)accessRuntimeLinker().getSymbol(moduleId, symbol, false);
   LOG_USE_MODULE(libkernel);
   LOG_DEBUG(L"dlsym[%d] 0x%08llx %S", moduleId, *pAddr, symbol);
   if (*pAddr == 0) return getErr(ErrCode::_EFAULT);

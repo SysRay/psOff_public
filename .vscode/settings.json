@@ -14,7 +14,7 @@
     "-fexceptions"
   ],
   "ccls.index.threads": 0,
-
+  "cmake.parallelJobs": 0,
   "cmake.generator": "Ninja",
   "cmake.sourceDirectory": "${workspaceFolder}",
   "cmake.buildDirectory": "${workspaceFolder}/_build/_Release",
@@ -24,16 +24,14 @@
     "CMAKE_C_COMPILER": "clang-cl.exe",
     "CMAKE_CXX_COMPILER": "clang-cl.exe"
   },
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.clang_format_style": "file:${workspaceRoot}/.clang-format",
+  "C_Cpp.clang_format_fallbackStyle": "LLVM",
+  "C_Cpp.clang_format_path": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang-format.exe",
   "C_Cpp.default.compilerPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
   "C_Cpp.default.intelliSenseMode": "windows-clang-x64",
   "C_Cpp.default.cppStandard": "c++20",
   "C_Cpp.autoAddFileAssociations": false,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "git.ignoredRepositories": [
-    "third_party/boost",
-    "third_party/optick",
-    "third_party/magic_enum",
-    "third_part/SDL2"
-  ]
 }

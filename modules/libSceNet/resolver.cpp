@@ -1,49 +1,37 @@
 #include "common.h"
+#include "core/networking/networking.h"
 #include "logging.h"
 #include "resolverTypes.h"
+#include "socketTypes.h"
 
 LOG_DEFINE_MODULE(libSceNet);
 
-namespace {} // namespace
-
 extern "C" {
 EXPORT SYSV_ABI SceNetId sceNetResolverCreate(const char* name, int memid, int flags) {
-  LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  static size_t count = 0;
-  return ++count;
+  return accessNetworking().resolverCreate(name, memid, flags);
 }
 
-EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, SceNetInAddr_t* addr, int timeout, int retry, int flags) {
-  LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return getErr(ErrCode::_ETIMEDOUT);
+EXPORT SYSV_ABI int sceNetResolverStartNtoa(SceNetId rid, const char* hostname, SceNetInAddr_t* addr, int timeout, int retries, int flags) {
+  return accessNetworking().resolverStartNtoa(rid, hostname, addr, timeout, retries, flags);
 }
 
 EXPORT SYSV_ABI int sceNetResolverStartAton(SceNetId rid, const SceNetInAddr_t* addr, char* hostname, int len, int timeout, int retry, int flags) {
-  LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return getErr(ErrCode::_ETIMEDOUT);
+  return accessNetworking().resolverStartAton(rid, addr, hostname, len, timeout, retry, flags);
 }
 
-EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retry, int flags) {
-  LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return getErr(ErrCode::_ETIMEDOUT);
+EXPORT SYSV_ABI int sceNetResolverStartNtoaMultipleRecords(SceNetId rid, const char* hostname, SceNetResolverInfo* info, int timeout, int retries, int flags) {
+  return accessNetworking().resolverStartNtoaMultipleRecords(rid, hostname, info, timeout, retries, flags);
 }
 
 EXPORT SYSV_ABI int sceNetResolverGetError(SceNetId rid, int* result) {
-  LOG_USE_MODULE(libSceNet);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  *result = (int)ErrCode::_ETIMEDOUT;
-  return Ok;
+  return accessNetworking().resolverGetError(rid, result);
 }
 
 EXPORT SYSV_ABI int sceNetResolverDestroy(SceNetId rid) {
-  return Ok;
+  return accessNetworking().resolverDestroy(rid);
 }
 
 EXPORT SYSV_ABI int sceNetResolverAbort(SceNetId rid, int flags) {
-  return Ok;
+  return accessNetworking().resolverAbort(rid, flags);
 }
 }

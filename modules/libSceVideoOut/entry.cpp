@@ -39,13 +39,11 @@ EXPORT SYSV_ABI int32_t sceVideoOutClose(int32_t handle) {
 
 EXPORT SYSV_ABI int32_t sceVideoOutRegisterBuffers(int32_t handle, int32_t startIndex, void* const* addresses, int32_t bufferNum,
                                                    const SceVideoOutBufferAttribute* attribute) {
-  [[unlikely]] if (addresses == nullptr) { return Err::VIDEO_OUT_ERROR_INVALID_ADDRESS; }
+  [[unlikely]] if (addresses == nullptr) { return Err::VideoOut::INVALID_ADDRESS; }
 
-  [[unlikely]] if (attribute == nullptr) { return Err::VIDEO_OUT_ERROR_INVALID_OPTION; }
+  [[unlikely]] if (attribute == nullptr) { return Err::VideoOut::INVALID_OPTION; }
 
-  [[unlikely]] if (startIndex < 0 || startIndex > 15 || bufferNum < 1 || bufferNum > 16 || startIndex + bufferNum > 15) {
-    return Err::VIDEO_OUT_ERROR_INVALID_VALUE;
-  }
+  [[unlikely]] if (startIndex < 0 || startIndex > 15 || bufferNum < 1 || bufferNum > 16 || startIndex + bufferNum > 15) { return Err::VideoOut::INVALID_VALUE; }
 
   return accessVideoOut().registerBuffers(handle, startIndex, addresses, bufferNum, attribute);
 }
@@ -76,13 +74,13 @@ EXPORT SYSV_ABI int32_t sceVideoOutSetFlipRate(int32_t handle, int32_t rate) {
 
 EXPORT SYSV_ABI int32_t sceVideoOutSetWindowModeMargins(int32_t handle, int top, int bottom) {
   LOG_USE_MODULE(libSceVideoOut);
-  LOG_ERR(L"TODO %S", __FUNCTION__);
+  LOG_TRACE(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutSubmitFlip(int32_t handle, int32_t bufferIndex, uint32_t flipMode, int64_t flipArg) {
   if (bufferIndex < 0 || bufferIndex > 15) {
-    return Err::VIDEO_OUT_ERROR_INVALID_INDEX;
+    return Err::VideoOut::INVALID_INDEX;
   }
   accessVideoOut().submitFlip(handle, bufferIndex, flipArg);
   return Ok;
@@ -108,7 +106,7 @@ EXPORT SYSV_ABI int32_t sceVideoOutGetResolutionStatus(int32_t handle, SceVideoO
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutAddFlipEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle, void* udata) {
-  [[unlikely]] if (eq == nullptr) { return Err::VIDEO_OUT_ERROR_INVALID_EVENT_QUEUE; }
+  [[unlikely]] if (eq == nullptr) { return Err::VideoOut::INVALID_EVENT_QUEUE; }
 
   Kernel::EventQueue::KernelEqueueEvent const event = {.triggered = false,
                                                        .event =
@@ -132,7 +130,7 @@ EXPORT SYSV_ABI int32_t sceVideoOutAddFlipEvent(Kernel::EventQueue::IKernelEqueu
 }
 
 EXPORT SYSV_ABI int32_t sceVideoOutAddVblankEvent(Kernel::EventQueue::IKernelEqueue_t eq, int32_t handle, void* udata) {
-  [[unlikely]] if (eq == nullptr) { return Err::VIDEO_OUT_ERROR_INVALID_EVENT_QUEUE; }
+  [[unlikely]] if (eq == nullptr) { return Err::VideoOut::INVALID_EVENT_QUEUE; }
 
   Kernel::EventQueue::KernelEqueueEvent const event = {.triggered = false,
                                                        .event =

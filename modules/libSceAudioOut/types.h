@@ -11,13 +11,12 @@ struct SceAudioOutOutputParam {
 };
 
 enum class SceAudioOutPortType {
-  MAIN     = 0,  // Main Audio
-  BGM      = 1,  // Background Music
-  VOICE    = 2,  // Voice
-  PERSONAL = 3,  // Personal Audio
-  PADSPK   = 4,  // Pad Speaker
-  AUX      = 127 // Auxiliary Audio
-
+  MAIN     = 0,   // Main Audio
+  BGM      = 1,   // Background Music
+  VOICE    = 2,   // Voice
+  PERSONAL = 3,   // Personal Audio
+  PADSPK   = 4,   // Pad Speaker
+  AUX      = 127, // Auxiliary Audio
 };
 
 enum class SceAudioOutParamFormat : unsigned int {
@@ -73,7 +72,7 @@ enum class SceAudioOutSystemDebugStateElement { NULL_ = 0, LOUDNESS, MAX };
 
 enum SceAudioOutSystemDebugStateLoudness { LOUDNESS_STOP = 0, LOUDNESS_START, LOUDNESS_START_QUIET, LOUDNESS_MAX };
 
-typedef struct SceAudioOutSystemDebugStateParam {
+struct SceAudioOutSystemDebugStateParam {
   uint32_t value;
   uint32_t reserved[3]; // reserved
-} SceAudioOutSystemDebugStateParam;
+};

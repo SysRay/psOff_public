@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <windows.h>
+
 LOG_DEFINE_MODULE(util);
 
 namespace util {
@@ -49,5 +50,14 @@ void setThreadName(std::string_view name) {
 
 void setThreadName(std::string_view name, void* nativeHandle) {
   auto r = SetThreadDescription((HANDLE)nativeHandle, std::wstring(name.begin(), name.end()).c_str());
+}
+
+int getPageSize(void) {
+  static int pageSize = [] {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwPageSize;
+  }();
+  return pageSize;
 }
 } // namespace util

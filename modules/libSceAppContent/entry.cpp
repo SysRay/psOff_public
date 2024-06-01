@@ -112,6 +112,22 @@ EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataFormat(const SceAppContentMoun
   return Ok;
 }
 
+EXPORT SYSV_ABI int32_t sceAppContentTemporaryDataGetAvailableSpaceKb(const SceAppContentMountPoint* mountPoint, size_t* avail) {
+  if (avail == nullptr) return Err::PARAMETER;
+  LOG_USE_MODULE(libSceAppContent);
+
+  auto tempFolder = accessFileManager().getMappedPath(mountPoint->data);
+  if (tempFolder) {
+    auto si = std::filesystem::space(*tempFolder);
+    *avail  = si.available / 1000; // bytes => kilobytes
+  } else {
+    LOG_ERR(L"unknown temp folder: %s", tempFolder->c_str());
+    *avail = 0;
+  }
+
+  return Ok;
+}
+
 EXPORT SYSV_ABI int32_t sceAppContentDownloadDataFormat(const SceAppContentMountPoint* mountPoint) {
   LOG_USE_MODULE(libSceAppContent);
   LOG_ERR(L"todo %S", __FUNCTION__);

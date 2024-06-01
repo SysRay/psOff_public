@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "device": {
+      "description": "The name of your sound output device e.g. \"Speakers (Realtek(R) Audio)\".\n* \"[default]\" means that emulator should use OS default audio device.\n* \"[null]\" means that emulator should not send the received data to any of audio devices.",
+      "type": "string"
+    },
+    "volume": {
+      "description": "Master volume for every emulator's sound output.",
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "padspeakers": {
+      "type": "array",
+      "description": "Host audio devices for each of connected gamepads.\n* \"[null]\" means that emulator should not send the received data to any of audio devices.",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "device",
+    "volume",
+    "padspeakers"
+  ]
+}

@@ -1,10 +1,11 @@
 #include "avplayer.h"
 
 #include "core/fileManager/fileManager.h"
-#include "core/videoout/intern.h"
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "typesEx.h"
+
+#include <graphics.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -17,10 +18,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include <queue>
-
 #include <condition_variable>
 #include <mutex>
+#include <queue>
 
 LOG_DEFINE_MODULE(AvPlayer);
 
@@ -79,7 +79,8 @@ class Avplayer: public IAvplayer {
   std::array<int, 4>   m_videoStride;
   std::array<void*, 4> m_videoPlane;
 
-  int64_t m_startTime = 0;
+  int64_t  m_startTime       = 0;
+  uint64_t m_latestTimestamp = 0;
 
   // Avplayer Data
   AVFormatContext* m_pFmtCtx = nullptr;
@@ -115,22 +116,30 @@ class Avplayer: public IAvplayer {
   } m_video, m_audio;
 
   void destroyAVData() {
-    if (m_pFmtCtx != nullptr) {
-      avformat_close_input(&m_pFmtCtx);
-    }
-    if (m_swsCtx != nullptr) {
-      sws_freeContext(m_swsCtx);
-    }
-    if (m_swrCtx != nullptr) {
-      swr_free(&m_swrCtx);
-    }
+    {
+      std::unique_lock lock(m_mutexDecode);
 
-    m_video.destroy();
-    m_audio.destroy();
+      m_isAudioActive = false;
+      m_isVideoActive = false;
 
-    m_isStop = true;
+      if (m_pFmtCtx != nullptr) {
+        avformat_close_input(&m_pFmtCtx);
+      }
+      if (m_swsCtx != nullptr) {
+        sws_freeContext(m_swsCtx);
+      }
+      if (m_swrCtx != nullptr) {
+        swr_free(&m_swrCtx);
+      }
+
+      m_video.destroy();
+      m_audio.destroy();
+    }
     m_condDecode.notify_one();
     if (m_decodeThread) m_decodeThread->join();
+
+    if (m_videoBuffer != nullptr) m_memAlloc.deallocateTexture(m_memAlloc.objectPointer, m_videoBuffer);
+    m_videoBuffer = nullptr;
   }
 
   std::unique_ptr<std::thread> threadFunc();
@@ -141,6 +150,8 @@ class Avplayer: public IAvplayer {
   virtual ~Avplayer() {
     LOG_USE_MODULE(AvPlayer);
     LOG_DEBUG(L"destruct");
+    m_isStop = true;
+    std::unique_lock lock(m_mutex_int);
     destroyAVData();
   };
 
@@ -159,8 +170,10 @@ class Avplayer: public IAvplayer {
     std::unique_lock lock(m_mutexDecode);
 
     LOG_TRACE(L"isPlaying:%u", m_isVideoActive | m_isAudioActive);
-    return m_isVideoActive | m_isAudioActive;
+    return m_isVideoActive || m_isAudioActive;
   }
+
+  uint64_t getCurrentTime() const final { return m_latestTimestamp; }
 
   void stop() final {
     LOG_USE_MODULE(AvPlayer);
@@ -199,12 +212,12 @@ bool Avplayer::setFile(const char* filename) {
 
   // Init ffmpeg
   if (avformat_open_input(&m_pFmtCtx, m_filename.string().c_str(), NULL, NULL) < 0) {
-    LOG_ERR(L"avformat_open_input %s", filename, m_filename.c_str());
+    LOG_ERR(L"avformat_open_input %s", m_filename.c_str());
     return false;
   }
 
   if (avformat_find_stream_info(m_pFmtCtx, NULL) < 0) {
-    LOG_ERR(L"avformat_find_stream_info %s", filename, m_filename.c_str());
+    LOG_ERR(L"avformat_find_stream_info %s", m_filename.c_str());
     avformat_close_input(&m_pFmtCtx);
     return false;
   }
@@ -227,7 +240,7 @@ bool Avplayer::setFile(const char* filename) {
       return false;
     }
 
-    uint64_t const alignment = getImageAlignment(VK_FORMAT_R8G8_UNORM, VkExtent3D {1920, 1080, 1}); // image size doesn't matter
+    uint64_t const alignment = accessVideoOut().getGraphics()->getImageAlignment(VK_FORMAT_R8G8_UNORM, VkExtent3D {1920, 1080, 1}); // image size doesn't matter
     m_videoBuffer            = (void*)((uint64_t)m_memAlloc.allocateTexture(m_memAlloc.objectPointer, alignment, videobufferSize));
 
     m_videoStride = std::array<int, 4> {m_video.codecContext->width, m_video.codecContext->width, 0, 0};
@@ -259,17 +272,19 @@ bool Avplayer::setFile(const char* filename) {
 bool Avplayer::getVideoData(void* info, bool isEx) {
   LOG_USE_MODULE(AvPlayer);
 
-  if (m_isVideoActive == false) return false;
+  std::unique_lock lock(m_mutexDecode);
+  if (!m_isVideoActive) return false;
 
   // Get Frame from decoder
   while (m_video.getNewFrame) {
-    std::unique_lock lock(m_mutexDecode);
 
     auto const retRecv = avcodec_receive_frame(m_video.codecContext, m_video.frame);
     if (retRecv < 0) {
       if (retRecv == AVERROR(EAGAIN)) {
         if (!m_isStop) {
+          LOG_TRACE(L"-> wait video frame");
           m_video.m_cond.wait(lock);
+          LOG_TRACE(L"<- wait video frame");
           continue;
         }
       } else if (retRecv != AVERROR_EOF) {
@@ -300,9 +315,12 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
   auto const timestamp = (int64_t)(1000.0 * av_q2d(m_video.stream->time_base) * m_video.frame->best_effort_timestamp); // timestamp[seconds] to [ms]
 
   auto const curTime = (av_gettime() - m_startTime) / 1000; // [us] to [ms]
+  LOG_TRACE(L"video frame timestamp:%lld", curTime);
   if (timestamp > curTime) {
     return false;
   }
+
+  m_latestTimestamp = timestamp;
 
   LOG_DEBUG(L"Received video frame, timestamp:%lld", m_video.frame->pts);
   m_video.getNewFrame = true;
@@ -315,16 +333,6 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
   // -
 
   av_frame_unref(m_video.frame);
-
-  {
-    std::unique_lock lock(m_mutexDecode);
-    if (m_video.pending) {
-      m_video.pending = false;
-      LOG_DEBUG(L"getAudioData: notfiy decoder");
-      lock.unlock();
-      m_condDecode.notify_one();
-    }
-  }
 
   // Set Info
   if (isEx) {
@@ -362,23 +370,32 @@ bool Avplayer::getVideoData(void* info, bool isEx) {
     pInfo->details.video.languageCode[2] = 'g';
     pInfo->details.video.languageCode[3] = '\0';
   }
+
+  if (m_video.pending && !m_isStop) {
+    m_video.pending = false;
+    LOG_DEBUG(L"getAudioData: notfiy decoder");
+    lock.unlock();
+    m_condDecode.notify_one();
+  }
   // -info
   return true;
 }
 
 bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   LOG_USE_MODULE(AvPlayer);
-  if (m_isAudioActive == false) return false;
+
+  std::unique_lock lock(m_mutexDecode);
+  if (!m_isAudioActive) return false;
 
   // Get Frame from decoder
   while (true) {
-    std::unique_lock lock(m_mutexDecode);
-
     auto const retRecv = avcodec_receive_frame(m_audio.codecContext, m_audio.frame);
     if (retRecv < 0) {
       if (retRecv == AVERROR(EAGAIN)) {
         if (!m_isStop) {
+          LOG_TRACE(L"-> wait audio frame");
           m_audio.m_cond.wait(lock);
+          LOG_TRACE(L"<- wait audio frame");
           continue;
         }
       } else if (retRecv != AVERROR_EOF) {
@@ -403,6 +420,7 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   }
 
   auto const timestamp = (int64_t)(1000.0 * av_q2d(m_audio.stream->time_base) * m_audio.frame->best_effort_timestamp); // timestamp[seconds] to [ms]
+  m_latestTimestamp    = timestamp;
 
   //  Convert and copy
   int const outNumSamples = swr_get_out_samples(m_swrCtx, m_audio.frame->nb_samples);
@@ -418,15 +436,6 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   // -
 
   av_frame_unref(m_audio.frame);
-  {
-    std::unique_lock lock(m_mutexDecode);
-    if (m_audio.pending) {
-      m_audio.pending = false;
-      LOG_DEBUG(L"getAudioData: notfiy decoder");
-      lock.unlock();
-      m_condDecode.notify_one();
-    }
-  }
 
   info->timeStamp = timestamp;
   info->pData     = m_audioBuffer.data();
@@ -438,6 +447,13 @@ bool Avplayer::getAudioData(SceAvPlayerFrameInfo* info) {
   info->details.audio.languageCode[1] = 'n';
   info->details.audio.languageCode[2] = 'g';
   info->details.audio.languageCode[3] = '\0';
+
+  if (m_audio.pending && !m_isStop) {
+    m_audio.pending = false;
+    LOG_DEBUG(L"getAudioData: notfiy decoder");
+    lock.unlock();
+    m_condDecode.notify_one();
+  }
   return true;
 }
 
@@ -517,20 +533,20 @@ std::unique_ptr<std::thread> Avplayer::threadFunc() {
           LOG_DEBUG(L"Queue Video Packet: numItems:%llu pts:%lld", m_video.decodeQueue.size(), packet->pts);
         } else if (packet->stream_index == m_audio.streamIndex) {
           m_audio.decodeQueue.push(packet);
-          LOG_DEBUG(L"Queue Video Packet: numItems:%llu pts:%lld", m_video.decodeQueue.size(), packet->pts);
+          LOG_DEBUG(L"Queue Audio Packet: numItems:%llu pts:%lld", m_audio.decodeQueue.size(), packet->pts);
         } else
           continue;
       }
       // - new frames
 
       // Decode Frame
-      while (true) {
+      while (!m_isStop) {
         sendFunc(m_video);
         sendFunc(m_audio);
 
         std::unique_lock lock(m_mutexDecode);
         if (m_video.pending && !m_video.decodeQueue.empty() && m_audio.pending && !m_audio.decodeQueue.empty()) {
-          m_condDecode.wait(lock, [&] { return m_video.pending; });
+          m_condDecode.wait(lock, [&] { return m_isStop || m_video.pending; });
           continue;
         }
         break;

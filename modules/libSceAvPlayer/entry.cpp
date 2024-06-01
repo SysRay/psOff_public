@@ -26,43 +26,61 @@ EXPORT SYSV_ABI int32_t sceAvPlayerClose(IAvplayer* avPlayer) {
 
 EXPORT SYSV_ABI int32_t sceAvPlayerAddSource(IAvplayer* avPlayer, const char* filename) {
   if (avPlayer->setFile(filename)) return Ok;
-  return Err::INVALID_PARAMS;
+  return Err::AvPlayer::INVALID_PARAMS;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerStreamCount(IAvplayer* avPlayer) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerGetStreamInfo(IAvplayer* avPlayer, uint32_t argStreamID, SceAvPlayerStreamInfo* argInfo) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerEnableStream(IAvplayer* avPlayer, uint32_t argStreamID) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerDisableStream(IAvplayer* avPlayer, uint32_t argStreamID) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerChangeStream(IAvplayer* avPlayer, uint32_t argOldStreamID, uint32_t argNewStreamID) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerStart(IAvplayer* avPlayer) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerStop(IAvplayer* avPlayer) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   avPlayer->stop();
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerPause(IAvplayer* avPlayer) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerResume(IAvplayer* avPlayer) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
@@ -85,18 +103,24 @@ EXPORT SYSV_ABI bool sceAvPlayerGetVideoData(IAvplayer* avPlayer, SceAvPlayerFra
 }
 
 EXPORT SYSV_ABI uint64_t sceAvPlayerCurrentTime(IAvplayer* avPlayer) {
-  return Ok;
+  return avPlayer->getCurrentTime();
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerJumpToTime(IAvplayer* avPlayer, uint64_t argJumpTimeMsec) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerSetTrickSpeed(IAvplayer* avPlayer, int32_t argTrickSpeed) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
 EXPORT SYSV_ABI int32_t sceAvPlayerSetAvSyncMode(IAvplayer* avPlayer, SceAvPlayerAvSyncMode argSyncMode) {
+  LOG_USE_MODULE(libSceAvPlayer);
+  LOG_ERR(L"todo %S", __FUNCTION__);
   return Ok;
 }
 
