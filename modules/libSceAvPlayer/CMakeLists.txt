@@ -3,8 +3,6 @@ include(../setupModule.cmake)
 
 set(libName libSceAvPlayer)
 project(${libName})
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
 
 add_library(${libName} SHARED
   entry.cpp entryEx.cpp avplayer.cpp
