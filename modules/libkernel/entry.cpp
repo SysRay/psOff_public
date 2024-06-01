@@ -35,7 +35,7 @@ extern "C" {
 
 EXPORT const char* MODULE_NAME = "libkernel";
 
-SYSV_ABI int* __NID(__error()) {
+EXPORT SYSV_ABI int* __NID(__error()) {
   return getError_pthread(); // todo: or extra for kernel?
 }
 
