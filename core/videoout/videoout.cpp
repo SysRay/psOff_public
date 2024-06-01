@@ -787,13 +787,17 @@ void cbWindow_close(SDL_Window* window) {
 void cbWindow_moveresize(SDL_Window* window) {
   int w, h, x, y;
   auto [lock, jData] = accessConfig()->accessModule(ConfigModFlag::GRAPHICS);
-  SDL_GetWindowSize(window, &w, &h);
-  SDL_GetWindowPosition(window, &x, &y);
+  auto fullscreen    = bool((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0);
 
-  (*jData)["fullscreen"] = bool((SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0);
+  if (!fullscreen) {
+    SDL_GetWindowSize(window, &w, &h);
+    SDL_GetWindowPosition(window, &x, &y);
+    (*jData)["width"] = w, (*jData)["height"] = h;
+    (*jData)["xpos"] = x, (*jData)["ypos"] = y;
+  }
+
+  (*jData)["fullscreen"] = fullscreen;
   (*jData)["display"]    = SDL_GetWindowDisplayIndex(window);
-  (*jData)["width"] = w, (*jData)["height"] = h;
-  (*jData)["xpos"] = x, (*jData)["ypos"] = y;
 }
 
 void cbWindow_keyhandler(SDL_Window* window, SDL_Event* event) { // todo: Move these to hotkey handler too?
@@ -905,31 +909,39 @@ std::thread VideoOut::createSDLThread() {
               LOG_ERR(L"Config| Couldn't load param:fullscreen from graphics");
             }
 
-            auto readCfgIntParam = [jData](const char* param, auto& value) {
+            auto grparam = [jData](const char* param, auto& value) -> bool {
               LOG_USE_MODULE(VideoOut);
 
               if (!getJsonParam(jData, param, value)) {
                 LOG_ERR(L"Config| Couldn't load param:%S from graphics", param);
+                return false;
               }
+
+              return true;
             };
 
             if (!useFullscreen) {
-              readCfgIntParam("xpos", win_x);
-              readCfgIntParam("ypos", win_y);
-              readCfgIntParam("display", displ);
-              readCfgIntParam("width", m_widthTotal);
-              readCfgIntParam("height", m_heightTotal);
-
-              if (m_widthTotal <= 0) m_widthTotal = 1920;
-              if (m_heightTotal <= 0) m_heightTotal = 1080;
+              grparam("display", displ);
               if (displ >= SDL_GetNumVideoDisplays()) displ = 0; // User disconnected some displays since the last run?
+
+              SDL_Rect db;
+              SDL_GetDisplayBounds(displ, &db);
+
+              if (!grparam("width", m_widthTotal) || !grparam("height", m_heightTotal) || m_widthTotal == 0 || m_heightTotal == 0) {
+                // Something wrong with the window dimensions, resetting them to default values
+                m_widthTotal  = db.w / 1.5;
+                m_heightTotal = db.h / 1.5;
+                alter         = true;
+              } else {
+                // We don't want our window to be out of display
+                m_widthTotal  = std::min(m_widthTotal, (uint32_t)db.w);
+                m_heightTotal = std::min(m_heightTotal, (uint32_t)db.h);
+              }
 
               if (win_x < 0 || win_y < 0) { // Negative window coords? => Center the window on selected display
                 win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
                 alter         = true;
               } else { // Check the saved window position to be valid according with the current displays configuration
-                SDL_Rect db;
-                SDL_GetDisplayBounds(displ, &db);
                 if ((win_x < db.x) || (win_y < db.y) || (win_x + m_widthTotal > db.x + db.w) || (win_y + m_heightTotal > db.y + db.h)) {
                   win_x = win_y = SDL_WINDOWPOS_CENTERED_DISPLAY(displ);
                   alter         = true;

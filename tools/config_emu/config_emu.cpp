@@ -258,7 +258,7 @@ Config::Config() {
 
   m_graphics._future = std::async(
       std::launch::async | std::launch::deferred, load, &m_graphics,
-      json({{"$schema", "./.schemas/graphics.json"}, {"display", 0u}, {"fullscreen", false}, {"width", 1920u}, {"height", 1080u}, {"xpos", -1}, {"ypos", -1}}),
+      json({{"$schema", "./.schemas/graphics.json"}, {"display", 0u}, {"fullscreen", false}, {"width", 0u}, {"height", 0u}, {"xpos", -1}, {"ypos", -1}}),
       ConfigModFlag::GRAPHICS);
 
   m_audio._future =

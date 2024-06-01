@@ -104,6 +104,12 @@ void initTLS(ScePthread_obj obj) {
 void init_pThread() {
   auto pimpl = getData();
 }
+
+const char* sanThreadName(const char* name) {
+  MEMORY_BASIC_INFORMATION mbi = {};
+  if (::VirtualQuery(name, &mbi, sizeof(mbi))) return name;
+  return "[BADPTR]";
+}
 } // namespace
 
 namespace pthread {
@@ -1137,7 +1143,7 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
   thread->unique_id = threadCounter();
 
   if (name != nullptr)
-    thread->name = std::format("_{}_{}", thread->unique_id, name);
+    thread->name = std::format("_{}_{}", thread->unique_id, sanThreadName(name));
   else
     thread->name = std::format("_{}", thread->unique_id);
 
