@@ -74,7 +74,7 @@ EXPORT SYSV_ABI int32_t sceVideoOutSetFlipRate(int32_t handle, int32_t rate) {
 
 EXPORT SYSV_ABI int32_t sceVideoOutSetWindowModeMargins(int32_t handle, int top, int bottom) {
   LOG_USE_MODULE(libSceVideoOut);
-  LOG_ERR(L"TODO %S", __FUNCTION__);
+  LOG_TRACE(L"TODO %S", __FUNCTION__);
   return Ok;
 }
 
