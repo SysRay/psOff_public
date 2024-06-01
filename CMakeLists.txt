@@ -63,10 +63,10 @@ include_directories(BEFORE
 link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
-  ${CMAKE_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  ${CMAKE_BINARY_DIR}/core/export/lib
 )
 
 ExternalProject_Add(third_party
@@ -176,6 +176,7 @@ install(TARGETS psoff
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_CURRENT_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  ${CMAKE_BINARY_DIR}/core/export/lib
   DESTINATION .
 )
 
