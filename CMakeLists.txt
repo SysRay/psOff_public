@@ -116,6 +116,8 @@ add_subdirectory(tools/gamereport)
 
 if(BUILD_CORE)
   add_subdirectory(core)
+else()
+  add_custom_target(core)
 endif()
 
 # #- Projects
