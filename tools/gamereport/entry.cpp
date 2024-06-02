@@ -586,6 +586,7 @@ void GameReport::ShowReportWindow(const Info& info) {
 
   auto        extver = std::format("{}: {}", git::Branch(), git::CommitSHA1());
   const char* emuver = nullptr;
+  const char* descr  = nullptr;
 
   if (git::Branch() == "main") {
     emuver = info.emu_ver;
@@ -593,31 +594,36 @@ void GameReport::ShowReportWindow(const Info& info) {
     emuver = extver.data();
   }
 
+  switch (info.type) {
+    case EXCEPTION:
+      descr = info.add.ex->what(); // todo: add stack trace?
+      break;
+    case MISSING_SYMBOL:
+      descr = info.add.message; // todo: some formatting?
+      break;
+
+    default:
+      descr = ""; //
+      break;
+  }
+
   if (issue.id == -1) {
     link.set_path(std::format("/{}/issues/new", GAMEREPORT_REPO_NAME));
     auto params = link.params();
     params.append({"template", "game_report.yml"});
-    switch (info.type) {
-      case EXCEPTION:
-        params.append({"what-happened", info.add.ex->what()}); // todo: add stack trace?
-        break;
-      case MISSING_SYMBOL:
-        params.append({"what-happened", info.add.message}); // todo: some formatting?
-        break;
-
-      default: break;
-    }
+    params.append({"what-happened", descr});
     params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
     params.append({"game-version", info.app_ver});
     params.append({"emu-version", emuver});
   } else {
+
     link.set_path(std::format("/{}/issues/{}", GAMEREPORT_REPO_NAME, issue.id));
-    std::string output = std::format("Retested with `{}`\n\n### Please, describe what you get\n\n\n\n"
+    std::string output = std::format("Retested with `{}`\n\n### Please, describe what you get\n\n{}\n\n"
                                      "### Game version you are using\n\n{}\n\n"
                                      "### Current game status\n\nNothing\n\n"
                                      "### Upload your log there\n\nNo logs :(\n\n"
                                      "### Upload your screenshots there\n\nNo screenshots :(\n\n",
-                                     emuver, info.app_ver);
+                                     emuver, descr, info.app_ver);
 
     auto    strlen = output.size() + 1;
     HGLOBAL hMem   = ::GlobalAlloc(GMEM_MOVEABLE, strlen);
