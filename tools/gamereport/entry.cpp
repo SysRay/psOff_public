@@ -271,7 +271,7 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         "Se ha detectado un fallo en la emulación!\n\n"
         "Estado actual: {}\nPosibles fallos:\n{}\n\n"
         "Deseas abrir el reporte de compatibilidad del juego?\n"
-        "Report data will be copied to your clipboard.",
+        "Los datos de reporte se copiarán a tu portapapeles.",
 
         "nothing (el juego no carga y/o se cuelga el emulador)",
         "intro (el juego produce imagen pero no funciona más allá del menú)",
