@@ -1,6 +1,6 @@
 #pragma once
 #include "codes.h"
-#include "modules/libSceNpManager/types.h"
+#include "modules/external/libSceNpManager/types.h"
 
 enum class SceSharePlayProhibitionMode : uint32_t { OFF = 0, CONTROL_ONLY = 1, CONTROL_SCREEN = 2 };
 

@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "logging.h"
-#include "modules/libkernel/dmem.h"
+#include "modules/external/libkernel/dmem.h"
 #include "types/memory.h"
 
 #include <boost/thread.hpp>

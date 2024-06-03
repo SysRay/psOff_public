@@ -1,7 +1,7 @@
 #pragma once
 #include "codes.h"
 #include "common.h"
-#include "modules/libSceNpManager/types.h"
+#include "modules/external/libSceNpManager/types.h"
 
 typedef uint32_t SceNpScoreBoardId;
 typedef int64_t  SceNpScoreValue;

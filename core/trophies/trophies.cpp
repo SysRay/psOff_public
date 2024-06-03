@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "core/fileManager/fileManager.h"
-#include "modules/libSceNpTrophy/types.h"
+#include "modules/external/libSceNpTrophy/types.h"
 #include "modules_include/system_param.h"
 #include "tools/config_emu/config_emu.h"
 

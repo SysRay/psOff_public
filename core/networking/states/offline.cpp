@@ -1,7 +1,7 @@
 #include "offline.h"
 
 #include "logging.h"
-#include "modules/libSceNetCtl/codes.h"
+#include "modules/external/libSceNetCtl/codes.h"
 
 LOG_DEFINE_MODULE(OfflineNetworkingCore);
 

@@ -5,8 +5,8 @@
 #include "core/videoout/videoout.h"
 #include "logging.h"
 #include "memory.h"
-#include "modules/libkernel/codes.h"
-#include "modules/libkernel/dmem.h"
+#include "modules/external/libkernel/codes.h"
+#include "modules/external/libkernel/dmem.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>

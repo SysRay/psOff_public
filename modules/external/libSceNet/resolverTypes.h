@@ -1,6 +1,6 @@
 #pragma once
 
-#include "modules/libSceNet/types.h"
+#include "modules/external/libSceNet/types.h"
 #include "types.h"
 
 union SceNetResolverAddrUn {

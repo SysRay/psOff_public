@@ -1,6 +1,6 @@
 #pragma once
 #include "codes.h"
-#include "modules/libSceCamera/types.h"
+#include "modules/external/libSceCamera/types.h"
 #include "modules_include/sceTypes.h"
 
 enum class SceVrTrackerProfile {
