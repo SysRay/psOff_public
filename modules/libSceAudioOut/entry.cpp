@@ -1,6 +1,7 @@
 #include "common.h"
 #include "config_emu.h"
 #include "logging.h"
+#include "mastering.h"
 #include "types.h"
 
 #include <SDL2/SDL.h>
@@ -525,6 +526,21 @@ EXPORT SYSV_ABI int32_t sceAudioOutGetSystemState(SceAudioOutSystemState* state)
 }
 
 EXPORT SYSV_ABI int32_t sceAudioOutSetSystemDebugState(SceAudioOutSystemDebugStateElement elem, SceAudioOutSystemDebugStateParam* param) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringInit(uint32_t flags) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringSetParam(const SceAudioOutMasteringParamsHeader* param, uint32_t flags) {
+  if (!audioInited) return Err::AudioOut::NOT_INIT;
+  return Ok;
+}
+
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringGetState(const SceAudioOutMasteringParamsHeader* param, uint32_t flags) {
   if (!audioInited) return Err::AudioOut::NOT_INIT;
   return Ok;
 }
