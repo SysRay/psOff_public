@@ -52,6 +52,10 @@ EXPORT SYSV_ABI int __NID(snprintf)(char* s, size_t n, const char* format, va_li
   return std::snprintf(s, n, format, args);
 }
 
+EXPORT SYSV_ABI int __NID(snprintf_s)(char* s, size_t bufsz, size_t n, const char* format, va_list args) {
+  return ::_snprintf_s(s, bufsz, n, format, args);
+}
+
 EXPORT SYSV_ABI int __NID(fflush)(FILE* stream) {
   return std::fflush(stream);
 }
