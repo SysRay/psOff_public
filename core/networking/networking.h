@@ -160,6 +160,5 @@ class INetworking {
   virtual int httpsSetSslVersion(int id, SceSslVersion version)                                                                            = 0;
 };
 
-
 __APICALL INetworking& accessNetworking();
 #undef __APICALL

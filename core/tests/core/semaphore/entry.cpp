@@ -17,7 +17,7 @@ TEST(core_semaphore, init) {
   pthread::getThreadId_fake.return_val = 4;
 
   constexpr int initCount = 1;
-  constexpr int maxCount = 10;
+  constexpr int maxCount  = 10;
 
   {
     auto sem = createSemaphore_fifo("test", initCount, maxCount);
@@ -39,7 +39,7 @@ TEST(core_semaphore, polling_1) {
   pthread::getThreadId_fake.return_val = 4;
 
   constexpr int initCount = 1;
-  constexpr int maxCount = 10;
+  constexpr int maxCount  = 10;
 
   auto sem = createSemaphore_fifo("test", initCount, maxCount);
 
@@ -91,7 +91,7 @@ TEST(core_semaphore, signal_1) {
   pthread::getThreadId_fake.return_val = 4;
 
   constexpr int initCount = 1;
-  constexpr int maxCount = 10;
+  constexpr int maxCount  = 10;
 
   auto sem = createSemaphore_fifo("test", initCount, maxCount);
 
@@ -121,7 +121,7 @@ TEST(core_semaphore, signal_1) {
     auto fut = std::async(std::launch::async, [&sem] {
       {
         uint32_t micros = 1;
-        auto res = sem->wait(2, &micros); // wait timeout
+        auto     res    = sem->wait(2, &micros); // wait timeout
         EXPECT_EQ(res, getErr(ErrCode::_ETIMEDOUT));
       }
     });
@@ -138,8 +138,7 @@ TEST(core_semaphore, signal_1) {
         EXPECT_EQ(res, Ok);
       }
     });
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(100)); // this or mock condition var
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); // this or mock condition var
 
     auto resSignal = sem->signal(1);
     EXPECT_EQ(resSignal, Ok);
@@ -159,7 +158,7 @@ TEST(core_semaphore, signal_2) {
   };
 
   constexpr int initCount = 0;
-  constexpr int maxCount = 10;
+  constexpr int maxCount  = 10;
 
   auto sem = createSemaphore_fifo("test", initCount, maxCount);
   EXPECT_EQ(sem->getSignalCounter(), 0);
@@ -180,8 +179,7 @@ TEST(core_semaphore, signal_2) {
         EXPECT_EQ(res, Ok);
       }
     });
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(100)); // this or mock condition var
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); // this or mock condition var
 
     {
       auto resSignal = sem->signal(2);
@@ -216,8 +214,7 @@ TEST(core_semaphore, signal_2) {
         EXPECT_EQ(res, Ok);
       }
     });
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(100)); // this or mock condition var
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); // this or mock condition var
 
     {
       auto resSignal = sem->signal(4);
@@ -244,7 +241,7 @@ TEST(core_semaphore, signal_exit) {
   };
 
   constexpr int initCount = 0;
-  constexpr int maxCount = 10;
+  constexpr int maxCount  = 10;
 
   auto sem = createSemaphore_fifo("test", initCount, maxCount);
   EXPECT_EQ(sem->getSignalCounter(), 0);
@@ -262,8 +259,7 @@ TEST(core_semaphore, signal_exit) {
         EXPECT_EQ(res, getErr(ErrCode::_ECANCELED));
       }
     });
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(100)); // this or mock condition var
+    std::this_thread::sleep_for(std::chrono::microseconds(100)); // this or mock condition var
 
     auto resSignal = sem->signal(2);
     EXPECT_EQ(resSignal, Ok);
