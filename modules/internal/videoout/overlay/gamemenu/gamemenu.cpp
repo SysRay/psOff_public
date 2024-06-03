@@ -1,8 +1,8 @@
 #include "gamemenu.h"
 
 #include "../imhelper.h"
-#include "core/hotkeys/hotkeys.h"
-#include "core/trophies/trophies.h"
+#include "internal/hotkeys/hotkeys.h"
+#include "internal/trophies/trophies.h"
 
 #include <chrono>
 #include <imgui/imgui.h>

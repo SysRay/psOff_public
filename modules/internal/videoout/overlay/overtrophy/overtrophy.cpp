@@ -1,7 +1,7 @@
 #include "overtrophy.h"
 
 #include "../imhelper.h"
-#include "core/trophies/trophies.h"
+#include "internal/trophies/trophies.h"
 
 void OverTrophy::addNotify(uint8_t grade, std::string title, std::string details) {
   m_notifications.emplace_back(0.0f, 5.0f, false, grade, std::move(title), std::move(details), nullptr, 0ull);

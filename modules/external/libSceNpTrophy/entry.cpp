@@ -1,7 +1,7 @@
 #include "../libSceNpManager/types.h"
 #include "common.h"
 #include "core/fileManager/fileManager.h"
-#include "core/trophies/trophies.h"
+#include "internal/trophies/trophies.h"
 #include "logging.h"
 #include "types.h"
 

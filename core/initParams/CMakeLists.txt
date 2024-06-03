@@ -3,5 +3,3 @@ add_library(initParams OBJECT
 )
 
 add_dependencies(initParams third_party)
-
-file(COPY initParams.h DESTINATION ${DST_INCLUDE_DIR}/initParams)

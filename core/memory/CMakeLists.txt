@@ -3,5 +3,3 @@ add_library(memory OBJECT
 )
 
 add_dependencies(memory third_party psOff_utility)
-
-file(COPY memory.h DESTINATION ${DST_INCLUDE_DIR}/memory)

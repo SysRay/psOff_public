@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
-#include "core/hotkeys/hotkeys.h"
+#include "modules/internal/hotkeys/hotkeys.h"
 #include "core/systemContent/systemContent.h"
 #include "modules/internal/videoout/videoout.h"
 #include "git_ver.h"

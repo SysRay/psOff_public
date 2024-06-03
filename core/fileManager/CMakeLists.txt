@@ -11,5 +11,3 @@ add_library(fileManager OBJECT
 )
 
 add_dependencies(fileManager third_party psOff_utility)
-
-file(COPY fileManager.h ifile.h DESTINATION ${DST_INCLUDE_DIR}/fileManager)

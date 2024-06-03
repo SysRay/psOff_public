@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
-#include "core/hotkeys/hotkeys.h"
+#include "internal/hotkeys/hotkeys.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
