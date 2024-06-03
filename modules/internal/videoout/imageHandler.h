@@ -1,6 +1,6 @@
 #pragma once
-#include "vulkan/vulkanTypes.h"
 #include "utility/utility.h"
+#include "vulkan/vulkanTypes.h"
 
 #include <optional>
 #include <vulkan/vulkan_core.h>

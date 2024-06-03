@@ -1,7 +1,7 @@
 #include "ikbd.h"
 
-#include "internal/hotkeys/hotkeys.h"
 #include "core/timer/timer.h"
+#include "internal/hotkeys/hotkeys.h"
 #include "internal/videoout/videoout.h"
 // #include "logging.h"
 

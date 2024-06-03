@@ -1,10 +1,10 @@
 #include "common.h"
-#include "pm4_custom.h"
 #include "core/kernel/eventqueue_types.h"
 #include "core/memory/memory.h"
 #include "core/timer/timer.h"
 #include "internal/videoout/videoout.h"
 #include "logging.h"
+#include "pm4_custom.h"
 #include "types.h"
 
 #include <graphics.h>

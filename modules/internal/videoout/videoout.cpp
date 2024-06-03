@@ -3,12 +3,12 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
-#include "internal/hotkeys/hotkeys.h"
 #include "core/initParams/initParams.h"
 #include "core/kernel/eventqueue.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
 #include "imageHandler.h"
+#include "internal/hotkeys/hotkeys.h"
 #include "logging.h"
 #include "modules/external/libSceVideoOut/codes.h"
 #include "modules/external/libSceVideoOut/types.h"

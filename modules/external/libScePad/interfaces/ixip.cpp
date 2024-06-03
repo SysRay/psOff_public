@@ -1,6 +1,6 @@
 #include "core/timer/timer.h"
-#include "internal/videoout/videoout.h"
 #include "ikbd.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 
 #include <Windows.h>
