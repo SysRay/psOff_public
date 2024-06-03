@@ -20,8 +20,6 @@
 [wiki: Building psoff](https://github.com/SysRay/psOff_public/wiki/Building-psOff-from-scratch)
 
 ### Executing a program
-> [!IMPORTANT]  
-> Vulkan SDK min. 1.3.268.0 has to be installed!
 
 ```
 .\psoff.exe --h
