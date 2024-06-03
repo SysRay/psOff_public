@@ -5,7 +5,7 @@
 #include "config_emu.h"
 #include "core/hotkeys/hotkeys.h"
 #include "core/systemContent/systemContent.h"
-#include "core/videoout/videoout.h"
+#include "modules/internal/videoout/videoout.h"
 #include "git_ver.h"
 #include "logging.h"
 #include "modules_include/system_param.h"

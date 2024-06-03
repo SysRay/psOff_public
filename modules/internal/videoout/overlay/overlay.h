@@ -1,7 +1,7 @@
 #pragma once
 #include "../imageHandler.h"
 #include "../vulkan/vulkanSetup.h"
-#include "core/videoout/vulkan/vulkanTypes.h"
+#include "../vulkan/vulkanTypes.h"
 #include "utility/utility.h"
 
 #include <SDL2/SDL.h>

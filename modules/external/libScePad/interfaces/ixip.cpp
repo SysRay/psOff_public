@@ -1,5 +1,5 @@
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
+#include "internal/videoout/videoout.h"
 #include "ikbd.h"
 #include "logging.h"
 

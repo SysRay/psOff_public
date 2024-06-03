@@ -1,5 +1,5 @@
 #include "common.h"
-#include "core/videoout/videoout.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 #include "system_param.h"
 #include "tools/config_emu/config_emu.h"

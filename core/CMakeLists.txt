@@ -1,6 +1,5 @@
 # Add directories
 add_subdirectory(kernel)
-add_subdirectory(videoout)
 add_subdirectory(initParams)
 add_subdirectory(timer)
 add_subdirectory(systemContent)

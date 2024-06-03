@@ -1,7 +1,7 @@
 #include "isdl.h"
 
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 
 #include <SDL2/SDL.h>

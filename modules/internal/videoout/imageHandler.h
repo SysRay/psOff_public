@@ -1,5 +1,5 @@
 #pragma once
-#include "core/videoout/vulkan/vulkanTypes.h"
+#include "vulkan/vulkanTypes.h"
 #include "utility/utility.h"
 
 #include <optional>

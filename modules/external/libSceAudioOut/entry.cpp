@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config_emu.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 #include "mastering.h"
 #include "types.h"
@@ -7,7 +8,6 @@
 #include <SDL2/SDL.h>
 #include <array>
 #include <chrono>
-#include <core/videoout/videoout.h>
 #include <mutex>
 
 LOG_DEFINE_MODULE(libSceAudioOut);

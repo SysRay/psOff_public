@@ -1,6 +1,6 @@
 #include "common.h"
 #include "core/kernel/eventqueue_types.h"
-#include "core/videoout/videoout.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 #include "types.h"
 

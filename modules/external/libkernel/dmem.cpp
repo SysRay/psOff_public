@@ -5,7 +5,7 @@
 #include "core/dmem/memoryManager.h"
 #include "core/kernel/filesystem.h"
 #include "core/memory/memory.h"
-#include "core/videoout/videoout.h"
+#include "internal/videoout/videoout.h"
 #include "logging.h"
 #include "modules_include/common.h"
 #include "types.h"

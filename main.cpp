@@ -9,7 +9,7 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
+#include "modules/internal/videoout/videoout.h"
 #include "gamereport.h"
 #undef __APICALL_IMPORT
 #include "logging.h"
