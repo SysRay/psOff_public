@@ -23,8 +23,4 @@ target_link_libraries(${libName} PRIVATE
   bcrypt.lib
 )
 
-target_compile_definitions(${libName} PRIVATE
-  BOOST_ALL_NO_LIB
-)
-
 setupModule(${libName})

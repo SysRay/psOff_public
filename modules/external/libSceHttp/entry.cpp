@@ -1,6 +1,6 @@
 #include "../libSceSsl/types.h"
 #include "common.h"
-#include "core/networking/networking.h"
+#include "internal/networking/networking.h"
 #include "httpsTypes.h"
 #include "logging.h"
 #include "types.h"

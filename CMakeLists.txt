@@ -47,6 +47,7 @@ message("Vulkan Path: ${VulkanPath}")
 # # - Gather Infos
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
 add_definitions(-DPSOFF_RENDER_VERSION="${PSOFF_RENDER_VERSION}")
+add_compile_definitions(BOOST_ALL_NO_LIB)
 
 #
 include_directories(BEFORE
@@ -116,7 +117,71 @@ add_subdirectory(core)
 
 # #- Projects
 
-# Executable
+# ## Core
+
+# Build
+add_library(core SHARED
+  $<TARGET_OBJECTS:kernel>
+  $<TARGET_OBJECTS:initParams>
+  $<TARGET_OBJECTS:timer>
+  $<TARGET_OBJECTS:systemContent>
+  $<TARGET_OBJECTS:networking>
+  $<TARGET_OBJECTS:hotkeys>
+  $<TARGET_OBJECTS:trophies>
+  $<TARGET_OBJECTS:videoout>
+  $<TARGET_OBJECTS:fileManager>
+  $<TARGET_OBJECTS:memory>
+  $<TARGET_OBJECTS:dmem>
+  $<TARGET_OBJECTS:unwinding>
+  $<TARGET_OBJECTS:runtime>
+)
+
+add_dependencies(core logging third_party config_emu psoff_render)
+target_link_libraries(core PRIVATE
+  libboost_url
+  libboost_thread
+  libboost_chrono
+  libboost_program_options
+  libboost_filesystem
+  sdl2
+  psoff_render.lib
+  OptickCore
+  psOff_utility
+  config_emu.lib
+  onecore.lib
+  IPHLPAPI.lib
+  Dbghelp.lib
+  wepoll.lib
+  Ws2_32.lib
+  libcrypto.lib
+  libssl.lib
+  pugixml.lib
+  ntdll.dll
+  imgui
+  VulkanMemoryAllocator
+  ${Vulkan_LIBRARIES}
+)
+
+install(FILES $<TARGET_PDB_FILE:core> DESTINATION debug OPTIONAL)
+install(TARGETS core LIBRARY DESTINATION .)
+
+# Manage symbols
+if(NOT ISDEBUG)
+  add_custom_command(
+    TARGET core POST_BUILD
+    COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+    ARGS --strip-all $<TARGET_FILE:core>
+  )
+endif()
+
+set_target_properties(core
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/core/export/lib"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/core/export/bin"
+  PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/"
+)
+
+# ## Executable
 add_executable(psoff
   main.cpp
 )

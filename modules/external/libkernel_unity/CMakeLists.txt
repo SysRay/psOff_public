@@ -13,7 +13,4 @@ target_link_libraries(${libName} PRIVATE
   libboost_thread
 )
 
-target_compile_definitions(${libName} PRIVATE
-  BOOST_ALL_NO_LIB
-)
 setupModule(${libName})

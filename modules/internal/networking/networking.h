@@ -1,12 +1,12 @@
 #pragma once
 
-#include "modules/external/libSceHttp/httpsTypes.h"
-#include "modules/external/libSceHttp/types.h"
-#include "modules/external/libSceNet/resolverTypes.h"
-#include "modules/external/libSceNet/socketTypes.h"
-#include "modules/external/libSceNet/types.h"
-#include "modules/external/libSceNetCtl/types.h"
-#include "modules/external/libSceSsl/types.h"
+#include "external/libSceHttp/httpsTypes.h"
+#include "external/libSceHttp/types.h"
+#include "external/libSceNet/resolverTypes.h"
+#include "external/libSceNet/socketTypes.h"
+#include "external/libSceNet/types.h"
+#include "external/libSceNetCtl/types.h"
+#include "external/libSceSsl/types.h"
 #include "modules_include/common.h"
 #include "utility/utility.h"
 

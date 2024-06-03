@@ -1,5 +1,5 @@
 #include "common.h"
-#include "core/networking/networking.h"
+#include "internal/networking/networking.h"
 #include "logging.h"
 #include "resolverTypes.h"
 #include "socketTypes.h"
