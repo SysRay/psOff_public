@@ -9,7 +9,7 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 set(PSOFF_LIB_VERSION v.0.3)
-set(PSOFF_RENDER_VERSION v.0.5)
+set(PSOFF_RENDER_VERSION v.0.6-nightly_03.06.2024)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -89,11 +89,11 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   )
 endif()
 
-# set(TEST_BENCH OFF CACHE BOOL "Enable testing")
+set(TEST_BENCH OFF CACHE BOOL "Enable testing")
 
-# if(TEST_BENCH)
-# add_subdirectory(tests)
-# endif()
+if(TEST_BENCH)
+ add_subdirectory(tests)
+endif()
 
 # include before link_libraries
 add_subdirectory(tools/logging)
@@ -113,12 +113,7 @@ add_compile_definitions(IMAGE_BASE=${IMAGE_BASE})
 add_subdirectory(modules)
 add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
-
-if(BUILD_CORE)
-  add_subdirectory(core)
-else()
-  add_custom_target(core)
-endif()
+add_subdirectory(core)
 
 # #- Projects
 

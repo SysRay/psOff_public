@@ -18,6 +18,9 @@
   "cmake.generator": "Ninja",
   "cmake.sourceDirectory": "${workspaceFolder}",
   "cmake.buildDirectory": "${workspaceFolder}/_build/_Release",
+  "cmake.configureArgs": [
+    "-DISDEBUG=1"
+  ],
   "cmake.configureSettings": {
     "CMAKE_BUILD_TYPE": "Release",
     "CMAKE_INSTALL_PREFIX": "${workspaceFolder}/_build/_Install",

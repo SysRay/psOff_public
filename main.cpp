@@ -142,7 +142,8 @@ int main(int argc, char** argv) {
     fileManager.enableUpdateSearch();
 
     // Change eboot.bin to update folder
-    filepath = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
+    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
+    if (std::filesystem::exists(u_eboot)) filepath = u_eboot;
   }
   // - special case
 
