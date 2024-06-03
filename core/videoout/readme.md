@@ -6,7 +6,7 @@
 
 <div align="center">
 
-![](../../out/docs/uml/modules/videoout_class.svg)
+![](../../docs/out/docs/uml/modules/videoout_class.svg)
 </div>
 
 ### Swapchain image handling
@@ -18,6 +18,6 @@ getImage_blocking() releases users FIFO. The whole swapchain images are handled 
 
 <div align="center">
 
-![](../../out/docs/uml/modules/videout_swapchain.svg)
+![](../../docs/out/docs/uml/modules/videout_swapchain.svg)
 
 </div>
