@@ -540,7 +540,7 @@ EXPORT SYSV_ABI int32_t sceAudioOutMasteringSetParam(const SceAudioOutMasteringP
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceAudioOutMasteringGetState(const SceAudioOutMasteringParamsHeader* param, uint32_t flags) {
+EXPORT SYSV_ABI int32_t sceAudioOutMasteringGetState(const SceAudioOutMasteringParamsHeader* param) {
   if (!audioInited) return Err::AudioOut::NOT_INIT;
   return Ok;
 }
