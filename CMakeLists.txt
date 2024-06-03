@@ -92,14 +92,13 @@ endif()
 set(TEST_BENCH OFF CACHE BOOL "Enable testing")
 
 if(TEST_BENCH)
- add_subdirectory(tests)
+  add_subdirectory(tests)
 endif()
 
 # include before link_libraries
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
-add_subdirectory(asm)
 
 add_dependencies(dll2Nids third_party)
 

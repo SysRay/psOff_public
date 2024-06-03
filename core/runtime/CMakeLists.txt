@@ -1,3 +1,5 @@
+add_subdirectory(asm)
+
 add_library(runtime OBJECT
   util/exceptionHandler.cpp
   util/moduleLoader.cpp
