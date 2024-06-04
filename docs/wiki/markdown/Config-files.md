@@ -172,6 +172,10 @@ Game language can be changed with systemlang : *, default is EnglishUS. Game mus
   // 6) Auto - try send to Baical server if available, otherwise to file
   // 7) Null - drop all incoming data
   "sink": "FileBin",
-  "verbosity": 1 // Verbosity level: 0 - Trace, 1 - Debug, 2 - Warnings, 3 - Errors, 4 - Critical
+  // Compatibility reports should be done with Debug verbosity level if the developers have not directly asked you to change it!
+  "verbosity": 1, // Verbosity level: 0 - Trace, 1 - Debug, 2 - Warnings, 3 - Errors, 4 - Critical
+  "_customVerb": {
+    // Bunch of logger modules, you can set custom verbosity for each of them
+  }
 }
 ```
