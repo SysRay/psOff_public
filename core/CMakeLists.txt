@@ -1,0 +1,10 @@
+# Add directories
+add_subdirectory(kernel)
+add_subdirectory(initParams)
+add_subdirectory(timer)
+add_subdirectory(systemContent)
+add_subdirectory(fileManager)
+add_subdirectory(memory)
+add_subdirectory(dmem)
+add_subdirectory(unwinding)
+add_subdirectory(runtime)

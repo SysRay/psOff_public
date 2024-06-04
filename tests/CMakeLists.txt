@@ -1,9 +1,5 @@
 enable_testing()
 
-add_compile_definitions(
-  BOOST_ALL_NO_LIB
-)
-
 link_libraries(gtest_main gmock gmock_main)
 add_link_options(/DEBUG)
 link_directories(

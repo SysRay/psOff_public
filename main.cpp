@@ -1,4 +1,4 @@
-#include "asm/helper.h"
+#include "core/runtime/asm/helper.h"
 #define __APICALL_IMPORT
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
@@ -9,8 +9,8 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
 #include "gamereport.h"
+#include "modules/internal/videoout/videoout.h"
 #undef __APICALL_IMPORT
 #include "logging.h"
 #include "utility/progloc.h"

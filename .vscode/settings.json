@@ -19,7 +19,6 @@
   "cmake.sourceDirectory": "${workspaceFolder}",
   "cmake.buildDirectory": "${workspaceFolder}/_build/_Release",
   "cmake.configureArgs": [
-    // "-DBUILD_CORE=1",
     "-DISDEBUG=1"
   ],
   "cmake.configureSettings": {
