@@ -12,6 +12,6 @@ add_library(networking OBJECT
 
 add_dependencies(networking third_party psOff_utility config_emu)
 
-target_compile_definitions(networking PUBLIC WIN32_LEAN_AND_MEAN _WINSOCK_DEPRECATED_NO_WARNINGS)
+target_compile_definitions(networking PUBLIC _WINSOCK_DEPRECATED_NO_WARNINGS)
 
 file(COPY networking.h DESTINATION ${DST_INCLUDE_DIR}/networking)

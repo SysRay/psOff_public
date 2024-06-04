@@ -8,6 +8,5 @@ add_library(${libName} SHARED entry.cpp)
 
 add_dependencies(${libName} core config_emu)
 target_link_libraries(${libName} PRIVATE core.lib SDL2 ${Vulkan_LIBRARIES} config_emu.lib)
-target_compile_definitions(${libName} PRIVATE WIN32_LEAN_AND_MEAN)
 
 setupModule(${libName})

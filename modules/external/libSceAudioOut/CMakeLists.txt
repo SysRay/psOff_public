@@ -10,6 +10,4 @@ add_dependencies(${libName} third_party config_emu core)
 
 target_link_libraries(${libName} PRIVATE core.lib config_emu.lib SDL2 libboost_thread)
 
-target_compile_definitions(${libName} PRIVATE WIN32_LEAN_AND_MEAN)
-
 setupModule(${libName})

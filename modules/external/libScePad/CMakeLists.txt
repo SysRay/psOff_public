@@ -14,6 +14,4 @@ add_dependencies(${libName} core config_emu)
 
 target_link_libraries(${libName} PRIVATE SDL2 ${Vulkan_LIBRARIES} core.lib config_emu.lib libboost_thread)
 
-target_compile_definitions(${libName} PRIVATE WIN32_LEAN_AND_MEAN)
-
 setupModule(${libName})
