@@ -143,9 +143,9 @@ bool SDLController::reconnect() {
   if (SDL_GameControllerGetType(m_padPtr) == SDL_CONTROLLER_TYPE_PS5) {
     DS5EffectsState_t dsef = {};
 
-    dsef.ucEnableBits1     = 0xe0;
-    dsef.ucSpeakerVolume   = 102;
-    dsef.ucAudioEnableBits = 0x20;
+    dsef.ucEnableBits1     = (0x80 | 0x20);
+    dsef.ucSpeakerVolume   = 100;
+    dsef.ucAudioEnableBits = 0x30;
 
     SDL_GameControllerSendEffect(m_padPtr, &dsef, sizeof(dsef));
   }
