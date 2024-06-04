@@ -8,7 +8,7 @@ target_link_libraries(eventsystem_test PRIVATE
   gtest_main gmock gmock_main eventsystem
 )
 
-add_dependencies(eventsystem_test eventsystem)
+add_dependencies(eventsystem_test eventsystem third_party)
 
 target_link_directories(eventsystem_test PRIVATE
   ${CMAKE_BINARY_DIR}
