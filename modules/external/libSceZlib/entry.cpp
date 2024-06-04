@@ -18,6 +18,7 @@ EXPORT SYSV_ABI int32_t sceZlibInitialize(const void* buffer, size_t len) {
   LOG_USE_MODULE(libSceZlib);
   LOG_ERR(L"todo %S", __FUNCTION__);
   g_bInitialized = true;
+  g_reqId        = 0;
   return Ok;
 }
 

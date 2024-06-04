@@ -4,7 +4,7 @@
 From what I see, the Library should create separate thread for ZLib data processing. This thread should be put to sleep by condition variable, when there's no requests (and `sceZlibInflate` should signal this variable ofc).
 
 ## sceZlibInitialize
-Creates the ZLib processing thread. Passed buffer should not be used, moreover should set it to `nullptr`.
+Creates the ZLib processing thread. Passed buffer should not be used, moreover the game should set it to `nullptr`.
 
 ## sceZlibFinalize
 Terminates ZLib processing thread and destroys every active request in queue.
