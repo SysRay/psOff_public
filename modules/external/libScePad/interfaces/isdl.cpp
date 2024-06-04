@@ -10,6 +10,30 @@
 
 LOG_DEFINE_MODULE(libScePad_sdl);
 
+struct DS5EffectsState_t {
+  Uint8 ucEnableBits1;
+  Uint8 ucEnableBits2;
+  Uint8 ucRumbleRight;
+  Uint8 ucRumbleLeft;
+  Uint8 ucHeadphoneVolume;
+  Uint8 ucSpeakerVolume;
+  Uint8 ucMicrophoneVolume;
+  Uint8 ucAudioEnableBits;
+  Uint8 ucMicLightMode;
+  Uint8 ucAudioMuteBits;
+  Uint8 rgucRightTriggerEffect[11];
+  Uint8 rgucLeftTriggerEffect[11];
+  Uint8 rgucUnknown1[6];
+  Uint8 ucLedFlags;
+  Uint8 rgucUnknown2[2];
+  Uint8 ucLedAnim;
+  Uint8 ucLedBrightness;
+  Uint8 ucPadLights;
+  Uint8 ucLedRed;
+  Uint8 ucLedGreen;
+  Uint8 ucLedBlue;
+};
+
 class SDLPadManager {
   std::vector<SDL_GameController*> m_openedPads;
 
@@ -115,6 +139,16 @@ bool SDLController::reconnect() {
   SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(m_padPtr)), m_guid, sizeof(m_guid));
   setLED(&m_lastColor); // restore last known LED color
   setMotion(m_motionEnabled);
+
+  if (SDL_GameControllerGetType(m_padPtr) == SDL_CONTROLLER_TYPE_PS5) {
+    DS5EffectsState_t dsef = {};
+
+    dsef.ucEnableBits1     = 0xe0;
+    dsef.ucSpeakerVolume   = 102;
+    dsef.ucAudioEnableBits = 0x20;
+
+    SDL_GameControllerSendEffect(m_padPtr, &dsef, sizeof(dsef));
+  }
 
   return true;
 }
