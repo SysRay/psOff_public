@@ -96,10 +96,11 @@ class Communication: public ICommunication {
     PacketHeader packet = {};
 
     while (_iread(&packet, sizeof(packet))) {
-      char* data = new char[packet.bodySize];
-      if (_iread(data, packet.bodySize)) {
+      char* data = packet.bodySize > 0 ? new char[packet.bodySize] : nullptr;
+      if (packet.bodySize == 0 || _iread(data, packet.bodySize)) {
         for (auto handler: m_handlers)
           handler(packet.id, packet.bodySize, data);
+        if (data) delete[] data;
         continue;
       }
 

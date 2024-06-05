@@ -224,9 +224,11 @@ int main(int argc, char** argv) {
   LOG_INFO(L"Started");
 
   // Connect to specified pipe
-  {
+  do {
     auto pipe = initParams->getPipeName();
-    if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
+    if (pipe.empty()) break;
+
+    if (accessIPC().init(pipe.c_str())) {
       LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
@@ -241,16 +243,21 @@ int main(int argc, char** argv) {
         }
       });
       accessIPC().runReadLoop();
-      LOG_ERR(L"IPC ReadLoop is closed!");
+      LOG_CRIT(L"IPC ReadLoop is closed!");
     } else {
-      LOG_ERR(L"Pipe conection failed!");
+      LOG_CRIT(L"Pipe conection failed!");
     }
-  } // -
+  } while (0); // -
 
   // --- preinit
 
   // ### Setup
-  auto       filepath   = initParams->getApplicationPath();
+  auto const filepath = initParams->getApplicationPath();
+  if (filepath.empty()) {
+    LOG_CRIT(L"--file argument is missing");
+    __Log::flush();
+    return 1;
+  }
   auto const fileRoot   = initParams->getApplicationRoot();
   auto const updateRoot = initParams->getUpdateRoot();
 
