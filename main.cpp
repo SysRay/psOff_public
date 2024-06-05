@@ -3,13 +3,13 @@
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
+#include "core/ipc/ipc.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "eventsystem/ipc/ipc.h"
 #include "gamereport.h"
 #include "modules/internal/videoout/videoout.h"
 #undef __APICALL_IMPORT
@@ -78,61 +78,12 @@ bool loadModule(std::string_view strFullpath) {
   return true;
 }
 
-int main(int argc, char** argv) {
-  ::setvbuf(stdout, nullptr, _IONBF, 0);
-  ::setvbuf(stderr, nullptr, _IONBF, 0);
+void runGame(const std::string& main, const std::string& mainRoot, const std::string& updateRoot) {
   LOG_USE_MODULE(MAIN);
 
-  printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
+  std::filesystem::path const dirRoot(!mainRoot.empty() ? mainRoot.data() : std::filesystem::path(main).parent_path());
 
-  /**
-   * Initialize GameReport before anything else gets loaded.
-   * TODO: Catch exceptions and pass them to it if possible.
-   */
-  (void)accessGameReport();
-
-  auto initParams = accessInitParams();
-
-  // ### Preinit
-  if (!initParams->init(argc, argv)) {
-    return -1;
-  }
-  util::setThreadName("MainThread");
-
-  // Wait on debugger if requested
-  if (initParams->isDebug()) {
-    while (!::IsDebuggerPresent()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-  }
-  // -
-
-  // Connect to specified pipe
-  {
-    auto pipe = initParams->getPipeName();
-    if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
-      std::thread ipc_reader([]() { // todo: run loop in main thread and execute all the stuff below in some ipc message
-        LOG_USE_MODULE(MAIN);
-        ICommunication::HandshakePacket hp = {};
-        accessIPC().write((ICommunication::UPackets*)&hp);
-        accessIPC().runReadLoop();
-        LOG_ERR(L"IPC ReadLoop is closed!");
-      });
-      ipc_reader.detach();
-    } else {
-      LOG_ERR(L"Pipe conection failed!");
-    }
-  } // -
-
-  LOG_INFO(L"Started");
-  // --- preinit
-
-  // ### Setup
-  auto       filepath   = initParams->getApplicationPath();
-  auto const fileRoot   = initParams->getApplicationRoot();
-  auto const updateRoot = initParams->getUpdateRoot();
-
-  std::filesystem::path const dirRoot(!fileRoot.empty() ? fileRoot.data() : std::filesystem::path(filepath).parent_path());
+  std::string mainProgPath = main;
 
   auto& systemContent = accessSystemContent();
   auto& fileManager   = accessFileManager();
@@ -160,8 +111,8 @@ int main(int argc, char** argv) {
     fileManager.enableUpdateSearch();
 
     // Change eboot.bin to update folder
-    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
-    if (std::filesystem::exists(u_eboot)) filepath = u_eboot;
+    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(main).filename()).string();
+    if (std::filesystem::exists(u_eboot)) mainProgPath = u_eboot;
   }
   // - special case
 
@@ -172,7 +123,7 @@ int main(int argc, char** argv) {
   // ### Load modules
 
   intern::init();
-  loadModule(filepath); // load mainprog
+  loadModule(mainProgPath); // load mainprog
 
   std::set<std::string> moduleSet;
 
@@ -238,8 +189,63 @@ int main(int argc, char** argv) {
 
   ScePthread_obj thread;
   pthread::create(&thread, &attr, thread_func, (void*)entryAddr, "main");
-  void* ret = 0;
-  pthread::join(thread, &ret);
+  pthread::detach(thread);
+  // void* ret = 0;
+  // pthread::join(thread, &ret);
+}
+
+int main(int argc, char** argv) {
+  ::setvbuf(stdout, nullptr, _IONBF, 0);
+  ::setvbuf(stderr, nullptr, _IONBF, 0);
+  LOG_USE_MODULE(MAIN);
+
+  printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
+
+  /**
+   * Initialize GameReport before anything else gets loaded.
+   * TODO: Catch exceptions and pass them to it if possible.
+   */
+  (void)accessGameReport();
+
+  auto initParams = accessInitParams();
+
+  // ### Preinit
+  if (!initParams->init(argc, argv)) {
+    return -1;
+  }
+  util::setThreadName("MainThread");
+
+  // Wait on debugger if requested
+  if (initParams->isDebug()) {
+    while (!::IsDebuggerPresent()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  }
+  // -
+
+  // Connect to specified pipe
+  {
+    auto pipe = initParams->getPipeName();
+    if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
+      accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
+
+      });
+      accessIPC().runReadLoop();
+      LOG_ERR(L"IPC ReadLoop is closed!");
+    } else {
+      LOG_ERR(L"Pipe conection failed!");
+    }
+  } // -
+
+  LOG_INFO(L"Started");
+  // --- preinit
+
+  // ### Setup
+  auto       filepath   = initParams->getApplicationPath();
+  auto const fileRoot   = initParams->getApplicationRoot();
+  auto const updateRoot = initParams->getUpdateRoot();
+
+  runGame(filepath, fileRoot, updateRoot);
 
   __Log::flush();
   return 0;

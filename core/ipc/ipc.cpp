@@ -88,7 +88,9 @@ class Communication: public ICommunication {
     return true;
   }
 
-  bool write(PacketHeader* packet) final { _iwrite(packet, packet->bodySize); }
+  bool write(PacketHeader* packet) final { return _iwrite(packet, packet->bodySize); }
+
+  void addHandler(PHandler pfunc) final { m_handlers.emplace_back(pfunc); }
 
   void runReadLoop() final {
     PacketHeader packet = {};

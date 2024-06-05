@@ -22,6 +22,7 @@ class ICommunication {
   virtual bool init(const char* name)      = 0;
   virtual bool deinit()                    = 0;
   virtual bool write(PacketHeader* packet) = 0;
+  virtual void addHandler(PHandler pfunc)  = 0;
   virtual void runReadLoop()               = 0;
 };
 

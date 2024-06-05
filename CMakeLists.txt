@@ -135,6 +135,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:dmem>
   $<TARGET_OBJECTS:unwinding>
   $<TARGET_OBJECTS:runtime>
+  $<TARGET_OBJECTS:ipc>
 )
 
 add_dependencies(core logging third_party config_emu psoff_render)
