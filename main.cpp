@@ -80,12 +80,12 @@ bool loadModule(std::string_view strFullpath) {
   return true;
 }
 
-void runGame(ScePthread_obj* thread, const std::string& main, const std::string& mainRoot, const std::string& updateRoot) {
+void runGame(ScePthread_obj* thread, const std::string_view main, const std::string_view mainRoot, const std::string_view updateRoot) {
   LOG_USE_MODULE(MAIN);
 
   std::filesystem::path const dirRoot(!mainRoot.empty() ? mainRoot.data() : std::filesystem::path(main).parent_path());
 
-  std::string mainProgPath = main;
+  std::string mainProgPath(main);
 
   auto& systemContent = accessSystemContent();
   auto& fileManager   = accessFileManager();
@@ -233,6 +233,8 @@ int main(int argc, char** argv) {
             runGame(&thread, rg.getExecutable(), rg.getRoot(), rg.getUpdate());
             pthread::detach(thread);
           } break;
+
+          default: break;
         }
       });
       accessIPC().runReadLoop();

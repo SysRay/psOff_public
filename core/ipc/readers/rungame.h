@@ -4,9 +4,9 @@
 #include <string>
 
 class IPCRunGame {
-  std::string m_mainExec;
-  std::string m_mainRoot;
-  std::string m_updateRoot;
+  std::string_view m_mainExec;
+  std::string_view m_mainRoot;
+  std::string_view m_updateRoot;
 
   public:
   IPCRunGame(const char* data, uint32_t size) {
@@ -15,9 +15,9 @@ class IPCRunGame {
     m_updateRoot = data += (m_mainRoot.size() + 1);
   }
 
-  const std::string& getUpdate() { return m_updateRoot; }
+  const std::string_view getUpdate() { return m_updateRoot; }
 
-  const std::string& getExecutable() { return m_mainExec; }
+  const std::string_view getExecutable() { return m_mainExec; }
 
-  const std::string& getRoot() { return m_mainRoot; }
+  const std::string_view getRoot() { return m_mainRoot; }
 };
