@@ -31,7 +31,7 @@ using ScePthread            = PthreadPrivate*;
 using ScePthreadOnce        = PthreadOnce*;
 using ScePthreadKey         = int;
 
-#if defined(__APICALL_EXTERN)
+#if defined(__APICALL_PTHREAD_EXTERN)
 #define __APICALL __declspec(dllexport)
 #elif defined(__APICALL_IMPORT)
 #define __APICALL __declspec(dllimport)

@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "logging.h"
-#include "modules/libkernel/dmem.h"
+#include "modules/external/libkernel/dmem.h"
 #include "types/memory.h"
 
 #include <boost/thread.hpp>
@@ -91,21 +91,19 @@ int32_t MemoryManager::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* in
   boost::unique_lock lock(m_mutexInt);
 
   auto itItem = m_mappings.lower_bound(addr);
-  if (itItem == m_mappings.end() || (itItem != m_mappings.begin() && itItem->first != addr)) --itItem; // Get the correct item
 
-  if (!(itItem->first <= addr && (itItem->first + itItem->second.size >= addr))) {
-    LOG_TRACE(L"Query Error: addr:0x%08llx", addr);
-    return getErr(ErrCode::_EACCES);
-  }
+  if (itItem == m_mappings.end() && addr > (itItem->first + itItem->second.size)) return getErr(ErrCode::_EACCES); // End reached
+
+  if (itItem == m_mappings.end() || (itItem != m_mappings.begin() && itItem->first != addr)) --itItem; // Get the correct item
 
   int res = getErr(ErrCode::_EACCES);
 
   switch (itItem->second.type) {
     case MappingType::Direct: {
-      res = m_directMemory->virtualQuery(addr, info);
+      res = m_directMemory->virtualQuery(itItem->first, info);
     } break;
     case MappingType::Flexible: {
-      res = m_flexibleMemory->virtualQuery(addr, info);
+      res = m_flexibleMemory->virtualQuery(itItem->first, info);
     } break;
     case MappingType::Fixed: {
     } break;
@@ -116,7 +114,8 @@ int32_t MemoryManager::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* in
   }
 
   if (res == Ok) {
-    LOG_TRACE(L"Query OK: addr:0x%08llx - start:0x%08llx end:0x%08llx prot:%d type:%d", addr, info->start, info->end, info->protection, info->memoryType);
+    LOG_TRACE(L"Query OK: addr:0x%08llx - start:0x%08llx end:0x%08llx prot:%d type:%d", itItem->first, info->start, info->end, info->protection,
+              info->memoryType);
   } else {
     LOG_TRACE(L"Query Error: addr:0x%08llx", addr);
   }

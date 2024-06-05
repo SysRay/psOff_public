@@ -1,4 +1,6 @@
+#define __APICALL_EXTERN
 #include "filesystem.h"
+#undef __APICALL_EXTERN
 
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
@@ -52,6 +54,13 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
 
 int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
   LOG_USE_MODULE(filesystem);
+
+  if (auto str = std::string_view(path); str.starts_with("/dev/std")) {
+    if (str.ends_with("stdin")) return 0;
+    if (str.ends_with("stdout")) return 1;
+    if (str.ends_with("stderr")) return 2;
+    return getErr(ErrCode::_ENOENT);
+  }
 
   std::ios_base::openmode mode = std::ios::binary;
 

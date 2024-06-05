@@ -1,22 +1,30 @@
-#define __APICALL_EXTERN
+#define __APICALL_INITPARAMS_EXTERN
 #include "initParams.h"
-#undef __APICALL_EXTERN
+#undef __APICALL_INITPARAMS_EXTERN
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <memory>
 
-struct InitParamsPimpl {
+class InitParams: public IInitParams {
   boost::program_options::variables_map m_vm;
-  InitParamsPimpl() = default;
+
+  public:
+  InitParams() = default;
+
+  bool init(int argc, char** argv) final;
+  bool isDebug() final;
+
+  std::string getApplicationPath() final;
+  std::string getApplicationRoot() final;
+  std::string getUpdateRoot() final;
+
+  bool enableValidation() final;
+  bool enableBrightness() final;
+  bool useVSYNC() final;
+  bool try4K() final;
+
+  virtual ~InitParams() = default;
 };
-
-InitParams::InitParams() {
-  _pImpl = std::make_unique<InitParamsPimpl>().release();
-}
-
-InitParams::~InitParams() {
-  delete _pImpl;
-}
 
 bool InitParams::init(int argc, char** argv) {
   namespace po = boost::program_options;
@@ -37,19 +45,18 @@ bool InitParams::init(int argc, char** argv) {
       // clang-format on
       ;
 
-  auto& vm = _pImpl->m_vm;
   try {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+    po::store(po::parse_command_line(argc, argv, desc), m_vm);
+    po::notify(m_vm);
   } catch (...) {
     return false;
   }
 
-  if (vm.count("help")) {
+  if (m_vm.count("help")) {
     std::cout << desc << '\n';
     return false;
   }
-  if (vm.count("file") == 0) {
+  if (m_vm.count("file") == 0) {
     std::cout << "--file missing\n";
     return false;
   }
@@ -57,25 +64,25 @@ bool InitParams::init(int argc, char** argv) {
   return true;
 }
 
-InitParams* accessInitParams() {
+IInitParams* accessInitParams() {
   static InitParams obj;
   return &obj;
 }
 
 bool InitParams::isDebug() {
-  return _pImpl->m_vm.count("d");
+  return m_vm.count("d");
 }
 
 std::string InitParams::getApplicationPath() {
-  return _pImpl->m_vm.count("file") ? _pImpl->m_vm["file"].as<std::string>() : std::string();
+  return m_vm.count("file") ? m_vm["file"].as<std::string>() : std::string();
 }
 
 std::string InitParams::getApplicationRoot() {
-  return _pImpl->m_vm.count("root") ? _pImpl->m_vm["root"].as<std::string>() : std::string();
+  return m_vm.count("root") ? m_vm["root"].as<std::string>() : std::string();
 }
 
 std::string InitParams::getUpdateRoot() {
-  return _pImpl->m_vm.count("update") ? _pImpl->m_vm["update"].as<std::string>() : std::string();
+  return m_vm.count("update") ? m_vm["update"].as<std::string>() : std::string();
 }
 
 std::string InitParams::getPipeName() {
@@ -83,17 +90,17 @@ std::string InitParams::getPipeName() {
 }
 
 bool InitParams::enableValidation() {
-  return _pImpl->m_vm.count("vkValidation");
+  return m_vm.count("vkValidation");
 }
 
 bool InitParams::enableBrightness() {
-  return _pImpl->m_vm.count("bright");
+  return m_vm.count("bright");
 }
 
 bool InitParams::useVSYNC() {
-  return _pImpl->m_vm["vsync"].as<bool>();
+  return m_vm["vsync"].as<bool>();
 }
 
 bool InitParams::try4K() {
-  return _pImpl->m_vm.count("4k");
+  return m_vm.count("4k");
 }

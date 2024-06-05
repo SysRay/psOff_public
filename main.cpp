@@ -1,4 +1,5 @@
-#include "asm/helper.h"
+#include "core/runtime/asm/helper.h"
+#define __APICALL_IMPORT
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
@@ -9,8 +10,9 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "core/videoout/videoout.h"
 #include "gamereport.h"
+#include "modules/internal/videoout/videoout.h"
+#undef __APICALL_IMPORT
 #include "logging.h"
 #include "utility/progloc.h"
 
@@ -158,7 +160,8 @@ int main(int argc, char** argv) {
     fileManager.enableUpdateSearch();
 
     // Change eboot.bin to update folder
-    filepath = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
+    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
+    if (std::filesystem::exists(u_eboot)) filepath = u_eboot;
   }
   // - special case
 
@@ -205,12 +208,13 @@ int main(int argc, char** argv) {
   }
   // --- modules
 
+  auto  mainProg  = accessRuntimeLinker().accessMainProg();
   auto* procParam = (ProcParam*)accessRuntimeLinker().accessMainProg()->procParamVaddr;
 
   // Set flexiblememory size if available
-  if (procParam->header.size < (8 + offsetof(ProcParam, PSceLibcParam))) {
-    auto memparam = procParam->_sceKernelMemParam;
-    if (memparam != 0 && memparam->sceKernelFlexibleMemorySize != nullptr) {
+  if (procParam->header.size > (8 + offsetof(ProcParam, PSceLibcParam))) {
+    auto memparam = (SceKernelMemParam*)((uint64_t)procParam->_sceKernelMemParam + mainProg->baseVaddr);
+    if (procParam->_sceKernelMemParam != 0 && memparam->sceKernelFlexibleMemorySize != nullptr) {
       accessMemoryManager()->flexibleMemory()->setTotalSize(*memparam->sceKernelFlexibleMemorySize);
     }
   }
@@ -221,11 +225,13 @@ int main(int argc, char** argv) {
 
   LOG_INFO(L"Start| entry:0x%08llx", entryAddr);
 
+  intern::post();
+
   ScePthreadAttr attr;
   pthread::attrInit(&attr);
 
   // set thread stack size if available
-  if (procParam->header.size < (8 + offsetof(ProcParam, sceUserMainThreadStackSize))) {
+  if (procParam->header.size > (8 + offsetof(ProcParam, sceUserMainThreadStackSize))) {
     if (procParam->sceUserMainThreadStackSize != 0 && *procParam->sceUserMainThreadStackSize != 0)
       pthread::attrSetstacksize(&attr, *procParam->sceUserMainThreadStackSize);
   }

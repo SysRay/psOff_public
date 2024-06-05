@@ -33,13 +33,15 @@ constexpr void deinit() {}
 constexpr uint8_t isIgnored(void* module, eTrace_Level level) {
   return true;
 }
+
+constexpr void flush() {}
 } // namespace __Log
 
 /**
  * @brief Call at start of file or in class
  *
  */
-#define LOG_DEFINE_MODULE(name) void* __TRACE_MODULE__DEFINED__##name = __Log::__registerModule(L#name)
+#define LOG_DEFINE_MODULE(name) void* __TRACE_MODULE__DEFINED__##name = nullptr;
 
 /**
  * @brief Call before logging
