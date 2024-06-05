@@ -10,7 +10,7 @@
         "--d",
         // "${config:psoff.add-arg}",
         // "--file=${config:psoff.game-path}/eboot.bin",
-        // "--pipe=\\\\.\\pipe\\psoff-test",
+        "--pipe=\\\\.\\pipe\\psoff-test",
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceRoot}/_build/_Install",

@@ -57,10 +57,6 @@ bool InitParams::init(int argc, char** argv) {
     std::cout << desc << '\n';
     return false;
   }
-  // if (m_vm.count("file") == 0) {
-  //   std::cout << "--file missing\n";
-  //   return false;
-  // }
 
   return true;
 }
