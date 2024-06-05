@@ -1465,9 +1465,9 @@ void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr, std
           } else {
             value = load(ri.vaddr) + ri.base_vaddr;
           }
-        } else if ((ri.type == Symbols::SymbolType::Func || ri.type == Symbols::SymbolType::Object) && !isJmpRelaTable) || (ri.type == Symbols::SymbolType::NoType && weak)) {
-            value = load(ri.vaddr) + ri.base_vaddr;
-          }
+        } else if (((ri.type == Symbols::SymbolType::Func || ri.type == Symbols::SymbolType::Object) && !isJmpRelaTable) || (ri.type == Symbols::SymbolType::NoType && weak)) {
+          value = load(ri.vaddr) + ri.base_vaddr;
+        }
 
         if (value != 0) {
           patched = patchReplace(ri.vaddr, value);
