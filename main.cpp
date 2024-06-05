@@ -3,6 +3,7 @@
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
+#include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
@@ -228,7 +229,9 @@ int main(int argc, char** argv) {
     auto pipe = initParams->getPipeName();
     if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
-
+        switch ((IpcEvent)id) {
+          case IpcEvent::EMU_RUN_GAME: break;
+        }
       });
       accessIPC().runReadLoop();
       LOG_ERR(L"IPC ReadLoop is closed!");
