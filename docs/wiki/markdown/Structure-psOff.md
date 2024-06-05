@@ -61,76 +61,76 @@
         </tr>
         <tr>
             <td>timer/</td>
-            <td></td>
+            <td>All the clock stuff</td>
         </tr>
         <tr>
             <td>unwinding/</td>
-            <td></td>
+            <td>Thread unwinding</td>
         </tr>
         <!-- Documentation thingies -->
         <tr>
             <td rowspan=3>docs/</td>
             <td>json/</td>
-            <td></td>
+            <td>Json schemas for emulator config files</td>
         </tr>
         <tr>
             <td>resource/</td>
-            <td></td>
+            <td>Useful PS4 hardware related documentation</td>
         </tr>
         <tr>
             <td>wiki/</td>
-            <td></td>
+            <td>This folder is used by upwiki.yml workflow for wiki updating</td>
         </tr>
         <!-- Event thingies -->
         <tr>
             <td rowspan=2>eventsystem/</td>
             <td>events/</td>
-            <td></td>
+            <td>Our event system</td>
         </tr>
         <tr>
             <td>test/</td>
-            <td></td>
+            <td>Google unit tests</td>
         </tr>
         <!-- NodeJS thingies -->
         <tr>
             <td rowspan=2>misc/</td>
             <td>discordNotify/</td>
-            <td></td>
+            <td>Script for discord release notifications, used by release_notify.yml workflow</td>
         </tr>
         <tr>
             <td>testRunner/</td>
-            <td></td>
+            <td>Script for Google tests running, used by build.yml</td>
         </tr>
         <!-- User thingies -->
         <tr>
             <td rowspan=2>modules/</td>
             <td>external/</td>
-            <td></td>
+            <td>Libraries with PS4 user functions, all the sce* exports goes there</td>
         </tr>
         <tr>
             <td>internal/</td>
-            <td></td>
+            <td>Set of internal things for calling from exported sce functions</td>
         </tr>
         <tr>
             <td>modules_include/</td>
             <td>*.h</td>
-            <td></td>
+            <td>Common includes for all the sce modules</td>
         </tr>
         <!-- Testbench thingies -->
         <tr>
             <td>tests/</td>
             <td>*.h</td>
-            <td></td>
+            <td>Google unit tests</td>
         </tr>
         <!-- Tools -->
         <tr>
             <td rowspan=5>tools/</td>
             <td>config_emu/</td>
-            <td></td>
+            <td>Emulator's configuration file parser</td>
         </tr>
         <tr>
             <td>dll2nids/</td>
-            <td></td>
+            <td>This program patches compiled sce libraries, by replacing function names with nids</td>
         </tr>
         <tr>
             <td>gamereports/</td>
@@ -138,17 +138,17 @@
         </tr>
         <tr>
             <td>logging/</td>
-            <td></td>
+            <td>Baical p7 logger integration</td>
         </tr>
         <tr>
             <td>matchers/</td>
-            <td></td>
+            <td>Error matchers for GitHub build.yml workflow</td>
         </tr>
         <!-- Utilities -->
         <tr>
             <td>utility/</td>
             <td>*.cpp, *.h</td>
-            <td></td>
+            <td>Set of handy functions</td>
         </tr>
     </tbody>
 </table>
