@@ -5,6 +5,7 @@
 #include "core/initParams/initParams.h"
 #include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
+#include "core/ipc/readers/rungame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
@@ -79,7 +80,7 @@ bool loadModule(std::string_view strFullpath) {
   return true;
 }
 
-void runGame(const std::string& main, const std::string& mainRoot, const std::string& updateRoot) {
+void runGame(ScePthread_obj* thread, const std::string& main, const std::string& mainRoot, const std::string& updateRoot) {
   LOG_USE_MODULE(MAIN);
 
   std::filesystem::path const dirRoot(!mainRoot.empty() ? mainRoot.data() : std::filesystem::path(main).parent_path());
@@ -188,11 +189,7 @@ void runGame(const std::string& main, const std::string& mainRoot, const std::st
       pthread::attrSetstacksize(&attr, *procParam->sceUserMainThreadStackSize);
   }
 
-  ScePthread_obj thread;
-  pthread::create(&thread, &attr, thread_func, (void*)entryAddr, "main");
-  pthread::detach(thread);
-  // void* ret = 0;
-  // pthread::join(thread, &ret);
+  pthread::create(thread, &attr, thread_func, (void*)entryAddr, "main");
 }
 
 int main(int argc, char** argv) {
@@ -230,7 +227,12 @@ int main(int argc, char** argv) {
     if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
-          case IpcEvent::EMU_RUN_GAME: break;
+          case IpcEvent::EMU_RUN_GAME: {
+            IPCRunGame     rg(data, size);
+            ScePthread_obj thread;
+            runGame(&thread, rg.getExecutable(), rg.getRoot(), rg.getUpdate());
+            pthread::detach(thread);
+          } break;
         }
       });
       accessIPC().runReadLoop();
@@ -248,7 +250,10 @@ int main(int argc, char** argv) {
   auto const fileRoot   = initParams->getApplicationRoot();
   auto const updateRoot = initParams->getUpdateRoot();
 
-  runGame(filepath, fileRoot, updateRoot);
+  ScePthread_obj thread;
+  runGame(&thread, filepath, fileRoot, updateRoot);
+  void* ret = 0;
+  pthread::join(thread, &ret);
 
   __Log::flush();
   return 0;
