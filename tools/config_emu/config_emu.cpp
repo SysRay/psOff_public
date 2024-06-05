@@ -38,7 +38,7 @@ class Item {
 };
 
 static inline bool isJsonTypesSimilar(json& a, json& b) {
-  return (a.type() == b.type()) || (a.is_number_integer() == b.is_number_integer());
+  return (a.type() == b.type()) || (a.is_number() == b.is_number());
 }
 } // namespace
 
