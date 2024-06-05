@@ -1,10 +1,8 @@
 add_subdirectory(events/template)
 add_subdirectory(test)
-add_subdirectory(ipc)
 
 add_library(eventsystem_core SHARED
   $<TARGET_OBJECTS:events_intern_template>
-  $<TARGET_OBJECTS:ipc>
 )
 
 add_library(eventsystem STATIC

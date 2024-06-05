@@ -88,27 +88,16 @@ class Communication: public ICommunication {
     return true;
   }
 
-  bool write(UPackets* packet) final {
-    switch (packet->packetId) {
-      case PacketID::IPC_PACKET_HANDSHAKE: return _iwrite(&packet->hshake, sizeof(packet->hshake)); break;
-
-      default: return false;
-    }
-  }
+  bool write(PacketHeader* packet) final { _iwrite(packet, packet->bodySize); }
 
   void runReadLoop() final {
-    UPackets packet = {};
+    PacketHeader packet = {};
 
-    while (_iread(&packet.packetId, sizeof(packet.packetId))) {
-      DWORD psize = 0xFFFFFFFF;
-
-      switch (packet.packetId) {
-        case PacketID::IPC_PACKET_HANDSHAKE: psize = sizeof(packet.hshake); break;
-      }
-
-      if (_iread((char*)&packet + sizeof(packet.packetId), psize - sizeof(packet.packetId))) {
+    while (_iread(&packet, sizeof(packet))) {
+      char* data = new char[packet.bodySize];
+      if (_iread(data, packet.bodySize)) {
         for (auto handler: m_handlers)
-          handler(&packet);
+          handler(packet.id, packet.bodySize, data);
         continue;
       }
 

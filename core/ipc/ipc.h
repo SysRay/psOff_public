@@ -9,29 +9,20 @@ class ICommunication {
   CLASS_NO_MOVE(ICommunication);
 
   public:
-  enum class PacketID : uint16_t {
-    IPC_PACKET_HANDSHAKE,
+  struct PacketHeader {
+    uint32_t id;
+    uint32_t bodySize;
   };
 
-  struct HandshakePacket {
-    PacketID   packetId;
-    const char data[16];
-  };
-
-  union UPackets {
-    PacketID        packetId;
-    HandshakePacket hshake;
-  };
-
-  typedef std::function<void(UPackets* packet)> PHandler;
+  typedef std::function<void(uint32_t id, uint32_t size, const char* data)> PHandler;
 
   ICommunication()          = default;
   virtual ~ICommunication() = default;
 
-  virtual bool init(const char* name)  = 0;
-  virtual bool deinit()                = 0;
-  virtual bool write(UPackets* packet) = 0;
-  virtual void runReadLoop()           = 0;
+  virtual bool init(const char* name)      = 0;
+  virtual bool deinit()                    = 0;
+  virtual bool write(PacketHeader* packet) = 0;
+  virtual void runReadLoop()               = 0;
 };
 
 #if defined(__APICALL_EXTERN)
