@@ -101,6 +101,7 @@ add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
 
+add_subdirectory(eventsystem)
 add_dependencies(dll2Nids third_party)
 
 # -
@@ -138,6 +139,7 @@ add_library(core SHARED
 
 add_dependencies(core logging third_party config_emu psoff_render)
 target_link_libraries(core PRIVATE
+  eventsystem
   libboost_url
   libboost_thread
   libboost_chrono
@@ -189,6 +191,7 @@ add_executable(psoff
 add_dependencies(psoff logging core psOff_utility gamereport)
 
 target_link_libraries(psoff PRIVATE
+  eventsystem
   core.lib
   gamereport.lib
   psOff_utility
