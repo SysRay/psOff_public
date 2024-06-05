@@ -509,7 +509,7 @@ int stat(const char* path, SceKernelStat* sb) {
   if (!_mapped) {
     return getErr(ErrCode::_EACCES);
   }
-  auto const mapped = _mapped.value();
+  auto const& mapped = *_mapped;
 
   if (!std::filesystem::exists(mapped)) {
     return getErr(ErrCode::_ENOENT);
