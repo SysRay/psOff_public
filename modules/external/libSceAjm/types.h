@@ -22,3 +22,8 @@ struct SceAjmBatchError {
   int   align2;
   void* pJobOriginRa;
 };
+
+struct SceAjmBuffer {
+  void*  pAddress;
+  size_t szSize;
+};
