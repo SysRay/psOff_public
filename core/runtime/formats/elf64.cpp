@@ -1459,15 +1459,15 @@ void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr, std
 
         if (ri.type == Symbols::SymbolType::Object && weak) {
           value = invalidMemoryAddr;
-        } else if (ri.type == Symbols::SymbolType::Func && isJmpRelaTable) {
+        } else if ((ri.type == Symbols::SymbolType::Func || ri.type == Symbols::SymbolType::Object) && isJmpRelaTable) {
           if (prog->pltVaddr != 0) {
             value = reinterpret_cast<CallPlt*>(prog->pltVaddr)->getAddr(index);
           } else {
             value = load(ri.vaddr) + ri.base_vaddr;
           }
-        } else if ((ri.type == Symbols::SymbolType::Func && !isJmpRelaTable) || (ri.type == Symbols::SymbolType::NoType && weak)) {
-          value = load(ri.vaddr) + ri.base_vaddr;
-        }
+        } else if ((ri.type == Symbols::SymbolType::Func || ri.type == Symbols::SymbolType::Object) && !isJmpRelaTable) || (ri.type == Symbols::SymbolType::NoType && weak)) {
+            value = load(ri.vaddr) + ri.base_vaddr;
+          }
 
         if (value != 0) {
           patched = patchReplace(ri.vaddr, value);
