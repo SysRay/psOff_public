@@ -221,10 +221,13 @@ int main(int argc, char** argv) {
   }
   // -
 
+  LOG_INFO(L"Started");
+
   // Connect to specified pipe
   {
     auto pipe = initParams->getPipeName();
     if (!pipe.empty() && accessIPC().init(pipe.c_str())) {
+      LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
           case IpcEvent::EMU_RUN_GAME: {
@@ -244,7 +247,6 @@ int main(int argc, char** argv) {
     }
   } // -
 
-  LOG_INFO(L"Started");
   // --- preinit
 
   // ### Setup
