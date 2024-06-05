@@ -16,6 +16,7 @@ class InitParams: public IInitParams {
 
   std::string getApplicationPath() final;
   std::string getApplicationRoot() final;
+  std::string getPipeName() final;
   std::string getUpdateRoot() final;
 
   bool enableValidation() final;
@@ -86,7 +87,7 @@ std::string InitParams::getUpdateRoot() {
 }
 
 std::string InitParams::getPipeName() {
-  return _pImpl->m_vm.count("pipe") ? _pImpl->m_vm["pipe"].as<std::string>() : std::string();
+  return m_vm.count("pipe") ? m_vm["pipe"].as<std::string>() : std::string();
 }
 
 bool InitParams::enableValidation() {

@@ -15,6 +15,7 @@ class IInitParams {
 
   virtual std::string getApplicationPath() = 0;
   virtual std::string getApplicationRoot() = 0;
+  virtual std::string getPipeName()        = 0;
   virtual std::string getUpdateRoot()      = 0;
 
   virtual bool enableValidation() = 0;
