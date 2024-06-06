@@ -132,6 +132,9 @@ private:
         case Item::Status::DONE: {
           qi->ready();
         } break;
+
+        case Item::Status::READY: {
+        } break;
       }
     }
   }
