@@ -6,6 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <zlib.h>
 
 LOG_DEFINE_MODULE(libSceZlib);
 
@@ -31,12 +32,26 @@ public:
 
     std::mutex& getMutex() { return m_mtx; }
 
-    void startDecompression() { m_status = Status::PROCESSING; }
+    void startDecompression() {
+      if ((m_zret = inflateInit(&m_zstrm)) == Z_OK) {
+        m_status = Status::PROCESSING;
+        return;
+      }
+
+      m_status = Status::ERROR;
+    }
 
     void decompressionStep() {
       LOG_USE_MODULE(libSceZlib);
       LOG_ERR(L"Unimplemented");
       m_status = Status::ERROR;
+    }
+
+    void finishDecompression() {
+      if (!m_bClosed) {
+        inflateEnd(&m_zstrm);
+        m_bClosed = true;
+      }
     }
 
     int32_t zlibErrorToSce() {
@@ -47,7 +62,8 @@ public:
     uint32_t getFinalLength() { return m_status == Status::DONE ? m_dstFinalLen : 0; }
 
 private:
-    Status m_status = Status::IDLE;
+    Status m_status  = Status::IDLE;
+    bool   m_bClosed = false;
 
     const void*    m_src;
     const uint32_t m_srcLen;
@@ -56,7 +72,8 @@ private:
     uint32_t m_dstLen;
     uint32_t m_dstFinalLen;
 
-    int m_zret;
+    z_stream m_zstrm;
+    int      m_zret;
 
     std::mutex m_mtx;
   };
@@ -83,9 +100,11 @@ private:
         } break;
 
         case Item::Status::DONE: {
+          qi->finishDecompression();
         } break;
 
         case Item::Status::ERROR: {
+          qi->finishDecompression();
         } break;
       }
     }
@@ -93,7 +112,11 @@ private:
 
   void clearQueue() {
     std::unique_lock lock(m_queueMut);
-    m_queue.clear();
+
+    for (auto it = m_queue.begin(); it != m_queue.end();) {
+      it->get()->finishDecompression();
+      m_queue.erase(it);
+    }
   }
 
   static void processingThread(ZLibQueue* zq) {
