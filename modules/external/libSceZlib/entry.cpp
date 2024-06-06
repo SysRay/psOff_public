@@ -88,7 +88,7 @@ public:
       return Err::Zlib::FATAL;
     }
 
-    uint32_t getFinalLength() { return m_status == Status::DONE ? m_dstFinalLen : 0; }
+    uint32_t getFinalLength() { return isFinished() ? m_dstFinalLen : 0; }
 
 private:
     Status m_status  = Status::IDLE;
