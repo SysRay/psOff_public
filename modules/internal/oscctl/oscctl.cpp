@@ -60,13 +60,13 @@ class OscCtl: public IOscCtl {
     m_params.status  = IOscCtl::Status::HIDDEN;
     m_params.aborted = false;
 
-    WideCharToMultiByte(CP_UTF8, 0, title, -1, m_params.title, sizeof(m_params.title), nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, title, -1, m_params.details, sizeof(m_params.details), nullptr, nullptr);
     return true;
   }
 
   bool show() final {
     if (m_params.status != IOscCtl::Status::HIDDEN) return false;
-    if (*m_params.title == '\0') return false;
+    if (*m_params.details == '\0') ::strcpy_s(m_params.details, "???");
     m_params.status = IOscCtl::Status::SHOWN;
     return true;
   }
@@ -81,7 +81,7 @@ class OscCtl: public IOscCtl {
     m_params.buffer      = nullptr;
     m_params.buffersz    = 0;
     *m_params.enterLabel = '\0';
-    *m_params.title      = '\0';
+    *m_params.details    = '\0';
     *m_params.details    = '\0';
   }
 

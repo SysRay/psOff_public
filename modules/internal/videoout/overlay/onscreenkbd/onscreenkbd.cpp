@@ -9,7 +9,7 @@ void OverKeyboard::draw() {
     if (params->status == IOscCtl::Status::SHOWN) {
       // ImGui::SetNextWindowPos(ImVec2(params->xpos, params->ypos));
       ImGui::SetNextWindowSize(ImVec2(350, 0));
-      ImGui::Begin(params->title, nullptr, ImGuiWindowFlags_NoCollapse);
+      ImGui::Begin("Onscreen keyboard", nullptr, ImGuiWindowFlags_NoCollapse);
 
       ImGui::Text("%s", params->details);
 

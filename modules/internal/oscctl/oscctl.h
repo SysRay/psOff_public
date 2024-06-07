@@ -18,9 +18,8 @@ class IOscCtl {
 
   struct Params {
     Status status;
-    char   title[32];
-    char   details[32];
-    char   enterLabel[32];
+    char   details[128];
+    char   enterLabel[16];
 
     char*    internal_buffer;
     wchar_t* buffer;
