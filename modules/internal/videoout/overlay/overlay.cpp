@@ -1,6 +1,5 @@
 #include "overlay.h"
 
-// #include "gamemenu/gamemenu.h"
 #include "logging.h"
 #include "onscreenkbd/onscreenkbd.h"
 #include "overtrophy/overtrophy.h"
@@ -130,7 +129,6 @@ void OverlayHandler::init(SDL_Window* window, vulkan::QueueInfo* queue, VkFormat
 
   ImGui_ImplVulkan_Init(&initInfo);
   m_overTrophy.init();
-  // m_gameMenu.init();
 
   m_isInit = true;
 }
@@ -176,5 +174,5 @@ void OverlayHandler::draw() {
   // ImGui::ShowDemoWindow();
   auto const fps = m_imageHandler->getFPS();
   m_overTrophy.draw(fps);
-  // m_gameMenu.draw();
+  m_osc.draw();
 }
