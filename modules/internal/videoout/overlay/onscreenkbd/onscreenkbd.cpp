@@ -13,7 +13,7 @@ void OverKeyboard::draw() {
 
       ImGui::Text("%s", params->details);
 
-      ImGui::InputText("EnteredText", params->buffer, params->buffersz, ImGuiInputTextFlags_None /*, [](ImGuiInputTextCallbackData* data) -> int {}*/);
+      ImGui::InputText("EnteredText", params->internal_buffer, params->buffersz, ImGuiInputTextFlags_None /*, [](ImGuiInputTextCallbackData* data) -> int {}*/);
 
       if (ImGui::Button(params->enterLabel)) {
       }

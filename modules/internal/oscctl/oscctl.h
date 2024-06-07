@@ -9,6 +9,7 @@ class IOscCtl {
 
   public:
   enum class Status {
+    NONE,
     HIDDEN,
     SHOWN,
     CLOSED,
@@ -20,8 +21,9 @@ class IOscCtl {
     char   details[32];
     char   enterLabel[32];
 
-    char*  buffer;
-    size_t buffersz;
+    char*    internal_buffer;
+    wchar_t* buffer;
+    size_t   buffersz;
 
     float xpos, ypos;
   };
@@ -30,6 +32,13 @@ class IOscCtl {
   virtual ~IOscCtl() = default;
 
   virtual Params* getParams() = 0;
+
+  virtual bool setEnterLabel(SceImeEnterLabel label)   = 0;
+  virtual bool setBuffer(wchar_t* buff, size_t buffsz) = 0;
+
+  virtual bool show()    = 0;
+  virtual bool run()     = 0;
+  virtual void destroy() = 0;
 };
 
 #if defined(__APICALL_EXTERN)
