@@ -680,6 +680,8 @@ int64_t lseek(int handle, int64_t offset, int whence) {
   if (whence > 2) return getErr(ErrCode::_EINVAL);
 
   auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) return getErr(ErrCode::_EINVAL);
+
   file->clearError();
 
   auto const pos = file->lseek(offset, (SceWhence)whence);

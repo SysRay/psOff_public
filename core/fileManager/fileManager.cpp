@@ -177,6 +177,8 @@ class FileManager: public IFileManager {
 
   void remove(int handle) final {
     std::unique_lock const lock(m_mutext_int);
+    if (handle >= m_openFiles.size()) return;
+
     m_openFiles[handle].reset();
   }
 
