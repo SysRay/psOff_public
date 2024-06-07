@@ -33,7 +33,8 @@ class OscCtl: public IOscCtl {
 
   bool setBuffer(wchar_t* buff, size_t buffsz) final {
     if (buffsz == 0 || buff == nullptr) return false;
-    m_params.internal_buffer = (char*)malloc(buffsz);
+    m_params.internal_buffer = (char*)::malloc(buffsz);
+    ::memset(m_params.internal_buffer, 0, buffsz);
     m_params.buffer          = buff;
     m_params.buffersz        = buffsz;
     return true;
