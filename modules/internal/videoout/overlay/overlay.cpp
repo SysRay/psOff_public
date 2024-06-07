@@ -2,6 +2,7 @@
 
 // #include "gamemenu/gamemenu.h"
 #include "logging.h"
+#include "onscreenkbd/onscreenkbd.h"
 #include "overtrophy/overtrophy.h"
 
 #include <imgui/imgui.h>
@@ -15,8 +16,8 @@ class OverlayHandler: public IOverlayHandler {
   std::shared_ptr<vulkan::DeviceInfo> m_deviceInfo;
   std::shared_ptr<IImageHandler>      m_imageHandler;
 
-  OverTrophy m_overTrophy;
-  // GameMenu   m_gameMenu;
+  OverTrophy   m_overTrophy;
+  OverKeyboard m_osc;
 
   VkDescriptorPool m_descriptorPool;
 
