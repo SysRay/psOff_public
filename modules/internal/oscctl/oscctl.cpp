@@ -35,8 +35,8 @@ class OscCtl: public IOscCtl {
     if (buffsz == 0 || buff == nullptr) return false;
     m_params.internal_buffer = (char*)::malloc(buffsz);
     ::memset(m_params.internal_buffer, 0, buffsz);
-    m_params.buffer          = buff;
-    m_params.buffersz        = buffsz;
+    m_params.buffer   = buff;
+    m_params.buffersz = buffsz;
     return true;
   }
 
