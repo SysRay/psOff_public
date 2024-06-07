@@ -20,11 +20,11 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
   if (param->maxTextLength == 0) return Err::ImeDialog::INVALID_MAX_TEXT_LENGTH;
   auto& osc = accessOscCtl();
 
-  if (param->type != SceImeType::DEFAULT) LOG_ERR(L"Handle ImeType");
-  if (param->supportedLanguages) LOG_ERR(L"Handle supportedLanguages");
-  if (param->inputMethod != SceImeInputMethod::DEFAULT) LOG_ERR(L"Handle inputMethod");
-  if (param->filter) LOG_ERR(L"Handle TextFilter function");
-  if (param->option) LOG_ERR(L"Handle ImeOption(s)");
+  if (param->type != SceImeType::DEFAULT) LOG_ERR(L"Handle ImeType: %d", param->type);
+  if (param->supportedLanguages) LOG_ERR(L"Handle supportedLanguages: %llu", param->supportedLanguages);
+  if (param->inputMethod != SceImeInputMethod::DEFAULT) LOG_ERR(L"Handle inputMethod: %d", param->inputMethod);
+  if (param->filter) LOG_ERR(L"Handle TextFilter function: %p", param->filter);
+  if (param->option) LOG_ERR(L"Handle ImeOption(s): %d", param->option);
   if (param->placeholder) LOG_ERR(L"Handle placeholder");
 
   if (!osc.run(param->title)) return Err::Ime::BUSY;
