@@ -16,11 +16,13 @@ void OverKeyboard::draw() {
       ImGui::InputText("EnteredText", params->internal_buffer, params->buffersz, ImGuiInputTextFlags_None /*, [](ImGuiInputTextCallbackData* data) -> int {}*/);
 
       if (ImGui::Button(params->enterLabel)) {
+        accessOscCtl().enter();
       }
 
       ImGui::SameLine();
 
       if (ImGui::Button("Cancel")) {
+        accessOscCtl().cancel();
       }
 
       ImGui::End();

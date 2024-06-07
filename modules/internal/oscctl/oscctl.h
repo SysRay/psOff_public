@@ -13,7 +13,7 @@ class IOscCtl {
     HIDDEN,
     SHOWN,
     DONE,
-    ABORTED,
+    CANCELLED,
   };
 
   struct Params {
@@ -27,6 +27,7 @@ class IOscCtl {
     size_t   buffersz;
 
     float xpos, ypos;
+    bool  aborted;
   };
 
   IOscCtl()          = default;
@@ -37,9 +38,13 @@ class IOscCtl {
   virtual bool setEnterLabel(SceImeEnterLabel label)   = 0;
   virtual bool setBuffer(wchar_t* buff, size_t buffsz) = 0;
 
-  virtual bool show()    = 0;
-  virtual bool run()     = 0;
-  virtual void destroy() = 0;
+  virtual bool cancel() = 0;
+  virtual bool enter()  = 0;
+
+  virtual bool run(const wchar_t* title) = 0;
+  virtual bool show()                    = 0;
+  virtual void destroy()                 = 0;
+  virtual void abort()                   = 0;
 };
 
 #if defined(__APICALL_EXTERN)
