@@ -33,29 +33,14 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
   return ecode;
 }
 
-EXPORT SYSV_ABI int32_t sceImeDialogTerm() {
-  g_curStatus = SceImeDialogStatus::NONE;
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceImeDialogAbort() {
-  g_curStatus = SceImeDialogStatus::NONE;
-  return Ok;
-}
-
-EXPORT SYSV_ABI int32_t sceImeDialogParamInit(SceImeDialogParam* param) {
-  LOG_USE_MODULE(libSceImeDialog);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  return Ok;
-}
-
 EXPORT SYSV_ABI SceImeDialogStatus sceImeDialogGetStatus() {
   if (auto param = accessOscCtl().getParams()) {
     switch (param->status) {
       case IOscCtl::Status::HIDDEN:
       case IOscCtl::Status::SHOWN: return SceImeDialogStatus::RUNNING;
 
-      case IOscCtl::Status::CLOSED: return SceImeDialogStatus::FINISHED;
+      case IOscCtl::Status::ABORTED:
+      case IOscCtl::Status::DONE: return SceImeDialogStatus::FINISHED;
 
       default: return SceImeDialogStatus::NONE;
     }
@@ -64,7 +49,26 @@ EXPORT SYSV_ABI SceImeDialogStatus sceImeDialogGetStatus() {
   return SceImeDialogStatus::NONE;
 }
 
-EXPORT SYSV_ABI int32_t sceImeDialogGetPanelSizeExtended(const SceImeDialogParam* param, const SceImeParamExtended* ext, uint32_t* w, uint32_t* h) {
+EXPORT SYSV_ABI int32_t sceImeDialogTerm() {
+  switch (sceImeDialogGetStatus()) {
+    case SceImeDialogStatus::RUNNING: return Err::ImeDialog::NOT_FINISHED;
+    case SceImeDialogStatus::NONE: return Err::ImeDialog::NOT_IN_USE;
+    default: return Ok;
+  }
+}
+
+EXPORT SYSV_ABI int32_t sceImeDialogAbort() {
+  switch (sceImeDialogGetStatus()) {
+    case SceImeDialogStatus::FINISHED: return Err::ImeDialog::NOT_RUNNING;
+    case SceImeDialogStatus::NONE: return Err::ImeDialog::NOT_IN_USE;
+    default: return Ok;
+  }
+}
+
+EXPORT SYSV_ABI int32_t sceImeDialogParamInit(SceImeDialogParam* param) {
+  LOG_USE_MODULE(libSceImeDialog);
+  LOG_ERR(L"todo %S", __FUNCTION__);
+  ::memset(param, 0, sizeof(SceImeDialogParam));
   return Ok;
 }
 
@@ -72,7 +76,11 @@ EXPORT SYSV_ABI int32_t sceImeDialogGetResult(SceImeDialogResult* res) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int32_t sceImeDialogGetPanelPositionAndForm(SceImePositionAndForm* pf) {
-  return Ok;
-}
+// EXPORT SYSV_ABI int32_t sceImeDialogGetPanelSizeExtended(const SceImeDialogParam* param, const SceImeParamExtended* ext, uint32_t* w, uint32_t* h) {
+//   return Ok;
+// }
+
+// EXPORT SYSV_ABI int32_t sceImeDialogGetPanelPositionAndForm(SceImePositionAndForm* pf) {
+//   return Ok;
+// }
 }

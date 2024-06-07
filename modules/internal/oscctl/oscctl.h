@@ -12,7 +12,8 @@ class IOscCtl {
     NONE,
     HIDDEN,
     SHOWN,
-    CLOSED,
+    DONE,
+    ABORTED,
   };
 
   struct Params {
