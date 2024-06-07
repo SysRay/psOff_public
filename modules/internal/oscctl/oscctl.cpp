@@ -30,7 +30,7 @@ class OscCtl: public IOscCtl {
   }
 
   bool setBuffer(wchar_t* buff, size_t buffsz) final {
-    if (buffsz == 0) return false;
+    if (buffsz == 0 || buff == nullptr) return false;
     m_params.internal_buffer = (char*)malloc(buffsz);
     m_params.buffer          = buff;
     m_params.buffersz        = buffsz;
