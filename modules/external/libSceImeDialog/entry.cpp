@@ -18,8 +18,8 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
   if (param->inputTextBuffer == nullptr) return Err::ImeDialog::INVALID_INPUT_TEXT_BUFFER;
   if (param->title == nullptr) return Err::ImeDialog::INVALID_TITLE;
   if (param->maxTextLength == 0) return Err::ImeDialog::INVALID_MAX_TEXT_LENGTH;
-  auto& osc = accessOscCtl();
 
+  if (ext) LOG_ERR(L"Handle ImeParamExtended");
   if (param->type != SceImeType::DEFAULT) LOG_ERR(L"Handle ImeType: %d", param->type);
   if (param->supportedLanguages) LOG_ERR(L"Handle supportedLanguages: %llu", param->supportedLanguages);
   if (param->inputMethod != SceImeInputMethod::DEFAULT) LOG_ERR(L"Handle inputMethod: %d", param->inputMethod);
@@ -27,6 +27,7 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
   if (param->option) LOG_ERR(L"Handle ImeOption(s): %d", param->option);
   if (param->placeholder) LOG_ERR(L"Handle placeholder");
 
+  auto& osc = accessOscCtl();
   if (!osc.run(param->title)) return Err::Ime::BUSY;
 
   auto setup = [&osc, param]() -> int32_t {
@@ -79,13 +80,6 @@ EXPORT SYSV_ABI int32_t sceImeDialogAbort() {
   }
 }
 
-EXPORT SYSV_ABI int32_t sceImeDialogParamInit(SceImeDialogParam* param) {
-  LOG_USE_MODULE(libSceImeDialog);
-  LOG_ERR(L"todo %S", __FUNCTION__);
-  ::memset(param, 0, sizeof(SceImeDialogParam));
-  return Ok;
-}
-
 EXPORT SYSV_ABI int32_t sceImeDialogGetResult(SceImeDialogResult* res) {
   if (auto param = accessOscCtl().getParams()) {
     switch (param->status) {
@@ -102,7 +96,7 @@ EXPORT SYSV_ABI int32_t sceImeDialogGetResult(SceImeDialogResult* res) {
     }
   }
 
-  return Err::ImeDialog::NOT_IN_USE;
+  return Err::ImeDialog::INTERNAL;
 }
 
 // EXPORT SYSV_ABI int32_t sceImeDialogGetPanelSizeExtended(const SceImeDialogParam* param, const SceImeParamExtended* ext, uint32_t* w, uint32_t* h) {
