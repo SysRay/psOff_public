@@ -32,7 +32,7 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
 
   auto setup = [&osc, param]() -> int32_t {
     if (!osc.setEnterLabel(param->enterLabel)) return Err::Ime::INVALID_ENTER_LABEL;
-    if (!osc.setBuffer(param->inputTextBuffer, param->maxTextLength)) return Err::Ime::INVALID_INPUT_TEXT_BUFFER;
+    if (!osc.setBuffer(param->inputTextBuffer, param->maxTextLength * sizeof(wchar_t))) return Err::Ime::INVALID_INPUT_TEXT_BUFFER;
     if (!osc.show()) return Err::Ime::INTERNAL;
     return Ok;
   };
