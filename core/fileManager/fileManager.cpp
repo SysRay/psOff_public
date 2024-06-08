@@ -176,8 +176,12 @@ class FileManager: public IFileManager {
   }
 
   void remove(int handle) final {
+    LOG_USE_MODULE(FileManager);
     std::unique_lock const lock(m_mutext_int);
-    if (handle >= m_openFiles.size()) return;
+    if (handle >= m_openFiles.size()) {
+      LOG_ERR(L"remove, unknown handle %d", handle);
+      return;
+    }
 
     m_openFiles[handle].reset();
   }
