@@ -199,7 +199,7 @@ target_link_libraries(psoff PRIVATE
   $<TARGET_OBJECTS:asmHelper>
 )
 
-target_link_options(psoff PUBLIC /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
+target_link_options(psoff PUBLIC /DYNAMICBASE:NO /DEBUG --image-base=${IMAGE_BASE})
 
 set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
