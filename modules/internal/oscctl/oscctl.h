@@ -3,6 +3,8 @@
 #include "external/libSceIme/types.h"
 #include "utility/utility.h"
 
+#include <string>
+
 class IOscCtl {
   CLASS_NO_COPY(IOscCtl);
   CLASS_NO_MOVE(IOscCtl);
@@ -17,9 +19,9 @@ class IOscCtl {
   };
 
   struct Params {
-    Status status;
-    char   details[128];
-    char   enterLabel[16];
+    Status      status;
+    std::string details;
+    std::string enterLabel;
 
     char*    internal_buffer;
     wchar_t* buffer;

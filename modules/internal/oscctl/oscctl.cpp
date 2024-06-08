@@ -23,11 +23,11 @@ class OscCtl: public IOscCtl {
     }
 
     if (label) {
-      std::string_view(label).copy(m_params.enterLabel, sizeof(m_params.enterLabel));
+      m_params.enterLabel.assign(label);
       return true;
     }
 
-    *m_params.enterLabel = '\0';
+    m_params.enterLabel.clear();
     return false;
   }
 
@@ -60,13 +60,15 @@ class OscCtl: public IOscCtl {
     m_params.status  = IOscCtl::Status::HIDDEN;
     m_params.aborted = false;
 
-    WideCharToMultiByte(CP_UTF8, 0, title, -1, m_params.details, sizeof(m_params.details), nullptr, nullptr);
+    uint32_t need = WideCharToMultiByte(CP_UTF8, 0, title, -1, nullptr, 0, nullptr, nullptr);
+    m_params.details.resize(need);
+    WideCharToMultiByte(CP_UTF8, 0, title, -1, &m_params.details[0], need, nullptr, nullptr);
     return true;
   }
 
   bool show() final {
     if (m_params.status != IOscCtl::Status::HIDDEN) return false;
-    if (*m_params.details == '\0') ::strcpy_s(m_params.details, "???");
+    if (m_params.details.empty()) m_params.details.assign("???");
     m_params.status = IOscCtl::Status::SHOWN;
     return true;
   }
@@ -78,11 +80,10 @@ class OscCtl: public IOscCtl {
       free(m_params.internal_buffer);
       m_params.internal_buffer = nullptr;
     }
-    m_params.buffer      = nullptr;
-    m_params.buffersz    = 0;
-    *m_params.enterLabel = '\0';
-    *m_params.details    = '\0';
-    *m_params.details    = '\0';
+    m_params.buffer   = nullptr;
+    m_params.buffersz = 0;
+    m_params.enterLabel.clear();
+    m_params.details.clear();
   }
 
   void abort() final {
