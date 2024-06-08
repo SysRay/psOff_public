@@ -292,6 +292,7 @@ EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
+  if (pInfo == nullptr) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
 
   if (handle > PSMOVE_DUMMY_HANDLE_RANGE) {
