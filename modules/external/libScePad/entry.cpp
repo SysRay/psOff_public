@@ -60,7 +60,7 @@ static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void*
   if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
   if (type == PadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
   if (type != PadPortType::STANDARD && type == PadPortType::SPECIAL) {
-    LOG_ERR(L"Handle PlayStation Move");
+    LOG_ERR(L"todo Handle PlayStation Move");
     return 1336 + userId;
   }
 
@@ -160,7 +160,7 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
 EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num) {
   LOG_USE_MODULE(libScePad);
   if (handle >= 1337) {
-    LOG_ERR(L"Handle PlayStation Move read");
+    LOG_ERR(L"todo Handle PlayStation Move read");
     return Ok;
   }
 
@@ -252,7 +252,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   LOG_USE_MODULE(libScePad);
 
   if (handle >= 1337) {
-    LOG_ERR(L"Handle PlayStation Move info");
+    LOG_ERR(L"todo Handle PlayStation Move info");
     pInfo->deviceClass    = ScePadDeviceClass::STANDARD;
     pInfo->connectionType = (uint8_t)PadPortType::SPECIAL;
     pInfo->connected      = false;
