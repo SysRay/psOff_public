@@ -49,6 +49,19 @@ EXPORT SYSV_ABI int32_t sceAjmBatchJobRunBufferRa(void* pBatchPosition, SceAjmIn
   return 0;
 }
 
+EXPORT SYSV_ABI void* sceAjmBatchJobRunSplitBufferRa(void* const pBatchPosition, const SceAjmInstanceId uiInstance, const uint64_t uiFlags,
+                                                     const SceAjmBuffer* const pDataInputBuffers, const size_t szNumDataInputBuffers,
+                                                     const SceAjmBuffer* const pDataOutputBuffers, const size_t szNumDataOutputBuffers,
+                                                     void* const pSidebandOutput, const size_t szSidebandOutputSize, const void* pReturnAddress) {
+  if (pSidebandOutput != nullptr) {
+    std::memset(pSidebandOutput, 0, szSidebandOutputSize);
+    FixSideband(uiFlags, pSidebandOutput, szSidebandOutputSize);
+  }
+
+  std::memset(pDataOutputBuffers->pAddress, 0, pDataOutputBuffers->szSize);
+  return 0;
+}
+
 EXPORT SYSV_ABI int32_t sceAjmBatchStartBuffer(SceAjmContextId uiContext, void* pBatchCommands, uint64_t szBatchSize, int iPriority,
                                                SceAjmBatchError pBatchError, SceAjmBatchId pBatch) {
   return Ok;

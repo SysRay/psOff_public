@@ -295,9 +295,9 @@ EXPORT SYSV_ABI int sceKernelUuidCreate(uint8_t* uuid) {
   return Ok;
 }
 
-EXPORT SYSV_ABI void sceKernelDebugRaiseExceptionOnReleaseMode(int /*c1*/, int /*c2*/) {
+EXPORT SYSV_ABI void sceKernelDebugRaiseExceptionOnReleaseMode(uint64_t reason, uint64_t id) {
   LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"todo %S", __FUNCTION__);
+  LOG_ERR(L"%S reason:0x%llx id:0x%llx", __FUNCTION__, reason, id);
 }
 
 EXPORT SYSV_ABI void _sceKernelSetThreadAtexitReport(thread_atexit_report_func_t func) {

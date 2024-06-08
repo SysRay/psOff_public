@@ -96,6 +96,8 @@ int32_t MemoryManager::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* in
 
   if (itItem == m_mappings.end() || (itItem != m_mappings.begin() && itItem->first != addr)) --itItem; // Get the correct item
 
+  if (itItem->first + itItem->second.size <= addr) return getErr(ErrCode::_EACCES); // Is last item
+
   int res = getErr(ErrCode::_EACCES);
 
   switch (itItem->second.type) {

@@ -118,19 +118,10 @@ class FileManager: public IFileManager {
     LOG_USE_MODULE(FileManager);
     std::unique_lock const lock(m_mutext_int);
 
-    // Check Cache
-    {
-      auto it = m_mappedPaths.find(path.data());
-      if (it != m_mappedPaths.end()) {
-        return it->second;
-      }
-    }
-    //-
-
     // Special case: Mounted Gamefiles
     if (path[0] != '/') {
       auto const mapped = m_dirGameFiles / path;
-      LOG_INFO(L"Gamefiles mapped:%s", mapped.c_str());
+      LOG_TRACE(L"Gamefiles mapped:%s", mapped.c_str());
       return mapped;
     }
     // -
@@ -146,18 +137,16 @@ class FileManager: public IFileManager {
           if (path[mountPoint.size() + offset] == '/') ++offset; // path.substr() should return relative path
 
           if (mountType.first == MountType::App && m_updateSearch) {
-            auto const& updateDir = m_mountPointList[MountType::Update].begin()->second;
-            auto const  mapped    = updateDir / path.substr(mountPoint.size() + offset);
-            if (std::filesystem::exists(mapped)) {
-              LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), updateDir.c_str(), path.data());
-              m_mappedPaths[path.data()] = mapped;
+            auto const&                          updateDir = m_mountPointList[MountType::Update].begin()->second;
+            std::optional<std::filesystem::path> mapped    = updateDir / path.substr(mountPoint.size() + offset);
+            if (std::filesystem::exists(*mapped)) {
+              LOG_TRACE(L"mapped: %s root:%s source:%S", mapped->c_str(), updateDir.c_str(), path.data());
               return mapped;
             }
           }
 
-          auto const mapped = rootDir / path.substr(mountPoint.size() + offset);
-          LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), rootDir.c_str(), path.data());
-          m_mappedPaths[path.data()] = mapped;
+          std::optional<std::filesystem::path> mapped = rootDir / path.substr(mountPoint.size() + offset);
+          LOG_TRACE(L"mapped: %s root:%s source:%S", mapped->c_str(), rootDir.c_str(), path.data());
           return mapped;
         }
       }
@@ -187,7 +176,13 @@ class FileManager: public IFileManager {
   }
 
   void remove(int handle) final {
+    LOG_USE_MODULE(FileManager);
     std::unique_lock const lock(m_mutext_int);
+    if (handle >= m_openFiles.size()) {
+      LOG_ERR(L"remove, unknown handle %d", handle);
+      return;
+    }
+
     m_openFiles[handle].reset();
   }
 

@@ -34,6 +34,7 @@ constexpr uint16_t SCE_NGS2_RACK_ID_MASTERING = 0x3000;
 constexpr uint16_t SCE_NGS2_RACK_ID_REVERB = 0x2001;
 constexpr uint16_t SCE_NGS2_RACK_ID_EQ     = 0x2002;
 
+constexpr uint16_t SCE_NGS2_RACK_ID_CUSTOM_VOICE     = 0x4000;
 constexpr uint16_t SCE_NGS2_RACK_ID_CUSTOM_SAMPLER   = 0x4001;
 constexpr uint16_t SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER  = 0x4002;
 constexpr uint16_t SCE_NGS2_RACK_ID_CUSTOM_MASTERING = 0x4003;
