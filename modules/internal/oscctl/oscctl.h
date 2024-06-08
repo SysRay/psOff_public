@@ -19,16 +19,17 @@ class IOscCtl {
   };
 
   struct Params {
-    Status      status;
-    std::string details;
-    std::string enterLabel;
+    Status      status     = Status::NONE;
+    std::string details    = "";
+    std::string enterLabel = "";
 
-    char*    internal_buffer;
-    wchar_t* buffer;
-    size_t   buffersz;
+    char*    internal_buffer = nullptr;
+    wchar_t* buffer          = nullptr;
+    size_t   buffersz        = 0;
 
-    float xpos, ypos;
-    bool  aborted;
+    float xpos    = 0.0f;
+    float ypos    = 0.0f;
+    bool  aborted = false;
   };
 
   IOscCtl()          = default;
