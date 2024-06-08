@@ -706,7 +706,7 @@ class Trophies: public ITrophies {
       SCE_NP_TROPHY_FLAG_SET(trop.id, (SceNpTrophyFlagArray*)progress);
     }
 
-    return true;
+    return Ok;
   }
 
   uint64_t getUnlockTime(usr_context* ctx, int32_t trophyId) final {
