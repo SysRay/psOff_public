@@ -188,6 +188,12 @@ EXPORT SYSV_ABI int scePadReadState(int32_t handle, ScePadData* pData) {
 }
 
 EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move sensor");
+    return Ok;
+  }
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     ctl->backend->setMotion(bEnable);
@@ -198,16 +204,34 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
 }
 
 EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move tiltcorrection");
+    return Ok;
+  }
+
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadSetAngularVelocityDeadbandState(int32_t handle, bool bEnable) {
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move velocity");
+    return Ok;
+  }
+
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
   return Ok;
 }
 
 EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move orientation reset");
+    return Ok;
+  }
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     ctl->backend->resetOrientation();
@@ -220,6 +244,12 @@ EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
 EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationParam* pParam) {
   if (pParam == nullptr) return Err::Pad::INVALID_ARG;
 
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move vibration");
+    return Ok;
+  }
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     return ctl->backend->setRumble(pParam) ? Ok : Err::Pad::INVALID_ARG;
@@ -231,6 +261,12 @@ EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationPara
 EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam) {
   if (pParam == nullptr) return Err::Pad::INVALID_ARG;
 
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move lightbar");
+    return Ok;
+  }
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     return ctl->backend->setLED(pParam) ? Ok : Err::Pad::INVALID_LIGHTBAR_SETTING;
@@ -240,6 +276,12 @@ EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam)
 }
 
 EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
+  LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"todo Handle PlayStation Move lightbar reset");
+    return Ok;
+  }
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     return ctl->backend->resetLED() ? Ok : Err::Pad::INVALID_LIGHTBAR_SETTING;
