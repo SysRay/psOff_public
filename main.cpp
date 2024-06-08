@@ -207,6 +207,8 @@ int main(int argc, char** argv) {
 
   LOG_INFO(L"Start| entry:0x%08llx", entryAddr);
 
+  intern::post();
+
   ScePthreadAttr attr;
   pthread::attrInit(&attr);
 

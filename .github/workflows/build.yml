@@ -93,6 +93,7 @@ jobs:
 
       - name: Configure
         run: |
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -ne 'C:\Program Files\LLVM\bin' }) -join ';'
           echo "::add-matcher::tools/matchers/cmake.json"
           cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe -DTEST_BENCH=ON -DISACTION=1
 

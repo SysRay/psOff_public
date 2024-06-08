@@ -129,6 +129,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:hotkeys>
   $<TARGET_OBJECTS:trophies>
+  $<TARGET_OBJECTS:oscctl>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:memory>
