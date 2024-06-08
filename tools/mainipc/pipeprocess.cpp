@@ -1,6 +1,7 @@
 #include "pipeprocess.h"
 
 #include <format>
+#include <thread>
 
 #define BUFSIZE 512
 
@@ -8,12 +9,12 @@ std::mutex procMutex;
 
 std::vector<std::unique_ptr<PipeProcess>> processes = {};
 
-PipeProcess* CreatePipedProcess(const char* procpath, const char* pipeid) {
+PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const char* pipeid) {
   PipeProcess* ppOut;
 
-  std::thread thproc([procpath, pipeid, &ppOut]() {
+  std::thread thproc([procpath, addarg, pipeid, &ppOut]() {
     std::string pipePath = std::format("\\\\.\\pipe\\psoff-{}", pipeid);
-    std::string procArgs = std::format("{} --pipe={}", procpath, pipePath);
+    std::string procArgs = std::format("{} --pipe={} {}", procpath, pipePath, addarg);
 
     printf("Spawning \"%s\" pipe...\n", pipePath.c_str());
 

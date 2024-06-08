@@ -15,4 +15,4 @@ struct PipeProcess {
   PipeProcess(HANDLE pipe): hPipe(pipe), vWriteData() {}
 };
 
-PipeProcess* CreatePipedProcess(const char* procpath, const char* pipeid);
+PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const char* pipeid);

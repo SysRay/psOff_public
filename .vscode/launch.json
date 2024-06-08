@@ -19,6 +19,12 @@
       "symbolSearchPath": "${workspaceRoot}/_build/_Install/debug"
     },
     {
+      "name": "(Windows) Attach",
+      "type": "cppvsdbg",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
       "name": "(Windows) Launch piped",
       "type": "cppvsdbg",
       "request": "launch",
