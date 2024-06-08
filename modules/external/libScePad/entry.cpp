@@ -56,10 +56,13 @@ static ControllerType _getPadType(int32_t userId) {
 };
 
 static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
+  LOG_USE_MODULE(libScePad);
   if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
   if (type == PadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
-  if (type != PadPortType::STANDARD && type != PadPortType::SPECIAL) return Err::Pad::INVALID_ARG;
-  LOG_USE_MODULE(libScePad);
+  if (type != PadPortType::STANDARD && type == PadPortType::SPECIAL) {
+    LOG_ERR(L"Handle PlayStation Move");
+    return 1336 + userId;
+  }
 
   auto pData = getData();
 
@@ -121,6 +124,8 @@ EXPORT SYSV_ABI int scePadOpenExt(int userId, PadPortType type, int index, const
 }
 
 EXPORT SYSV_ABI int scePadClose(int32_t handle) {
+  if (handle >= 1337) return Ok; // Closing PlayStation Move
+
   LOG_USE_MODULE(libScePad);
   LOG_INFO(L"<- Pad[%d]", handle);
 
@@ -136,6 +141,7 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
 }
 
 EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
+  if (type == PadPortType::SPECIAL) return 1336 + userId;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
 
@@ -153,6 +159,10 @@ EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t in
 
 EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num) {
   LOG_USE_MODULE(libScePad);
+  if (handle >= 1337) {
+    LOG_ERR(L"Handle PlayStation Move read");
+    return Ok;
+  }
 
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
@@ -240,6 +250,14 @@ EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
 
 EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControllerInformation* pInfo) {
   LOG_USE_MODULE(libScePad);
+
+  if (handle >= 1337) {
+    LOG_ERR(L"Handle PlayStation Move info");
+    pInfo->deviceClass    = ScePadDeviceClass::STANDARD;
+    pInfo->connectionType = (uint8_t)PadPortType::SPECIAL;
+    pInfo->connected      = false;
+    return Ok;
+  }
 
   if (auto ctl = getController(handle)) {
     std::unique_lock const lock(getData()->m_mutexInt);
