@@ -100,6 +100,7 @@ endif()
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
+add_subdirectory(tools/mainipc)
 
 add_subdirectory(eventsystem)
 add_dependencies(dll2Nids third_party)
@@ -245,3 +246,4 @@ install(TARGETS psoff
 )
 
 install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
+install(FILES $<TARGET_FILE:mainipc> DESTINATION ${CMAKE_INSTALL_PREFIX})

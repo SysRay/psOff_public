@@ -17,6 +17,17 @@
       "environment": [],
       "console": "integratedTerminal",
       "symbolSearchPath": "${workspaceRoot}/_build/_Install/debug"
+    },
+    {
+      "name": "(Windows) Launch piped",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceRoot}/_build/_Install/mainipc.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceRoot}/_build/_Install",
+      "environment": [],
+      "console": "integratedTerminal",
     }
   ]
 }
