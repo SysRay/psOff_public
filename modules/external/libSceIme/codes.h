@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 namespace Err {
+namespace Ime {
 constexpr int32_t BUSY                         = -2135162879;
 constexpr int32_t NOT_OPENED                   = -2135162878;
 constexpr int32_t NO_MEMORY                    = -2135162877;
@@ -36,6 +37,7 @@ constexpr int32_t INVALID_ADDRESS              = -2135162831;
 constexpr int32_t INVALID_RESERVED             = -2135162830;
 constexpr int32_t INVALID_TIMING               = -2135162829;
 constexpr int32_t INTERNAL                     = -2135162625;
+} // namespace Ime
 } // namespace Err
 
 constexpr uint32_t SCE_IME_OSK_DISPLAY_SIZE_WIDTH          = 1920;

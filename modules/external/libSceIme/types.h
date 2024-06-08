@@ -391,9 +391,13 @@ struct SceImeEvent {
   SceImeEventParam param;
 };
 
+// clang-format off
+
 typedef void    SYSV_ABI (*SceImeEventHandler)(void* arg, const SceImeEvent* e);
 typedef int32_t SYSV_ABI (*SceImeTextFilter)(wchar_t* outText, uint32_t* outTextLength, const wchar_t* srcText, uint32_t srcTextLength);
 typedef int     SYSV_ABI (*SceImeExtKeyboardFilter)(const SceImeKeycode* srcKeycode, uint16_t* outKeycode, uint32_t* outStatus, void* reserved);
+
+// clang-format on
 
 struct SceImeParam {
   SceUserServiceUserId      userId;
