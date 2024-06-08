@@ -12,15 +12,14 @@ When you click on the installer's exe you'll see a window with a bunch of checkb
 
 ### Step 2: Clone the psOff repo
 Open any folder you want (I personally prefer %USERPROFILE%\Documents\GitHub) then hold Shift and click RMB on the empty space in this folder. In the new context menu, click "Open in Terminal". Type in the following command: 
-`git.exe clone --recurse-submodules https://github.com/SysRay/psOff_public.git`
+`git.exe clone https://github.com/SysRay/psOff_public.git`
 
 ### Step 3: Building the emulator
 
 #### Step 3.1: Configure the project
 
 Type this into your terminal window:
-`cmake.exe -S. -B_build/_Release -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe`
- wait 'til it finishes. There shouldn't be any errors.
+`cmake.exe -S. -B_build/_Release -GNinja -DISDEBUG=1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_build/_Install -DCMAKE_C_COMPILER=clang-cl.exe -DCMAKE_CXX_COMPILER=clang-cl.exe` wait 'til it finishes. There shouldn't be any errors.
 
 #### Step 3.2: Build the project
 
@@ -34,7 +33,7 @@ Finally, type this command:
  Its execution usually takes under 2 or 3 seconds
 
 Done! Now you can try to modify the emulator's code and see how it works. Just open `_build/_Install/` folder and you'll see `psoff.exe` there.
- 
+
 ---
 author: [igor](https://github.com/igor725)
 ---

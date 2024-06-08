@@ -633,7 +633,7 @@ EXPORT SYSV_ABI int32_t sceNgs2VoiceControl(SceNgs2Handle* voh, const SceNgs2Voi
   while (true) {
     uint16_t const rackId = curItem->id >> 16;
 
-    if (rackId == SCE_NGS2_RACK_ID_VOICE)
+    if (rackId == SCE_NGS2_RACK_ID_VOICE || rackId == SCE_NGS2_RACK_ID_CUSTOM_VOICE)
       ret = voiceControl_voice(voh, curItem);
     else if (rackId == SCE_NGS2_RACK_ID_MASTERING || rackId == SCE_NGS2_RACK_ID_CUSTOM_MASTERING)
       ret = voiceControl_mastering(voh, curItem);

@@ -196,6 +196,15 @@ EXPORT int SYSV_ABI sceGnmDrawIndex(uint32_t* cmdOut, uint64_t size, uint32_t in
   return Ok;
 }
 
+EXPORT int SYSV_ABI sceGnmDrawIndexIndirect(uint32_t* cmdOut, uint64_t size) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_WARN(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
+
+  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DRAW_INDIRECT);
+
+  return Ok;
+}
+
 EXPORT int SYSV_ABI sceGnmDrawIndexOffset(uint32_t* cmdOut, uint64_t size, uint32_t index_offset, uint32_t index_count, uint32_t flags) {
   LOG_USE_MODULE(libSceGraphicsDriver);
   LOG_TRACE(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
@@ -383,6 +392,15 @@ EXPORT int SYSV_ABI sceGnmDispatchDirect(uint32_t* cmdOut, uint64_t size, uint32
   cmdOut[2] = thread_group_y;
   cmdOut[3] = thread_group_z;
   cmdOut[4] = mode;
+
+  return Ok;
+}
+
+EXPORT int SYSV_ABI sceGnmDispatchIndirect(uint32_t* cmdOut, uint64_t size) {
+  LOG_USE_MODULE(libSceGraphicsDriver);
+  LOG_WARN(L"%S 0x%08llx %u", __FUNCTION__, (uint64_t)cmdOut, size);
+
+  cmdOut[0] = Pm4::create(size, Pm4::Custom::R_DISPATCH_INDIRECT);
 
   return Ok;
 }

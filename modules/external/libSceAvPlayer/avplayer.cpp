@@ -32,7 +32,7 @@ bool openCodecContext(int* stream_idx, AVFormatContext* fmt_ctx, enum AVMediaTyp
   AVCodec const* codec;
   *stream_idx = av_find_best_stream(fmt_ctx, type, -1, -1, &codec, 0);
   if (*stream_idx < 0) {
-    LOG_ERR(L"openCodecContext: no %S stream", av_get_media_type_string(type));
+    LOG_INFO(L"openCodecContext: no %S stream", av_get_media_type_string(type));
     return false;
   }
   LOG_DEBUG(L"using codec: %S [%S]", codec->name, codec->long_name);
@@ -528,10 +528,10 @@ std::unique_ptr<std::thread> Avplayer::threadFunc() {
             LOG_INFO(L"av_read_frame eof");
           }
         }
-        if (packet->stream_index == m_video.streamIndex) {
+        if (m_isVideoActive && packet->stream_index == m_video.streamIndex) {
           m_video.decodeQueue.push(packet);
           LOG_DEBUG(L"Queue Video Packet: numItems:%llu pts:%lld", m_video.decodeQueue.size(), packet->pts);
-        } else if (packet->stream_index == m_audio.streamIndex) {
+        } else if (m_isAudioActive && packet->stream_index == m_audio.streamIndex) {
           m_audio.decodeQueue.push(packet);
           LOG_DEBUG(L"Queue Audio Packet: numItems:%llu pts:%lld", m_audio.decodeQueue.size(), packet->pts);
         } else

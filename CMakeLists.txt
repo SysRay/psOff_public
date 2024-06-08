@@ -9,7 +9,7 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 set(PSOFF_LIB_VERSION v.0.3)
-set(PSOFF_RENDER_VERSION v.0.6-nightly_03.06.2024)
+set(PSOFF_RENDER_VERSION v.0.6-nightly_08.06.2024)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -129,6 +129,7 @@ add_library(core SHARED
   $<TARGET_OBJECTS:networking>
   $<TARGET_OBJECTS:hotkeys>
   $<TARGET_OBJECTS:trophies>
+  $<TARGET_OBJECTS:oscctl>
   $<TARGET_OBJECTS:videoout>
   $<TARGET_OBJECTS:fileManager>
   $<TARGET_OBJECTS:memory>
@@ -200,7 +201,7 @@ target_link_libraries(psoff PRIVATE
   $<TARGET_OBJECTS:asmHelper>
 )
 
-target_link_options(psoff PUBLIC /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
+target_link_options(psoff PUBLIC /DYNAMICBASE:NO /DEBUG --image-base=${IMAGE_BASE})
 
 set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
