@@ -55,7 +55,6 @@ class OscCtl: public IOscCtl {
   }
 
   bool run(const wchar_t* title) final {
-    if (title == nullptr || *title == 0x0000) return false;
     if (m_params.status != IOscCtl::Status::NONE) return false;
     m_params.status  = IOscCtl::Status::HIDDEN;
     m_params.aborted = false;

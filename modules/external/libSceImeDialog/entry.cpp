@@ -16,7 +16,7 @@ EXPORT SYSV_ABI int32_t sceImeDialogInit(const SceImeDialogParam* param, const S
   LOG_USE_MODULE(libSceImeDialog);
   if (param == nullptr) return Err::ImeDialog::INVALID_ADDRESS;
   if (param->inputTextBuffer == nullptr) return Err::ImeDialog::INVALID_INPUT_TEXT_BUFFER;
-  if (param->title == nullptr) return Err::ImeDialog::INVALID_TITLE;
+  if (param->title == nullptr || *param->title == 0x0000) return Err::ImeDialog::INVALID_TITLE;
   if (param->maxTextLength == 0) return Err::ImeDialog::INVALID_MAX_TEXT_LENGTH;
 
   if (ext) LOG_ERR(L"Handle ImeParamExtended");
