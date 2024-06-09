@@ -2,11 +2,11 @@
 
 enum class IpcEvent {
   /* Shared */
-  SHARED_HANDSHAKE,
+  SHARED_HANDSHAKE, // <-->
 
   /* Gamereport */
 
   /* Emulator */
-  EMU_RUN_GAME,
-  EMU_EXEC_REQUEST
+  EMU_RUN_GAME,    // <--
+  EMU_EXEC_REQUEST // -->
 };

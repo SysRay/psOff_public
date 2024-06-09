@@ -8,7 +8,9 @@
 struct IPCHeader;
 
 struct PipeProcess {
-  bool              closed;
+  bool              closed      = false;
+  bool              readfinish  = false;
+  bool              writefinish = false;
   HANDLE            hPipe;
   DWORD             procId;
   std::vector<char> vWriteData;
