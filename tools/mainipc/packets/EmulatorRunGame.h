@@ -17,7 +17,7 @@ class IPCEmulatorRunGame: public IPCPacket {
     uint32_t         argc;
     std::string_view argcw((char*)&argc, 4);
 
-    if (args == nullptr) {
+    if (args == nullptr || args->size() == 0) {
       argc = 0;
       m_data.insert(m_data.end(), argcw.begin(), argcw.end());
       return;

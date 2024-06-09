@@ -12,16 +12,15 @@ int main() {
   emuproc->reader = [&](PipeProcess* pproc, IPCHeader* phead) {
     switch ((IpcEvent)phead->packetId) {
       case IpcEvent::EMU_EXEC_REQUEST: {
-        IPCEmulatorExecRequest eer;
-        eer.readPacketFrom(pproc, phead);
+        IPCEmulatorExecRequest eer(pproc, phead);
 
         auto self = emuproc->reader;
 
         emuproc         = CreatePipedProcess(".\\psoff.exe", "", "emulator");
         emuproc->reader = self;
 
-        IPCEmulatorRunGame packet(gamexec, gameroot, updateroot);
-        packet.addArguments(nullptr);
+        IPCEmulatorRunGame packet(eer.getExecutable(), gameroot, updateroot);
+        packet.addArguments(eer.getArguments());
         packet.putPacketTo(emuproc);
       } break;
 

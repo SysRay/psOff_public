@@ -23,13 +23,21 @@ class IPCPacket {
     pproc->vWriteData.insert(pproc->vWriteData.end(), m_data->begin(), m_data->end());
   }
 
-  bool readPacketFrom(PipeProcess* pproc, IPCHeader* phead) {
-    if (m_header.packetId != phead->packetId) return false;
+  private:
+  IPCHeader m_header;
+
+  std::vector<char>* m_data;
+};
+
+class IPCPacketRead {
+  public:
+  IPCPacketRead(IpcEvent id, std::vector<char>* data, PipeProcess* pproc, IPCHeader* phead): m_header({(uint32_t)id, 0}), m_data(data) {
+    if (m_header.packetId != phead->packetId) throw std::exception("Invalid packet id");
     m_header.packetSize = phead->packetSize;
     m_data->resize(m_header.packetSize);
 
     DWORD rd;
-    return ReadFile(pproc->hPipe, m_data->data(), m_header.packetSize, &rd, nullptr) && rd > 0;
+    if (!ReadFile(pproc->hPipe, m_data->data(), m_header.packetSize, &rd, nullptr) || rd == 0) throw std::exception("Failed to read packet");
   }
 
   private:
