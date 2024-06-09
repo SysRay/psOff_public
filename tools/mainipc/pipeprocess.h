@@ -5,6 +5,8 @@
 #include <vector>
 #include <windows.h>
 
+struct PacketHeader;
+
 struct PipeProcess {
   bool              closed;
   HANDLE            hPipe;

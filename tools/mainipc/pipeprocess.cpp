@@ -47,13 +47,14 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
       printf("Got client connection to pipe!\n");
 
       std::thread reader([&pp]() {
+        std::mutex              cond_mtx;
+        std::condition_variable cond;
+
         for (;;) {
           std::unique_lock lock(pp->wrMutex);
 
           do {
-            std::mutex              cond_mtx;
-            std::condition_variable cond;
-            std::unique_lock        cond_lock(cond_mtx);
+            std::unique_lock cond_lock(cond_mtx);
             cond.wait(cond_lock, [&pp]() -> bool {
               DWORD avail;
               return pp->reader && PeekNamedPipe(pp->hPipe, nullptr, 0, nullptr, &avail, nullptr) && avail > 0;
