@@ -1,10 +1,10 @@
-#include "../packet.h"
+#include "../ipcpacket.h"
 
-class EmulatorOpenGamePacket: public PacketWriter {
+class IPCEmulatorRunGame: public IPCPacket {
   std::vector<char> m_data = {};
 
   public:
-  EmulatorOpenGamePacket(std::string_view appexec, std::string_view approot, std::string_view updateroot): m_data {}, PacketWriter(0x01, &m_data) {
+  IPCEmulatorRunGame(std::string_view appexec, std::string_view approot, std::string_view updateroot): m_data {}, IPCPacket(IpcEvent::EMU_RUN_GAME, &m_data) {
     m_data.insert(m_data.end(), appexec.begin(), appexec.end());
     m_data.push_back('\0');
     m_data.insert(m_data.end(), approot.begin(), approot.end());

@@ -1,12 +1,12 @@
-#include "packets/EmulatorOpenGame.h"
+#include "packets/EmulatorRunGame.h"
 #include "pipeprocess.h"
 
 int main() {
   PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "", "emulator");
 
-  emuproc->reader = [](PipeProcess* pproc, PacketHeader* phead) {};
+  emuproc->reader = [](PipeProcess* pproc, IPCHeader* phead) {};
 
-  EmulatorOpenGamePacket packet("D:/ps4/games/Sonic Mania/eboot.bin", "", "D:/ps4/games/Sonic Mania patch/");
+  IPCEmulatorRunGame packet("D:/ps4/games/Sonic Mania/eboot.bin", "", "D:/ps4/games/Sonic Mania patch/");
   packet.putPacketTo(emuproc);
 
   while (true)

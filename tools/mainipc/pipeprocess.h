@@ -5,7 +5,7 @@
 #include <vector>
 #include <windows.h>
 
-struct PacketHeader;
+struct IPCHeader;
 
 struct PipeProcess {
   bool              closed;
@@ -13,7 +13,7 @@ struct PipeProcess {
   DWORD             procId;
   std::vector<char> vWriteData;
 
-  std::function<void(PipeProcess* pproc, PacketHeader* phead)> reader;
+  std::function<void(PipeProcess* pproc, IPCHeader* phead)> reader;
 
   std::mutex wrMutex;
 

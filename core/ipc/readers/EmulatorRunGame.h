@@ -3,13 +3,13 @@
 #include <cstdint>
 #include <string>
 
-class IPCRunGame {
+class IPCEmulatorRunGameRead {
   std::string_view m_mainExec;
   std::string_view m_mainRoot;
   std::string_view m_updateRoot;
 
   public:
-  IPCRunGame(const char* data, uint32_t size) {
+  IPCEmulatorRunGameRead(const char* data, uint32_t size) {
     m_mainExec   = data;
     m_mainRoot   = data += (m_mainExec.size() + 1);
     m_updateRoot = data += (m_mainRoot.size() + 1);

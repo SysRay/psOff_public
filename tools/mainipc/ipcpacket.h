@@ -1,22 +1,19 @@
 #pragma once
 
+#include "core/ipc/events.h"
 #include "pipeprocess.h"
 
 #include <cstdint>
 #include <vector>
 
-struct PacketHeader {
+struct IPCHeader {
   uint32_t packetId;
   uint32_t packetSize;
 };
 
-class PacketWriter {
-  PacketHeader m_header;
-
-  std::vector<char>* m_data;
-
+class IPCPacket {
   public:
-  PacketWriter(uint32_t id, std::vector<char>* data): m_header({id, 0}), m_data(data) {};
+  IPCPacket(IpcEvent id, std::vector<char>* data): m_header({(uint32_t)id, 0}), m_data(data) {};
 
   void putPacketTo(PipeProcess* pproc) {
     std::unique_lock lock(pproc->wrMutex);
@@ -26,7 +23,7 @@ class PacketWriter {
     pproc->vWriteData.insert(pproc->vWriteData.end(), m_data->begin(), m_data->end());
   }
 
-  bool readPacketFrom(PipeProcess* pproc, PacketHeader* phead) {
+  bool readPacketFrom(PipeProcess* pproc, IPCHeader* phead) {
     if (m_header.packetId != phead->packetId) return false;
     m_header.packetSize = phead->packetSize;
     m_data->resize(m_header.packetSize);
@@ -34,4 +31,9 @@ class PacketWriter {
     DWORD rd;
     return ReadFile(pproc->hPipe, m_data->data(), m_header.packetSize, &rd, nullptr) && rd > 0;
   }
+
+  private:
+  IPCHeader m_header;
+
+  std::vector<char>* m_data;
 };

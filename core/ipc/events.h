@@ -8,4 +8,5 @@ enum class IpcEvent {
 
   /* Emulator */
   EMU_RUN_GAME,
+  EMU_EXEC_REQUEST
 };

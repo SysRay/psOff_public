@@ -5,7 +5,7 @@
 #include "core/initParams/initParams.h"
 #include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
-#include "core/ipc/readers/rungame.h"
+#include "core/ipc/readers/EmulatorRunGame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
@@ -233,7 +233,8 @@ int main(int argc, char** argv) {
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
           case IpcEvent::EMU_RUN_GAME: {
-            IPCRunGame     rg(data, size);
+            IPCEmulatorRunGameRead rg(data, size);
+
             ScePthread_obj thread;
             runGame(&thread, rg.getExecutable(), rg.getRoot(), rg.getUpdate());
             pthread::detach(thread);

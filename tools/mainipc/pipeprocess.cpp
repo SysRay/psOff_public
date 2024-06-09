@@ -1,6 +1,6 @@
 #include "pipeprocess.h"
 
-#include "packet.h"
+#include "ipcpacket.h"
 
 #include <format>
 #include <thread>
@@ -61,7 +61,7 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
             });
           } while (0);
 
-          PacketHeader phdr;
+          IPCHeader phdr;
 
           DWORD rd = 0;
 
