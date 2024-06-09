@@ -121,6 +121,13 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetStatus(SceSystemServiceStatus* status
 }
 
 EXPORT SYSV_ABI int32_t sceSystemServiceLoadExec(const char* path, char* const argv[]) {
+  LOG_USE_MODULE(libSceSystemService);
+  LOG_ERR(L"### Manual Start:%S", path);
+
+  for (uint32_t n = 0; n < 4096; ++n) {
+    if (argv[n] == nullptr) break;
+    LOG_ERR(L"arg %u| %S", n, argv[n]);
+  }
   return Ok;
 }
 

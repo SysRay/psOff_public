@@ -193,10 +193,8 @@ class RuntimeLinker: public IRuntimeLinker {
   uint64_t m_invalidMemoryAddr   = 0;
   size_t   m_countcreatePrograms = 0;
 
-  EntryParams m_entryParams = {
-      .argc = 1,
-      .argv = {"psOff", "", ""},
-  };
+  std::list<std::string>   m_argsSave;
+  std::vector<const char*> m_entryParams = {"psOff"};
 
   /**
    * @brief Programlist (<fixed> 0: mainProgram)
@@ -413,7 +411,12 @@ class RuntimeLinker: public IRuntimeLinker {
 
   std::vector<std::pair<uint64_t, uint64_t>> getExecSections() const final { return m_programList.begin()->second->getExecSections(); }
 
-  EntryParams const* getEntryParams() const final { return &m_entryParams; };
+  std::vector<const char*> const& getEntryParams() const final { return m_entryParams; };
+
+  void addEntryParam(std::string const& arg) final {
+    auto& item = m_argsSave.emplace_back(arg);
+    m_entryParams.push_back(item.data());
+  }
 
   Program* accessMainProg() final {
     std::unique_lock const lock(m_mutex_int);
