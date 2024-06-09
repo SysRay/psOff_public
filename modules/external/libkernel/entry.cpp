@@ -40,11 +40,11 @@ EXPORT SYSV_ABI int* __NID(__error()) {
 }
 
 EXPORT SYSV_ABI int __NID(getargc)(void) {
-  return accessRuntimeLinker().getEntryParams()->argc;
+  return accessRuntimeLinker().getEntryParams().size();
 }
 
 EXPORT SYSV_ABI char const* const* __NID(getargv)(void) {
-  return accessRuntimeLinker().getEntryParams()->argv;
+  return accessRuntimeLinker().getEntryParams().data();
 }
 
 EXPORT SYSV_ABI int __NID(getpagesize)(void) {

@@ -6,24 +6,40 @@ jmpEntry PROC
   ; Input
   ;   RDI addr
   ;   RSI EntryParams
-  ;   RDX exitHandler
+  ;   RDX length of EntryParams
+  ;   RCX exitHandler
 
   mov RAX, RDI
 
+  ; Calc needed stacksize
+  mov RDI, RDX
+  add RDI, 1 ; entryparams + it's length
+  shl RDI, 3
+
   ; align stack
-  SUB RSP, 32
+  SUB RSP, RDI
   AND RSP, -10h
 
   ; copy entry param to stack
-  ADD RSP, 40
-  push [RSI+24]
-  push [RSI+16]
-  push [RSI+8]
-  push [RSI]
+  add RDI, 8
+  add RSP, RDI
+
+; ### do while
+  ; counter (offset)
+  mov RDI, RDX
+  shl RDI, 3
+
+loopStart:
+  sub RDI, 8
+  push [RSI + RDI]
+  test RDI, RDI
+  jnz loopStart
+
+  push RDX
   ; -
 
-  lea rdi, [RSP] ; param 1 (EntryParam) is @ rsp
-  mov rsi, RDX ; param2 (atexit)
+  lea RDI, [RSP] ; param 1 (EntryParam) is @ rsp
+  mov RSI, RCX ; param2 (atexit)
   jmp RAX
 
 jmpEntry ENDP

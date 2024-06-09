@@ -83,7 +83,9 @@ class IRuntimeExport {
 
   virtual uint64_t getTLSStaticBlockSize() const = 0;
 
-  virtual EntryParams const* getEntryParams() const = 0;
+  virtual std::vector<const char*> const& getEntryParams() const = 0;
+
+  virtual void addEntryParam(std::string const& arg) = 0;
 
   virtual void cxa_add_atexit(CxaDestructor&&, int moduleId) = 0;
   virtual void cxa_finalize(int moduleId)                    = 0;
