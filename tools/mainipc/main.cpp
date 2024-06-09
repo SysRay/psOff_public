@@ -4,6 +4,8 @@
 int main() {
   PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "", "emulator");
 
+  emuproc->reader = [](PipeProcess* pproc, PacketHeader* phead) {};
+
   EmulatorOpenGamePacket packet("D:/ps4/games/Sonic Mania/eboot.bin", "", "D:/ps4/games/Sonic Mania patch/");
   packet.putPacketTo(emuproc);
 

@@ -1,5 +1,7 @@
 #include "pipeprocess.h"
 
+#include "packet.h"
+
 #include <format>
 #include <thread>
 
@@ -48,19 +50,22 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
         for (;;) {
           std::unique_lock lock(pp->wrMutex);
 
-          DWORD avail;
+          do {
+            std::mutex              cond_mtx;
+            std::condition_variable cond;
+            std::unique_lock        cond_lock(cond_mtx);
+            cond.wait(cond_lock, [&pp]() -> bool {
+              DWORD avail;
+              return pp->reader && PeekNamedPipe(pp->hPipe, nullptr, 0, nullptr, &avail, nullptr) && avail > 0;
+            });
+          } while (0);
 
-          if (!PeekNamedPipe(pp->hPipe, nullptr, 0, nullptr, &avail, nullptr) || avail == 0) {
-            Sleep(10);
-            continue;
-          }
-
-          uint32_t packetId;
+          PacketHeader phdr;
 
           DWORD rd = 0;
 
-          if (ReadFile(pp->hPipe, &packetId, sizeof(packetId), &rd, nullptr) && rd > 0) {
-
+          if (ReadFile(pp->hPipe, &phdr, sizeof(phdr), &rd, nullptr) && rd > 0) {
+            pp->reader(pp.get(), &phdr);
           } else {
             switch (GetLastError()) {
               case ERROR_BROKEN_PIPE:

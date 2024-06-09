@@ -5,11 +5,13 @@
 #include <cstdint>
 #include <vector>
 
+struct PacketHeader {
+  uint32_t packetId;
+  uint32_t packetSize;
+};
+
 class PacketWriter {
-  struct PacketHeader {
-    uint32_t packetId;
-    uint32_t packetSize;
-  } m_header;
+  PacketHeader m_header;
 
   std::vector<char>* m_data;
 
@@ -22,5 +24,14 @@ class PacketWriter {
     std::string_view sv((char*)&m_header, sizeof(m_header));
     pproc->vWriteData.insert(pproc->vWriteData.end(), sv.begin(), sv.end());
     pproc->vWriteData.insert(pproc->vWriteData.end(), m_data->begin(), m_data->end());
+  }
+
+  bool readPacketFrom(PipeProcess* pproc, PacketHeader* phead) {
+    if (m_header.packetId != phead->packetId) return false;
+    m_header.packetSize = phead->packetSize;
+    m_data->resize(m_header.packetSize);
+
+    DWORD rd;
+    return ReadFile(pproc->hPipe, m_data->data(), m_header.packetSize, &rd, nullptr) && rd > 0;
   }
 };

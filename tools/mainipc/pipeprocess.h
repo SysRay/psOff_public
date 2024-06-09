@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <mutex>
 #include <vector>
 #include <windows.h>
@@ -9,6 +10,8 @@ struct PipeProcess {
   HANDLE            hPipe;
   DWORD             procId;
   std::vector<char> vWriteData;
+
+  std::function<void(PipeProcess* pproc, PacketHeader* phead)> reader;
 
   std::mutex wrMutex;
 
