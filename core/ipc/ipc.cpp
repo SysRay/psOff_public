@@ -88,18 +88,18 @@ class Communication: public ICommunication {
     return true;
   }
 
-  bool write(PacketHeader* packet) final { return _iwrite(packet, packet->bodySize); }
+  bool write(IPCHeader* packet) final { return _iwrite(packet, packet->bodySize + sizeof(IPCHeader)); }
 
   void addHandler(PHandler pfunc) final { m_handlers.emplace_back(pfunc); }
 
   void runReadLoop() final {
-    PacketHeader packet = {};
+    IPCHeader packet = {};
 
     while (_iread(&packet, sizeof(packet))) {
       char* data = packet.bodySize > 0 ? new char[packet.bodySize] : nullptr;
       if (packet.bodySize == 0 || _iread(data, packet.bodySize)) {
         for (auto handler: m_handlers)
-          handler(packet.id, packet.bodySize, data);
+          handler(packet.packetId, packet.bodySize, data);
         if (data) delete[] data;
         continue;
       }

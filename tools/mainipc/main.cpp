@@ -9,9 +9,9 @@
 int main() {
   PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "", "emulator");
 
-  std::string gamexec    = "D:/ps4/games/Sonic Mania/eboot.bin";
+  std::string gamexec    = "D:/ps4/games/Call of Duty Ghosts/eboot.bin";
   std::string gameroot   = "";
-  std::string updateroot = "D:/ps4/games/Sonic Mania patch/";
+  std::string updateroot = "";
 
   emuproc->reader = [&](PipeProcess* pproc, IPCHeader* phead) {
     switch ((IpcEvent)phead->packetId) {
@@ -39,11 +39,15 @@ int main() {
     }
   };
 
-  IPCEmulatorLoadGame gload_packet(gamexec, gameroot, updateroot);
-  gload_packet.putPacketTo(emuproc);
+  {
+    IPCEmulatorLoadGame gload_packet(gamexec, gameroot, updateroot);
+    gload_packet.putPacketTo(emuproc);
+  }
 
-  IPCEmulatorRunGame grun_packet;
-  grun_packet.putPacketTo(emuproc);
+  {
+    IPCEmulatorRunGame grun_packet;
+    grun_packet.putPacketTo(emuproc);
+  }
 
   while (true)
     Sleep(5);

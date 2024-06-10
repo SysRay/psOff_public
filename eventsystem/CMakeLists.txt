@@ -1,12 +1,15 @@
 add_subdirectory(events/template)
+add_subdirectory(events/system)
 add_subdirectory(test)
 
 add_library(eventsystem_core SHARED
   $<TARGET_OBJECTS:events_intern_template>
+  $<TARGET_OBJECTS:events_intern_system>
 )
 
 add_library(eventsystem STATIC
   $<TARGET_OBJECTS:events_template>
+  $<TARGET_OBJECTS:events_system>
 )
 
 target_link_libraries(eventsystem PUBLIC eventsystem_core.lib)

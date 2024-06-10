@@ -6,7 +6,7 @@ project(${libName})
 
 add_library(${libName} SHARED entry.cpp)
 
-add_dependencies(${libName} core config_emu)
-target_link_libraries(${libName} PRIVATE core.lib SDL2 ${Vulkan_LIBRARIES} config_emu.lib)
+add_dependencies(${libName} core eventsystem config_emu)
+target_link_libraries(${libName} PRIVATE core.lib eventsystem SDL2 ${Vulkan_LIBRARIES} config_emu.lib)
 
 setupModule(${libName})

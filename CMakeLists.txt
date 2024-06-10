@@ -191,7 +191,7 @@ add_executable(psoff
   main.cpp
 )
 
-add_dependencies(psoff logging core psOff_utility gamereport)
+add_dependencies(psoff logging core eventsystem psOff_utility gamereport)
 
 target_link_libraries(psoff PRIVATE
   eventsystem
@@ -237,6 +237,7 @@ install(TARGETS psoff
   $<TARGET_FILE_DIR:psoff>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
+  ${CMAKE_BINARY_DIR}/eventsystem/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_CURRENT_BINARY_DIR}/core

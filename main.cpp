@@ -3,9 +3,9 @@
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
-#include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
 #include "core/ipc/readers/EmulatorAddArgs.h"
+#include "core/ipc/readers/EmulatorLoadExec.h"
 #include "core/ipc/readers/EmulatorLoadGame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
@@ -13,8 +13,10 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
+#include "eventsystem/events/system/handler.h"
 #include "gamereport.h"
 #include "modules/internal/videoout/videoout.h"
+#include "tools/mainipc/ipcevents.h"
 #undef __APICALL_IMPORT
 #include "logging.h"
 #include "utility/progloc.h"
@@ -27,6 +29,20 @@
 #include <windows.h>
 
 LOG_DEFINE_MODULE(MAIN);
+
+namespace {
+class LoadExecHandler: private events::system::IEventHandler {
+  public:
+  LoadExecHandler() = default;
+
+  void onLoadExec(events::system::LoadExecData const& data) {
+    // IPCEmulatorLoadExec le_packet(data.exec, data.args);
+    // accessIPC().write(le_packet.getData());
+    // exit(0);
+    LOG_USE_MODULE(MAIN);
+    LOG_CRIT(L"Not yet implemented");
+  }
+};
 
 void SYSV_ABI exitHandler() {
   LOG_USE_MODULE(MAIN);
@@ -198,6 +214,7 @@ void runGame(ScePthread_obj* thread) {
 
   pthread::create(thread, &attr, thread_func, (void*)entryAddr, "main");
 }
+} // namespace
 
 int main(int argc, char** argv) {
   ::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -236,6 +253,8 @@ int main(int argc, char** argv) {
     if (pipe.empty()) break;
 
     if (accessIPC().init(pipe.c_str())) {
+      LOG_INFO(L"Setting up IPC events...");
+      static LoadExecHandler leHandler;
       LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
