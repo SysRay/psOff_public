@@ -7,6 +7,7 @@ enum class IpcEvent {
   /* Gamereport */
 
   /* Emulator */
+  EMU_LOAD_GAME,   // <--
   EMU_RUN_GAME,    // <--
   EMU_EXEC_REQUEST // -->
 };

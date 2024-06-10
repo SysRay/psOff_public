@@ -5,7 +5,7 @@
 #include "core/initParams/initParams.h"
 #include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
-#include "core/ipc/readers/EmulatorRunGame.h"
+#include "core/ipc/readers/EmulatorLoadGame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
@@ -80,7 +80,7 @@ bool loadModule(std::string_view strFullpath) {
   return true;
 }
 
-void runGame(ScePthread_obj* thread, const std::string_view main, const std::string_view mainRoot, const std::string_view updateRoot) {
+void loadGame(const std::string_view main, const std::string_view mainRoot, const std::string_view updateRoot) {
   LOG_USE_MODULE(MAIN);
 
   std::filesystem::path const dirRoot(!mainRoot.empty() ? mainRoot.data() : std::filesystem::path(main).parent_path());
@@ -174,8 +174,13 @@ void runGame(ScePthread_obj* thread, const std::string_view main, const std::str
   }
 
   accessTimer().init();
+}
 
-  auto const entryAddr = rt.execute();
+void runGame(ScePthread_obj* thread) {
+  LOG_USE_MODULE(MAIN);
+  auto&      rt        = accessRuntimeLinker();
+  auto*      procParam = (ProcParam*)rt.accessMainProg()->procParamVaddr;
+  auto const entryAddr = rt.relocate();
 
   LOG_INFO(L"Start| entry:0x%08llx", entryAddr);
 
@@ -233,11 +238,21 @@ int main(int argc, char** argv) {
       LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
-          case IpcEvent::EMU_RUN_GAME: {
-            IPCEmulatorRunGameRead rg(data, size);
+          case IpcEvent::EMU_LOAD_GAME: {
+            IPCEmulatorLoadGameRead rg(data, size);
 
+            auto  args = rg.getArgs();
+            auto& rt   = accessRuntimeLinker();
+
+            for (auto it = args.begin(); it != args.end(); ++it) {
+              rt.addEntryParam(*it);
+            }
+
+            loadGame(rg.getExecutable(), rg.getRoot(), rg.getUpdate());
+          } break;
+          case IpcEvent::EMU_RUN_GAME: {
             ScePthread_obj thread;
-            runGame(&thread, rg.getExecutable(), rg.getRoot(), rg.getUpdate());
+            runGame(&thread);
             pthread::detach(thread);
           } break;
 
@@ -263,8 +278,10 @@ int main(int argc, char** argv) {
   auto const fileRoot   = initParams->getApplicationRoot();
   auto const updateRoot = initParams->getUpdateRoot();
 
+  loadGame(filepath, fileRoot, updateRoot);
+
   ScePthread_obj thread;
-  runGame(&thread, filepath, fileRoot, updateRoot);
+  runGame(&thread);
   void* ret = 0;
   pthread::join(thread, &ret);
 

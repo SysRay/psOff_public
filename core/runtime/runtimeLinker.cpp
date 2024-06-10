@@ -259,7 +259,7 @@ class RuntimeLinker: public IRuntimeLinker {
 
   int loadStartModule(std::filesystem::path const& path, size_t args, const void* argp, int* pRes) final;
 
-  uintptr_t execute() final;
+  uintptr_t relocate() final;
 
   void stopModules() final;
   void stopModule(int moduleId) final;
@@ -886,9 +886,9 @@ bool RuntimeLinker::interceptInternal(Program* prog, uintptr_t progoffset, uintp
   return true;
 }
 
-uintptr_t RuntimeLinker::execute() {
+uintptr_t RuntimeLinker::relocate() {
   LOG_USE_MODULE(RuntimeLinker);
-  LOG_INFO(L"Execute()");
+  LOG_INFO(L"Relocate()");
 
   initTlsStaticBlock();
   // pthread::initSelfForMainThread(m_tlsStaticInitBlock.size()); // call before runtimelinker
