@@ -1,10 +1,8 @@
 #include "../ipcpacket.h"
 
 class IPCEmulatorAddArguments: public IPCPacket {
-  std::vector<char> m_data = {};
-
   public:
-  IPCEmulatorAddArguments(std::vector<const char*>* args): m_data {}, IPCPacket(IpcEvent::EMU_ADD_ARGS, &m_data) {
+  IPCEmulatorAddArguments(std::vector<const char*>* args): IPCPacket(IpcEvent::EMU_ADD_ARGS) {
     uint32_t         argc;
     std::string_view argcw((char*)&argc, 4);
 

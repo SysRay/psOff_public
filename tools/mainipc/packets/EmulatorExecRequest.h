@@ -1,13 +1,12 @@
 #include "../ipcpacket.h"
 
 class IPCEmulatorExecRequest: public IPCPacketRead {
-  std::vector<char>        m_data = {};
   std::vector<const char*> m_args = {};
 
   uintptr_t m_execOffset;
 
   public:
-  IPCEmulatorExecRequest(PipeProcess* pproc, IPCHeader* phead): m_data {}, IPCPacketRead(IpcEvent::EMU_EXEC_REQUEST, &m_data, pproc, phead) {
+  IPCEmulatorExecRequest(PipeProcess* pproc, IPCHeader* phead): IPCPacketRead(IpcEvent::EMU_EXEC_REQUEST, pproc, phead) {
     m_execOffset = 0;
     // todo
   }

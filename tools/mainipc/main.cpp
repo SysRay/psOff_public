@@ -4,6 +4,8 @@
 #include "packets/EmulatorRunGame.h"
 #include "pipeprocess.h"
 
+#include <chrono>
+
 int main() {
   PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "", "emulator");
 
@@ -18,7 +20,9 @@ int main() {
 
         auto self = emuproc->reader;
 
-        emuproc         = CreatePipedProcess(".\\psoff.exe", "", "emulator");
+        std::string pipeName = std::format("emulator-rerun-{}", std::chrono::system_clock::now().time_since_epoch().count());
+
+        emuproc         = CreatePipedProcess(".\\psoff.exe", "", pipeName.c_str());
         emuproc->reader = self;
 
         IPCEmulatorLoadGame load_packet(eer.getExecutable(), gameroot, updateroot);
