@@ -1,3 +1,4 @@
+#include "packets/EmulatorAddArguments.h"
 #include "packets/EmulatorExecRequest.h"
 #include "packets/EmulatorLoadGame.h"
 #include "packets/EmulatorRunGame.h"
@@ -20,9 +21,11 @@ int main() {
         emuproc         = CreatePipedProcess(".\\psoff.exe", "", "emulator");
         emuproc->reader = self;
 
-        IPCEmulatorLoadGame packet(eer.getExecutable(), gameroot, updateroot);
-        packet.addArguments(eer.getArguments());
-        packet.putPacketTo(emuproc);
+        IPCEmulatorLoadGame load_packet(eer.getExecutable(), gameroot, updateroot);
+        load_packet.putPacketTo(emuproc);
+
+        IPCEmulatorAddArguments args_packet(eer.getArguments());
+        args_packet.putPacketTo(emuproc);
 
         IPCEmulatorRunGame grun_packet;
         grun_packet.putPacketTo(emuproc);
@@ -33,7 +36,6 @@ int main() {
   };
 
   IPCEmulatorLoadGame gload_packet(gamexec, gameroot, updateroot);
-  gload_packet.addArguments(nullptr);
   gload_packet.putPacketTo(emuproc);
 
   IPCEmulatorRunGame grun_packet;

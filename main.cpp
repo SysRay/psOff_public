@@ -5,6 +5,7 @@
 #include "core/initParams/initParams.h"
 #include "core/ipc/events.h"
 #include "core/ipc/ipc.h"
+#include "core/ipc/readers/EmulatorAddArgs.h"
 #include "core/ipc/readers/EmulatorLoadGame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
@@ -238,16 +239,18 @@ int main(int argc, char** argv) {
       LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
       accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
         switch ((IpcEvent)id) {
-          case IpcEvent::EMU_LOAD_GAME: {
-            IPCEmulatorLoadGameRead rg(data, size);
+          case IpcEvent::EMU_ADD_ARGS: {
+            IPCEmulatorAddArgsRead apack(data, size);
 
-            auto  args = rg.getArgs();
+            auto  args = apack.getArgs();
             auto& rt   = accessRuntimeLinker();
 
             for (auto it = args.begin(); it != args.end(); ++it) {
               rt.addEntryParam(*it);
             }
-
+          } break;
+          case IpcEvent::EMU_LOAD_GAME: {
+            IPCEmulatorLoadGameRead rg(data, size);
             loadGame(rg.getExecutable(), rg.getRoot(), rg.getUpdate());
           } break;
           case IpcEvent::EMU_RUN_GAME: {
