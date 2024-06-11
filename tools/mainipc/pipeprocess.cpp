@@ -29,40 +29,44 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
   if (CreateProcessA(procpath, (char*)procArgs.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &sti, &pi)) {
     pp->procId = pi.dwProcessId;
 
-    std::thread reader([pp]() {
-      while (!pp->closed) {
-        std::unique_lock lock(pp->wrMutex);
+    std::thread reader(
+        [](PipeProcess* pp) {
+          while (!pp->closed) {
+            std::unique_lock lock(pp->wrMutex);
 
-        IPCHeader phdr;
+            IPCHeader phdr;
 
-        DWORD rd = 0;
+            DWORD rd = 0;
 
-        if (pp->read(&phdr, sizeof(phdr)) > 0) {
-          pp->reader(pp, &phdr);
-        }
-      }
+            if (pp->read(&phdr, sizeof(phdr)) > 0) {
+              pp->reader(pp, &phdr);
+            }
+          }
 
-      pp->readfinish = true;
-    });
+          pp->readfinish = true;
+        },
+        pp);
 
-    std::thread writer([pp]() {
-      while (!pp->closed) {
-        std::unique_lock lock(pp->wrMutex);
+    std::thread writer(
+        [](PipeProcess* pp) {
+          while (!pp->closed) {
+            std::unique_lock lock(pp->wrMutex);
 
-        if (pp->vWriteData.size() == 0) {
-          Sleep(10);
-          continue;
-        }
+            if (pp->vWriteData.size() == 0) {
+              Sleep(10);
+              continue;
+            }
 
-        size_t   sent = 0;
-        uint32_t prio = 0;
+            size_t   sent = 0;
+            uint32_t prio = 0;
 
-        pp->mq.send(pp->vWriteData.data(), pp->vWriteData.size(), prio);
-        pp->vWriteData.erase(pp->vWriteData.begin(), pp->vWriteData.end());
-      }
+            pp->mq.send(pp->vWriteData.data(), pp->vWriteData.size(), prio);
+            pp->vWriteData.erase(pp->vWriteData.begin(), pp->vWriteData.end());
+          }
 
-      pp->writefinish = true;
-    });
+          pp->writefinish = true;
+        },
+        pp);
 
     reader.detach();
     writer.detach();
