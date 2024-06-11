@@ -15,9 +15,7 @@ class ICommunication {
   ICommunication()          = default;
   virtual ~ICommunication() = default;
 
-  virtual bool init(const char* name)     = 0;
-  virtual bool deinit()                   = 0;
-  virtual bool write(IPCHeader* packet)   = 0;
+  virtual void write(IPCHeader* packet)   = 0;
   virtual void addHandler(PHandler pfunc) = 0;
   virtual void runReadLoop()              = 0;
 };
@@ -29,5 +27,5 @@ class ICommunication {
 #else
 #define __APICALL
 #endif
-__APICALL ICommunication& accessIPC();
+__APICALL std::unique_ptr<ICommunication> createIPC(const char* name);
 #undef __APICALL

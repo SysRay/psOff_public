@@ -31,6 +31,8 @@
 LOG_DEFINE_MODULE(MAIN);
 
 namespace {
+std::unique_ptr<ICommunication> comm;
+
 class LoadExecHandler: private events::system::IEventHandler {
   public:
   LoadExecHandler() = default;
@@ -252,40 +254,37 @@ int main(int argc, char** argv) {
     auto pipe = initParams->getPipeName();
     if (pipe.empty()) break;
 
-    if (accessIPC().init(pipe.c_str())) {
-      LOG_INFO(L"Setting up IPC events...");
-      static LoadExecHandler leHandler;
-      LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
-      accessIPC().addHandler([](uint32_t id, uint32_t size, const char* data) {
-        switch ((IpcEvent)id) {
-          case IpcEvent::EMU_ADD_ARGS: {
-            IPCEmulatorAddArgsRead apack(data, size);
+    comm = createIPC(pipe.c_str());
+    LOG_INFO(L"Setting up IPC events...");
+    static LoadExecHandler leHandler;
+    LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
+    comm->addHandler([](uint32_t id, uint32_t size, const char* data) {
+      switch ((IpcEvent)id) {
+        case IpcEvent::EMU_ADD_ARGS: {
+          IPCEmulatorAddArgsRead apack(data, size);
 
-            auto  args = apack.getArgs();
-            auto& rt   = accessRuntimeLinker();
+          auto  args = apack.getArgs();
+          auto& rt   = accessRuntimeLinker();
 
-            for (auto it = args.begin(); it != args.end(); ++it) {
-              rt.addEntryParam(*it);
-            }
-          } break;
-          case IpcEvent::EMU_LOAD_GAME: {
-            IPCEmulatorLoadGameRead rg(data, size);
-            loadGame(rg.getExecutable(), rg.getRoot(), rg.getUpdate());
-          } break;
-          case IpcEvent::EMU_RUN_GAME: {
-            ScePthread_obj thread;
-            runGame(&thread);
-            pthread::detach(thread);
-          } break;
+          for (auto it = args.begin(); it != args.end(); ++it) {
+            rt.addEntryParam(*it);
+          }
+        } break;
+        case IpcEvent::EMU_LOAD_GAME: {
+          IPCEmulatorLoadGameRead rg(data, size);
+          loadGame(rg.getExecutable(), rg.getRoot(), rg.getUpdate());
+        } break;
+        case IpcEvent::EMU_RUN_GAME: {
+          ScePthread_obj thread;
+          runGame(&thread);
+          pthread::detach(thread);
+        } break;
 
-          default: break;
-        }
-      });
-      accessIPC().runReadLoop();
-      LOG_CRIT(L"IPC ReadLoop is closed!");
-    } else {
-      LOG_CRIT(L"Pipe conection failed!");
-    }
+        default: break;
+      }
+    });
+    comm->runReadLoop();
+    LOG_CRIT(L"IPC ReadLoop is closed!");
   } while (0); // -
 
   // --- preinit

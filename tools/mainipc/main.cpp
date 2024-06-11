@@ -7,7 +7,7 @@
 #include <chrono>
 
 int main() {
-  PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "", "emulator");
+  PipeProcess* emuproc = CreatePipedProcess(".\\psoff.exe", "--d", "emulator");
 
   std::string gamexec    = "D:/ps4/games/Call of Duty Ghosts/eboot.bin";
   std::string gameroot   = "";

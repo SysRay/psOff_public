@@ -39,7 +39,7 @@ class IPCPacketRead {
     *(IPCHeader*)m_data.data() = *phead;
 
     DWORD rd;
-    if (!ReadFile(pproc->hPipe, m_data.data() + sizeof(IPCHeader), phead->bodySize, &rd, nullptr) || rd == 0) throw std::exception("Failed to read packet");
+    if (pproc->read(m_data.data() + sizeof(IPCHeader), phead->bodySize) != phead->bodySize) throw std::exception("Failed to read packet");
   }
 
   protected:

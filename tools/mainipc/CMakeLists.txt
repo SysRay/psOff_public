@@ -16,3 +16,4 @@ add_dependencies(mainipc core)
 target_link_libraries(mainipc core.lib)
 
 target_link_options(mainipc PUBLIC /DEBUG)
+target_compile_definitions(mainipc PRIVATE BOOST_ALL_NO_LIB _CRT_SECURE_NO_WARNINGS)

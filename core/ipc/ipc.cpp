@@ -3,113 +3,41 @@
 #undef __APICALL_EXTERN
 
 #include <Windows.h>
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 class Communication: public ICommunication {
   private:
-  HANDLE                m_hPipe;
-  DWORD                 m_dwError;
-  std::string           m_pipeName;
-  std::vector<PHandler> m_handlers = {};
-
-  bool _iwrite(const void* buffer, size_t size) {
-    if (m_hPipe == INVALID_HANDLE_VALUE) {
-      m_dwError = ERROR_BROKEN_PIPE;
-      return false;
-    }
-
-    DWORD cbWrite = 0;
-    BOOL  succ;
-
-    succ = WriteFile(m_hPipe, buffer, size, &cbWrite, nullptr);
-
-    if (!succ || size != cbWrite) {
-      m_dwError = GetLastError();
-      deinit();
-      return false;
-    }
-
-    return true;
-  }
-
-  bool _iread(void* buffer, size_t size) {
-    if (m_hPipe == INVALID_HANDLE_VALUE) {
-      m_dwError = ERROR_BROKEN_PIPE;
-      return false;
-    }
-
-    DWORD cbRead = 0;
-    BOOL  succ;
-
-    succ = ReadFile(m_hPipe, buffer, size, &cbRead, nullptr);
-
-    if (!succ || cbRead == 0 || cbRead != size) {
-      m_dwError = GetLastError();
-      deinit();
-      return false;
-    }
-
-    return true;
-  }
+  boost::interprocess::message_queue mq;
+  std::vector<PHandler>              m_handlers = {};
 
   public:
-  bool init(const char* name) final {
-    if (name)
-      m_pipeName = name;
-    else
-      name = m_pipeName.c_str();
+  Communication(const char* name): mq(boost::interprocess::open_only, name) {}
 
-    if (WaitNamedPipeA((LPCSTR)name, 5000)) {
-      m_hPipe = CreateFileA((LPCSTR)name, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-      if ((m_dwError = GetLastError()) == ERROR_PIPE_BUSY || m_hPipe == INVALID_HANDLE_VALUE) {
-        deinit();
-        return false;
-      }
-
-      DWORD dwMode = PIPE_TYPE_BYTE;
-
-      if (!SetNamedPipeHandleState(m_hPipe, &dwMode, nullptr, nullptr)) {
-        m_dwError = GetLastError();
-        deinit();
-        return false;
-      }
-
-      return true;
-    }
-
-    m_dwError = GetLastError();
-    return false;
-  }
-
-  bool deinit() final {
-    if (m_hPipe == INVALID_HANDLE_VALUE) return false;
-    DisconnectNamedPipe(m_hPipe);
-    CloseHandle(m_hPipe);
-    m_hPipe = INVALID_HANDLE_VALUE;
-    return true;
-  }
-
-  bool write(IPCHeader* packet) final { return _iwrite(packet, packet->bodySize + sizeof(IPCHeader)); }
+  void write(IPCHeader* packet) final { mq.send((char*)packet, packet->bodySize + sizeof(IPCHeader), 0); }
 
   void addHandler(PHandler pfunc) final { m_handlers.emplace_back(pfunc); }
 
   void runReadLoop() final {
     IPCHeader packet = {};
 
-    while (_iread(&packet, sizeof(packet))) {
-      char* data = packet.bodySize > 0 ? new char[packet.bodySize] : nullptr;
-      if (packet.bodySize == 0 || _iread(data, packet.bodySize)) {
-        for (auto handler: m_handlers)
-          handler(packet.packetId, packet.bodySize, data);
-        if (data) delete[] data;
-        continue;
-      }
+    while (true) {
+      size_t   bufsz = sizeof(packet);
+      uint32_t prio  = 0;
 
-      return;
+      mq.receive(&packet, bufsz, bufsz, prio);
+      if (bufsz != sizeof(packet)) throw std::exception("Failed to receive packet");
+      char* data = packet.bodySize > 0 ? new char[packet.bodySize] : nullptr;
+      if (packet.bodySize > 0) {
+        prio = 0, bufsz = 0;
+        mq.receive(data, packet.bodySize, bufsz, prio);
+      }
+      for (auto handler: m_handlers)
+        handler(packet.packetId, packet.bodySize, data);
+      if (data) delete[] data;
     }
   }
 };
 
-ICommunication& accessIPC() {
-  static Communication ipc;
-  return ipc;
+std::unique_ptr<ICommunication> createIPC(const char* name) {
+  return std::make_unique<Communication>(name);
 }
