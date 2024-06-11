@@ -228,6 +228,22 @@ EXPORT SYSV_ABI float __NID(cosf)(float val) {
   return std::cosf(val);
 }
 
+EXPORT SYSV_ABI float __NID(fabsf)(float val) {
+  return std::fabsf(val);
+}
+
+EXPORT SYSV_ABI float __NID(acosf)(float val) {
+  return std::acosf(val);
+}
+
+EXPORT SYSV_ABI double __NID(abs)(double val) {
+  return std::abs(val);
+}
+
+EXPORT SYSV_ABI double __NID(acos)(double val) {
+  return std::acos(val);
+}
+
 EXPORT SYSV_ABI double __NID(cos)(double val) {
   return std::cos(val);
 }
