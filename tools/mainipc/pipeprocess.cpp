@@ -29,13 +29,7 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
   if (CreateProcessA(procpath, (char*)procArgs.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &sti, &pi)) {
     pp->procId = pi.dwProcessId;
 
-    auto closePipe = [&pi, &pp]() {
-      TerminateProcess(pi.hProcess, 1);
-      CloseHandle(pi.hProcess);
-      pp->closed = true;
-    };
-
-    std::thread reader([&closePipe, &pp]() {
+    std::thread reader([pp]() {
       while (!pp->closed) {
         std::unique_lock lock(pp->wrMutex);
 
@@ -51,7 +45,7 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
       pp->readfinish = true;
     });
 
-    std::thread writer([&pp]() {
+    std::thread writer([pp]() {
       while (!pp->closed) {
         std::unique_lock lock(pp->wrMutex);
 
@@ -75,6 +69,7 @@ PipeProcess* CreatePipedProcess(const char* procpath, const char* addarg, const 
     return pp;
   } else {
     printf("Oh no! Failed to spawn process %s: %lu!\n", procpath, GetLastError());
+    pp->closed = true;
   }
 
   return nullptr;
