@@ -3,3 +3,4 @@ add_library(ipc OBJECT
 )
 
 target_compile_definitions(ipc PRIVATE BOOST_ALL_NO_LIB _CRT_SECURE_NO_WARNINGS)
+add_dependencies(ipc third_party)

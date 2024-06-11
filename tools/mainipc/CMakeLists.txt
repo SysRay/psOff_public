@@ -11,7 +11,7 @@ target_include_directories(mainipc PRIVATE
   ${CMAKE_SOURCE_DIR}
 )
 
-add_dependencies(mainipc core)
+add_dependencies(mainipc core third_party)
 
 target_link_libraries(mainipc core.lib)
 
