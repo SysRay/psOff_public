@@ -44,17 +44,9 @@ class IController {
   public:
   virtual ~IController() = default;
 
-  auto getUserID() const { return m_userId; }
-
-  auto getType() const { return m_type; }
-
-  auto getState() const { return m_state; }
-
   auto getName() const { return m_name; }
 
   auto getGUID() const { return m_guid; }
-
-  auto getConnectionsCount() const { return m_connectCount; }
 
   auto isConnected() { return m_state == ControllerState::Connected || reconnect(); }
 
