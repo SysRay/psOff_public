@@ -17,6 +17,7 @@ add_dependencies(psoff core third_party eventsystem)
 target_link_libraries(psoff
   core.lib
   eventsystem
+  libboost_filesystem
   libboost_program_options
 )
 

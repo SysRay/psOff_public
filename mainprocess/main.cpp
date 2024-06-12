@@ -1,6 +1,8 @@
 #include "eventsystem\events\system_cross\events.h"
+#include "utility/progloc.h"
 
 #include <boost/program_options.hpp>
+#include <filesystem>
 #include <iostream>
 #include <thread>
 #include <windows.h>
@@ -40,13 +42,33 @@ int main(int argc, char** argv) {
 
   events::system_cross::initChild();
 
-  STARTUPINFOA sti = {
+  STARTUPINFOW sti = {
       .cb = sizeof(STARTUPINFOA),
   };
   PROCESS_INFORMATION pi;
 
-  std::string procArgs = "";
-  if (!CreateProcessA(".\\psOffChild.exe", (char*)procArgs.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &sti, &pi)) {
+  std::filesystem::path root = util::getProgramLoc();
+
+  auto childExec = root / "psOffChild.exe";
+
+  std::wstring args;
+
+  std::vector<const char*> blacklist = {"--file", "--update", "--root"};
+
+  for (int i = 1; i < argc; ++i) {
+    std::string_view arg(argv[i]);
+
+    auto pred = [&arg](const char* pref) -> bool {
+      // Check if argument is blacklisted
+      return arg.starts_with(pref);
+    };
+
+    if (std::find_if(blacklist.begin(), blacklist.end(), pred) != blacklist.end()) continue;
+    args += L" " + std::wstring(arg.begin(), arg.end());
+  }
+
+  std::wstring commandLine = childExec.c_str() + args;
+  if (!CreateProcessW(childExec.c_str(), (wchar_t*)commandLine.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &sti, &pi)) {
     printf("Failed to spawn child process: %lu!\n", GetLastError());
     return -2;
   }
@@ -59,9 +81,12 @@ int main(int argc, char** argv) {
   events::system_cross::postEventLoadExec(loadArgs);
   events::system_cross::postEventRunExec();
 
+  DWORD ecode;
   while (true) {
+    if (GetExitCodeProcess(pi.hProcess, &ecode) && ecode != STILL_ACTIVE) break;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  return 0;
+  printf("Emulator's process gone!\n");
+  return ecode;
 }
