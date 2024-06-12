@@ -254,7 +254,7 @@ bool SDLController::readPadData(ScePadData& data) {
     SDL_GameControllerGetTouchpadFinger(m_padPtr, 0, f, NULL, &x, &y, &p);
     if (p > 0) {
       auto& touch = data.touchData.touch[data.touchData.touchNum++];
-      touch.x = x * 1920, touch.y = y * 950, touch.id = f;
+      touch.x = x * m_touchInfo.resolution.x, touch.y = y * m_touchInfo.resolution.y, touch.id = f;
     }
   }
 
