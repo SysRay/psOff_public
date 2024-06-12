@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-namespace events::system {
+namespace events::system_cross {
 class IEventHandler {
   protected:
   IEventHandler();
@@ -13,4 +13,4 @@ class IEventHandler {
   virtual void onEventSetArguments(SetArg const& data) = 0;
   virtual void onEventRunExec()                        = 0;
 };
-} // namespace events::system
+} // namespace events::system_cross

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string>
 
-namespace events::system {
+namespace events::system_cross {
 class IEventHandler;
 }
 
@@ -13,11 +13,11 @@ class IEventHandler;
 #define __APICALL __declspec(dllimport)
 #endif
 
-namespace events::system::core {
-__APICALL void registerSelf(events::system::IEventHandler* obj);
+namespace events::system_cross::core {
+__APICALL void registerSelf(events::system_cross::IEventHandler* obj);
 __APICALL void postEvent(std::string const& stream);
 __APICALL void initChild(); // Receiver, that wants to postEvents
 
-} // namespace events::system::core
+} // namespace events::system_cross::core
 
 #undef __APICALL

@@ -1,15 +1,15 @@
 add_subdirectory(events/template)
-add_subdirectory(events/system)
+add_subdirectory(events/system_cross)
 add_subdirectory(test)
 
 add_library(eventsystem_core SHARED
   $<TARGET_OBJECTS:events_intern_template>
-  $<TARGET_OBJECTS:events_intern_system>
+  $<TARGET_OBJECTS:events_intern_system_cross>
 )
 
 add_library(eventsystem STATIC
   $<TARGET_OBJECTS:events_template>
-  $<TARGET_OBJECTS:events_system>
+  $<TARGET_OBJECTS:events_system_cross>
 )
 
 target_link_libraries(eventsystem_core PUBLIC libboost_serialization)
@@ -22,7 +22,7 @@ target_link_directories(eventsystem PUBLIC
   ${CMAKE_BINARY_DIR}/eventsystem/lib
 )
 
-add_dependencies(eventsystem eventsystem_core)
+add_dependencies(eventsystem eventsystem_core third_party)
 
 install(TARGETS eventsystem_core LIBRARY DESTINATION .)
 

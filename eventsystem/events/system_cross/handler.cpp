@@ -2,8 +2,8 @@
 
 #include "intern/export.h"
 
-namespace events::system {
+namespace events::system_cross {
 IEventHandler::IEventHandler() {
   core::registerSelf(this);
 }
-} // namespace events::system
+} // namespace events::system_cross

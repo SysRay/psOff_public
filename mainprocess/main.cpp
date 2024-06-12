@@ -1,4 +1,4 @@
-#include "eventsystem\events\system\events.h"
+#include "eventsystem\events\system_cross\events.h"
 
 #include <boost/program_options.hpp>
 #include <iostream>
@@ -21,7 +21,6 @@ int main(int argc, char** argv) {
   ("file", po::value<std::string>(), "fullpath to applications binary")
   ("root", po::value<std::string>(), "Applications root")
   ("update", po::value<std::string>(), "update files folder")
-  ("pipe", po::value<std::string>(), "Communication pipe name")
       // clang-format on
       ;
 
@@ -39,7 +38,7 @@ int main(int argc, char** argv) {
   }
   // - program params
 
-  events::system::initChild();
+  events::system_cross::initChild();
 
   STARTUPINFOA sti = {
       .cb = sizeof(STARTUPINFOA),
@@ -52,13 +51,13 @@ int main(int argc, char** argv) {
     return -2;
   }
 
-  events::system::LoadArgs loadArgs {};
+  events::system_cross::LoadArgs loadArgs {};
   loadArgs.mainExec   = m_vm.count("file") ? m_vm["file"].as<std::string>() : std::string();
   loadArgs.mainRoot   = m_vm.count("root") ? m_vm["root"].as<std::string>() : std::string();
   loadArgs.updateRoot = m_vm.count("update") ? m_vm["update"].as<std::string>() : std::string();
 
-  events::system::postEventLoadExec(loadArgs);
-  events::system::postEventRunExec();
+  events::system_cross::postEventLoadExec(loadArgs);
+  events::system_cross::postEventRunExec();
 
   while (true) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

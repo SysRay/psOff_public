@@ -18,7 +18,7 @@ namespace {
 constexpr std::string_view PIPENAME         = "psoff-system";
 constexpr size_t           MAX_MESSAGE_SIZE = 500;
 
-void onEvent(events::system::IEventHandler* handler, char const* data, uint32_t size);
+void onEvent(events::system_cross::IEventHandler* handler, char const* data, uint32_t size);
 
 struct PImplReader {
   boost::interprocess::message_queue mq;
@@ -76,7 +76,7 @@ auto getWriter() {
   return &inst;
 }
 
-void onEvent(events::system::IEventHandler* handler, char const* data, uint32_t size) {
+void onEvent(events::system_cross::IEventHandler* handler, char const* data, uint32_t size) {
 
   boost::iostreams::array_source source(data, size);
 
@@ -91,14 +91,14 @@ void onEvent(events::system::IEventHandler* handler, char const* data, uint32_t 
 
   switch (eventId) {
     case 0: {
-      events::system::LoadArgs obj;
+      events::system_cross::LoadArgs obj;
 
       ia >> obj;
       handler->onEventLoadExec(obj);
 
     } break;
     case 1: {
-      events::system::SetArg obj;
+      events::system_cross::SetArg obj;
 
       ia >> obj;
       handler->onEventSetArguments(obj);
@@ -108,9 +108,9 @@ void onEvent(events::system::IEventHandler* handler, char const* data, uint32_t 
 }
 } // namespace
 
-namespace events::system::core {
+namespace events::system_cross::core {
 
-void registerSelf(events::system::IEventHandler* obj) {
+void registerSelf(events::system_cross::IEventHandler* obj) {
   using namespace boost::placeholders;
   getReader()->signal.connect(boost::bind(onEvent, obj, _1, _2));
 }
@@ -128,4 +128,4 @@ void initChild() {
   boost::interprocess::message_queue::remove(PIPENAME.data());
   (void)getWriter();
 }
-} // namespace events::system::core
+} // namespace events::system_cross::core

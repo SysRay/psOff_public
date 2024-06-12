@@ -8,7 +8,7 @@
 
 // todo use boost archive
 
-namespace events::system {
+namespace events::system_cross {
 void initChild() {
   core::initChild();
 }
@@ -41,4 +41,4 @@ void postEventRunExec() {
   oa << (int32_t)2;
   core::postEvent(oss.str());
 }
-} // namespace events::system
+} // namespace events::system_cross

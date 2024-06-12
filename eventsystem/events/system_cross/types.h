@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace events::system {
+namespace events::system_cross {
 struct LoadArgs {
   std::string mainExec;
   std::string mainRoot;
@@ -32,4 +32,4 @@ struct SetArg {
     ar & arg;
   }
 };
-} // namespace events::system
+} // namespace events::system_cross

@@ -9,7 +9,7 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
-#include "eventsystem/events/system/handler.h"
+#include "eventsystem/events/system_cross/handler.h"
 #include "gamereport.h"
 #include "modules/internal/videoout/videoout.h"
 #include "tools/mainipc/ipcevents.h"
@@ -198,7 +198,7 @@ void runGame(ScePthread_obj* thread) {
   pthread::create(thread, &attr, thread_func, (void*)entryAddr, "main");
 }
 
-class SystemEventHandler: public events::system::IEventHandler {
+class SystemEventHandler: public events::system_cross::IEventHandler {
   ScePthread_obj _thread = nullptr;
 
   public:
@@ -213,12 +213,12 @@ class SystemEventHandler: public events::system::IEventHandler {
   }
 
   // ### Interface
-  void onEventLoadExec(events::system::LoadArgs const& data) override {
+  void onEventLoadExec(events::system_cross::LoadArgs const& data) override {
     printf("LoadExec\n");
     loadGame(data.mainExec, data.mainRoot, data.updateRoot);
   }
 
-  void onEventSetArguments(events::system::SetArg const& data) override {
+  void onEventSetArguments(events::system_cross::SetArg const& data) override {
     printf("SetArgument %s\n", data.arg.c_str());
     auto& rt = accessRuntimeLinker();
 
