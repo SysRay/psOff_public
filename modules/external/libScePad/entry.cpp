@@ -126,13 +126,12 @@ EXPORT SYSV_ABI int scePadOpenExt(int userId, PadPortType type, int index, const
 
 EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   if (handle > PSMOVE_DUMMY_HANDLE_RANGE) return Ok; // Closing PlayStation Move
+  std::unique_lock const lock(getData()->m_mutexInt);
 
   LOG_USE_MODULE(libScePad);
   LOG_INFO(L"<- Pad[%d]", handle);
 
   if (auto ctl = getController(handle)) {
-    std::unique_lock const lock(getData()->m_mutexInt);
-
     ctl->userId = -1;
     if (ctl->backend) ctl->backend->close();
     return Ok;
@@ -165,10 +164,10 @@ EXPORT SYSV_ABI int scePadRead(int32_t handle, ScePadData* pPadData, int32_t num
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
-
-    std::unique_lock const lock(getData()->m_mutexInt);
 
     ctl->backend->readPadData(*pPadData);
 
@@ -195,6 +194,8 @@ EXPORT SYSV_ABI int scePadSetMotionSensorState(int32_t handle, bool bEnable) {
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     ctl->backend->setMotion(bEnable);
@@ -211,7 +212,9 @@ EXPORT SYSV_ABI int scePadSetTiltCorrectionState(int32_t handle, bool bEnable) {
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
+
   return Ok;
 }
 
@@ -222,7 +225,9 @@ EXPORT SYSV_ABI int scePadSetAngularVelocityDeadbandState(int32_t handle, bool b
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
+
   return Ok;
 }
 
@@ -232,6 +237,8 @@ EXPORT SYSV_ABI int scePadResetOrientation(int32_t handle) {
     LOG_ERR(L"todo Handle PlayStation Move orientation reset");
     return Ok;
   }
+
+  std::unique_lock const lock(getData()->m_mutexInt);
 
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
@@ -251,6 +258,8 @@ EXPORT SYSV_ABI int scePadSetVibration(int32_t handle, const ScePadVibrationPara
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     return ctl->backend->setRumble(pParam) ? Ok : Err::Pad::INVALID_ARG;
@@ -268,6 +277,8 @@ EXPORT SYSV_ABI int scePadSetLightBar(int32_t handle, const ScePadColor* pParam)
     return Ok;
   }
 
+  std::unique_lock const lock(getData()->m_mutexInt);
+
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
     return ctl->backend->setLED(pParam) ? Ok : Err::Pad::INVALID_LIGHTBAR_SETTING;
@@ -282,6 +293,8 @@ EXPORT SYSV_ABI int scePadResetLightBar(int32_t handle) {
     LOG_ERR(L"todo Handle PlayStation Move lightbar reset");
     return Ok;
   }
+
+  std::unique_lock const lock(getData()->m_mutexInt);
 
   if (auto ctl = getController(handle)) {
     if (ctl->backend == nullptr) return Err::Pad::INVALID_HANDLE;
@@ -303,9 +316,9 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
     return Ok;
   }
 
-  if (auto ctl = getController(handle)) {
-    std::unique_lock const lock(getData()->m_mutexInt);
+  std::unique_lock const lock(getData()->m_mutexInt);
 
+  if (auto ctl = getController(handle)) {
     if (ctl->backend->readControllerInfo(*pInfo)) {
       LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);
       return Ok;
@@ -318,6 +331,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
 }
 
 EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtControllerInformation* pInfo) {
+  std::unique_lock const lock(getData()->m_mutexInt);
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
@@ -325,6 +339,7 @@ EXPORT SYSV_ABI int scePadGetExtControllerInformation(int32_t handle, ScePadExtC
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData* pData, ScePadDeviceClassData* pDeviceClassData) {
+  std::unique_lock const lock(getData()->m_mutexInt);
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
@@ -332,6 +347,7 @@ EXPORT SYSV_ABI int scePadDeviceClassParseData(int32_t handle, const ScePadData*
 }
 
 EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, ScePadDeviceClassExtendedInformation* pExtInfo) {
+  std::unique_lock const lock(getData()->m_mutexInt);
   if (getController(handle) == nullptr) return Err::Pad::INVALID_ARG;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"todo %S", __FUNCTION__);
@@ -340,6 +356,8 @@ EXPORT SYSV_ABI int scePadDeviceClassGetExtendedInformation(int32_t handle, SceP
 
 EXPORT SYSV_ABI void scePadTerminate() {
   auto pData = getData();
+
+  std::unique_lock const lock(pData->m_mutexInt);
 
   for (int i = 0; i < MAX_CONTROLLERS_COUNT; i++) {
     if (auto backend = pData->controller[i].backend.get()) backend->close();
