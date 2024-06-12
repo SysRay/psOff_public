@@ -56,11 +56,11 @@ static ControllerType _getPadType(int32_t userId) {
   return ControllerType::SDL;
 };
 
-static int _padOpen(int32_t userId, PadPortType type, int32_t index, const void* pParam) {
+static int _padOpen(int32_t userId, ScePadPortType type, int32_t index, const void* pParam) {
   LOG_USE_MODULE(libScePad);
   if ((userId < 1 || userId > 4) && userId != 0xFF) return Err::Pad::INVALID_ARG;
-  if (type == PadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
-  if (type != PadPortType::STANDARD && type == PadPortType::SPECIAL) {
+  if (type == ScePadPortType::REMOTE_CONTROL && userId != 0xFF) return Err::Pad::INVALID_ARG;
+  if (type != ScePadPortType::STANDARD && type == ScePadPortType::SPECIAL) {
     LOG_ERR(L"todo Handle PlayStation Move");
     return PSMOVE_DUMMY_HANDLE_RANGE + userId;
   }
@@ -116,11 +116,11 @@ EXPORT SYSV_ABI int scePadInit(void) {
   return Ok;
 }
 
-EXPORT SYSV_ABI int scePadOpen(int32_t userId, PadPortType type, int32_t index, const void* param) {
+EXPORT SYSV_ABI int scePadOpen(int32_t userId, ScePadPortType type, int32_t index, const void* param) {
   return _padOpen(userId, type, index, param);
 }
 
-EXPORT SYSV_ABI int scePadOpenExt(int userId, PadPortType type, int index, const void* param) {
+EXPORT SYSV_ABI int scePadOpenExt(int userId, ScePadPortType type, int index, const void* param) {
   return _padOpen(userId, type, index, param);
 }
 
@@ -140,8 +140,8 @@ EXPORT SYSV_ABI int scePadClose(int32_t handle) {
   return Err::Pad::INVALID_ARG;
 }
 
-EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, PadPortType type, int32_t index) {
-  if (type == PadPortType::SPECIAL) return PSMOVE_DUMMY_HANDLE_RANGE + userId;
+EXPORT SYSV_ABI int scePadGetHandle(int32_t userId, ScePadPortType type, int32_t index) {
+  if (type == ScePadPortType::SPECIAL) return PSMOVE_DUMMY_HANDLE_RANGE + userId;
   LOG_USE_MODULE(libScePad);
   LOG_DEBUG(L"");
 
@@ -311,7 +311,7 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   if (handle > PSMOVE_DUMMY_HANDLE_RANGE) {
     LOG_ERR(L"todo Handle PlayStation Move info");
     pInfo->deviceClass    = ScePadDeviceClass::STANDARD;
-    pInfo->connectionType = (uint8_t)PadPortType::SPECIAL;
+    pInfo->connectionType = (uint8_t)ScePadPortType::SPECIAL;
     pInfo->connected      = false;
     return Ok;
   }

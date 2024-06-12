@@ -24,15 +24,15 @@ class IController {
   CLASS_NO_MOVE(IController);
 
   protected:
-  ControllerType const      m_type;
-  ControllerState           m_state     = ControllerState::Disconnected;
-  ScePadDeviceClass         m_class     = ScePadDeviceClass::STANDARD;
-  PadPortType               m_port      = PadPortType::STANDARD;
-  ScePadStickInformation    m_stickInfo = {2, 2}; // todo make config
-  ScePadTouchPadInformation m_touchInfo = {44.86f, {1920, 950}};
-  uint32_t                  m_userId;
-  uint8_t                   m_connectCount;
-  ScePadColor               m_lastColor = {0x00, 0x00, 0xFF};
+  ControllerType const      m_type         = ControllerType::Unknown;
+  ScePadPortType const      m_port         = ScePadPortType::STANDARD;
+  ScePadDeviceClass const   m_class        = ScePadDeviceClass::STANDARD;
+  ControllerState           m_state        = ControllerState::Disconnected;
+  uint32_t const            m_userId       = -1;
+  uint8_t                   m_connectCount = 0;
+  ScePadStickInformation    m_stickInfo    = {2, 2}; // todo make config
+  ScePadTouchPadInformation m_touchInfo    = {44.86f, {1920, 950}};
+  ScePadColor               m_lastColor    = {0x00, 0x00, 0xFF};
   char                      m_guid[33];
   char                      m_name[33];
 
