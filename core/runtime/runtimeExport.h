@@ -85,7 +85,7 @@ class IRuntimeExport {
 
   virtual std::vector<const char*> const& getEntryParams() const = 0;
 
-  virtual void addEntryParam(std::string const& arg) = 0;
+  virtual void addEntryParam(std::string_view const arg) = 0;
 
   virtual void cxa_add_atexit(CxaDestructor&&, int moduleId) = 0;
   virtual void cxa_finalize(int moduleId)                    = 0;

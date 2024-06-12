@@ -413,7 +413,7 @@ class RuntimeLinker: public IRuntimeLinker {
 
   std::vector<const char*> const& getEntryParams() const final { return m_entryParams; };
 
-  void addEntryParam(std::string const& arg) final {
+  void addEntryParam(std::string_view const arg) final {
     auto& item = m_argsSave.emplace_back(arg);
     m_entryParams.push_back(item.data());
   }

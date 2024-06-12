@@ -8,10 +8,10 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-set(PSOFF_LIB_VERSION v.0.3)
+set(PSOFF_LIB_VERSION v.0.4)
 set(PSOFF_RENDER_VERSION v.0.6-nightly_08.06.2024)
 
-set(ProjectName psOff_${CMAKE_BUILD_TYPE})
+set(ProjectName psOffChild_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
 
 unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
@@ -100,7 +100,8 @@ endif()
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
-add_subdirectory(tools/mainipc)
+
+add_subdirectory(mainprocess)
 
 add_subdirectory(eventsystem)
 add_dependencies(dll2Nids third_party)
@@ -137,7 +138,6 @@ add_library(core SHARED
   $<TARGET_OBJECTS:dmem>
   $<TARGET_OBJECTS:unwinding>
   $<TARGET_OBJECTS:runtime>
-  $<TARGET_OBJECTS:ipc>
 )
 
 add_dependencies(core logging third_party config_emu psoff_render)
@@ -187,13 +187,13 @@ set_target_properties(core
 )
 
 # ## Executable
-add_executable(psoff
+add_executable(psOffChild
   main.cpp
 )
 
-add_dependencies(psoff logging core eventsystem psOff_utility gamereport)
+add_dependencies(psOffChild logging core eventsystem psOff_utility gamereport)
 
-target_link_libraries(psoff PRIVATE
+target_link_libraries(psOffChild PRIVATE
   eventsystem
   core.lib
   gamereport.lib
@@ -202,9 +202,9 @@ target_link_libraries(psoff PRIVATE
   $<TARGET_OBJECTS:asmHelper>
 )
 
-target_link_options(psoff PUBLIC /DYNAMICBASE:NO /DEBUG --image-base=${IMAGE_BASE})
+target_link_options(psOffChild PUBLIC /DYNAMICBASE:NO /DEBUG --image-base=${IMAGE_BASE})
 
-set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
+set_property(TARGET psOffChild PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
 # # Install
 install(DIRECTORY "${CMAKE_BINARY_DIR}/third_party/src/third_party/bin/" DESTINATION ${CMAKE_INSTALL_PREFIX}
@@ -227,14 +227,14 @@ if(DEFINED ISACTION)
   file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/bin/vulkan-1.dll CONTENT "") # cmake needs to find the file in order to ignore it
 endif()
 
-install(TARGETS psoff
-  COMPONENT psoff
+install(TARGETS psOffChild
+  COMPONENT psOffChild
   RUNTIME_DEPENDENCIES
   PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
   POST_EXCLUDE_REGEXES ".*system32/.*\\.dll" ".*vulkan-1\\.dll"
 
   DIRECTORIES
-  $<TARGET_FILE_DIR:psoff>
+  $<TARGET_FILE_DIR:psOffChild>
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/bin
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
   ${CMAKE_BINARY_DIR}/eventsystem/lib
@@ -246,5 +246,4 @@ install(TARGETS psoff
   DESTINATION .
 )
 
-install(FILES $<TARGET_PDB_FILE:psoff> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)
-install(FILES $<TARGET_FILE:mainipc> DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES $<TARGET_PDB_FILE:psOffChild> DESTINATION ${CMAKE_INSTALL_PREFIX}/debug OPTIONAL)

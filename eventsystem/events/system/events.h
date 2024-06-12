@@ -2,5 +2,10 @@
 #include "types.h"
 
 namespace events::system {
-void postEventLoadExec(LoadExecData const& data);
-}
+
+void initChild();
+
+void postEventLoadExec(LoadArgs const& data);
+void postEventSetArguments(SetArg const& data);
+void postEventRunExec();
+} // namespace events::system

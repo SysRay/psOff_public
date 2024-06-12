@@ -3,10 +3,6 @@
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/initParams/initParams.h"
-#include "core/ipc/ipc.h"
-#include "core/ipc/readers/EmulatorAddArgs.h"
-#include "core/ipc/readers/EmulatorLoadExec.h"
-#include "core/ipc/readers/EmulatorLoadGame.h"
 #include "core/kernel/pthread.h"
 #include "core/runtime/exports/intern.h"
 #include "core/runtime/procParam.h"
@@ -31,21 +27,6 @@
 LOG_DEFINE_MODULE(MAIN);
 
 namespace {
-std::unique_ptr<ICommunication> comm;
-
-class LoadExecHandler: private events::system::IEventHandler {
-  public:
-  LoadExecHandler() = default;
-
-  void onLoadExec(events::system::LoadExecData const& data) {
-    // IPCEmulatorLoadExec le_packet(data.exec, data.args);
-    // accessIPC().write(le_packet.getData());
-    // exit(0);
-    LOG_USE_MODULE(MAIN);
-    LOG_CRIT(L"Not yet implemented");
-  }
-};
-
 void SYSV_ABI exitHandler() {
   LOG_USE_MODULE(MAIN);
   LOG_ERR(L"Program exit");
@@ -216,6 +197,39 @@ void runGame(ScePthread_obj* thread) {
 
   pthread::create(thread, &attr, thread_func, (void*)entryAddr, "main");
 }
+
+class SystemEventHandler: public events::system::IEventHandler {
+  ScePthread_obj _thread = nullptr;
+
+  public:
+  SystemEventHandler() = default;
+
+  virtual ~SystemEventHandler() {
+    if (_thread != nullptr) {
+      pthread::cancel(_thread);
+      void* ret;
+      pthread::join(_thread, &ret);
+    }
+  }
+
+  // ### Interface
+  void onEventLoadExec(events::system::LoadArgs const& data) override {
+    printf("LoadExec\n");
+    loadGame(data.mainExec, data.mainRoot, data.updateRoot);
+  }
+
+  void onEventSetArguments(events::system::SetArg const& data) override {
+    printf("SetArgument %s\n", data.arg.c_str());
+    auto& rt = accessRuntimeLinker();
+
+    rt.addEntryParam(data.arg);
+  }
+
+  void onEventRunExec() override {
+    printf("RunExec\n");
+    runGame(&_thread);
+  }
+};
 } // namespace
 
 int main(int argc, char** argv) {
@@ -247,65 +261,12 @@ int main(int argc, char** argv) {
   }
   // -
 
-  LOG_INFO(L"Started");
+  SystemEventHandler systemHandler;
+  LOG_INFO(L"Started, waiting for events");
 
-  // Connect to specified pipe
-  do {
-    auto pipe = initParams->getPipeName();
-    if (pipe.empty()) break;
-
-    comm = createIPC(pipe.c_str());
-    LOG_INFO(L"Setting up IPC events...");
-    static LoadExecHandler leHandler;
-    LOG_INFO(L"Connecting to pipe %S...", pipe.c_str());
-    comm->addHandler([](uint32_t id, uint32_t size, const char* data) {
-      switch ((IpcEvent)id) {
-        case IpcEvent::EMU_ADD_ARGS: {
-          IPCEmulatorAddArgsRead apack(data, size);
-
-          auto  args = apack.getArgs();
-          auto& rt   = accessRuntimeLinker();
-
-          for (auto it = args.begin(); it != args.end(); ++it) {
-            rt.addEntryParam(*it);
-          }
-        } break;
-        case IpcEvent::EMU_LOAD_GAME: {
-          IPCEmulatorLoadGameRead rg(data, size);
-          loadGame(rg.getExecutable(), rg.getRoot(), rg.getUpdate());
-        } break;
-        case IpcEvent::EMU_RUN_GAME: {
-          ScePthread_obj thread;
-          runGame(&thread);
-          pthread::detach(thread);
-        } break;
-
-        default: break;
-      }
-    });
-    comm->runReadLoop();
-    LOG_CRIT(L"IPC ReadLoop is closed!");
-  } while (0); // -
-
-  // --- preinit
-
-  // ### Setup
-  auto const filepath = initParams->getApplicationPath();
-  if (filepath.empty()) {
-    LOG_CRIT(L"--file argument is missing");
-    __Log::flush();
-    return 1;
+  while (true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  auto const fileRoot   = initParams->getApplicationRoot();
-  auto const updateRoot = initParams->getUpdateRoot();
-
-  loadGame(filepath, fileRoot, updateRoot);
-
-  ScePthread_obj thread;
-  runGame(&thread);
-  void* ret = 0;
-  pthread::join(thread, &ret);
-
   __Log::flush();
   return 0;
 }
