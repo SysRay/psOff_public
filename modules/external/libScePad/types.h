@@ -2,7 +2,7 @@
 #include "codes.h"
 #include "sceTypes.h"
 
-enum class PadPortType {
+enum class ScePadPortType {
   STANDARD       = 0,
   SPECIAL        = 2,
   REMOTE_CONTROL = 16,
@@ -42,7 +42,7 @@ enum class ScePadDeviceClass : int32_t {
   GUN            = 9,
 };
 
-enum class PadConnectionType {
+enum class ScePadConnectionType {
   LOCAL             = 0,
   REMOTE_VITA       = 1,
   REMOTE_DUALSHOCK4 = 2,
