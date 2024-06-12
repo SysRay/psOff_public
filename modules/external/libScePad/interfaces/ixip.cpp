@@ -10,10 +10,14 @@
 
 LOG_DEFINE_MODULE(libScePad_xip);
 
+// clang-format off
+
 typedef void (*XInputEnableProc)(BOOL);
 typedef DWORD (*XInputGetStateProc)(DWORD, XINPUT_STATE*);
 typedef DWORD (*XInputSetStateProc)(DWORD, XINPUT_VIBRATION*);
 typedef DWORD (*XInputGetCapabilitiesProc)(DWORD, DWORD, XINPUT_CAPABILITIES*);
+
+// clang-format on
 
 static HMODULE                   xip_lib          = nullptr;
 static XInputEnableProc          xip_enableFunc   = nullptr;
@@ -135,10 +139,7 @@ bool XIPController::readPadData(ScePadData& data) {
   XINPUT_STATE xstate;
   if (xip_getStateFunc(m_xUserId, &xstate) != ERROR_SUCCESS) {
     m_state = ControllerState::Disconnected;
-    if (!reconnect()) {
-      data = ScePadData {};
-      return false;
-    }
+    if (!isConnected()) return false;
   }
 
   auto xGamepad = &xstate.Gamepad;

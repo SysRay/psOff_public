@@ -178,15 +178,11 @@ uint32_t SDLController::getButtons() {
 }
 
 bool SDLController::readPadData(ScePadData& data) {
-
   if (m_state == ControllerState::Closed) return false;
 
   if (SDL_GameControllerGetAttached(m_padPtr) == SDL_FALSE) {
     m_state = ControllerState::Disconnected;
-    if (!reconnect()) {
-      data = ScePadData {};
-      return false;
-    }
+    if (!isConnected()) return false;
   }
 
   data = ScePadData {
@@ -300,6 +296,8 @@ bool SDLController::readPadData(ScePadData& data) {
 }
 
 bool SDLController::setMotion(bool state) {
+  if (m_state == ControllerState::Closed) return false;
+
   LOG_USE_MODULE(libScePad_sdl);
   m_motionEnabled = state;
 
@@ -317,15 +315,19 @@ bool SDLController::setMotion(bool state) {
 }
 
 bool SDLController::resetOrientation() {
+  if (m_state == ControllerState::Closed) return false;
   m_gyroData = {0.0f, 0.0f, 0.0f};
   return true;
 }
 
 bool SDLController::setRumble(const ScePadVibrationParam* pParam) {
+  if (m_state == ControllerState::Closed) return false;
+
   return SDL_GameControllerRumble(m_padPtr, ((float)pParam->smallMotor / 255.0f) * 0xFFFF, ((float)pParam->largeMotor / 255.0f) * 0xFFFF, -1) == 0;
 }
 
 bool SDLController::setLED(const ScePadColor* pParam) {
+  if (m_state == ControllerState::Closed) return false;
   if (SDL_GameControllerHasLED(m_padPtr) == SDL_FALSE) return false;
   SDL_GameControllerSetLED(m_padPtr, pParam->r, pParam->g, pParam->b);
   m_lastColor = *pParam;
@@ -333,6 +335,7 @@ bool SDLController::setLED(const ScePadColor* pParam) {
 }
 
 bool SDLController::resetLED() {
+  if (m_state == ControllerState::Closed) return false;
   m_lastColor = {0x00, 0x00, 0xff};
   return setLED(&m_lastColor);
 }

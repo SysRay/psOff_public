@@ -306,36 +306,12 @@ EXPORT SYSV_ABI int scePadGetControllerInformation(int32_t handle, ScePadControl
   if (auto ctl = getController(handle)) {
     std::unique_lock const lock(getData()->m_mutexInt);
 
-    // Not connected -> defaults
-    if (ctl->userId < 0) {
-      pInfo->touchPadInfo.pixelDensity = 1.f;
-      pInfo->touchPadInfo.resolution.x = 1920;
-      pInfo->touchPadInfo.resolution.y = 950;
-
-      pInfo->stickInfo.deadZoneLeft  = 2; // todo make config
-      pInfo->stickInfo.deadZoneRight = 2; // todo make config
-      pInfo->connectionType          = (uint8_t)PadPortType::STANDARD;
-      pInfo->connectedCount          = ctl->backend ? ctl->backend->getConnectionsCount() : 0;
-      pInfo->connected               = false;
-      pInfo->deviceClass             = ScePadDeviceClass::STANDARD;
+    if (ctl->backend->readControllerInfo(*pInfo)) {
+      LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);
       return Ok;
     }
-    // -
 
-    pInfo->connectionType = ctl->backend->getPortType();
-    pInfo->connectedCount = ctl->backend->getConnectionsCount();
-    pInfo->connected      = ctl->backend->isConnected();
-    pInfo->deviceClass    = ctl->backend->getClass();
-
-    pInfo->touchPadInfo.pixelDensity = 44.86f;
-    pInfo->touchPadInfo.resolution.x = 1920;
-    pInfo->touchPadInfo.resolution.y = 943;
-
-    pInfo->stickInfo.deadZoneLeft  = 2; // todo make config
-    pInfo->stickInfo.deadZoneRight = 2; // todo make config
-
-    LOG_DEBUG(L"handle:%d connected:%d", handle, pInfo->connected);
-    return Ok;
+    return Err::Pad::FATAL;
   }
 
   return Err::Pad::INVALID_ARG;
