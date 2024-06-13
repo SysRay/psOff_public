@@ -57,7 +57,7 @@ struct PImplReader {
     });
   }
 
-  ~PImplReader() {}
+  ~PImplReader() { reader.join(); }
 };
 
 struct PImplWriter {

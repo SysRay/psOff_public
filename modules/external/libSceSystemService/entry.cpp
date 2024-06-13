@@ -131,8 +131,8 @@ EXPORT SYSV_ABI int32_t sceSystemServiceLoadExec(const char* path, char* const a
 
   auto fullpath = accessFileManager().getMappedPath(path);
   if (fullpath) {
-    auto apppath = accessFileManager().getMountPoint(MountType::App, "/app0/");
-    auto appupd  = accessFileManager().getMountPoint(MountType::Update, "/app1/");
+    auto apppath = accessFileManager().getMountPoint(MountType::App, MOUNT_POINT_APP.data());
+    auto appupd  = accessFileManager().getMountPoint(MountType::Update, MOUNT_POINT_UPDATE.data());
 
     events::system_circle::postEventLoadExec({fullpath->string().c_str(), apppath.string().c_str(), appupd.string().c_str()});
   } else {
