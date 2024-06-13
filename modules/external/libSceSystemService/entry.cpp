@@ -123,15 +123,22 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetStatus(SceSystemServiceStatus* status
 }
 
 EXPORT SYSV_ABI int32_t sceSystemServiceLoadExec(const char* path, char* const argv[]) {
-  for (uint32_t n = 0; argv && n < 4096; ++n) {
+  LOG_USE_MODULE(libSceSystemService);
+  for (uint32_t n = 1; argv && n < 4096; ++n) {
     if (argv[n] == nullptr) break;
     events::system_circle::postEventSetArguments({argv[n]});
   }
 
   auto fullpath = accessFileManager().getMappedPath(path);
-  events::system_circle::postEventLoadExec({fullpath->string().c_str(), "", ""});
+  if (fullpath) {
+    auto apppath = accessFileManager().getMountPoint(MountType::App, "/app0/");
+    auto appupd  = accessFileManager().getMountPoint(MountType::Update, "/app1/");
 
-  LOG_USE_MODULE(libSceSystemService);
+    events::system_circle::postEventLoadExec({fullpath->string().c_str(), apppath.string().c_str(), appupd.string().c_str()});
+  } else {
+    LOG_CRIT(L"No %S executable found!", path);
+  }
+
   LOG_ERR(L"### Manual Start:%S", path);
 
   for (uint32_t n = 0; argv && n < 4096; ++n) {
