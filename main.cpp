@@ -12,7 +12,6 @@
 #include "eventsystem/events/system_cross/handler.h"
 #include "gamereport.h"
 #include "modules/internal/videoout/videoout.h"
-#include "tools/mainipc/ipcevents.h"
 #undef __APICALL_IMPORT
 #include "logging.h"
 #include "utility/progloc.h"

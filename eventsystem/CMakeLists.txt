@@ -1,15 +1,18 @@
 add_subdirectory(events/template)
 add_subdirectory(events/system_cross)
+add_subdirectory(events/system_circle)
 add_subdirectory(test)
 
 add_library(eventsystem_core SHARED
   $<TARGET_OBJECTS:events_intern_template>
   $<TARGET_OBJECTS:events_intern_system_cross>
+  $<TARGET_OBJECTS:events_intern_system_circle>
 )
 
 add_library(eventsystem STATIC
   $<TARGET_OBJECTS:events_template>
   $<TARGET_OBJECTS:events_system_cross>
+  $<TARGET_OBJECTS:events_system_circle>
 )
 
 target_link_libraries(eventsystem_core PUBLIC libboost_serialization)

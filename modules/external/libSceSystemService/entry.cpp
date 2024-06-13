@@ -1,5 +1,6 @@
 #include "common.h"
-#include "eventsystem/events/system_cross/events.h"
+#include "core/fileManager/fileManager.h"
+#include "eventsystem/events/system_circle/events.h"
 #include "internal/videoout/videoout.h"
 #include "logging.h"
 #include "system_param.h"
@@ -122,7 +123,14 @@ EXPORT SYSV_ABI int32_t sceSystemServiceGetStatus(SceSystemServiceStatus* status
 }
 
 EXPORT SYSV_ABI int32_t sceSystemServiceLoadExec(const char* path, char* const argv[]) {
-  // events::system_cross::postEventLoadExec({path, argv});
+  for (uint32_t n = 0; argv && n < 4096; ++n) {
+    if (argv[n] == nullptr) break;
+    events::system_circle::postEventSetArguments({argv[n]});
+  }
+
+  auto fullpath = accessFileManager().getMappedPath(path);
+  events::system_circle::postEventLoadExec({fullpath->string().c_str(), "", ""});
+
   LOG_USE_MODULE(libSceSystemService);
   LOG_ERR(L"### Manual Start:%S", path);
 

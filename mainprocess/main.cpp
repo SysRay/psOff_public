@@ -1,4 +1,7 @@
+#include "eventsystem\events\system_circle\events.h"
+#include "eventsystem\events\system_circle\handler.h"
 #include "eventsystem\events\system_cross\events.h"
+#include "eventsystem\events\system_cross\handler.h"
 #include "utility/progloc.h"
 
 #include <boost/program_options.hpp>
@@ -6,6 +9,117 @@
 #include <iostream>
 #include <thread>
 #include <windows.h>
+
+class EmuProcess {
+  STARTUPINFOW m_startup = {
+      .cb = sizeof(STARTUPINFOA),
+  };
+
+  PROCESS_INFORMATION m_procInfo = {
+      .hProcess    = INVALID_HANDLE_VALUE,
+      .hThread     = INVALID_HANDLE_VALUE,
+      .dwProcessId = 0,
+      .dwThreadId  = 0,
+  };
+
+  std::vector<const char*> m_blacklist = {"--file", "--update", "--root"};
+  std::filesystem::path    m_childExec;
+  std::wstring             m_args;
+  std::wstring             m_currCmdLine;
+
+  std::recursive_mutex m_accessProcInfo;
+
+  public:
+  EmuProcess(int argc, char** argv) {
+    std::filesystem::path root = util::getProgramLoc();
+    m_childExec                = root / "psOffChild.exe";
+
+    for (int i = 1; i < argc; ++i) {
+      std::string_view arg(argv[i]);
+
+      auto pred = [&arg](const char* pref) -> bool {
+        // Check if argument is blacklisted
+        return arg.starts_with(pref);
+      };
+
+      if (std::find_if(m_blacklist.begin(), m_blacklist.end(), pred) != m_blacklist.end()) continue;
+      m_args += L" " + std::wstring(arg.begin(), arg.end());
+    }
+
+    restart();
+  }
+
+  void restart() {
+    std::unique_lock const lock(m_accessProcInfo);
+
+    if (m_procInfo.hProcess != INVALID_HANDLE_VALUE) {
+      switch (WaitForSingleObject(m_procInfo.hProcess, INFINITE)) {
+        case WAIT_OBJECT_0: break; // Process finished successfully
+        case WAIT_FAILED: throw std::runtime_error(std::format("WaitForSingleObject failed: {}!", GetLastError()));
+      }
+
+      m_procInfo = {
+          .hProcess    = INVALID_HANDLE_VALUE,
+          .hThread     = INVALID_HANDLE_VALUE,
+          .dwProcessId = 0,
+          .dwThreadId  = 0,
+      };
+    }
+
+    m_currCmdLine = m_childExec.c_str() + m_args;
+    if (!CreateProcessW(m_childExec.c_str(), (wchar_t*)m_currCmdLine.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &m_startup, &m_procInfo)) {
+      throw std::runtime_error(std::format("Failed to spawn child process: {}!", GetLastError()));
+    }
+  }
+
+  bool isAlive(DWORD* ecode) {
+    std::unique_lock const lock(m_accessProcInfo);
+    return GetExitCodeProcess(m_procInfo.hProcess, ecode) && *ecode == STILL_ACTIVE;
+  }
+};
+
+class EmuEventHandler: public events::system_circle::IEventHandler {
+  std::vector<std::string> m_args = {};
+  EmuProcess*              m_eproc;
+
+  public:
+  EmuEventHandler(EmuProcess* ep): m_eproc(ep) {};
+  ~EmuEventHandler() = default;
+
+  // ### Interface
+  void onEventSetArguments(events::system_circle::SetArg const& data) override { m_args.push_back(data.arg); }
+
+  void onEventLoadExec(events::system_circle::LoadArgs const& data) override {
+    m_eproc->restart();
+
+    /**
+     * @brief Temporary hack!
+     *
+     * Wait til child process will be ready to
+     * read the data and will not clear the
+     * message queue
+     *
+     */
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    events::system_cross::LoadArgs loadargs = {
+        .mainExec   = data.mainExec,
+        .mainRoot   = data.mainRoot,
+        .updateRoot = data.updateRoot,
+    };
+
+    events::system_cross::postEventLoadExec(loadargs);
+
+    for (auto it = m_args.begin(); it != m_args.end(); ++it) {
+      events::system_cross::SetArg setarg = {.arg = *it};
+      events::system_cross::postEventSetArguments(setarg);
+    }
+
+    events::system_cross::postEventRunExec();
+
+    m_args.clear();
+  }
+};
 
 int main(int argc, char** argv) {
   // Program params
@@ -41,37 +155,10 @@ int main(int argc, char** argv) {
   // - program params
 
   events::system_cross::initChild();
+  events::system_circle::initChild();
 
-  STARTUPINFOW sti = {
-      .cb = sizeof(STARTUPINFOA),
-  };
-  PROCESS_INFORMATION pi;
-
-  std::filesystem::path root = util::getProgramLoc();
-
-  auto childExec = root / "psOffChild.exe";
-
-  std::wstring args;
-
-  std::vector<const char*> blacklist = {"--file", "--update", "--root"};
-
-  for (int i = 1; i < argc; ++i) {
-    std::string_view arg(argv[i]);
-
-    auto pred = [&arg](const char* pref) -> bool {
-      // Check if argument is blacklisted
-      return arg.starts_with(pref);
-    };
-
-    if (std::find_if(blacklist.begin(), blacklist.end(), pred) != blacklist.end()) continue;
-    args += L" " + std::wstring(arg.begin(), arg.end());
-  }
-
-  std::wstring commandLine = childExec.c_str() + args;
-  if (!CreateProcessW(childExec.c_str(), (wchar_t*)commandLine.c_str(), nullptr, nullptr, false, 0, nullptr, nullptr, &sti, &pi)) {
-    printf("Failed to spawn child process: %lu!\n", GetLastError());
-    return -2;
-  }
+  EmuProcess      emuproc(argc, argv);
+  EmuEventHandler emuev(&emuproc);
 
   events::system_cross::LoadArgs loadArgs {};
   loadArgs.mainExec   = m_vm.count("file") ? m_vm["file"].as<std::string>() : std::string();
@@ -83,7 +170,7 @@ int main(int argc, char** argv) {
 
   DWORD ecode;
   while (true) {
-    if (GetExitCodeProcess(pi.hProcess, &ecode) && ecode != STILL_ACTIVE) break;
+    if (!emuproc.isAlive(&ecode)) break;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
