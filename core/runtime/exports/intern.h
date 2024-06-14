@@ -10,6 +10,7 @@
 
 namespace intern {
 __APICALL void init();
-}
+__APICALL void post();
+} // namespace intern
 
 #undef __APICALL

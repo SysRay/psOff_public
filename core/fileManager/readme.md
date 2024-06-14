@@ -4,5 +4,5 @@ Manages all Linux files (mounts etc.), converts paths to Host paths and is the o
 
 <div align="center">
 
-![](../../out/docs/uml/modules/fileManager.svg)
+![](../../docs/out/docs/uml/modules/fileManager.svg)
 </div>

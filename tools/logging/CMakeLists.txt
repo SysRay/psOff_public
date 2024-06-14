@@ -6,8 +6,6 @@ add_dependencies(logging third_party config_emu)
 
 target_link_libraries(logging PRIVATE ws2_32 p7 config_emu.lib)
 
-target_compile_definitions(logging PRIVATE BOOST_ALL_NO_LIB WIN32_LEAN_AND_MEAN)
-
 target_compile_options(logging PRIVATE "/Zi")
 
 set_target_properties(logging

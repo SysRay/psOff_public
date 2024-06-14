@@ -3,7 +3,7 @@
 #undef __APICALL_EXTERN
 
 #include "logging.h"
-#include "modules/libkernel/dmem.h"
+#include "modules/external/libkernel/dmem.h"
 #include "types/memory.h"
 
 #include <boost/thread.hpp>
@@ -95,6 +95,8 @@ int32_t MemoryManager::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* in
   if (itItem == m_mappings.end() && addr > (itItem->first + itItem->second.size)) return getErr(ErrCode::_EACCES); // End reached
 
   if (itItem == m_mappings.end() || (itItem != m_mappings.begin() && itItem->first != addr)) --itItem; // Get the correct item
+
+  if (itItem->first + itItem->second.size <= addr) return getErr(ErrCode::_EACCES); // Is last item
 
   int res = getErr(ErrCode::_EACCES);
 

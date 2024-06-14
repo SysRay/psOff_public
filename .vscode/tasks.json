@@ -25,6 +25,7 @@
         "-S${workspaceFolder}",
         "-B_build/_Release",
         "-GNinja",
+        //"-DBUILD_CORE=1",
         "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_INSTALL_PREFIX=_build/_Install",
         "-DCMAKE_C_COMPILER=clang-cl.exe",

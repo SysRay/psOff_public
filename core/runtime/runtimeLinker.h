@@ -24,8 +24,11 @@ class IRuntimeLinker: public IRuntimeExport {
   virtual uintptr_t execute()     = 0;
   virtual void      stopModules() = 0;
 
+  virtual void stopModule(int id) = 0;
+
   virtual void addExport(std::unique_ptr<Symbols::SymbolExport>&& symbols) = 0;
 
+  virtual bool      interceptInternal(Program* prog, uintptr_t progaddr, uintptr_t iaddr)                                         = 0;
   virtual void      interceptAdd(uintptr_t addr, std::string_view name, std::string_view libraryName, std::string_view modulName) = 0;
   virtual uintptr_t interceptGetAddr(uintptr_t addr) const                                                                        = 0;
 

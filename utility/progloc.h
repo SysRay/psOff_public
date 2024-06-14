@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef BOOST_ALL_NO_LIB
-#define BOOST_ALL_NO_LIB
-#endif
-
 #include <boost/dll/runtime_symbol_info.hpp>
 
 namespace util {

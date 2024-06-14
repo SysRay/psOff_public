@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
+
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
 set(PSOFF_LIB_VERSION v.0.3)
-set(PSOFF_RENDER_VERSION v.0.5-nightly_27.05.24)
+set(PSOFF_RENDER_VERSION v.0.6-nightly_08.06.2024)
 
 set(ProjectName psOff_${CMAKE_BUILD_TYPE})
 project(${ProjectName} VERSION 0.0.1)
@@ -11,12 +18,15 @@ unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_WINDOWS_SYMBOL_VISIBILITY_IN_STATIC_LIBRARIES OFF)
+if(ISDEBUG)
+  set(CMAKE_CXX_FLAGS_RELEASE "/MD /Zi /GS- /GF /Gy /GR /Oi -O0 -fno-strict-aliasing")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
+else()
+  set(CMAKE_CXX_FLAGS_RELEASE "/MD /GS- /GF /Gy /GR /Oi -Ofast -fno-strict-aliasing")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /OPT:REF,ICF")
+endif()
 
 if(NOT PRJ_SRC_DIR)
   set(PRJ_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -37,6 +47,7 @@ message("Vulkan Path: ${VulkanPath}")
 # # - Gather Infos
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib) # Move all libs here post-build, except third_party
 add_definitions(-DPSOFF_RENDER_VERSION="${PSOFF_RENDER_VERSION}")
+add_compile_definitions(BOOST_ALL_NO_LIB)
 
 #
 include_directories(BEFORE
@@ -53,10 +64,10 @@ include_directories(BEFORE
 link_directories(BEFORE
   ${CMAKE_INSTALL_PREFIX}/development/lib
   ${CMAKE_BINARY_DIR}/third_party/src/third_party/lib
-  ${CMAKE_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_BINARY_DIR}/bin
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  ${CMAKE_BINARY_DIR}/core/export/lib
 )
 
 ExternalProject_Add(third_party
@@ -89,8 +100,8 @@ endif()
 add_subdirectory(tools/logging)
 add_subdirectory(tools/config_emu)
 add_subdirectory(tools/dll2Nids)
-add_subdirectory(asm)
 
+add_subdirectory(eventsystem)
 add_dependencies(dll2Nids third_party)
 
 # -
@@ -101,13 +112,79 @@ add_compile_definitions(IMAGE_BASE=${IMAGE_BASE})
 
 # Internal Projects
 add_subdirectory(modules)
-add_subdirectory(core)
 add_subdirectory(utility)
 add_subdirectory(tools/gamereport)
+add_subdirectory(core)
 
 # #- Projects
 
-# Executable
+# ## Core
+
+# Build
+add_library(core SHARED
+  $<TARGET_OBJECTS:kernel>
+  $<TARGET_OBJECTS:initParams>
+  $<TARGET_OBJECTS:timer>
+  $<TARGET_OBJECTS:systemContent>
+  $<TARGET_OBJECTS:networking>
+  $<TARGET_OBJECTS:hotkeys>
+  $<TARGET_OBJECTS:trophies>
+  $<TARGET_OBJECTS:oscctl>
+  $<TARGET_OBJECTS:videoout>
+  $<TARGET_OBJECTS:fileManager>
+  $<TARGET_OBJECTS:memory>
+  $<TARGET_OBJECTS:dmem>
+  $<TARGET_OBJECTS:unwinding>
+  $<TARGET_OBJECTS:runtime>
+)
+
+add_dependencies(core logging third_party config_emu psoff_render)
+target_link_libraries(core PRIVATE
+  eventsystem
+  libboost_url
+  libboost_thread
+  libboost_chrono
+  libboost_program_options
+  libboost_filesystem
+  sdl2
+  psoff_render.lib
+  OptickCore
+  psOff_utility
+  config_emu.lib
+  onecore.lib
+  IPHLPAPI.lib
+  Dbghelp.lib
+  wepoll.lib
+  Ws2_32.lib
+  libcrypto.lib
+  libssl.lib
+  pugixml.lib
+  ntdll.dll
+  imgui
+  VulkanMemoryAllocator
+  ${Vulkan_LIBRARIES}
+)
+
+install(FILES $<TARGET_PDB_FILE:core> DESTINATION debug OPTIONAL)
+install(TARGETS core LIBRARY DESTINATION .)
+
+# Manage symbols
+if(NOT ISDEBUG)
+  add_custom_command(
+    TARGET core POST_BUILD
+    COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+    ARGS --strip-all $<TARGET_FILE:core>
+  )
+endif()
+
+set_target_properties(core
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/core/export/lib"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/core/export/bin"
+  PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/"
+)
+
+# ## Executable
 add_executable(psoff
   main.cpp
 )
@@ -115,6 +192,7 @@ add_executable(psoff
 add_dependencies(psoff logging core psOff_utility gamereport)
 
 target_link_libraries(psoff PRIVATE
+  eventsystem
   core.lib
   gamereport.lib
   psOff_utility
@@ -122,7 +200,7 @@ target_link_libraries(psoff PRIVATE
   $<TARGET_OBJECTS:asmHelper>
 )
 
-target_link_options(psoff PUBLIC /DEBUG /DYNAMICBASE:NO --image-base=${IMAGE_BASE})
+target_link_options(psoff PUBLIC /DYNAMICBASE:NO /DEBUG --image-base=${IMAGE_BASE})
 
 set_property(TARGET psoff PROPERTY VS_DPI_AWARE "PerMonitor") # SDL2 High dpi window
 
@@ -161,6 +239,7 @@ install(TARGETS psoff
   ${CMAKE_BINARY_DIR}/lib
   ${CMAKE_CURRENT_BINARY_DIR}/core
   ${CMAKE_BINARY_DIR}/psoff_render/src/psoff_render/lib
+  ${CMAKE_BINARY_DIR}/core/export/lib
   DESTINATION .
 )
 
