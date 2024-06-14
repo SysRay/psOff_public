@@ -74,8 +74,9 @@ class GoReader {
   };
 
   struct playgo_mchunk_attr_ent {
-    uint64_t loc  : 48;
-    uint64_t size : 48;
+    uint64_t loc;
+    uint64_t size  : 48;
+    uint16_t align : 16;
   };
 
 #pragma pack(pop)
