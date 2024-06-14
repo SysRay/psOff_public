@@ -32,7 +32,7 @@ EXPORT SYSV_ABI int sceRtcGetCurrentClock(SceRtcDateTime* pTime, int iTimeZone) 
   pTime->hour        = duration.hours();
   pTime->minute      = duration.minutes();
   pTime->second      = duration.seconds();
-  pTime->microsecond = duration.fractional_seconds() * 1000;
+  pTime->microsecond = duration.fractional_seconds();
   return Ok;
 }
 
@@ -47,7 +47,7 @@ EXPORT SYSV_ABI int sceRtcGetCurrentClockLocalTime(SceRtcDateTime* pTime) {
   pTime->hour        = duration.hours();
   pTime->minute      = duration.minutes();
   pTime->second      = duration.seconds();
-  pTime->microsecond = duration.fractional_seconds() * 1000;
+  pTime->microsecond = duration.fractional_seconds();
   return Ok;
 }
 
