@@ -52,7 +52,7 @@ EXPORT SYSV_ABI int sceRtcGetCurrentClockLocalTime(SceRtcDateTime* pTime) {
 }
 
 EXPORT SYSV_ABI int sceRtcGetCurrentNetworkTick(SceRtcTick* pTick) {
-  pTick->tick = boost::chrono::system_clock::now().time_since_epoch().count();
+  pTick->tick = boost::posix_time::microsec_clock::universal_time().time_of_day().total_microseconds();
   return Ok;
 }
 
