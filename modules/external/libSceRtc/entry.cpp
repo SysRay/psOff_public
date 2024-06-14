@@ -17,7 +17,7 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceRtc";
 
 EXPORT SYSV_ABI int sceRtcGetCurrentTick(SceRtcTick* pTick) {
-  pTick->tick = boost::chrono::duration_cast<boost::chrono::nanoseconds>(boost::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  pTick->tick = boost::chrono::duration_cast<boost::chrono::microseconds>(boost::chrono::high_resolution_clock::now().time_since_epoch()).count();
   return Ok;
 }
 
