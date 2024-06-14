@@ -66,7 +66,7 @@ class GoReader {
     uint8_t  flags;
     uint8_t  image_disc_layer_n;
     uint8_t  req_locus;
-    uint8_t  unknown[10];
+    uint8_t  unknown[11];
     uint16_t mchunk_count;
     uint64_t lang_mask;
     uint32_t mchunks_offset;
@@ -75,8 +75,11 @@ class GoReader {
 
   struct playgo_mchunk_attr_ent {
     uint64_t loc;
-    uint64_t size  : 48;
-    uint16_t align : 16;
+
+    struct {
+      uint64_t align : 16;
+      uint64_t value : 48;
+    } size;
   };
 
 #pragma pack(pop)

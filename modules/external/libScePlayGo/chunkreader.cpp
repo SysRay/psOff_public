@@ -74,11 +74,11 @@ uint64_t GoReader::getChunkSize(uint16_t id) {
   uint64_t total_size = 0;
 
   if (auto mchunks_len = m_chunkattr_ent[id].mchunk_count) {
-    auto mchunks = &m_mchunks[m_chunkattr_ent[id].mchunks_offset / sizeof(*m_mchunks)];
+    auto mchunks = (uint16_t*)((char*)m_mchunks + m_chunkattr_ent[id].mchunks_offset);
 
     for (int i = 0; i < mchunks_len; ++i) {
       auto mchunk_id = mchunks[i];
-      total_size += m_mchunattr_ent[mchunk_id].size;
+      total_size += m_mchunattr_ent[mchunk_id].size.value;
     }
   }
 
