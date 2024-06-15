@@ -21,8 +21,8 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libScePlayGo";
 
 EXPORT SYSV_ABI int32_t scePlayGoInitialize(const ScePlayGoInitParams* init) {
-  LOG_USE_MODULE(libScePlayGo);
   if (g_goread != nullptr) return Err::PlayGo::ALREADY_INITIALIZED;
+  LOG_USE_MODULE(libScePlayGo);
   LOG_INFO(L"bufAddr:0x%08llx bufSize:0x%08x", (uint64_t)init->bufAddr, init->bufSize);
   auto path = accessFileManager().getMappedPath("/app0/sce_sys/playgo-chunk.dat");
   g_goread  = new GoReader(*path);
@@ -31,6 +31,8 @@ EXPORT SYSV_ABI int32_t scePlayGoInitialize(const ScePlayGoInitParams* init) {
 
 EXPORT SYSV_ABI int32_t scePlayGoTerminate(void) {
   if (!g_goread) return Err::PlayGo::NOT_INITIALIZED;
+  LOG_USE_MODULE(libScePlayGo);
+  LOG_INFO(L"Terminating..");
   delete g_goread;
   g_goread = nullptr;
   return Ok;
@@ -39,6 +41,7 @@ EXPORT SYSV_ABI int32_t scePlayGoTerminate(void) {
 EXPORT SYSV_ABI int32_t scePlayGoOpen(ScePlayGoHandle* outHandle, const void* param) {
   if (!g_goread) return Err::PlayGo::NOT_INITIALIZED;
   LOG_USE_MODULE(libScePlayGo);
+  LOG_INFO(L"outHandle:0x%08llx param:0x%08x", (uint64_t)outHandle, (uint64_t)param);
   *outHandle = 1;
   return Ok;
 }
@@ -112,9 +115,9 @@ EXPORT SYSV_ABI int32_t scePlayGoGetEta(ScePlayGoHandle handle, const ScePlayGoC
   if (handle != 1) return Err::PlayGo::BAD_HANDLE;
   if (!chunkIds || !outEta) return Err::PlayGo::BAD_POINTER;
   if (!numberOfEntries) return Err::PlayGo::BAD_SIZE;
-
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_INFO(L"ETA set to 0");
+
   *outEta = 0;
   return Ok;
 }
@@ -123,7 +126,7 @@ EXPORT SYSV_ABI int32_t scePlayGoSetInstallSpeed(ScePlayGoHandle handle, ScePlay
   if (!g_goread) return Err::PlayGo::NOT_INITIALIZED;
   if (handle != 1) return Err::PlayGo::BAD_HANDLE;
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_INFO(L"handle: %d, speed: %d", handle, speed);
 
   std::unique_lock lock(g_ispeedmtx);
 
@@ -137,7 +140,7 @@ EXPORT SYSV_ABI int32_t scePlayGoGetInstallSpeed(ScePlayGoHandle handle, ScePlay
   if (!g_goread) return Err::PlayGo::NOT_INITIALIZED;
   if (handle != 1) return Err::PlayGo::BAD_HANDLE;
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_INFO(L"handle: %d, speed: %08llx", handle, (uint64_t)speed);
 
   std::unique_lock lock(g_ispeedmtx);
 
@@ -175,7 +178,7 @@ EXPORT SYSV_ABI int32_t scePlayGoGetProgress(ScePlayGoHandle handle, const ScePl
   if (!numberOfEntries) return Err::PlayGo::BAD_SIZE;
 
   LOG_USE_MODULE(libScePlayGo);
-  LOG_TRACE(L"TODO: %S", __FUNCTION__);
+  LOG_INFO(L"handle: %d, chunkIds: %08llx, numEnts: %lu, outProgress: %08llx", handle, (uint64_t)chunkIds, numberOfEntries, (uint64_t)outProgress);
 
   outProgress->progressSize = 0;
   outProgress->totalSize    = 0;
@@ -202,7 +205,7 @@ EXPORT SYSV_ABI int32_t scePlayGoGetChunkId(ScePlayGoHandle handle, ScePlayGoChu
   if (!outChunkIdList || !outEntries) return Err::PlayGo::BAD_POINTER;
   if (!numberOfEntries) return Err::PlayGo::BAD_SIZE;
   LOG_USE_MODULE(libScePlayGo);
-  LOG_ERR(L"TODO: %S", __FUNCTION__);
+  LOG_INFO(L"handle: %d, outChunksList: %08llx, numEnts: %lu, outEnts: %08llx", handle, (uint64_t)outChunkIdList, numberOfEntries, (uint64_t)outEntries);
 
   *outEntries = std::min(g_goread->getChunksCount(), numberOfEntries);
 
