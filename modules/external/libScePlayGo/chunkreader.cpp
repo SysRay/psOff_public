@@ -1,5 +1,6 @@
 #include "chunkreader.hpp"
 
+#include "core/kernel/filesystem.h"
 #include "logging.h"
 
 #include <fstream>
@@ -9,61 +10,58 @@ LOG_DEFINE_MODULE(PlayGoChunkReader);
 GoReader::GoReader(std::filesystem::path file) {
   LOG_USE_MODULE(PlayGoChunkReader);
 
-  std::ifstream fstrm(file, std::ios::in | std::ios::binary);
-
-  if (fstrm.is_open()) {
-    if (!fstrm.read((char*)&m_header, sizeof(m_header))) {
-      LOG_ERR(L"Failed to read playgo file header");
-      return;
-    }
-
-    fstrm.seekg(0, std::ios::end);
-    m_buffer.resize(fstrm.tellg());
-    fstrm.seekg(0);
-    fstrm.read(m_buffer.data(), m_buffer.size());
-
-    if (m_buffer.size() < sizeof(playgo_header)) {
-      LOG_ERR(L"Invalid playgo file!");
-      return;
-    }
-
-    m_header = (playgo_header*)m_buffer.data();
-
-    if (m_header->magic != 0x6F676C70) {
-      LOG_ERR(L"Invalid playgo file magic!");
-      return;
-    }
-
-    auto getchunkptr = [this](const playgo_chunk* chunk) -> void* {
-      if (m_buffer.size() < chunk->offset + chunk->size) return nullptr;
-      return m_buffer.data() + chunk->offset;
-    };
-
-    if ((m_chunkattr_ent = (playgo_chunkattr_ent*)getchunkptr(&(m_header->chunk_attrs))) == nullptr) {
-      LOG_ERR(L"Failed to read chunkattr section");
-      return;
-    }
-
-    if ((m_mchunks = (uint16_t*)getchunkptr(&(m_header->chunk_mchunks))) == nullptr) {
-      LOG_ERR(L"Failed to read mchunks section");
-      return;
-    }
-
-    if ((m_labels = (const char*)getchunkptr(&(m_header->chunk_labels))) == nullptr) {
-      LOG_ERR(L"Failed to read labels section");
-      return;
-    }
-
-    if ((m_mchunkattr_ent = (playgo_mchunk_attr_ent*)getchunkptr(&(m_header->mchunk_attrs))) == nullptr) {
-      LOG_ERR(L"Failed to read mchunk_attr section");
-      return;
-    }
-
-    m_loaded = true;
+  if ((m_fd = filesystem::open(file.string().c_str(), {.mode = filesystem::SceOpenMode::RDONLY}, 0)) < 0) {
+    LOG_ERR(L"Failed to open playgo file!");
     return;
   }
 
-  LOG_ERR(L"Failed to open %s", file.c_str());
+  auto size = filesystem::lseek(m_fd, 0, SEEK_END);
+  if (size < sizeof(playgo_header)) {
+    LOG_ERR(L"Invalid playgo file!");
+    return;
+  }
+
+  if (filesystem::mmap(nullptr, size, 1, {.mode = filesystem::SceMapMode::SHARED, .type = filesystem::SceMapType::FILE}, m_fd, 0, (void**)&m_data) != Ok) {
+    LOG_ERR(L"Failed to map playgo file to memory");
+    return;
+  }
+
+  if (m_header->magic != 0x6F676C70) {
+    LOG_ERR(L"Invalid playgo file magic!");
+    return;
+  }
+
+  auto getchunkptr = [this, size](const playgo_chunk* chunk) -> const void* {
+    if (size < chunk->offset + chunk->size) return nullptr;
+    return m_data + chunk->offset;
+  };
+
+  if ((m_chunkattr_ent = (playgo_chunkattr_ent*)getchunkptr(&(m_header->chunk_attrs))) == nullptr) {
+    LOG_ERR(L"Failed to read chunkattr section");
+    return;
+  }
+
+  if ((m_mchunks = (uint16_t*)getchunkptr(&(m_header->chunk_mchunks))) == nullptr) {
+    LOG_ERR(L"Failed to read mchunks section");
+    return;
+  }
+
+  if ((m_labels = (const char*)getchunkptr(&(m_header->chunk_labels))) == nullptr) {
+    LOG_ERR(L"Failed to read labels section");
+    return;
+  }
+
+  if ((m_mchunkattr_ent = (playgo_mchunk_attr_ent*)getchunkptr(&(m_header->mchunk_attrs))) == nullptr) {
+    LOG_ERR(L"Failed to read mchunk_attr section");
+    return;
+  }
+
+  m_loaded = true;
+}
+
+GoReader::~GoReader() {
+  filesystem::munmap((void*)m_data, 0);
+  filesystem::close(m_fd);
 }
 
 uint64_t GoReader::getChunkSize(uint16_t id) {

@@ -5,7 +5,7 @@
 class GoReader {
   public:
   GoReader(std::filesystem::path file);
-  virtual ~GoReader() = default;
+  ~GoReader();
 
   uint32_t getChunksCount() const { return m_loaded ? m_header->chunk_count : 0; };
 
@@ -85,8 +85,13 @@ class GoReader {
 #pragma pack(pop)
 
   std::vector<char> m_buffer;
+  int32_t           m_fd;
 
-  const playgo_header*          m_header         = nullptr;
+  union {
+    const char*          m_data = nullptr;
+    const playgo_header* m_header;
+  };
+
   const playgo_chunkattr_ent*   m_chunkattr_ent  = nullptr;
   const playgo_mchunk_attr_ent* m_mchunkattr_ent = nullptr;
   const uint16_t*               m_mchunks        = nullptr;
