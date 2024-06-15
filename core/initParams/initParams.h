@@ -13,10 +13,6 @@ class IInitParams {
   virtual bool init(int argc, char** argv) = 0;
   virtual bool isDebug()                   = 0;
 
-  virtual std::string getApplicationPath() = 0;
-  virtual std::string getApplicationRoot() = 0;
-  virtual std::string getUpdateRoot()      = 0;
-
   virtual bool enableValidation() = 0;
   virtual bool enableBrightness() = 0;
   virtual bool useVSYNC()         = 0;

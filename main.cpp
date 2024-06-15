@@ -9,6 +9,7 @@
 #include "core/runtime/runtimeLinker.h"
 #include "core/systemContent/systemContent.h"
 #include "core/timer/timer.h"
+#include "eventsystem/events/system_cross/handler.h"
 #include "gamereport.h"
 #include "modules/internal/videoout/videoout.h"
 #undef __APICALL_IMPORT
@@ -24,6 +25,7 @@
 
 LOG_DEFINE_MODULE(MAIN);
 
+namespace {
 void SYSV_ABI exitHandler() {
   LOG_USE_MODULE(MAIN);
   LOG_ERR(L"Program exit");
@@ -77,44 +79,12 @@ bool loadModule(std::string_view strFullpath) {
   return true;
 }
 
-int main(int argc, char** argv) {
-  ::setvbuf(stdout, nullptr, _IONBF, 0);
-  ::setvbuf(stderr, nullptr, _IONBF, 0);
+void loadGame(const std::string_view main, const std::string_view mainRoot, const std::string_view updateRoot) {
   LOG_USE_MODULE(MAIN);
 
-  printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
+  std::filesystem::path const dirRoot(!mainRoot.empty() ? mainRoot.data() : std::filesystem::path(main).parent_path());
 
-  /**
-   * Initialize GameReport before anything else gets loaded.
-   * TODO: Catch exceptions and pass them to it if possible.
-   */
-  (void)accessGameReport();
-
-  auto initParams = accessInitParams();
-
-  // ### Preinit
-  if (!initParams->init(argc, argv)) {
-    return -1;
-  }
-  util::setThreadName("MainThread");
-
-  // Wait on debugger if requested
-  if (initParams->isDebug()) {
-    while (!::IsDebuggerPresent()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-  }
-  // -
-
-  LOG_INFO(L"Started");
-  // --- preinit
-
-  // ### Setup
-  auto       filepath   = initParams->getApplicationPath();
-  auto const fileRoot   = initParams->getApplicationRoot();
-  auto const updateRoot = initParams->getUpdateRoot();
-
-  std::filesystem::path const dirRoot(!fileRoot.empty() ? fileRoot.data() : std::filesystem::path(filepath).parent_path());
+  std::string mainProgPath(main);
 
   auto& systemContent = accessSystemContent();
   auto& fileManager   = accessFileManager();
@@ -142,8 +112,8 @@ int main(int argc, char** argv) {
     fileManager.enableUpdateSearch();
 
     // Change eboot.bin to update folder
-    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(filepath).filename()).string();
-    if (std::filesystem::exists(u_eboot)) filepath = u_eboot;
+    auto u_eboot = (std::filesystem::path(updateRoot) / std::filesystem::path(main).filename()).string();
+    if (std::filesystem::exists(u_eboot)) mainProgPath = u_eboot;
   }
   // - special case
 
@@ -154,7 +124,7 @@ int main(int argc, char** argv) {
   // ### Load modules
 
   intern::init();
-  loadModule(filepath); // load mainprog
+  loadModule(mainProgPath); // load mainprog
 
   std::set<std::string> moduleSet;
 
@@ -203,8 +173,13 @@ int main(int argc, char** argv) {
   }
 
   accessTimer().init();
+}
 
-  auto const entryAddr = rt.execute();
+void runGame(ScePthread_obj* thread) {
+  LOG_USE_MODULE(MAIN);
+  auto&      rt        = accessRuntimeLinker();
+  auto*      procParam = (ProcParam*)rt.accessMainProg()->procParamVaddr;
+  auto const entryAddr = rt.relocate();
 
   LOG_INFO(L"Start| entry:0x%08llx", entryAddr);
 
@@ -219,11 +194,78 @@ int main(int argc, char** argv) {
       pthread::attrSetstacksize(&attr, *procParam->sceUserMainThreadStackSize);
   }
 
-  ScePthread_obj thread;
-  pthread::create(&thread, &attr, thread_func, (void*)entryAddr, "main");
-  void* ret = 0;
-  pthread::join(thread, &ret);
+  pthread::create(thread, &attr, thread_func, (void*)entryAddr, "main");
+}
 
+class SystemEventHandler: public events::system_cross::IEventHandler {
+  ScePthread_obj _thread = nullptr;
+
+  public:
+  SystemEventHandler() = default;
+
+  virtual ~SystemEventHandler() {
+    if (_thread != nullptr) {
+      pthread::cancel(_thread);
+      void* ret;
+      pthread::join(_thread, &ret);
+    }
+  }
+
+  // ### Interface
+  void onEventLoadExec(events::system_cross::LoadArgs const& data) override {
+    printf("LoadExec\n");
+    loadGame(data.mainExec, data.mainRoot, data.updateRoot);
+  }
+
+  void onEventSetArguments(events::system_cross::SetArg const& data) override {
+    printf("SetArgument %s\n", data.arg.c_str());
+    auto& rt = accessRuntimeLinker();
+
+    rt.addEntryParam(data.arg);
+  }
+
+  void onEventRunExec() override {
+    printf("RunExec\n");
+    runGame(&_thread);
+  }
+};
+} // namespace
+
+int main(int argc, char** argv) {
+  ::setvbuf(stdout, nullptr, _IONBF, 0);
+  ::setvbuf(stderr, nullptr, _IONBF, 0);
+  LOG_USE_MODULE(MAIN);
+
+  printf("Renderer version: %s\n", PSOFF_RENDER_VERSION);
+
+  /**
+   * Initialize GameReport before anything else gets loaded.
+   * TODO: Catch exceptions and pass them to it if possible.
+   */
+  (void)accessGameReport();
+
+  auto initParams = accessInitParams();
+
+  // ### Preinit
+  if (!initParams->init(argc, argv)) {
+    return -1;
+  }
+  util::setThreadName("MainThread");
+
+  // Wait on debugger if requested
+  if (initParams->isDebug()) {
+    while (!::IsDebuggerPresent()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  }
+  // -
+
+  SystemEventHandler systemHandler;
+  LOG_INFO(L"Started, waiting for events");
+
+  while (true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
   __Log::flush();
   return 0;
 }

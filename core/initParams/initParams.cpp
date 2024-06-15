@@ -14,10 +14,6 @@ class InitParams: public IInitParams {
   bool init(int argc, char** argv) final;
   bool isDebug() final;
 
-  std::string getApplicationPath() final;
-  std::string getApplicationRoot() final;
-  std::string getUpdateRoot() final;
-
   bool enableValidation() final;
   bool enableBrightness() final;
   bool useVSYNC() final;
@@ -38,9 +34,6 @@ bool InitParams::init(int argc, char** argv) {
   ("bright", "use srgb display format (brightness)")
   ("4k", "try 4K display mode if game supports it")
   ("vsync", po::value<bool>()->default_value(true), "Enable vertical synchronization")
-  ("file", po::value<std::string>(), "fullpath to applications binary")
-  ("root", po::value<std::string>(), "Applications root")
-  ("update", po::value<std::string>(), "update files folder")
       // clang-format on
       ;
 
@@ -55,10 +48,6 @@ bool InitParams::init(int argc, char** argv) {
     std::cout << desc << '\n';
     return false;
   }
-  if (m_vm.count("file") == 0) {
-    std::cout << "--file missing\n";
-    return false;
-  }
 
   return true;
 }
@@ -70,18 +59,6 @@ IInitParams* accessInitParams() {
 
 bool InitParams::isDebug() {
   return m_vm.count("d");
-}
-
-std::string InitParams::getApplicationPath() {
-  return m_vm.count("file") ? m_vm["file"].as<std::string>() : std::string();
-}
-
-std::string InitParams::getApplicationRoot() {
-  return m_vm.count("root") ? m_vm["root"].as<std::string>() : std::string();
-}
-
-std::string InitParams::getUpdateRoot() {
-  return m_vm.count("update") ? m_vm["update"].as<std::string>() : std::string();
 }
 
 bool InitParams::enableValidation() {
