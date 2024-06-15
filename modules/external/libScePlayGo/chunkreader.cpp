@@ -17,40 +17,45 @@ GoReader::GoReader(std::filesystem::path file) {
       return;
     }
 
-    if (m_header.magic != 0x6F676C70) {
+    fstrm.seekg(0, std::ios::end);
+    m_buffer.resize(fstrm.tellg());
+    fstrm.seekg(0);
+    fstrm.read(m_buffer.data(), m_buffer.size());
+
+    if (m_buffer.size() < sizeof(playgo_header)) {
+      LOG_ERR(L"Invalid playgo file!");
+      return;
+    }
+
+    m_header = (playgo_header*)m_buffer.data();
+
+    if (m_header->magic != 0x6F676C70) {
       LOG_ERR(L"Invalid playgo file magic!");
       return;
     }
 
-    auto chunk_loader = [&fstrm](playgo_chunk* chunk, void** ptr) -> bool {
-      auto buf = new char[chunk->size];
-
-      if (fstrm.seekg(chunk->offset, std::ios::beg) && fstrm.read(buf, chunk->size)) {
-        *ptr = buf;
-        return true;
-      }
-
-      delete[] buf;
-      return false;
+    auto getchunkptr = [this](const playgo_chunk* chunk) -> void* {
+      if (m_buffer.size() < chunk->offset + chunk->size) return nullptr;
+      return m_buffer.data() + chunk->offset;
     };
 
-    if (!chunk_loader(&m_header.chunk_attrs, (void**)&m_chunkattr_ent)) {
-      LOG_ERR(L"Failed to read playgo chunk attributes!");
+    if ((m_chunkattr_ent = (playgo_chunkattr_ent*)getchunkptr(&(m_header->chunk_attrs))) == nullptr) {
+      LOG_ERR(L"Failed to read chunkattr section");
       return;
     }
 
-    if (!chunk_loader(&m_header.chunk_mchunks, (void**)&m_mchunks)) {
-      LOG_ERR(L"Failed to read playgo chunk attributes!");
+    if ((m_mchunks = (uint16_t*)getchunkptr(&(m_header->chunk_mchunks))) == nullptr) {
+      LOG_ERR(L"Failed to read mchunks section");
       return;
     }
 
-    if (!chunk_loader(&m_header.chunk_labels, (void**)&m_labels)) {
-      LOG_ERR(L"Failed to read playgo chunk attributes!");
+    if ((m_labels = (const char*)getchunkptr(&(m_header->chunk_labels))) == nullptr) {
+      LOG_ERR(L"Failed to read labels section");
       return;
     }
 
-    if (!chunk_loader(&m_header.mchunk_attrs, (void**)&m_mchunattr_ent)) {
-      LOG_ERR(L"Failed to read playgo chunk attributes!");
+    if ((m_mchunkattr_ent = (playgo_mchunk_attr_ent*)getchunkptr(&(m_header->mchunk_attrs))) == nullptr) {
+      LOG_ERR(L"Failed to read mchunk_attr section");
       return;
     }
 
@@ -59,13 +64,6 @@ GoReader::GoReader(std::filesystem::path file) {
   }
 
   LOG_ERR(L"Failed to open %s", file.c_str());
-}
-
-GoReader::~GoReader() {
-  if (m_chunkattr_ent) delete[] m_chunkattr_ent;
-  if (m_mchunattr_ent) delete[] m_mchunattr_ent;
-  if (m_mchunks) delete[] m_mchunks;
-  if (m_labels) delete[] m_labels;
 }
 
 uint64_t GoReader::getChunkSize(uint16_t id) {
@@ -78,7 +76,7 @@ uint64_t GoReader::getChunkSize(uint16_t id) {
 
     for (int i = 0; i < mchunks_len; ++i) {
       auto mchunk_id = mchunks[i];
-      total_size += m_mchunattr_ent[mchunk_id].size.value;
+      total_size += m_mchunkattr_ent[mchunk_id].size.value;
     }
   }
 
