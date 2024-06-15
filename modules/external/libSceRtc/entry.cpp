@@ -17,7 +17,7 @@ extern "C" {
 EXPORT const char* MODULE_NAME = "libSceRtc";
 
 EXPORT SYSV_ABI int sceRtcGetCurrentTick(SceRtcTick* pTick) {
-  pTick->tick = boost::chrono::duration_cast<boost::chrono::nanoseconds>(boost::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  pTick->tick = boost::posix_time::microsec_clock::universal_time().time_of_day().total_microseconds();
   return Ok;
 }
 
@@ -32,7 +32,7 @@ EXPORT SYSV_ABI int sceRtcGetCurrentClock(SceRtcDateTime* pTime, int iTimeZone) 
   pTime->hour        = duration.hours();
   pTime->minute      = duration.minutes();
   pTime->second      = duration.seconds();
-  pTime->microsecond = duration.fractional_seconds() * 1000;
+  pTime->microsecond = duration.fractional_seconds();
   return Ok;
 }
 
@@ -47,13 +47,12 @@ EXPORT SYSV_ABI int sceRtcGetCurrentClockLocalTime(SceRtcDateTime* pTime) {
   pTime->hour        = duration.hours();
   pTime->minute      = duration.minutes();
   pTime->second      = duration.seconds();
-  pTime->microsecond = duration.fractional_seconds() * 1000;
+  pTime->microsecond = duration.fractional_seconds();
   return Ok;
 }
 
 EXPORT SYSV_ABI int sceRtcGetCurrentNetworkTick(SceRtcTick* pTick) {
-  pTick->tick = boost::chrono::system_clock::now().time_since_epoch().count();
-  return Ok;
+  return sceRtcGetCurrentTick(pTick);
 }
 
 EXPORT SYSV_ABI int sceRtcConvertUtcToLocalTime(const SceRtcTick* pUtc, SceRtcTick* pLocalTime) {
