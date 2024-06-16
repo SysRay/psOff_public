@@ -33,8 +33,8 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
 
   mountResult->mountStatus = 0;
 
-  bool doCreate = ((uint32_t)mountMode & ((uint32_t)SceSaveDataMountMode::CREATE) | (uint32_t)SceSaveDataMountMode::CREATE2) > 0;
-  bool doOpen   = ((uint32_t)mountMode & ((uint32_t)SceSaveDataMountMode::READ_ONLY) | (uint32_t)SceSaveDataMountMode::READ_WRITE) > 0;
+  bool doCreate = ((uint32_t)mountMode & ((uint32_t)SceSaveDataMountMode::CREATE | (uint32_t)SceSaveDataMountMode::CREATE2)) > 0;
+  bool doOpen   = ((uint32_t)mountMode & ((uint32_t)SceSaveDataMountMode::READ_ONLY | (uint32_t)SceSaveDataMountMode::READ_WRITE)) > 0;
 
   if (doOpen || doCreate) {
     if (!accessFileManager().getMountPoint(MountType::Save, dirSaveFiles.filename().string()).empty()) {
@@ -48,6 +48,8 @@ int saveDataMount(int32_t userId, const char* dirName, SceSaveDataMountMode moun
     if (!std::filesystem::exists(dirSaveFiles)) {
       std::filesystem::create_directories(dirSaveFiles);
       mountResult->mountStatus = (uint32_t)SceSaveDataMountStatus::CREATED;
+    } else if ((uint32_t)mountMode & (uint32_t)SceSaveDataMountMode::CREATE) {
+      return Err::SaveData::EXISTS;
     }
   }
 

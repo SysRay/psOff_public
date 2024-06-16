@@ -21,7 +21,6 @@ void init() {
   initIntercepts();
 }
 
-/*
 void SYSV_ABI logfunc(const char* str, void* args) {
   char sanitize[1024] = "gamelogger| ";
   for (int i = 12; i < 1024; ++i) {
@@ -35,13 +34,27 @@ void SYSV_ABI logfunc(const char* str, void* args) {
   }
   vprintf(sanitize, (va_list)&args);
 }
-*/
+
+/**
+ * @brief List of game logger addresses:
+ *
+ * <Game name>:
+ *   <Version>: <binary>:<offset>, <interceptor>
+ *
+ *
+ * NieR: Automata:
+ *   v01.06: eboot.bin:0xbe09e0, logfunc
+ *
+ * Worms W.M.D
+ *   v01.00: eboot.bin:0x428b70, logfunc
+ *
+ */
 
 void post() {
   /*
-    // NieR: Automata v01.06 internal game logger interception example:
-    auto mp = accessRuntimeLinker().accessMainProg();
-    accessRuntimeLinker().interceptInternal(mp, 0xbe09e0, (uint64_t)&logfunc);
+    // Use addresses above to intercept game's function
+    auto prg = accessRuntimeLinker().accessMainProg(); // or findProgramById() for prx libs
+    accessRuntimeLinker().interceptInternal(prg, <offset there>, (uint64_t)&<your function name there>);
   */
 }
 
