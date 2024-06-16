@@ -21,7 +21,7 @@ class IRuntimeLinker: public IRuntimeExport {
   virtual Program* findProgram(uint64_t vaddr)      = 0;
   virtual Program* findProgramById(size_t id) const = 0;
 
-  virtual uintptr_t execute()     = 0;
+  virtual uintptr_t relocate()    = 0;
   virtual void      stopModules() = 0;
 
   virtual void stopModule(int id) = 0;

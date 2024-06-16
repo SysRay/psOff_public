@@ -7,15 +7,31 @@
       "request": "launch",
       "program": "${workspaceRoot}/_build/_Install/psoff.exe",
       "args": [
-        "--d",
+        // "--d",
+        // "--vkValidation",
         "${config:psoff.add-arg}",
-        "--file=${config:psoff.game-path}/eboot.bin",
+        "--file=${config:psoff.game-path}/eboot.bin"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceRoot}/_build/_Install",
       "environment": [],
       "console": "integratedTerminal",
       "symbolSearchPath": "${workspaceRoot}/_build/_Install/debug"
+    },
+    {
+      "name": "(Windows) Attach",
+      "type": "cppvsdbg",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch + Attach",
+      "configurations": [
+        "(Windows) Launch",
+        "(Windows) Attach"
+      ]
     }
   ]
 }

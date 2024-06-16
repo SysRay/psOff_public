@@ -131,6 +131,7 @@ private:
         case Item::Status::ERROR:
         case Item::Status::DONE: {
           qi->ready();
+          m_cond.notify_one();
         } break;
 
         case Item::Status::READY: {
