@@ -368,7 +368,7 @@ EXPORT SYSV_ABI int sceKernelGetModuleInfo(SceKernelModule handle, SceKernelModu
   if (info == nullptr) return getErr(ErrCode::_EINVAL);
 
   std::string_view(info->name).copy(r->name, sizeof(r->name));
-  *r->segments     = *info->segments;
+  ::memcpy(r->segments, info->segments, sizeof(info->segments));
   r->segment_count = info->segment_count;
   r->ref_count     = info->ref_count;
   ::memset(r->fingerprint, 0, sizeof(r->fingerprint)); // todo Read .sce_special from ELF binary
