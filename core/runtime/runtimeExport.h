@@ -92,6 +92,7 @@ class IRuntimeExport {
 
   virtual ModulInfo mainModuleInfo() const = 0;
 
+  virtual SceKernelModuleInfoEx const* getModuleInfoEx(int32_t handle) const = 0;
   virtual SceKernelModuleInfoEx const* getModuleInfoEx(uint64_t vaddr) const = 0;
 
   virtual std::vector<int> getModules() const = 0;
