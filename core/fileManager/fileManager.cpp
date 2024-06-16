@@ -227,8 +227,7 @@ class FileManager: public IFileManager {
 
 #pragma pack(pop, 1)
 
-    auto count = dir->count;
-    int  n     = 0;
+    int n = 0;
 
     while (n < nbytes - sizeof(DataStruct)) {
       auto item = (DataStruct*)(buf + n);
@@ -236,7 +235,7 @@ class FileManager: public IFileManager {
       auto const filename = (*dir->m_file)->path().filename().string();
       if (sizeof(DataStruct) + std::min(filename.size(), 255llu) >= nbytes) break;
 
-      item->fileno             = (n / sizeof(DataStruct)) + 1;
+      item->fileno             = ++dir->count;
       item->type               = ((*dir->m_file)->is_regular_file() ? 8 : 4);
       item->namlen             = filename.copy(item->name, 255);
       item->name[item->namlen] = '\0';
@@ -244,17 +243,16 @@ class FileManager: public IFileManager {
       n += sizeof(DataStruct);
       item->reclen = sizeof(DataStruct);
 
-      LOG_DEBUG(L"KernelGetdirentries[%d]: %S %u offset:%u count:%u", handle, item->name, item->type, n, count);
+      LOG_DEBUG(L"KernelGetdirentries[%d]: %S %u offset:%u count:%u", handle, item->name, item->type, n, dir->count);
 
       std::error_code err;
       (*dir->m_file).increment(err);
-      count = ++dir->count;
 
       if ((*dir->m_file) == endDir || err) break;
     };
 
     if (basep != nullptr) {
-      *basep = count;
+      *basep = dir->count;
     }
     return n;
   }
