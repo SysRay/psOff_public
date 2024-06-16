@@ -236,7 +236,7 @@ class FileManager: public IFileManager {
       auto const filename = (*dir->m_file)->path().filename().string();
       if (sizeof(DataStruct) + std::min(filename.size(), 255llu) >= nbytes) break;
 
-      item->fileno             = count;
+      item->fileno             = (n / sizeof(DataStruct)) + 1;
       item->type               = ((*dir->m_file)->is_regular_file() ? 8 : 4);
       item->namlen             = filename.copy(item->name, 255);
       item->name[item->namlen] = '\0';
