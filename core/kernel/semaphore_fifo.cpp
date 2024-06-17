@@ -1,7 +1,10 @@
+#define __APICALL_EXTERN
+#include "semaphore.h"
+#undef __APICALL_EXTERN
+
 #include "logging.h"
 #include "modules_include/common.h"
 #include "pthread.h"
-#include "semaphore.h"
 
 #include <boost/chrono.hpp>
 #include <boost/thread/condition.hpp>

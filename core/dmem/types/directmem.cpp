@@ -2,10 +2,11 @@
 #include "core/kernel/filesystem.h"
 #include "core/runtime/procParam.h"
 #include "core/runtime/runtimeLinker.h"
-#include "core/videoout/videoout.h"
 #include "logging.h"
 #include "memory.h"
-#include "modules/libkernel/codes.h"
+#include "modules/external/libkernel/codes.h"
+#include "modules/external/libkernel/dmem.h"
+#include "modules/internal/videoout/videoout.h"
 #include "utility/utility.h"
 
 #include <boost/thread.hpp>
@@ -26,7 +27,7 @@ enum class MemoryState {
   Commited,
 };
 
-struct MemoryMapping {
+struct MemoryMappingDirect {
   uint64_t addr = 0;
 
   uint64_t heapAddr = 0; // addr for MemoryInfo
@@ -78,12 +79,12 @@ DWORD convProtection(int prot) {
 } // namespace
 
 class DirectMemory: public IMemoryType {
-  boost::mutex m_mutexInt;
+  mutable boost::mutex m_mutexInt;
 
   IMemoryManager* m_parent;
 
-  std::map<uint64_t, MemoryInfo>    m_objects;
-  std::map<uint64_t, MemoryMapping> m_mappings;
+  std::map<uint64_t, MemoryInfo>          m_objects;
+  std::map<uint64_t, MemoryMappingDirect> m_mappings;
 
   uint64_t m_allocSize = 0;
   uint64_t m_usedSize  = 0;
@@ -136,7 +137,10 @@ class DirectMemory: public IMemoryType {
 
   uint64_t size() const final;
 
-  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) final;
+  int getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const final;
+
+  int32_t virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const final;
+  int32_t directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const final;
 
   void deinit() final;
 };
@@ -218,7 +222,7 @@ int DirectMemory::alloc(size_t len, size_t alignment, int memoryType, uint64_t* 
   m_allocSize += len;
   m_objects.emplace(std::make_pair(
       *outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = memoryType, .vmaAlloc = alloc, .vmaBlock = block}));
-
+  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   LOG_DEBUG(L"-> Allocated: len:0x%08llx alignment:0x%08llx memorytype:%d -> 0x%08llx", len, alignment, memoryType, *outAddr);
 
   return Ok;
@@ -251,7 +255,7 @@ int DirectMemory::free(off_t start, size_t len) {
     return Ok;
   }
 
-  if (itHeap->first != addr || itHeap->second.size != len) {
+  if (len != 0 && (itHeap->first != addr || itHeap->second.size != len)) {
     LOG_ERR(L"free Error| start:0x%08llx len:0x%08llx != start:0x%08llx len:0x%08llx", addr, len, itHeap->first, itHeap->second.size);
   }
 
@@ -304,13 +308,24 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
   VmaVirtualAllocation alloc = nullptr;
 
   // search for free space
-  uint64_t    fakeAddrOffset = 0;
-  MemoryInfo* info           = getMemoryInfo(len, alignment, prot, alloc, fakeAddrOffset);
+  uint64_t fakeAddrOffset = 0;
+
+  MemoryInfo* info = nullptr;
+  if (flags & (int)filesystem::SceMapMode::FIXED) {
+    for (auto& item: m_objects) {
+      if (item.second.state == MemoryState::Reserved && item.first <= vaddr && item.second.size >= len) {
+        info     = &item.second;
+        desVaddr = info->addr;
+      }
+    }
+  }
+  if (info == nullptr) info = getMemoryInfo(len, alignment, prot, alloc, fakeAddrOffset);
+
   if (info == nullptr) return retNoMem();
   // -
 
   // Check if Commit needed
-  if (info->state == MemoryState::Free) {
+  if (info->state == MemoryState::Free || info->state == MemoryState::Reserved) {
     MEM_ADDRESS_REQUIREMENTS addressReqs    = {0};
     MEM_EXTENDED_PARAMETER   extendedParams = {0};
 
@@ -321,8 +336,11 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
     extendedParams.Type    = MemExtendedParameterAddressRequirements;
     extendedParams.Pointer = &addressReqs;
 
-    void* ptr = VirtualAlloc2(NULL, (void*)desVaddr, info->size, MEM_RESERVE | MEM_COMMIT | MEM_WRITE_WATCH, convProtection(prot),
-                              desVaddr != 0 ? 0 : &extendedParams, desVaddr != 0 ? 0 : 1);
+    uint32_t flags = MEM_COMMIT;
+    if (info->state != MemoryState::Reserved) {
+      flags |= MEM_RESERVE | MEM_WRITE_WATCH;
+    }
+    void* ptr = VirtualAlloc2(NULL, (void*)desVaddr, info->size, flags, convProtection(prot), desVaddr != 0 ? 0 : &extendedParams, desVaddr != 0 ? 0 : 1);
     if (ptr == 0) {
       auto const err = GetLastError();
       LOG_ERR(L"Commit Error| addr:0x%08llx len:0x%08llx err:%d", info->addr, info->size, GetLastError());
@@ -331,15 +349,15 @@ int DirectMemory::map(uint64_t vaddr, off_t offset, size_t len, int prot, int fl
 
     info->allocAddr = ptr;
     info->state     = MemoryState::Commited;
+    info->prot      = prot;
     LOG_DEBUG(L"Commit| addr:0x%08llx len:0x%08llx prot:%d ->", info->addr, info->size, prot, ptr);
   }
   // - commit
 
   *outAddr = (uint64_t)info->allocAddr + fakeAddrOffset;
   m_mappings.emplace(
-      std::make_pair(*outAddr, MemoryMapping {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
+      std::make_pair(*outAddr, MemoryMappingDirect {.addr = *outAddr, .heapAddr = info->addr, .size = len, .alignment = alignment, .vmaAlloc = alloc}));
 
-  m_parent->registerMapping(*outAddr, MappingType::Direct);
   m_usedSize += len;
 
   LOG_DEBUG(L"-> Map: start:0x%08llx(0x%x) len:0x%08llx alignment:0x%08llx prot:%d -> 0x%08llx", vaddr, offset, len, alignment, prot, *outAddr);
@@ -379,6 +397,7 @@ int DirectMemory::reserve(uint64_t start, size_t len, size_t alignment, int flag
 
   m_objects.emplace(
       std::make_pair(*outAddr, MemoryInfo {.addr = *outAddr, .size = len, .alignment = alignment, .memoryType = 0, .state = MemoryState::Reserved}));
+  m_parent->registerMapping(*outAddr, len, MappingType::Direct);
   return Ok;
 }
 
@@ -416,12 +435,37 @@ uint64_t DirectMemory::size() const {
   return SCE_KERNEL_MAIN_DMEM_SIZE;
 }
 
-int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) {
+int DirectMemory::getAvailableSize(uint32_t start, uint32_t end, size_t alignment, uint32_t* startOut, size_t* sizeOut) const {
   LOG_USE_MODULE(DirectMemory);
-  LOG_DEBUG(L"availableSize: start:0x%08llx end:0x%08llx alignment:0x%08llx", start, end, alignment);
+  LOG_DEBUG(L"availableSize: start:0x%lx end:0x%lx alignment:0x%08llx", start, end, alignment);
 
-  *startOut = m_usedSize;
-  *sizeOut  = SCE_KERNEL_MAIN_DMEM_SIZE - m_usedSize;
+  auto itItem = m_objects.lower_bound(DIRECTMEM_START + start);
+  if (m_objects.empty() || itItem == m_objects.end()) {
+    *startOut = start;
+    *sizeOut  = std::min(SCE_KERNEL_MAIN_DMEM_SIZE, (uint64_t)end - start);
+    return Ok;
+  }
+
+  // *startOut = start;
+  // *sizeOut  = (itItem->second.addr - DIRECTMEM_START) - start;
+  if (itItem->second.addr + itItem->second.size >= DIRECTMEM_START + end) {
+    *startOut = end;
+    *sizeOut  = 0;
+    return Ok;
+  }
+
+  *startOut = start;
+  *sizeOut  = 0;
+
+  auto itEnd = m_objects.lower_bound(DIRECTMEM_START + end);
+  for (; itItem != itEnd; ++itItem) {
+    *startOut = (itItem->second.addr + itItem->second.size) - DIRECTMEM_START;
+  }
+
+  if (*startOut > end)
+    *sizeOut = *startOut - end;
+  else
+    *sizeOut = end - *startOut;
 
   return Ok;
 }
@@ -435,4 +479,67 @@ void DirectMemory::deinit() {
     }
   }
   m_objects.clear();
+}
+
+int32_t DirectMemory::virtualQuery(uint64_t addr, SceKernelVirtualQueryInfo* info) const {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+  if (m_objects.empty()) return getErr(ErrCode::_EACCES);
+
+  auto itItem = m_objects.lower_bound(addr);
+  if (itItem == m_objects.end() && addr > (itItem->first + itItem->second.size)) return getErr(ErrCode::_EACCES); // End reached
+
+  if (itItem == m_objects.end() || (itItem != m_objects.begin() && itItem->first != addr)) --itItem; // Get the correct item
+
+  info->protection       = itItem->second.prot;
+  info->memoryType       = itItem->second.memoryType;
+  info->isFlexibleMemory = false;
+  info->isDirectMemory   = true;
+  info->isPooledMemory   = false;
+  // info->isStack   = false; // done by parent
+
+  auto itMapping = m_mappings.lower_bound(itItem->first);
+  if (itMapping == m_mappings.end() || (itMapping != m_mappings.begin() && itMapping->first != itItem->first)) --itMapping; // Get the correct item
+
+  if (!(itMapping->first <= itItem->first && (itMapping->first + itMapping->second.size > itItem->first))) {
+    if (itItem->second.state == MemoryState::Reserved) {
+      info->start       = (void*)itItem->first;
+      info->end         = (void*)(itItem->first + itItem->second.size);
+      info->offset      = 0;
+      info->isCommitted = false;
+      return Ok;
+    }
+    return getErr(ErrCode::_EACCES);
+  }
+
+  info->start  = (void*)itMapping->first;
+  info->end    = (void*)(itMapping->first + itMapping->second.size);
+  info->offset = 0;
+
+  info->isCommitted = true;
+  return Ok;
+}
+
+int32_t DirectMemory::directQuery(uint64_t offset, SceKernelDirectMemoryQueryInfo* info) const {
+  LOG_USE_MODULE(DirectMemory);
+
+  boost::unique_lock lock(m_mutexInt);
+
+  for (auto& item: m_objects) {
+    auto off = item.second.addr - DIRECTMEM_START;
+    if (offset >= off && offset < off + item.second.size) {
+      info->start = item.second.addr;
+      info->end   = item.second.addr + item.second.size;
+
+      info->memoryType = item.second.memoryType;
+
+      LOG_DEBUG(L"Query OK: offset:0x%08llx -> start:0x%08llx end:0x%08llx type:%d", offset, info->start, info->end, info->memoryType);
+      return Ok;
+    }
+  }
+
+  LOG_DEBUG(L"Query Error: offset:0x%08llx", offset);
+
+  return getErr(ErrCode::_EACCES);
 }

@@ -21,8 +21,8 @@ struct alignas(32) EntryParams {
 };
 
 struct ModulInfo {
-  uint64_t address;
-  uint64_t size;
+  uint64_t seg0Addr;
+  uint64_t seg0Size;
   uint64_t procParamAddr;
 };
 
@@ -83,7 +83,9 @@ class IRuntimeExport {
 
   virtual uint64_t getTLSStaticBlockSize() const = 0;
 
-  virtual EntryParams const* getEntryParams() const = 0;
+  virtual std::vector<const char*> const& getEntryParams() const = 0;
+
+  virtual void addEntryParam(std::string_view const arg) = 0;
 
   virtual void cxa_add_atexit(CxaDestructor&&, int moduleId) = 0;
   virtual void cxa_finalize(int moduleId)                    = 0;

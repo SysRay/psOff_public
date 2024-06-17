@@ -3,11 +3,15 @@
 #undef __APICALL_EXTERN
 
 #include "config_emu.h"
+#include "core/systemContent/systemContent.h"
 #include "git_ver.h"
 #include "logging.h"
+#include "modules/internal/hotkeys/hotkeys.h"
+#include "modules/internal/videoout/videoout.h"
 #include "modules_include/system_param.h"
 #include "nlohmann/json.hpp"
 
+#include <SDL2/SDL.h>
 #include <Windows.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -90,7 +94,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "It looks like we already know about the issues in this game!\n\n"
         "Current status: {}\nPossible issues:\n{}\n\n"
-        "Do you want to open a game's issue page on GitHub?",
+        "Do you want to open a game's issue page on GitHub?\n"
+        "Report data will be copied to your clipboard.",
 
         "nothing (the game don't initialize properly, not loading at all and/or crashing the emulator)",
         "intro (the game display image but don't make it past the menus)",
@@ -133,7 +138,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "Похоже, что мы уже знаем о проблемах в этой игре!\n\n"
         "Текущий статус: {}\nВозможные проблемы:\n{}\n\n"
-        "Хотите открыть страницу игры на GitHub?\n",
+        "Хотите открыть страницу игры на GitHub?\n"
+        "Данные о вашем тесте будут скопированы в буфер обмена.",
 
         "nothing (игра не инициализируется правильно, не загружается вообще и/или крашит эмулятор)",
         "intro (игра что-то рисует на экране, но уйти дальше главного меню не выходит)",
@@ -176,7 +182,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "Il semble que nous soyons déjà au courant des problèmes de ce jeu !\n\n"
         "État actuel : {}\nProblèmes possibles :\n{}\n\n"
-        "Voulez-vous ouvrir la page des problèmes d'un jeu sur GitHub ?",
+        "Voulez-vous ouvrir la page des problèmes d'un jeu sur GitHub ?\n"
+        "Report data will be copied to your clipboard.",
 
         "nothing (le jeu ne s'initialise pas correctement, ne se charge pas du tout et/ou plante l'émulateur)",
         "intro (l'image du jeu affiche mais ne dépasse pas les menus)",
@@ -219,7 +226,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "Es scheint, als wären uns die Probleme in diesem Spiel bereits bekannt!\n\n"
         "Aktueller Status: {}\nMögliche Probleme:\n{}\n\n"
-        "Möchtest du eine Fehlerseite für ein Spiel auf GitHub öffnen?",
+        "Möchtest du eine Fehlerseite für ein Spiel auf GitHub öffnen?\n"
+        "Report data will be copied to your clipboard.",
 
         "nothing (Das Spiel initialisiert nicht richtig, es lädt nicht und/oder lässt den Emulator abstürzen)",
         "intro (Das Spiel zeigt ein Bild, kommt jedoch nicht weiter als Menüs)",
@@ -262,7 +270,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "Se ha detectado un fallo en la emulación!\n\n"
         "Estado actual: {}\nPosibles fallos:\n{}\n\n"
-        "Deseas abrir el reporte de compatibilidad del juego?",
+        "Deseas abrir el reporte de compatibilidad del juego?\n"
+        "Los datos de reporte se copiarán a tu portapapeles.",
 
         "nothing (el juego no carga y/o se cuelga el emulador)",
         "intro (el juego produce imagen pero no funciona más allá del menú)",
@@ -305,7 +314,8 @@ static const char* strings[LANGS_MAX][LANG_STR_MAX] = {
         /* Issues window */
         "Wydaje się, że już znamy problemy z tą grą!\n\n"
         "Obecny status: {}\nMożliwe problemy:\n{}\n\n"
-        "Czy chcesz otworzyć zgłoszony raport gry na Github?",
+        "Czy chcesz otworzyć zgłoszony raport gry na Github?\n"
+        "Report data will be copied to your clipboard.",
 
         "nic (gra nie uruchamia się poprawnie, w ogóle się nie wczytuje i/lub powoduje awarię emulatora)",
         "intro (gra wyświetla obraz, ale nie przechodzi dalej niż menu)",
@@ -460,6 +470,25 @@ GameReport::GameReport() {
   // for (int i = 0; i < LANG_STR_MAX; i++) {
   //   printf("%s\n = \n%s\n*************************\n", strings[Langs::ENGLISH][i], strings[Langs::RUSSIAN][i]);
   // }
+
+  accessHotkeys().registerCallback(HkCommand::GAMEREPORT_SEND_REPORT, [this](HkCommand) {
+    auto title    = accessSystemContent().getString("TITLE");
+    auto title_id = accessSystemContent().getString("TITLE_ID");
+    auto app_ver  = accessSystemContent().getString("APP_VER");
+
+    ShowReportWindow({
+        .title    = title ? title.value().data() : "Your PS4 Game Name",
+        .title_id = title_id ? title_id.value().data() : "CUSA00000",
+        .app_ver  = app_ver ? app_ver.value().data() : "v0.0",
+        .emu_ver  = PSOFF_RENDER_VERSION,
+
+        .type = IGameReport::Type::USER,
+        .add =
+            {
+                .ex = nullptr,
+            },
+    });
+  });
 }
 
 void GameReport::ShowReportWindow(const Info& info) {
@@ -488,13 +517,13 @@ void GameReport::ShowReportWindow(const Info& info) {
   }
 
   SDL_MessageBoxButtonData btns[2] {
-      {.flags = 0, .buttonid = 1, .text = get_lang_string(lang_id, LangString::BUTTONS_YES)},
       {.flags = 0, .buttonid = 2, .text = get_lang_string(lang_id, LangString::BUTTONS_NO)},
+      {.flags = 0, .buttonid = 1, .text = get_lang_string(lang_id, LangString::BUTTONS_YES)},
   };
 
   SDL_MessageBoxData mbd {
       .flags      = SDL_MESSAGEBOX_INFORMATION,
-      .window     = info.wnd,
+      .window     = accessVideoOut().SDLWindow(),
       .title      = get_lang_string(lang_id, LangString::MAIN_TITLE),
       .message    = message,
       .numbuttons = 2,
@@ -539,8 +568,8 @@ void GameReport::ShowReportWindow(const Info& info) {
       mbd.message    = get_lang_string(lang_id, LangString::LOGGING_TEXT);
       mbd.flags      = SDL_MESSAGEBOX_WARNING;
       mbd.numbuttons = 2;
-      btns[0].text   = get_lang_string(lang_id, LangString::BUTTONS_OK);
-      btns[1].text   = get_lang_string(lang_id, LangString::BUTTONS_CANCEL);
+      btns[1].text   = get_lang_string(lang_id, LangString::BUTTONS_OK);
+      btns[0].text   = get_lang_string(lang_id, LangString::BUTTONS_CANCEL);
 
       if (SDL_ShowMessageBox(&mbd, &btn) != 0) {
         LOG_ERR(L"[gamereport] Failed to generate SDL MessageBox: %S", SDL_GetError());
@@ -555,26 +584,56 @@ void GameReport::ShowReportWindow(const Info& info) {
 
   boost::urls::url link("https://github.com/");
 
+  auto        extver = std::format("{}: {}", git::Branch(), git::CommitSHA1());
+  const char* emuver = nullptr;
+  const char* descr  = nullptr;
+
+  if (git::Branch() == "main") {
+    emuver = info.emu_ver;
+  } else {
+    emuver = extver.data();
+  }
+
+  switch (info.type) {
+    case EXCEPTION:
+      descr = info.add.ex->what(); // todo: add stack trace?
+      break;
+    case MISSING_SYMBOL:
+      descr = info.add.message; // todo: some formatting?
+      break;
+
+    default:
+      descr = ""; //
+      break;
+  }
+
   if (issue.id == -1) {
     link.set_path(std::format("/{}/issues/new", GAMEREPORT_REPO_NAME));
     auto params = link.params();
     params.append({"template", "game_report.yml"});
-    switch (info.type) {
-      case EXCEPTION:
-        params.append({"what-happened", info.add.ex->what()}); // todo: add stack trace?
-        break;
-      case MISSING_SYMBOL:
-        params.append({"what-happened", info.add.message}); // todo: some formatting?
-        break;
-
-      default: break;
-    }
+    params.append({"what-happened", descr});
     params.append({"title", std::format("[{}]: {}", info.title_id, info.title)});
     params.append({"game-version", info.app_ver});
-    params.append({"emu-version", info.emu_ver});
-    params.append({"lib-version", git::CommitSHA1().data()});
+    params.append({"emu-version", emuver});
   } else {
+
     link.set_path(std::format("/{}/issues/{}", GAMEREPORT_REPO_NAME, issue.id));
+    std::string output = std::format("Retested with `{}`\n\n### Please, describe what you get\n\n{}\n\n"
+                                     "### Game version you are using\n\n{}\n\n"
+                                     "### Current game status\n\nNothing\n\n"
+                                     "### Upload your log there\n\nNo logs :(\n\n"
+                                     "### Upload your screenshots there\n\nNo screenshots :(\n\n",
+                                     emuver, descr, info.app_ver);
+
+    auto    strlen = output.size() + 1;
+    HGLOBAL hMem   = ::GlobalAlloc(GMEM_MOVEABLE, strlen);
+    ::memcpy(GlobalLock(hMem), output.c_str(), strlen);
+    ::GlobalUnlock(hMem);
+    ::OpenClipboard(nullptr);
+    ::EmptyClipboard();
+    ::SetClipboardData(CF_TEXT, hMem);
+    ::CloseClipboard();
+    ::GlobalFree(hMem);
   }
 
   ShellExecuteA(nullptr, nullptr, link.normalize().c_str(), nullptr, nullptr, SW_SHOW);

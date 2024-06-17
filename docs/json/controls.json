@@ -36,104 +36,111 @@
       "description": "Information about keybinds for gamepad emulation, hover your cursor on any key inside this object to get more info.",
       "additionalProperties": false,
       "properties": {
-        "circle": {
+        "gamereport.send": {
           "$ref": "#/definitions/button"
         },
-        "cross": {
+        "overlay.open": {
           "$ref": "#/definitions/button"
         },
-        "dpad_down": {
+        "controller.circle": {
           "$ref": "#/definitions/button"
         },
-        "dpad_left": {
+        "controller.cross": {
           "$ref": "#/definitions/button"
         },
-        "dpad_right": {
+        "controller.dpad_down": {
           "$ref": "#/definitions/button"
         },
-        "dpad_up": {
+        "controller.dpad_left": {
           "$ref": "#/definitions/button"
         },
-        "l1": {
+        "controller.dpad_right": {
           "$ref": "#/definitions/button"
         },
-        "l2": {
+        "controller.dpad_up": {
           "$ref": "#/definitions/button"
         },
-        "l3": {
+        "controller.l1": {
           "$ref": "#/definitions/button"
         },
-        "lx+": {
+        "controller.l2": {
           "$ref": "#/definitions/button"
         },
-        "lx-": {
+        "controller.l3": {
           "$ref": "#/definitions/button"
         },
-        "ly+": {
+        "controller.lx+": {
           "$ref": "#/definitions/button"
         },
-        "ly-": {
+        "controller.lx-": {
           "$ref": "#/definitions/button"
         },
-        "options": {
+        "controller.ly+": {
           "$ref": "#/definitions/button"
         },
-        "r1": {
+        "controller.ly-": {
           "$ref": "#/definitions/button"
         },
-        "r2": {
+        "controller.options": {
           "$ref": "#/definitions/button"
         },
-        "r3": {
+        "controller.r1": {
           "$ref": "#/definitions/button"
         },
-        "rx+": {
+        "controller.r2": {
           "$ref": "#/definitions/button"
         },
-        "rx-": {
+        "controller.r3": {
           "$ref": "#/definitions/button"
         },
-        "ry+": {
+        "controller.rx+": {
           "$ref": "#/definitions/button"
         },
-        "ry-": {
+        "controller.rx-": {
           "$ref": "#/definitions/button"
         },
-        "square": {
+        "controller.ry+": {
           "$ref": "#/definitions/button"
         },
-        "touchpad": {
+        "controller.ry-": {
           "$ref": "#/definitions/button"
         },
-        "triangle": {
+        "controller.square": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.touchpad": {
+          "$ref": "#/definitions/button"
+        },
+        "controller.triangle": {
           "$ref": "#/definitions/button"
         }
       },
       "required": [
-        "circle",
-        "cross",
-        "dpad_down",
-        "dpad_left",
-        "dpad_right",
-        "dpad_up",
-        "l1",
-        "l2",
-        "l3",
-        "lx+",
-        "lx-",
-        "ly+",
-        "ly-",
-        "options",
-        "r1",
-        "r2",
-        "r3",
-        "rx+",
-        "rx-",
-        "ry+",
-        "ry-",
-        "square",
-        "touchpad",
-        "triangle"
+        "gamereport.send",
+        "controller.circle",
+        "controller.cross",
+        "controller.dpad_down",
+        "controller.dpad_left",
+        "controller.dpad_right",
+        "controller.dpad_up",
+        "controller.l1",
+        "controller.l2",
+        "controller.l3",
+        "controller.lx+",
+        "controller.lx-",
+        "controller.ly+",
+        "controller.ly-",
+        "controller.options",
+        "controller.r1",
+        "controller.r2",
+        "controller.r3",
+        "controller.rx+",
+        "controller.rx-",
+        "controller.ry+",
+        "controller.ry-",
+        "controller.square",
+        "controller.touchpad",
+        "controller.triangle"
       ]
     },
     "pads": {

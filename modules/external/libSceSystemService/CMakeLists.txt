@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.24)
+include(../setupModule.cmake)
+
+set(libName libSceSystemService)
+project(${libName})
+
+add_library(${libName} SHARED entry.cpp)
+
+add_dependencies(${libName} core eventsystem config_emu)
+target_link_libraries(${libName} PRIVATE core.lib eventsystem SDL2 ${Vulkan_LIBRARIES} config_emu.lib)
+
+setupModule(${libName})

@@ -12,8 +12,61 @@ SYSV_ABI void module_start(size_t argc, const void* argp, int* pRes) {
   // todo ?
 }
 
+void initIntercepts();
+
 void init() {
   LIB_DEFINE_START("intern", 0, "intern", 0, 0)
   LIB_FUNC("module_start", module_start), LIB_DEFINE_END();
+
+  initIntercepts();
+}
+
+void SYSV_ABI logfunc(const char* str, void* args) {
+  char sanitize[1024] = "gamelogger| ";
+  for (int i = 12; i < 1024; ++i) {
+    if (*str >= ' ' && *str <= '~')
+      sanitize[i] = *str++;
+    else {
+      sanitize[i]     = '\n';
+      sanitize[i + 1] = '\0';
+      break;
+    }
+  }
+  vprintf(sanitize, (va_list)&args);
+}
+
+/**
+ * @brief List of game logger addresses:
+ *
+ * <Game name>:
+ *   <Version>: <binary>:<offset>, <interceptor>
+ *
+ *
+ * NieR: Automata:
+ *   v01.06: eboot.bin:0xbe09e0, logfunc
+ *
+ * Worms W.M.D
+ *   v01.00: eboot.bin:0x428b70, logfunc
+ *
+ */
+
+void post() {
+  /*
+    // Use addresses above to intercept game's function
+    auto prg = accessRuntimeLinker().accessMainProg(); // or findProgramById() for prx libs
+    accessRuntimeLinker().interceptInternal(prg, <offset there>, (uint64_t)&<your function name there>);
+  */
+}
+
+void initIntercepts() {
+  /*Usage
+  // functions has to be of SYSV_ABI!
+  accessRuntimeLinker().interceptAdd((uintptr_t)int_Malloc, "Y7aJ1uydPMo", "libc", "libc")
+
+  // Calling original
+  auto const origFunction = accessRuntimeLinker().interceptGetAddr((uintptr_t)int_Malloc);
+  typedef SYSV_ABI void* (*fcnPtr)(void*, size_t);
+  void* ret = ((fcnPtr)origFunction)(ptr, size);
+  */
 }
 } // namespace intern

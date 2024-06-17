@@ -3,34 +3,25 @@
 
 #include <string>
 
-struct InitParamsPimpl;
-
-class InitParams {
-  CLASS_NO_COPY(InitParams);
-  CLASS_NO_MOVE(InitParams);
-
-  InitParamsPimpl* _pImpl = nullptr;
+class IInitParams {
+  CLASS_NO_COPY(IInitParams);
+  CLASS_NO_MOVE(IInitParams);
 
   public:
-  InitParams();
+  IInitParams() = default;
 
-  bool init(int argc, char** argv);
+  virtual bool init(int argc, char** argv) = 0;
+  virtual bool isDebug()                   = 0;
 
-  // Functions
-  bool isDebug();
+  virtual bool enableValidation() = 0;
+  virtual bool enableBrightness() = 0;
+  virtual bool useVSYNC()         = 0;
+  virtual bool try4K()            = 0;
 
-  std::string getApplicationPath();
-  std::string getApplicationRoot();
-  std::string getUpdateRoot();
-
-  bool enableValidation();
-  bool enableBrightness();
-  bool useVSYNC();
-  bool try4K();
-  ~InitParams();
+  virtual ~IInitParams() = default;
 };
 
-#if defined(__APICALL_EXTERN)
+#if defined(__APICALL_INITPARAMS_EXTERN)
 #define __APICALL __declspec(dllexport)
 #elif defined(__APICALL_IMPORT)
 #define __APICALL __declspec(dllimport)
@@ -38,5 +29,5 @@ class InitParams {
 #define __APICALL
 #endif
 
-__APICALL InitParams* accessInitParams();
+__APICALL IInitParams* accessInitParams();
 #undef __APICALL

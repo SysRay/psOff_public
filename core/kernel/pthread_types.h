@@ -1,13 +1,15 @@
 #pragma once
 #include "utility/utility.h"
 
+// clang-format off
+
 using pthread_entry_func_t          = SYSV_ABI void* (*)(void*);
 using pthread_key_destructor_func_t = SYSV_ABI void (*)(void*);
+using thread_dtors_func_t           = SYSV_ABI void (*)();
+using thread_clean_func_t           = SYSV_ABI void (*)(void*);
+using pthread_once_init             = SYSV_ABI void (*)();
 
-using thread_dtors_func_t = SYSV_ABI void (*)();
-using thread_clean_func_t = SYSV_ABI void (*)(void*);
-
-using pthread_once_init = SYSV_ABI void (*)();
+// clang-format on
 
 struct SceSchedParam {
   int sched_priority;

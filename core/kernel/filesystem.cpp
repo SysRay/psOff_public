@@ -1,4 +1,6 @@
+#define __APICALL_EXTERN
 #include "filesystem.h"
+#undef __APICALL_EXTERN
 
 #include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
@@ -52,6 +54,13 @@ std::unique_ptr<IFile> createType_dev(std::filesystem::path path, std::ios_base:
 
 int open_dev(const char* path, filesystem::SceOpen flags, filesystem::SceKernelMode kernelMode) {
   LOG_USE_MODULE(filesystem);
+
+  if (auto str = std::string_view(path); str.starts_with("/dev/std")) {
+    if (str.ends_with("stdin")) return 0;
+    if (str.ends_with("stdout")) return 1;
+    if (str.ends_with("stderr")) return 2;
+    return getErr(ErrCode::_ENOENT);
+  }
 
   std::ios_base::openmode mode = std::ios::binary;
 
@@ -134,7 +143,7 @@ int mmap(void* addr, size_t len, int prot, SceMap flags, int fd, int64_t offset,
               offset, GetLastError());
     } else {
       LOG_DEBUG(L"Mmap addr:0x%08llx len:0x%08llx prot:%d flags:%0lx fd:%d offset:%lld -> out:0x%08llx", addr, mappingLength, prot, flags, fd, offset, *res);
-      accessMemoryManager()->registerMapping((uint64_t)*res, MappingType::File);
+      accessMemoryManager()->registerMapping((uint64_t)*res, len, MappingType::File);
     }
   }
 
@@ -235,7 +244,7 @@ int open(const char* path, SceOpen flags, SceKernelMode kernelMode) {
     return getErr(ErrCode::_EINVAL);
   }
 
-  if (std::string_view(path).starts_with("/dev")) {
+  if (std::string_view(path).starts_with("/dev/")) {
     return open_dev(path, flags, kernelMode);
   }
 
@@ -500,7 +509,7 @@ int stat(const char* path, SceKernelStat* sb) {
   if (!_mapped) {
     return getErr(ErrCode::_EACCES);
   }
-  auto const mapped = _mapped.value();
+  auto const& mapped = *_mapped;
 
   if (!std::filesystem::exists(mapped)) {
     return getErr(ErrCode::_ENOENT);
@@ -671,6 +680,8 @@ int64_t lseek(int handle, int64_t offset, int whence) {
   if (whence > 2) return getErr(ErrCode::_EINVAL);
 
   auto file = accessFileManager().accessFile(handle);
+  if (file == nullptr) return getErr(ErrCode::_EINVAL);
+
   file->clearError();
 
   auto const pos = file->lseek(offset, (SceWhence)whence);

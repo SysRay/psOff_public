@@ -118,19 +118,10 @@ class FileManager: public IFileManager {
     LOG_USE_MODULE(FileManager);
     std::unique_lock const lock(m_mutext_int);
 
-    // Check Cache
-    {
-      auto it = m_mappedPaths.find(path.data());
-      if (it != m_mappedPaths.end()) {
-        return it->second;
-      }
-    }
-    //-
-
     // Special case: Mounted Gamefiles
     if (path[0] != '/') {
       auto const mapped = m_dirGameFiles / path;
-      LOG_INFO(L"Gamefiles mapped:%s", mapped.c_str());
+      LOG_TRACE(L"Gamefiles mapped:%s", mapped.c_str());
       return mapped;
     }
     // -
@@ -146,18 +137,16 @@ class FileManager: public IFileManager {
           if (path[mountPoint.size() + offset] == '/') ++offset; // path.substr() should return relative path
 
           if (mountType.first == MountType::App && m_updateSearch) {
-            auto const& updateDir = m_mountPointList[MountType::Update].begin()->second;
-            auto const  mapped    = updateDir / path.substr(mountPoint.size() + offset);
-            if (std::filesystem::exists(mapped)) {
-              LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), updateDir.c_str(), path.data());
-              m_mappedPaths[path.data()] = mapped;
+            auto const&                          updateDir = m_mountPointList[MountType::Update].begin()->second;
+            std::optional<std::filesystem::path> mapped    = updateDir / path.substr(mountPoint.size() + offset);
+            if (std::filesystem::exists(*mapped)) {
+              LOG_TRACE(L"mapped: %s root:%s source:%S", mapped->c_str(), updateDir.c_str(), path.data());
               return mapped;
             }
           }
 
-          auto const mapped = rootDir / path.substr(mountPoint.size() + offset);
-          LOG_DEBUG(L"mapped: %s root:%s source:%S", mapped.c_str(), rootDir.c_str(), path.data());
-          m_mappedPaths[path.data()] = mapped;
+          std::optional<std::filesystem::path> mapped = rootDir / path.substr(mountPoint.size() + offset);
+          LOG_TRACE(L"mapped: %s root:%s source:%S", mapped->c_str(), rootDir.c_str(), path.data());
           return mapped;
         }
       }
@@ -187,7 +176,13 @@ class FileManager: public IFileManager {
   }
 
   void remove(int handle) final {
+    LOG_USE_MODULE(FileManager);
     std::unique_lock const lock(m_mutext_int);
+    if (handle >= m_openFiles.size()) {
+      LOG_ERR(L"remove, unknown handle %d", handle);
+      return;
+    }
+
     m_openFiles[handle].reset();
   }
 
@@ -220,6 +215,8 @@ class FileManager: public IFileManager {
 
     if ((*dir->m_file) == endDir) return 0;
 
+#pragma pack(push, 1)
+
     struct DataStruct {
       uint32_t fileno;
       uint16_t reclen;
@@ -228,8 +225,9 @@ class FileManager: public IFileManager {
       char     name[256];
     };
 
-    auto count = dir->count;
-    int  n     = 0;
+#pragma pack(pop, 1)
+
+    int n = 0;
 
     while (n < nbytes - sizeof(DataStruct)) {
       auto item = (DataStruct*)(buf + n);
@@ -237,7 +235,7 @@ class FileManager: public IFileManager {
       auto const filename = (*dir->m_file)->path().filename().string();
       if (sizeof(DataStruct) + std::min(filename.size(), 255llu) >= nbytes) break;
 
-      item->fileno             = 0;
+      item->fileno             = ++dir->count;
       item->type               = ((*dir->m_file)->is_regular_file() ? 8 : 4);
       item->namlen             = filename.copy(item->name, 255);
       item->name[item->namlen] = '\0';
@@ -245,17 +243,16 @@ class FileManager: public IFileManager {
       n += sizeof(DataStruct);
       item->reclen = sizeof(DataStruct);
 
-      LOG_DEBUG(L"KernelGetdirentries[%d]: %S %u offset:%u count:%u", handle, item->name, item->type, item->reclen, count);
+      LOG_DEBUG(L"KernelGetdirentries[%d]: %S %u offset:%u count:%u", handle, item->name, item->type, n, dir->count);
 
       std::error_code err;
       (*dir->m_file).increment(err);
-      count = ++dir->count;
 
       if ((*dir->m_file) == endDir || err) break;
     };
 
     if (basep != nullptr) {
-      *basep = count;
+      *basep = dir->count;
     }
     return n;
   }

@@ -22,9 +22,13 @@
 namespace {
 LOG_DEFINE_MODULE(ELF64);
 
+// clang-format off
+
 using module_func_t          = SYSV_ABI int (*)(size_t args, const void* argp);
 using module_call_func_t     = SYSV_ABI void (*)();
 using module_ini_fini_func_t = SYSV_ABI int (*)(size_t args, const void* argp, module_func_t func);
+
+// clang-format on
 
 int jmpModule(uint64_t addr, size_t args, const void* argp, module_func_t func) {
   return reinterpret_cast<module_ini_fini_func_t>(addr)(args, argp, func);
@@ -500,7 +504,7 @@ class Parser_ELF64: public IFormat {
   Symbols::RelocationInfo getRelocationInfo(IRuntimeLinker const* linker, elf64::Elf64_Rela const* r, Program const* prog,
                                             elf64::SymbolMap const& symbolsMap) const;
 
-  void relocate(Program const* prog, uint64_t invalidMemoryAddr) final;
+  void relocate(Program const* prog, uint64_t invalidMemoryAddr, std::string_view libName) final;
 
   bool isShared() const { return (m_elfHeader->type == elf64::ET_DYNAMIC); }
 
@@ -1117,8 +1121,8 @@ bool Parser_ELF64::load2Mem(Program* prog) {
   prog->baseVaddr = memory::alloc(prog->desiredBaseAddr, prog->baseSizeAligned + /*fs_table: */ sizeof(uint64_t) * (1 + fsPatchAddrList.size()),
                                   SceProtExecute | SceProtRead | SceProtWrite);
 
-  printf("[%llu] %S| Image allocation, addr:0x%08llx size:0x%08llx\n", prog->id, m_filename.c_str(), prog->baseVaddr, prog->allocSize);
-  LOG_DEBUG(L"[%llu] %s| Image allocation, addr:0x%08llx(0x%08llx) size:0x%08llx", prog->id, m_filename.c_str(), prog->baseVaddr, prog->desiredBaseAddr,
+  printf("[%d] %S| Image allocation, addr:0x%08llx size:0x%08llx\n", prog->id, m_filename.c_str(), prog->baseVaddr, prog->allocSize);
+  LOG_DEBUG(L"[%d] %s| Image allocation, addr:0x%08llx(0x%08llx) size:0x%08llx", prog->id, m_filename.c_str(), prog->baseVaddr, prog->desiredBaseAddr,
             prog->allocSize);
 
   m_baseVaddr = prog->baseVaddr;
@@ -1420,7 +1424,7 @@ void Parser_ELF64::setupMissingRelocationHandler(Program* prog, void* relocateHa
   }
 }
 
-void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr) {
+void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr, std::string_view libName) {
   LOG_USE_MODULE(ELF64);
   LOG_INFO(L"relocate %s", prog->filename.c_str());
 
@@ -1431,12 +1435,22 @@ void Parser_ELF64::relocate(Program const* prog, uint64_t invalidMemoryAddr) {
     return ret;
   };
 
-  auto relocateAll = [this, prog, invalidMemoryAddr, load](IRuntimeLinker& linker, elf64::Elf64_Rela const* records, uint64_t numBytes,
-                                                           bool const isJmpRelaTable) {
+  auto relocateAll = [&](IRuntimeLinker& linker, elf64::Elf64_Rela const* records, uint64_t numBytes, bool const isJmpRelaTable) {
     uint32_t index = 0;
     for (auto const* r = records; reinterpret_cast<uint8_t const*>(r) < reinterpret_cast<uint8_t const*>(records) + numBytes; r++, index++) {
-      auto const ri      = getRelocationInfo(&linker, r, prog, m_dynamicInfo->symbolsMap);
-      bool       patched = false;
+      auto const ri = getRelocationInfo(&linker, r, prog, m_dynamicInfo->symbolsMap);
+
+      if (!libName.empty()) {
+        auto idData = util::splitString(ri.name, '#');
+
+        if (idData.size() == 3) {
+          auto lib = getLibrary(m_dynamicInfo.get(), idData[1]);
+          if (lib->name != libName) continue;
+        } else
+          continue;
+      }
+
+      bool patched = false;
       if (ri.resolved) {
         patched = patchReplace(ri.vaddr, ri.value);
       } else {

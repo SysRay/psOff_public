@@ -1,13 +1,14 @@
 
-#define __APICALL_EXPORT
+#define __APICALL_PTHREAD_EXTERN
 #include "pthread.h"
-#undef __APICALL_EXPORT
+#undef __APICALL_PTHREAD_EXTERN
 
 #include "logging.h"
 #include "modules_include/common.h"
 #include "pthread_intern.h"
 
 #define __APICALL_IMPORT
+#include "core/dmem/memoryManager.h"
 #include "core/fileManager/fileManager.h"
 #include "core/runtime/runtimeLinker.h"
 #include "core/timer/timer.h"
@@ -102,6 +103,12 @@ void initTLS(ScePthread_obj obj) {
 
 void init_pThread() {
   auto pimpl = getData();
+}
+
+const char* sanThreadName(const char* name) {
+  MEMORY_BASIC_INFORMATION mbi = {};
+  if (::VirtualQuery(name, &mbi, sizeof(mbi))) return name;
+  return "[BADPTR]";
 }
 } // namespace
 
@@ -399,11 +406,13 @@ int join(ScePthread_obj obj, void** value) {
   auto thread = getPthread(obj);
   thread->p.join();
 
-  LOG_USE_MODULE(pthread);
-  LOG_DEBUG(L"Delete thread:%d", thread->unique_id);
-  // Cleanup thread
-  thread->~PthreadPrivate();
-  delete[] obj;
+  if (!thread->detached) {
+    LOG_USE_MODULE(pthread);
+    LOG_DEBUG(L"Delete thread:%d", thread->unique_id);
+    // Cleanup thread
+    thread->~PthreadPrivate();
+    delete[] obj;
+  }
   // -
   return Ok;
 }
@@ -801,10 +810,7 @@ int cancel(ScePthread_obj obj) {
   auto thread = getPthread(obj);
   // todo cancel
   // int  result = ::pthread_cancel(thread->p);
-
-  LOG_USE_MODULE(pthread);
-  LOG_ERR(L" todo cancel| %S id:%d", thread->name.data(), thread->unique_id);
-  // LOG_TRACE(L"thread cancel| threadId:%d name:%S result:%d", thread->unique_id, thread->name.c_str(), result);
+  thread->p.interrupt();
 
   return Ok;
 }
@@ -1137,7 +1143,7 @@ int create(ScePthread_obj* obj, const ScePthreadAttr* attr, pthread_entry_func_t
   thread->unique_id = threadCounter();
 
   if (name != nullptr)
-    thread->name = std::format("_{}_{}", thread->unique_id, name);
+    thread->name = std::format("_{}_{}", thread->unique_id, sanThreadName(name));
   else
     thread->name = std::format("_{}", thread->unique_id);
 
@@ -1218,6 +1224,7 @@ void cleanup_thread() {
     func(arg);
     thread->cleanupFuncs.pop_back();
   }
+  accessRuntimeLinker().destroyTLSKeys(getSelf());
 
   auto thread_dtors = *getThreadDtors();
 
@@ -1225,7 +1232,7 @@ void cleanup_thread() {
     thread_dtors();
   }
 
-  accessRuntimeLinker().destroyTLSKeys(getSelf());
+  accessMemoryManager()->unregisterStack((uint64_t)thread->attr.getStackAddr());
 
   // Delete here if detached, else in join()
   if (thread->detached) {
@@ -1250,6 +1257,8 @@ ScePthread setup_thread(void* arg) {
 
     attr.setStackAddr(tib->StackLimit); // lowest addressable byte
     auto const stackSize = (uint64_t)tib->StackBase - (uint64_t)tib->StackLimit;
+
+    accessMemoryManager()->registerStack((uint64_t)tib->StackLimit, stackSize);
 
     LOG_DEBUG(L"thread[%d] stack addr:0x%08llx size:0x%08llx", thread->unique_id, tib->StackBase, stackSize);
     if (attr.getStackSize() < stackSize) {

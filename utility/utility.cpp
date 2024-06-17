@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <windows.h>
+
 LOG_DEFINE_MODULE(util);
 
 namespace util {
