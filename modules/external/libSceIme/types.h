@@ -275,8 +275,8 @@ enum class SceImeKeyboardType {
 };
 
 enum class SceImeKeyboardDeviceType {
-  KEYBOARD = 0,
-  OSK      = 1,
+  USB_KEYBOARD = 0,
+  OSK          = 1,
 };
 
 enum class SceImePanelType {
@@ -387,7 +387,7 @@ union SceImeEventParam {
 };
 
 struct SceImeEvent {
-  SceImeEventId    id;
+  uint32_t         id;
   SceImeEventParam param;
 };
 
