@@ -275,8 +275,8 @@ enum class SceImeKeyboardType {
 };
 
 enum class SceImeKeyboardDeviceType {
-  KEYBOARD = 0,
-  OSK      = 1,
+  USB_KEYBOARD = 0,
+  OSK          = 1,
 };
 
 enum class SceImePanelType {
@@ -306,7 +306,7 @@ struct SceImeEditText {
   wchar_t*               str;
   uint32_t               caretIndex;
   uint32_t               areaNum;
-  SceImeTextAreaProperty textArea[SCE_IME_MAX_TEXT_AREA];
+  SceImeTextAreaProperty textArea[Ime::MAX_TEXT_AREA];
 };
 
 struct SceImePositionAndForm {
@@ -359,7 +359,7 @@ struct SceImeKeyboardInfo {
 
 struct SceImeKeyboardResourceIdArray {
   SceUserServiceUserId userId;
-  uint32_t             resourceId[SCE_IME_KEYBOARD_MAX_NUMBER];
+  uint32_t             resourceId[Ime::KEYBOARD_MAX_NUMBER];
 };
 
 struct SceImeKeycode {
@@ -387,7 +387,7 @@ union SceImeEventParam {
 };
 
 struct SceImeEvent {
-  SceImeEventId    id;
+  uint32_t         id;
   SceImeEventParam param;
 };
 
@@ -448,5 +448,5 @@ struct SceImeKeyboardParam {
 
 struct SceImeKeyboardResourceId {
   SceUserServiceUserId userId;
-  uint32_t             resourceId[SCE_IME_KEYBOARD_MAX_NUMBER];
+  uint32_t             resourceId[Ime::KEYBOARD_MAX_NUMBER];
 };
