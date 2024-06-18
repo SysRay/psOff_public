@@ -363,9 +363,16 @@ EXPORT SYSV_ABI int __NID(__elf_phdr_match_addr)(SceKernelModuleInfoEx* m, uint6
 EXPORT SYSV_ABI int sceKernelGetModuleInfo(SceKernelModule handle, SceKernelModuleInfo* r) {
   if (r == nullptr) return getErr(ErrCode::_EFAULT);
   if (r->size < sizeof(*r)) return getErr(ErrCode::_EINVAL);
-  LOG_USE_MODULE(libkernel);
-  LOG_ERR(L"todo %S(%d)", __FUNCTION__, handle);
-  // auto info = accessRuntimeLinker().getModuleInfo(handle); // todo
+
+  auto info = accessRuntimeLinker().getModuleInfoEx(handle);
+  if (info == nullptr) return getErr(ErrCode::_EINVAL);
+
+  std::string_view(info->name).copy(r->name, sizeof(r->name));
+  ::memcpy(r->segments, info->segments, sizeof(info->segments));
+  r->segment_count = info->segment_count;
+  r->ref_count     = info->ref_count;
+  ::memset(r->fingerprint, 0, sizeof(r->fingerprint)); // todo Read .sce_special from ELF binary
+
   return Ok;
 }
 

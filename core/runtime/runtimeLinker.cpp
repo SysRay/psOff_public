@@ -326,6 +326,12 @@ class RuntimeLinker: public IRuntimeLinker {
     return &prog->moduleInfoEx;
   }
 
+  SceKernelModuleInfoEx const* getModuleInfoEx(int32_t handle) const final {
+    Program const* prog = findProgramById(handle);
+    if (prog == nullptr) return nullptr;
+    return &prog->moduleInfoEx;
+  }
+
   std::vector<int> getModules() const final {
     std::unique_lock lock(m_mutex_int);
     std::vector<int> ret(m_programList.size());
